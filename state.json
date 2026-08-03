@@ -1,0 +1,9 @@
+{
+  "pair": "EUR/USD",
+  "goal": { "count": 850, "target": 2000 },
+  "trades": [
+    { "pair": "EUR/USD", "side": "long",  "pnl": "▲ +34 pips" },
+    { "pair": "XAU/USD", "side": "long",  "pnl": "▲ +$126" },
+    { "pair": "BTC/USD", "side": "short", "pnl": "▼ −0.8%" }
+  ]
+}

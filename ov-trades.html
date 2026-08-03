@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><title>SMILE · Open Positions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css"><link rel="stylesheet" href="_shared.css">
+<style>
+/* DATA: state.json → trades[] · VARS: --corner --mx --my --scale --w */
+:root{--corner:tr;--mx:68;--my:286;--scale:1;--w:462;}
+.widget{width:calc(var(--u)*var(--w,462));}
+.trade{display:flex;align-items:center;gap:calc(var(--u)*12);padding:calc(var(--u)*11) calc(var(--u)*14);}
+.trade + .trade{border-top:1px solid rgba(255,255,255,.05);}
+.trade .tp{font-family:var(--font-display);font-weight:800;font-size:calc(var(--u)*12.5);color:var(--fg);min-width:calc(var(--u)*84);}
+.trade .ts{font-family:var(--font-display);font-weight:800;font-size:calc(var(--u)*9);letter-spacing:.16em;
+  border-radius:999px;padding:calc(var(--u)*4) calc(var(--u)*9);}
+.trade.long .ts{color:var(--up);background:rgba(14,203,129,.08);border:1px solid rgba(14,203,129,.35);}
+.trade.short .ts{color:var(--down);background:rgba(246,70,93,.08);border:1px solid rgba(246,70,93,.35);}
+.trade .tv{margin-left:auto;font-weight:600;font-size:calc(var(--u)*12.5);}
+.trade.long .tv{color:var(--up);} .trade.short .tv{color:var(--down);}
+.trade-empty{padding:calc(var(--u)*16);text-align:center;font-family:var(--font-display);
+  font-weight:700;font-size:calc(var(--u)*10.5);letter-spacing:.3em;color:var(--faint);}
+</style>
+</head>
+<body class="ov">
+<div class="card fx" id="root">
+  <div class="widget">
+    <div class="w-head">
+      <span class="w-idx">03</span>
+      <svg class="w-ico" viewBox="0 0 24 24"><path d="M3.5 17.5 9 11l4 3.5 7.5-9"/><path d="M15.5 5.5h5v5"/></svg>
+      <h3>OPEN POSITIONS</h3>
+      <span class="w-tag" id="count">0</span>
+    </div>
+    <div id="rows"></div>
+  </div>
+</div>
+<script src="_shared.js"></script>
+<script>
+SMILE.mount(document.getElementById('root'),{corner:'tr',mx:68,my:286,scale:1});
+var rows=document.getElementById('rows'),cnt=document.getElementById('count');
+function render(list){
+  list=list||[];cnt.textContent=list.length;rows.innerHTML='';
+  if(!list.length){rows.innerHTML='<div class="trade-empty">NO OPEN POSITIONS</div>';return;}
+  list.forEach(function(t){
+    var side=(t.side||'long').toLowerCase()==='short'?'short':'long';
+    var d=document.createElement('div');d.className='trade '+side;
+    d.innerHTML='<span class="tp">'+SMILE.esc(t.pair||'—')+'</span>'+
+                '<span class="ts">'+SMILE.esc((t.side||'long').toUpperCase())+'</span>'+
+                '<span class="tv num">'+SMILE.esc(t.pnl||'')+'</span>';
+    rows.appendChild(d);
+  });
+}
+render([
+  {pair:'EUR/USD',side:'long',pnl:'▲ +34 pips'},
+  {pair:'XAU/USD',side:'long',pnl:'▲ +$126'},
+  {pair:'BTC/USD',side:'short',pnl:'▼ −0.8%'}
+]);
+SMILE.watchState(function(s){ if(Array.isArray(s.trades))render(s.trades); },3000);
+</script>
+</body></html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><title>SMILE · Cam Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css"><link rel="stylesheet" href="_shared.css">
+<style>
+/* PARAMS: ?corner=bl · ?mode=card|pill · ?w=372&h=210 · ?tag=0 · ?label=CAM · ?hint=1
+   VARS:   same names as CSS vars. Frame is transparent inside — put your
+           video capture source BEHIND this one, sized/matched to it.        */
+:root{--corner:bl;--mx:68;--my:112;--scale:1;--w:372;--h:210;}
+.cam-frame{position:relative;width:calc(var(--u)*var(--w,372));height:calc(var(--u)*var(--h,210));
+  border-radius:calc(var(--u)*16);border:1px solid rgba(255,255,255,.14);background:transparent;
+  box-shadow:0 calc(var(--u)*24) calc(var(--u)*54) rgba(0,0,0,.6);}
+.cam-tag{position:absolute;top:calc(var(--u)*11);left:calc(var(--u)*11);display:var(--tag,inline-flex);}
+.cam-hint{position:absolute;inset:calc(var(--u)*10);border:1px dashed rgba(255,255,255,.14);
+  border-radius:calc(var(--u)*10);display:none;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:calc(var(--u)*10);letter-spacing:.34em;color:#52525b;}
+body.hint .cam-hint{display:flex;}
+.cam-cap{display:none;align-items:center;gap:calc(var(--u)*11);padding:calc(var(--u)*9) calc(var(--u)*16);
+  border-radius:999px;background:rgba(9,9,11,.92);border:1px solid var(--border-2);
+  box-shadow:0 calc(var(--u)*16) calc(var(--u)*36) rgba(0,0,0,.55);backdrop-filter:blur(8px);}
+.cam-cap .disc{width:calc(var(--u)*22);height:calc(var(--u)*22);}
+.cam-cap .lbl{font-family:var(--font-display);font-weight:800;font-size:calc(var(--u)*11);letter-spacing:.22em;color:var(--fg);}
+.cam-cap .live{display:inline-flex;align-items:center;gap:calc(var(--u)*6);font-family:var(--font-display);
+  font-weight:800;font-size:calc(var(--u)*9);letter-spacing:.18em;color:var(--down);}
+.cam-cap .live i{width:calc(var(--u)*6);height:calc(var(--u)*6);border-radius:50%;background:var(--down);animation:softpulse 1.6s infinite;}
+body.pill .cam-frame{display:none;}
+body.pill .cam-cap{display:inline-flex;}
+</style>
+</head>
+<body class="ov">
+<div id="root">
+  <div class="cam-frame fx">
+    <span class="badge solid cam-tag"><span class="dot r" style="background:var(--ink)"></span><span id="tagLbl">CAM</span></span>
+    <span class="cam-hint">WEBCAM SOURCE</span>
+  </div>
+  <div class="cam-cap fx">
+    <svg class="disc" viewBox="0 0 100 100" aria-hidden="true"></svg>
+    <span class="lbl" id="capLbl">CAM</span>
+    <span class="live"><i></i>LIVE</span>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script src="_shared.js"></script>
+<script>
+if(SMILE.opt('mode','card')==='pill')document.body.classList.add('pill');
+if(SMILE.opt('hint','0')==='1')document.body.classList.add('hint');
+if(SMILE.opt('tag','1')==='0')document.documentElement.style.setProperty('--tag','none');
+var lbl=SMILE.opt('label','CAM');
+document.getElementById('tagLbl').textContent=lbl;
+document.getElementById('capLbl').textContent=lbl;
+SMILE.mount(document.getElementById('root'),{corner:'bl',mx:68,my:112,scale:1});
+</script>
+</body></html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><title>SMILE · Ticker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css"><link rel="stylesheet" href="_shared.css">
+<style>
+/* PARAMS: ?warn=0 (hide risk cap) · ?speed=30 (seconds per loop) · VARS: --speed */
+:root{--speed:30s;}
+.ticker{position:absolute;left:0;right:0;bottom:0;height:var(--ticker);z-index:5;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);backdrop-filter:blur(12px);}
+.tk-cap{display:flex;align-items:center;gap:calc(var(--u)*10);padding:0 calc(var(--u)*26);white-space:nowrap;
+  font-family:var(--font-display);font-weight:800;font-size:calc(var(--u)*12.5);letter-spacing:.16em;}
+.tk-cap.brandcap{background:var(--yellow);color:var(--ink);
+  clip-path:polygon(0 0,100% 0,calc(100% - var(--u)*16) 100%,0 100%);padding-right:calc(var(--u)*38);}
+.tk-cap.brandcap .disc{width:calc(var(--u)*24);height:calc(var(--u)*24);}
+.tk-cap.warn{margin-left:auto;background:rgba(246,70,93,.05);border-left:1px solid rgba(246,70,93,.25);
+  color:rgba(246,70,93,.75);font-size:calc(var(--u)*10.5);letter-spacing:.18em;}
+body.no-warn .tk-cap.warn{display:none;}
+.tk-mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.tk-track{display:flex;width:max-content;animation:tk var(--speed,30s) linear infinite;}
+.tk-seq{display:flex;align-items:center;}
+.tk-item{display:inline-flex;align-items:center;white-space:nowrap;font-weight:500;font-size:calc(var(--u)*12);
+  letter-spacing:.18em;text-transform:uppercase;margin-right:calc(var(--u)*44);color:var(--muted-fg);}
+.tk-item::before{content:"✦";color:var(--yellow);margin-right:calc(var(--u)*16);font-size:calc(var(--u)*10);}
+.tk-item b{color:var(--fg);font-weight:700;}
+@keyframes tk{to{transform:translateX(-50%);}}
+</style>
+</head>
+<body class="ov">
+<footer class="ticker">
+  <div class="tk-cap brandcap">
+    <svg class="disc" viewBox="0 0 100 100" aria-hidden="true"></svg>
+    <span>SMILE · LIVE</span>
+  </div>
+  <div class="tk-mask">
+    <div class="tk-track">
+      <span class="tk-seq">
+        <span class="tk-item">say hi in chat <b>@smileke</b></span>
+        <span class="tk-item"><b>smile.co.ke</b> — 4G smiles only</span>
+        <span class="tk-item"><b>#SmileSquad</b></span>
+        <span class="tk-item">drop a 🙂 if you're new</span>
+        <span class="tk-item">everything streams from <b>smile.co.ke</b></span>
+      </span>
+      <span class="tk-seq" aria-hidden="true">
+        <span class="tk-item">say hi in chat <b>@smileke</b></span>
+        <span class="tk-item"><b>smile.co.ke</b> — 4G smiles only</span>
+        <span class="tk-item"><b>#SmileSquad</b></span>
+        <span class="tk-item">drop a 🙂 if you're new</span>
+        <span class="tk-item">everything streams from <b>smile.co.ke</b></span>
+      </span>
+    </div>
+  </div>
+  <div class="tk-cap warn">⚠&nbsp;TRADING INVOLVES RISK · NOT FINANCIAL ADVICE</div>
+</footer>
+<script src="smile-mark.js"></script>
+<script src="_shared.js"></script>
+<script>
+if(SMILE.opt('warn','1')==='0')document.body.classList.add('no-warn');
+var sp=SMILE.opt('speed',null);
+if(sp)document.documentElement.style.setProperty('--speed',sp+'s');
+</script>
+</body></html>

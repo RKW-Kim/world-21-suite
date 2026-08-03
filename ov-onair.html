@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><title>SMILE · On Air</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css"><link rel="stylesheet" href="_shared.css">
+<style>
+/* PARAMS: ?corner=tr · ?mode=uptime|clock (clock = Nairobi time) */
+:root{--corner:tr;--mx:44;--my:30;--scale:1;}
+.onair{gap:calc(var(--u)*13);}
+.onair .rec{display:inline-flex;align-items:center;}
+.onair .uptime{font-family:var(--font-display);font-weight:800;font-size:calc(var(--u)*16);color:var(--fg);}
+.sep-v{width:1px;height:calc(var(--u)*18);background:var(--border);}
+</style>
+</head>
+<body class="ov">
+<div class="badge onair fx" id="root">
+  <span class="rec"><span class="dot r"></span></span>
+  <span class="sep-v"></span>
+  <span class="uptime num" id="t">0:00:00</span>
+</div>
+<script src="_shared.js"></script>
+<script>
+SMILE.mount(document.getElementById('root'),{corner:'tr',mx:44,my:30,scale:1});
+var el=document.getElementById('t'),mode=SMILE.opt('mode','uptime'),start=Date.now();
+function pad(n){return String(n).padStart(2,'0');}
+function tick(){
+  if(mode==='clock'){
+    try{el.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',
+      hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());}catch(e){}
+  }else{
+    var s=Math.floor((Date.now()-start)/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);
+    el.textContent=h+':'+pad(m)+':'+pad(s%60);
+  }
+}
+setInterval(tick,1000);tick();
+</script>
+</body></html>
