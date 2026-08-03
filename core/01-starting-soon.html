@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · starting soon</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css">
+<style>
+  .topbar{position:absolute;top:96px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center}
+  .topbar .brand{font-size:46px}.clock{font-size:24px}
+  .left{position:absolute;left:120px;top:262px;z-index:3}.kicker{margin-bottom:26px}
+  h1{font-family:var(--display);font-weight:800;font-size:148px;line-height:.92;letter-spacing:-.03em}
+  h1 .y{color:var(--yellow)} h1 .g{color:var(--up)}
+  .sub{margin-top:26px;max-width:680px;font-size:26px;font-weight:500;color:var(--muted);line-height:1.4}
+  .stats{margin-top:34px;display:flex;gap:48px}
+  .stats .n{font-family:var(--display);font-weight:800;font-size:46px;color:var(--yellow);line-height:1}
+  .stats .t{font-size:14px;font-weight:700;letter-spacing:.16em;color:var(--muted);margin-top:6px}
+  .load{margin-top:38px;width:560px}
+  .load .track{height:18px;border-radius:999px;background:var(--panel-2);border:1.5px solid var(--line);overflow:hidden}
+  .load .fill{height:100%;width:0%;background:var(--yellow);border-radius:999px;transition:width .35s ease}
+  .load .meta{display:flex;justify-content:space-between;margin-top:12px;font-family:var(--display);font-weight:700;font-size:18px;color:var(--muted)}
+  .load .pct{color:var(--yellow)}.socials{margin-top:32px;display:flex;gap:14px}
+  .right{position:absolute;right:200px;top:210px;display:flex;flex-direction:column;align-items:center;gap:42px;z-index:3}
+  .orbit{position:relative;padding:34px}
+  .orbit::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.45);border-radius:50%;animation:spin 22s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .cbars{display:flex;gap:14px;align-items:flex-end;height:130px}
+  .cbars span{position:relative;width:26px;border-radius:6px;transform-origin:bottom;animation:bar 1.5s ease-in-out infinite}
+  .cbars span::before{content:"";position:absolute;left:50%;top:-14%;bottom:-10%;width:4px;transform:translateX(-50%);background:inherit;filter:brightness(.6)}
+  .cbars span:nth-child(1){height:36px;background:var(--down)}.cbars span:nth-child(2){height:62px;background:var(--up);animation-delay:.12s}
+  .cbars span:nth-child(3){height:48px;background:var(--down);animation-delay:.24s}.cbars span:nth-child(4){height:88px;background:var(--up);animation-delay:.36s}
+  .cbars span:nth-child(5){height:70px;background:var(--down);animation-delay:.48s}.cbars span:nth-child(6){height:112px;background:var(--up);animation-delay:.6s}
+  .cbars span:nth-child(7){height:130px;background:var(--yellow);animation-delay:.72s}
+  #skyline{position:absolute;left:0;right:0;bottom:62px;height:330px;opacity:.45;z-index:1}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div><div id="skyline"></div>
+  <span class="spark" style="left:10%;top:24%;--d:0s"></span><span class="spark" style="left:46%;top:14%;--d:1.4s;background:var(--up)"></span><span class="spark" style="left:88%;top:20%;--d:.8s;background:var(--down)"></span>
+  <div class="topbar">
+    <span class="brand"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"/><g><ellipse cx="38" cy="40" rx="6.6" ry="8.6"/><ellipse cx="62" cy="40" rx="6.6" ry="8.6"/></g><path d="M31 57 C 34 80, 66 80, 69 57" fill="none" stroke="#0b0b0b" stroke-width="8" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark clock"><span id="clock">--:--</span>&nbsp;· NAIROBI DESK</div>
+  </div>
+  <div class="left">
+    <span class="chip solid kicker">● PRE-MARKET · LOADING</span>
+    <h1>markets open<br><span class="y">soon</span><span class="g">.</span></h1>
+    <p class="sub">Charts loading, coffee brewing. Grab your seat before the bell — spot, futures, MT5 &amp; good vibes under one Smile desk.</p>
+    <div class="stats"><div><div class="n">1,416</div><div class="t">TRADERS TRUST US</div></div><div><div class="n">198</div><div class="t">ACTIVE MARKETS</div></div></div>
+    <div class="load"><div class="track"><div class="fill" id="fill"></div></div><div class="meta"><span>LOADING CHARTS &amp; CANDLES…</span><span class="pct" id="pct">0%</span></div></div>
+    <div class="socials"><span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span></div>
+  </div>
+  <div class="right">
+    <div class="orbit"><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <div class="cbars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker">
+    <div class="tk"><span>✦ OPENING SOON</span><span>BTC · ETH · USD/KES · XAU · CRASH500</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>not financial advice — just good vibes</span></div>
+    <div class="tk"><span>✦ OPENING SOON</span><span>BTC · ETH · USD/KES · XAU · CRASH500</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>not financial advice — just good vibes</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  const sky=document.getElementById('skyline'),cols=['#0ECB81','#F6465D','#222','#0ECB81','#F6465D','#222'];
+  for(let i=0;i<26;i++){const c=document.createElement('span');c.className='cndl';c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';c.style.height=(70+Math.random()*240)+'px';c.style.background=cols[i%6];c.style.setProperty('--d',(i*0.06)+'s');sky.appendChild(c);}
+  const clock=()=>document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-KE',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',hour12:false});clock();setInterval(clock,10000);
+  let p=0;const f=document.getElementById('fill'),x=document.getElementById('pct');
+  (function step(){p=Math.min(100,p+Math.random()*9+2);f.style.width=p+'%';x.textContent=Math.floor(p)+'%';if(p>=100){setTimeout(()=>{p=14;step();},2200);}else setTimeout(step,260+Math.random()*380);})();
+</script></body></html>

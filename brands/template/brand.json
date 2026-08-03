@@ -1,0 +1,15 @@
+{
+  "name": "Nova (example channel)",
+  "wordmark": "nova",
+  "tokens": {
+    "--yellow": "#7C5CFF", "--yellow-hot": "#6A48FF",
+    "--ink": "#07070b", "--panel": "#12121c", "--panel-2": "#1a1a28", "--line": "#2c2c40",
+    "--muted": "#9a9ab0", "--paper": "#ffffff",
+    "--up": "#22D3A6", "--down": "#FF5470", "--up-soft": "#7FF0D2", "--down-soft": "#FF9BAD",
+    "--sky": "#46C8FF", "--live": "#FF5470"
+  },
+  "handles": {
+    "@smileke": "@novatv", "smile.co.ke": "nova.example", "#SmileSquad": "#NovaNation",
+    "Kenya's all-in-one finance hub": "trade smarter, smile wider"
+  }
+}

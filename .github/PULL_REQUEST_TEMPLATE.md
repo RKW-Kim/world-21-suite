@@ -1,0 +1,4 @@
+- [ ] `python scripts/validate.py` passes
+- [ ] No deployed file hand-edited (change is in core/ or a brand pack)
+- [ ] Brand-agnostic (works with brands/template)
+- [ ] Docs updated if visual system changed

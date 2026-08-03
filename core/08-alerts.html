@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · alerts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile.css">
+  <style>
+    #zone{position:absolute;left:0;right:0;top:120px;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+    .alert{position:relative;display:flex;align-items:center;gap:22px;background:var(--panel);color:#fff;border:2px solid var(--yellow);border-radius:20px;padding:20px 36px 20px 20px;box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0;transform:translateY(-60px) scale(.8)}
+    .alert.show{animation:ain .55s cubic-bezier(.2,1.4,.3,1) forwards}.alert.hide{animation:aout .45s ease forwards}
+    @keyframes ain{to{transform:none;opacity:1}}@keyframes aout{to{transform:translateY(-40px) scale(.9);opacity:0}}
+    .burst{position:absolute;inset:-46px;border-radius:50%;z-index:-1;filter:blur(1px);opacity:0;background:repeating-conic-gradient(rgba(255,193,7,.5) 0 9deg,transparent 9deg 18deg)}
+    .alert.show .burst{animation:burst .8s ease-out forwards}@keyframes burst{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.3) rotate(40deg)}}
+    .icon{width:84px;height:84px;border-radius:50%;background:var(--yellow);display:grid;place-items:center;flex-shrink:0}
+    .icon svg{width:44px;height:44px;stroke:#0b0b0b;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+    .k{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
+    .title{font-family:var(--font-display);font-weight:800;font-size:32px;line-height:1.1;margin-top:2px}
+    .sub{font-size:20px;color:var(--muted);margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div id="zone">
+      <div class="alert" id="alertBox">
+        <div class="burst"></div>
+        <div class="icon">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </div>
+        <div>
+          <div class="k" id="alertCategory">MARKET ALERT</div>
+          <div class="title" id="alertTitle">BTC Breaking Resistance</div>
+          <div class="sub" id="alertSub">Surged past target levels on high volume</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="smile-mark.js"></script>
+  <script>
+    function triggerAlert(cat, title, sub) {
+      const box = document.getElementById('alertBox');
+      document.getElementById('alertCategory').textContent = cat || 'MARKET ALERT';
+      document.getElementById('alertTitle').textContent = title || 'Alert Triggered';
+      document.getElementById('alertSub').textContent = sub || '';
+      box.classList.remove('hide');
+      box.classList.add('show');
+      if (window.smileMood) window.smileMood('bounce', 1200);
+      setTimeout(() => {
+        box.classList.remove('show');
+        box.classList.add('hide');
+      }, 5000);
+    }
+    const params = new URLSearchParams(location.search);
+    if (params.get('trigger') === 'true') {
+      setTimeout(() => triggerAlert(params.get('cat'), params.get('title'), params.get('sub')), 1000);
+    }
+  </script>
+</body>
+</html>

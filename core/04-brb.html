@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>SMILE · brb</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css">
+<style>
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px}
+  .buffer{position:relative;width:330px;height:330px;display:grid;place-items:center}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:9px solid var(--panel-2);border-top-color:var(--yellow);animation:spin 1.6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}.buffer .face{width:230px;height:230px}
+  h1{font-family:var(--display);font-weight:800;font-size:116px;letter-spacing:-.03em}h1 .y{color:var(--yellow)}
+  .sub{font-size:26px;font-weight:500;color:var(--muted)}.bnc{display:flex;gap:14px}
+  .bnc span{width:15px;height:15px;border-radius:50%;background:var(--yellow);animation:b 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}.bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes b{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span>
+  <div class="wrap">
+    <div class="buffer"><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <h1>positions <span class="y">paused</span>.</h1>
+    <p class="sub">Trader stepped away — charts secured, smile intact.</p>
+    <div class="bnc"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker">
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span></div>
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>

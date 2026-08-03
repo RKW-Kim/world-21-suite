@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE // CONTROL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f0d; --panel-solid:#101714; --line:#1e2b25; --line-hi:#2c3f36;
+  --ink:#e8f1ec; --dim:#7d918a; --live:#3ddc84; --live-dk:#12351f; --amb:#ffb454; --red:#ff5c5c;
+  --cyan:#5ad1e6; --mono:'IBM Plex Mono',ui-monospace,monospace; --disp:'Chakra Petch',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(61,220,132,.06), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(90,209,230,.05), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 1px, transparent 1px 3px),
+    var(--bg);
+  color:var(--ink); font-family:var(--mono); overflow-x:hidden;
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 180px rgba(0,0,0,.55);}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 22px 60px}
+header{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}
+.brand{font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:.04em;line-height:1}
+.brand em{font-style:normal;color:var(--live)}
+.brand small{display:block;font-family:var(--mono);font-weight:400;font-size:11px;color:var(--dim);letter-spacing:.32em;margin-top:6px;text-transform:uppercase}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px;border:1px solid var(--line);border-radius:3px;background:var(--panel-solid);color:var(--dim)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:#3a4a43}
+.pill.on{color:var(--live);border-color:var(--live-dk)}
+.pill.on .dot{background:var(--live);box-shadow:0 0 10px var(--live);animation:pulse 1.6s infinite}
+.pill.warn{color:var(--amb);border-color:#3d2f1a}.pill.warn .dot{background:var(--amb)}
+@keyframes pulse{50%{opacity:.4}}
+#clock{font-family:var(--disp);font-weight:600;font-size:26px;letter-spacing:.06em;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{grid-column:span 12;border:1px solid var(--line);border-radius:4px;background:var(--panel-solid);position:relative;padding:16px 16px 18px;transition:border-color .25s}
+.panel:hover{border-color:var(--line-hi)}
+.panel::before{content:"";position:absolute;top:-1px;left:-1px;width:14px;height:14px;border-top:2px solid var(--live);border-left:2px solid var(--live);opacity:.7}
+.panel h2{font-family:var(--disp);font-size:12px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.panel h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}
+@media(max-width:900px){.c4,.c6,.c8{grid-column:span 12}}
+.btn{font-family:var(--disp);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--ink);background:#131c18;border:1px solid var(--line);border-radius:3px;padding:10px 14px;cursor:pointer;transition:all .18s;position:relative}
+.btn:hover{border-color:var(--live);color:var(--live);transform:translateY(-1px);box-shadow:0 4px 14px rgba(61,220,132,.12)}
+.btn:active{transform:translateY(0)}
+.btn.active{background:var(--live-dk);border-color:var(--live);color:var(--live);box-shadow:0 0 0 1px var(--live),0 0 18px rgba(61,220,132,.25)}
+.btn.danger:hover{border-color:var(--red);color:var(--red);box-shadow:0 4px 14px rgba(255,92,92,.15)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.layouts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.layout{display:flex;flex-direction:column;gap:8px;align-items:center;padding:12px 8px}
+.glyph{width:64px;height:36px;border:1px solid var(--line-hi);border-radius:2px;position:relative;background:#0c1210;overflow:hidden}
+.glyph i{position:absolute;background:rgba(61,220,132,.35);border:1px solid rgba(61,220,132,.6)}
+.g-single i{inset:3px}
+.g-duo i{top:3px;bottom:3px;left:3px;width:27px}
+.g-duo i+i{left:auto;right:3px}
+.g-grid4 i{top:3px;left:3px;width:27px;height:13px}
+.g-grid4 i:nth-child(2){left:auto;right:3px}
+.g-grid4 i:nth-child(3){top:auto;bottom:3px}
+.g-grid4 i:nth-child(4){top:auto;bottom:3px;left:auto;right:3px}
+.g-auto i{top:3px;bottom:3px;left:3px;width:38px}
+.g-auto i+i{left:auto;right:3px;width:15px;height:6px}
+.g-auto i:nth-child(3){top:11px}.g-auto i:nth-child(4){top:20px}.g-auto i:nth-child(5){top:29px;height:4px}
+.parts{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:1000px){.parts{grid-template-columns:repeat(2,1fr)}}
+.part{border:1px solid var(--line);border-radius:3px;background:#0d1411;padding:12px;transition:all .2s;position:relative;overflow:hidden}
+.part .nm{font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:.06em}
+.part .tag{font-size:10px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.part.speaking{border-color:var(--live);box-shadow:0 0 0 1px var(--live),0 0 22px rgba(61,220,132,.28)}
+.part.speaking .tag{color:var(--live)}
+.meter{height:5px;background:#152019;border-radius:2px;margin:10px 0 8px;overflow:hidden}
+.meter b{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--live),var(--amb));transition:width .25s ease}
+.part .ctl{display:flex;gap:6px}
+.part .ctl .btn{flex:1;padding:7px 6px;font-size:10px}
+.btn.muted{border-color:var(--red);color:var(--red)}
+.tgl{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:3px;padding:10px 12px;background:#0d1411;cursor:pointer;transition:border-color .2s}
+.tgl:hover{border-color:var(--line-hi)}
+.tgl .lbl{font-family:var(--disp);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.tgl .sw{width:34px;height:18px;border-radius:10px;background:#1a2620;position:relative;transition:background .2s}
+.tgl .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#5a6f66;transition:all .2s}
+.tgl.on .sw{background:var(--live-dk)}
+.tgl.on .sw::after{left:18px;background:var(--live);box-shadow:0 0 8px var(--live)}
+.stack{display:flex;flex-direction:column;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-family:var(--disp);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:6px 8px;border-bottom:1px solid #141d18;color:var(--ink)}
+td.num{color:var(--cyan)}
+td .vis{color:var(--live)} td .hid{color:var(--red)}
+tr:hover td{background:#0e1613}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel-solid);border:1px solid var(--live);color:var(--live);font-family:var(--disp);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:10px 18px;border-radius:3px;opacity:0;transition:all .3s;pointer-events:none;z-index:60}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">SMILE<em>//</em>CONTROL<small>live kit command centre</small></div>
+    <div class="spacer"></div>
+    <span class="pill" id="obsPill"><span class="dot"></span>OBS <b id="obsTxt">--</b></span>
+    <span class="pill" id="cnvPill"><span class="dot"></span><b id="cnvTxt">--</b></span>
+    <div id="clock">--:--:--</div>
+  </header>
+
+  <div class="grid">
+    <div class="panel c8">
+      <h2>Layout</h2>
+      <div class="layouts" id="layouts">
+        <button class="btn layout" data-layout="single"><span class="glyph g-single"><i></i></span>SOLO</button>
+        <button class="btn layout" data-layout="duo"><span class="glyph g-duo"><i></i><i></i></span>DUO</button>
+        <button class="btn layout" data-layout="grid4"><span class="glyph g-grid4"><i></i><i></i><i></i><i></i></span>GRID</button>
+        <button class="btn layout" data-layout="autotalk"><span class="glyph g-auto"><i></i><i></i><i></i><i></i><i></i></span>AUTO-TALK</button>
+      </div>
+    </div>
+
+    <div class="panel c4">
+      <h2>Speaker Mode</h2>
+      <div class="row">
+        <button class="btn" id="modeAuto">AUTO (mic)</button>
+        <button class="btn" id="modeManual">MANUAL</button>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin-top:12px;line-height:1.6">AUTO promotes the loudest mic. MANUAL: click FEATURE on a participant below.</p>
+    </div>
+
+    <div class="panel c12">
+      <h2>Participants</h2>
+      <div class="parts" id="parts"></div>
+    </div>
+
+    <div class="panel c6">
+      <h2>Scenes</h2>
+      <div class="row" id="scenes"></div>
+    </div>
+
+    <div class="panel c4">
+      <h2>Widgets</h2>
+      <div class="stack" id="widgets"></div>
+    </div>
+
+    <div class="panel c4">
+      <h2>Alerts</h2>
+      <div class="stack">
+        <button class="btn alert" data-kind="follow">FIRE: FOLLOW</button>
+        <button class="btn alert" data-kind="sub">FIRE: SUB</button>
+        <button class="btn alert" data-kind="donation">FIRE: DONATION</button>
+        <button class="btn alert danger" data-kind="raid">FIRE: RAID</button>
+      </div>
+    </div>
+
+    <div class="panel c12">
+      <h2>Diagnostics <button class="btn" id="reconnect" style="margin-left:auto;padding:6px 12px;font-size:10px">RECONNECT OBS</button></h2>
+      <table>
+        <thead><tr><th>source</th><th>x</th><th>y</th><th>w</th><th>h</th><th>state</th></tr></thead>
+        <tbody id="diag"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  var ws=null, S=null;
+  var $=function(s){return document.querySelector(s)};
+
+  function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('show');
+    clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show')},1800)}
+
+  function pad(n){return String(n).padStart(2,'0')}
+  setInterval(function(){var d=new Date();
+    $('#clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())},1000);
+
+  function send(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o))}
+
+  function connect(){
+    ws=new WebSocket('ws://'+location.host+'/api/control');
+    ws.onopen=function(){toast('LINK ESTABLISHED')};
+    ws.onmessage=function(e){var m=JSON.parse(e.data);
+      if(m.type==='state'){S=m;render(m)}
+      if(m.type==='levels'){meters(m.levels)}};
+    ws.onclose=function(){setTimeout(connect,2000)};
+    ws.onerror=function(){ws.close()};
+  }
+
+  function render(m){
+    $('#obsTxt').textContent=m.obs_connected?'ONLINE':'OFFLINE';
+    $('#obsPill').className='pill '+(m.obs_connected?'on':'warn');
+    $('#cnvTxt').textContent=m.canvas.w+'x'+m.canvas.h;
+    $('#cnvPill').className='pill on';
+
+    document.querySelectorAll('#layouts .btn').forEach(function(b){
+      b.classList.toggle('active',b.dataset.layout===m.layout)});
+    $('#modeAuto').classList.toggle('active',m.mode==='auto');
+    $('#modeManual').classList.toggle('active',m.mode==='manual');
+
+    var box=$('#parts');box.innerHTML='';
+    m.participants.forEach(function(p){
+      var d=document.createElement('div');d.className='part'+(m.active_speaker===p.name?' speaking':'');
+      d.innerHTML='<div class="nm">'+p.name+'</div>'+
+        '<div class="tag">'+(m.active_speaker===p.name?'ON AIR':(p.mic?'mic: '+p.mic:'no mic'))+'</div>'+
+        '<div class="meter"><b data-m="'+p.name+'"></b></div>'+
+        '<div class="ctl"><button class="btn feat">FEATURE</button>'+
+        (p.mic?'<button class="btn mute'+(p.muted?' muted':'')+'">'+(p.muted?'UNMUTE':'MUTE')+'</button>':'')+'</div>';
+      d.querySelector('.feat').onclick=function(){send({cmd:'set_speaker',name:p.name});toast(p.name+' featured')};
+      var mt=d.querySelector('.mute');if(mt)mt.onclick=function(){send({cmd:'toggle_mute',name:p.name})};
+      box.appendChild(d)});
+
+    var sc=$('#scenes');sc.innerHTML='';
+    (m.scenes||['01-starting-soon','02-countdown','03-live','04-brb','05-ending']).forEach(function(n){
+      var b=document.createElement('button');b.className='btn'+(n===m.scene?' active':'');
+      b.textContent=n.replace(/^\d+-/,'').toUpperCase();
+      b.onclick=function(){send({cmd:'set_scene',scene:n});toast('scene: '+n)};sc.appendChild(b)});
+
+    var wg=$('#widgets');wg.innerHTML='';
+    Object.keys(m.widgets).forEach(function(k){
+      var t=document.createElement('div');t.className='tgl'+(m.widgets[k]?' on':'');
+      t.innerHTML='<span class="lbl">'+k+'</span><span class="sw"></span>';
+      t.onclick=function(){send({cmd:'toggle_widget',widget:k})};wg.appendChild(t)});
+
+    var tb=$('#diag');tb.innerHTML='';
+    (m.diag||[]).forEach(function(r){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+r.name+'</td><td class="num">'+Math.round(r.x)+'</td><td class="num">'+Math.round(r.y)+
+        '</td><td class="num">'+Math.round(r.w)+'</td><td class="num">'+Math.round(r.h)+
+        '</td><td>'+(r.visible?'<span class="vis">VISIBLE</span>':'<span class="hid">HIDDEN</span>')+'</td>';
+      tb.appendChild(tr)});
+  }
+
+  function meters(levels){
+    Object.keys(levels).forEach(function(name){
+      var el=document.querySelector('[data-m="'+name+'"]');if(!el)return;
+      var db=levels[name];var pct=Math.max(0,Math.min(100,(db+60)/60*100));
+      el.style.width=pct+'%'})}
+
+  document.querySelectorAll('#layouts .btn').forEach(function(b){
+    b.onclick=function(){send({cmd:'set_layout',layout:b.dataset.layout});toast('layout: '+b.dataset.layout)}});
+  $('#modeAuto').onclick=function(){send({cmd:'set_mode',mode:'auto'});toast('AUTO speaker tracking')};
+  $('#modeManual').onclick=function(){send({cmd:'set_mode',mode:'manual'});toast('MANUAL speaker control')};
+  document.querySelectorAll('.alert').forEach(function(b){
+    b.onclick=function(){send({cmd:'fire_alert',kind:b.dataset.kind,text:b.dataset.kind.toUpperCase()});toast('alert fired: '+b.dataset.kind)}});
+  $('#reconnect').onclick=function(){send({cmd:'reconnect_obs'});toast('reconnecting OBS...')};
+
+  connect();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · live chart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile.css">
+  <style>
+    html,body{width:460px;height:300px}
+    .box{position:absolute;inset:0;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 18px 46px rgba(0,0,0,.5);display:flex;flex-direction:column}
+    .head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1.5px solid var(--line)}
+    .head .l{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:800;font-size:20px}
+    .head .l i{width:9px;height:9px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:pulse2 1.8s infinite}
+    @keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
+    .head .l small{color:var(--muted);font-size:15px;font-weight:600}
+    .head .r{display:flex;align-items:center;font-variant-numeric:tabular-nums}
+    .px{font-weight:800;font-size:22px}.chg{font-family:var(--font-display);font-weight:700;font-size:15px;margin-left:9px}
+    .meta{display:flex;gap:8px;padding:6px 16px 0;font-family:var(--font-display);font-weight:700;font-size:13px}
+    .meta span{padding:2px 9px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+    .meta .bull{color:var(--up);border-color:rgba(14,203,129,.4)}.meta .bear{color:var(--down);border-color:rgba(246,70,93,.4)}
+    canvas{flex:1;width:100%}
+    .foot{display:flex;justify-content:space-between;padding:6px 16px;font-size:12px;font-weight:600;color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="box">
+  <div class="head">
+    <div class="l"><i></i><span id="sym">BTC/USDT</span><small id="mode">· live</small></div>
+    <div class="r"><span class="px" id="px">—</span><span class="chg" id="chg"></span></div>
+  </div>
+  <div class="meta" id="meta"></div>
+  <canvas id="cv" width="920" height="360"></canvas>
+  <div class="foot"><span id="src">DIRECT STREAM</span><span>smile.co.ke</span></div>
+</div>
+<script src="smile-mark.js"></script>
+<script src="live-feed.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get('symbol')) SMILE.setActive(q.get('symbol'));
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), UP = '#0ECB81', DN = '#F6465D', Y = '#FFC107', SK = '#3FB6FF';
+  function draw(d){
+    document.getElementById('sym').textContent = d.sym;
+    document.getElementById('px').textContent = d.price == null ? '—' : d.price.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const ch = document.getElementById('chg'); ch.textContent = (d.chg >= 0 ? '+' : '') + d.chg.toFixed(2) + '%'; ch.style.color = d.chg >= 0 ? UP : DN;
+    const w = cv.width, h = cv.height, pad = 14; ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++){ const y = pad + (h - 2 * pad) * i / 5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    if (d.candles && d.candles.length > 4){
+      document.getElementById('mode').textContent = '· 1m candles';
+      const hi = Math.max(...d.candles.map(c => c[2])), lo = Math.min(...d.candles.map(c => c[3]));
+      const Yv = v => pad + (h - 2 * pad) * (1 - (v - lo) / ((hi - lo) || 1)); const cw = w / d.candles.length;
+      d.candles.forEach((c, i) => { const o = c[1], cl = c[4], x = i * cw + cw / 2, col = cl >= o ? UP : DN;
+        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, Yv(c[2])); ctx.lineTo(x, Yv(c[3])); ctx.stroke();
+        const bw = Math.max(3, cw * .55); ctx.fillStyle = col; ctx.fillRect(x - bw / 2, Math.min(Yv(o), Yv(cl)), bw, Math.max(2, Math.abs(Yv(o) - Yv(cl)))); });
+      if (d.ind){
+        const closes = d.candles.map(c => c[4]);
+        const e9 = SMILE.indicators(closes);
+        const m = document.getElementById('meta'); const t = e9.trend;
+        m.innerHTML = `<span class="${t === 'BULL' ? 'bull' : t === 'BEAR' ? 'bear' : ''}">${t === 'BULL' ? '▲ BULL' : t === 'BEAR' ? '▼ BEAR' : '◆ RANGE'}</span><span>RSI ${e9.rsi ? e9.rsi.toFixed(0) : '—'}</span>`;
+      }
+    } else if (d.spark && d.spark.length > 1){
+      document.getElementById('mode').textContent = '· live spot';
+      document.getElementById('meta').innerHTML = '<span>real-time ticks</span>';
+      const hi = Math.max(...d.spark), lo = Math.min(...d.spark); const Yv = v => pad + (h - 2 * pad) * (1 - (v - lo) / ((hi - lo) || 1));
+      const grad = ctx.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, 'rgba(255,193,7,.25)'); grad.addColorStop(1, 'rgba(255,193,7,0)');
+      ctx.beginPath(); d.spark.forEach((v, i) => { const x = i / (d.spark.length - 1) * w; i ? ctx.lineTo(x, Yv(v)) : ctx.moveTo(x, Yv(v)); });
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+      ctx.beginPath(); d.spark.forEach((v, i) => { const x = i / (d.spark.length - 1) * w; i ? ctx.lineTo(x, Yv(v)) : ctx.moveTo(x, Yv(v)); });
+      ctx.strokeStyle = Y; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+  }
+  SMILE.on('smile:chart', draw);
+</script>
+</body>
+</html>

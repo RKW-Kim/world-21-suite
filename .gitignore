@@ -1,0 +1,18 @@
+secrets.env
+secrets.env.local
+.DS_Store
+Thumbs.db
+node_modules/
+smile-profile/
+active.json
+dist/
+__pycache__/
+*.log
+*.zip
+
+# Added by migrate.py
+*.pyc
+.venv/
+venv/
+.env
+migrate.py

@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · countdown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile.css">
+  <style>
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .ring{position:relative;width:560px;height:560px}.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ring circle{fill:none;stroke-width:14;stroke-linecap:round}.ring .tr{stroke:var(--panel-2)}
+    .ring .pr{stroke:var(--yellow);stroke-dasharray:1609;transition:stroke-dashoffset 1s linear}
+    .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:290px}
+    .num.pop{animation:pop .9s ease}
+    @keyframes pop{0%{transform:scale(1.28);opacity:.15;color:var(--yellow)}60%{transform:scale(.96)}100%{transform:scale(1)}}
+    .label{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:.4em;text-transform:uppercase;color:var(--muted);margin-top:30px}
+    .flash{position:absolute;inset:0;background:var(--yellow);opacity:0;pointer-events:none}.flash.go{animation:fl .9s ease forwards}
+    @keyframes fl{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+    .endlogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0}.endlogo.go{animation:endp 1s ease forwards}
+    .endlogo .brand{font-size:200px;background:var(--panel);padding:.18em .34em;border-radius:.18em;border:2px solid var(--line)}
+    @keyframes endp{0%{opacity:0;transform:scale(.7)}35%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:18%;--d:.3s"></span>
+  <span class="spark" style="left:82%;top:24%;--d:1.6s;background:var(--up)"></span>
+  <span class="spark" style="left:76%;top:80%;--d:2.8s"></span>
+  <div class="wrap">
+    <div class="ring">
+      <svg viewBox="0 0 560 560"><circle class="tr" cx="280" cy="280" r="256"/><circle class="pr" id="pr" cx="280" cy="280" r="256"/></svg>
+      <div class="num" id="num">10</div>
+    </div>
+    <div class="label">opening bell in</div>
+  </div>
+  <div class="endlogo" id="end">
+    <span class="brand" data-mood="bounce">
+      <span class="dw">
+        <svg class="disc" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#FFC800"/>
+          <circle cx="31" cy="35" r="5.5" fill="#000000"/>
+          <circle cx="69" cy="35" r="5.5" fill="#000000"/>
+          <path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#000000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span><b>smile</b>
+    </span>
+  </div>
+  <div class="flash" id="flash"></div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  const q=new URLSearchParams(location.search);const total=+(q.get('from')||10);let n=total,AC;
+  const num=document.getElementById('num'),pr=document.getElementById('pr'),C=1609;
+  function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.18);o.start();o.stop(AC.currentTime+.2);}catch(e){}}
+  (function tick(){if(n>0){num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');pr.style.strokeDashoffset=C*(1-n/total);beep(n<=3?988:660);n--;setTimeout(tick,1000);}else{beep(1319);document.getElementById('flash').classList.add('go');document.getElementById('end').classList.add('go');}})();
+</script>
+</body>
+</html>

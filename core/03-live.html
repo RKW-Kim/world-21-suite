@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>Live Overlay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1080px;overflow:hidden;background:transparent;font-family:'Chakra Petch','Segoe UI',system-ui,sans-serif}
+.frame{position:absolute;border:2px solid rgba(255,255,255,.14);border-radius:6px;pointer-events:none;transition:all .35s ease}
+.frame.on{border-color:rgba(61,220,132,.75);box-shadow:0 0 16px rgba(61,220,132,.28)}
+.frame .label{position:absolute;bottom:10px;left:12px;font-size:15px;font-weight:700;letter-spacing:.08em;color:#fff;background:rgba(6,10,8,.72);padding:4px 12px;border-radius:3px;opacity:0;transition:opacity .3s;text-transform:uppercase}
+.frame.on .label{opacity:1}
+.frame .tag{position:absolute;top:10px;left:12px;font-size:10px;font-weight:700;letter-spacing:.24em;color:#3ddc84;opacity:0;transition:opacity .3s}
+.frame.on .tag{opacity:1;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.35}}
+#alertbox{position:absolute;top:60px;left:50%;transform:translateX(-50%) translateY(-30px);min-width:420px;text-align:center;background:rgba(8,12,10,.9);border:1px solid #3ddc84;border-left:5px solid #3ddc84;border-radius:4px;padding:16px 30px;opacity:0;transition:all .4s cubic-bezier(.2,.9,.3,1.3);pointer-events:none}
+#alertbox.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#alertbox .k{font-size:11px;font-weight:700;letter-spacing:.3em;color:#3ddc84;text-transform:uppercase}
+#alertbox .t{font-size:24px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div id="alertbox"><div class="k" id="ak"></div><div class="t" id="at"></div></div>
+<script>
+(function(){
+  var overlay=document.getElementById('overlay');
+  var currentLayout=null;
+  function buildFrames(slots){
+    overlay.innerHTML='';
+    slots.forEach(function(s,i){
+      var el=document.createElement('div');
+      el.className='frame';el.dataset.slot=s.name;
+      el.style.left=s.x+'px';el.style.top=s.y+'px';el.style.width=s.w+'px';el.style.height=s.h+'px';
+      el.innerHTML='<span class="tag">ON AIR</span><span class="label"></span>';
+      overlay.appendChild(el)});
+  }
+  function highlight(state){
+    document.querySelectorAll('.frame').forEach(function(f){f.classList.remove('on');f.querySelector('.label').textContent=''});
+    if(!state.active_speaker)return;
+    var slots=state.slots||[];
+    var mainEl=document.querySelector('.frame[data-slot="'+(slots[0]?slots[0].name:'main')+'"]');
+    if(mainEl){mainEl.classList.add('on');mainEl.querySelector('.label').textContent=state.active_speaker}
+    (state.strip||[]).forEach(function(nm,i){
+      var slot=slots[i+1];if(!slot)return;
+      var el=document.querySelector('.frame[data-slot="'+slot.name+'"]');
+      if(el){el.classList.add('on');el.querySelector('.label').textContent=nm}});
+  }
+  var ab=document.getElementById('alertbox');
+  function showAlert(kind,text){
+    document.getElementById('ak').textContent=kind;
+    document.getElementById('at').textContent=text||kind;
+    ab.classList.add('show');
+    clearTimeout(ab._t);ab._t=setTimeout(function(){ab.classList.remove('show')},4000);
+  }
+  function connect(){
+    var ws=new WebSocket('ws://'+location.host+'/api/autotalk/state');
+    ws.onmessage=function(e){
+      var m=JSON.parse(e.data);
+      if(m.type==='state'){if(m.layout!==currentLayout&&m.slots){currentLayout=m.layout;buildFrames(m.slots)}highlight(m)}
+      if(m.type==='alert'){showAlert(m.kind,m.text)}
+    };
+    ws.onclose=function(){setTimeout(connect,2500)};
+    ws.onerror=function(){ws.close()};
+  }
+  connect();
+})();
+</script>
+</body>
+</html>
