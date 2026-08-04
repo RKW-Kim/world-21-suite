@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · countdown</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<!-- FONTS — swap for smile.co.ke's exact faces here when you send them -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css">
+
+<!--
+  SMILE · COUNTDOWN — smooth pass
+  · numbers = clipped odometer reel (one column slides, no overlap garble)
+  · dial + hairline = rAF-driven off a real deadline → continuous sweep
+  · one shared clock for ring, hairline and digit changes
+  · ?from=30 · ENTER skips to the bell
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted-fg:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+.page{position:relative;display:flex;flex-direction:column;height:100vh;}
+svg{display:block;}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+.num{font-variant-numeric:tabular-nums;}
+
+/* ═══ AMBIENT ═══ */
+.ambient{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.dots{position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 46%,#000 30%,transparent 84%);
+          mask-image:radial-gradient(ellipse at 50% 46%,#000 30%,transparent 84%);}
+.spotlight{position:absolute;inset:0;
+  background:radial-gradient(ellipse 64% 46% at 50% -12%,rgba(255,255,255,.1),transparent 70%);}
+.aura{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+  width:820px;height:620px;transition:opacity 1s;
+  background:radial-gradient(ellipse,rgba(255,193,7,.1),transparent 65%);filter:blur(10px);opacity:.7;}
+.hypeOn .aura{opacity:1.4;}
+.floor{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);
+  width:1300px;height:240px;
+  background:radial-gradient(ellipse at 50% 100%,rgba(255,193,7,.07),transparent 62%);}
+.beam{position:absolute;top:-25%;width:170px;height:150%;filter:blur(22px);will-change:opacity;
+  background:linear-gradient(180deg,transparent 8%,rgba(255,255,255,.05) 46%,transparent 88%);
+  animation:breathe 9s ease-in-out infinite;}
+.beam.b1{left:12%;transform:rotate(14deg);}
+.beam.b2{left:50%;transform:rotate(-10deg);animation-delay:3s;opacity:.7;}
+.beam.b3{left:84%;transform:rotate(12deg);animation-delay:5.5s;opacity:.55;}
+@keyframes breathe{0%,100%{opacity:.5;}50%{opacity:.95;}}
+.market{position:absolute;left:0;right:0;bottom:66px;height:460px;opacity:.5;transition:opacity 1s;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 30%);}
+.market svg{width:100%;height:100%;}
+.hypeOn .market{opacity:.75;}
+.market .mglow{fill:none;stroke:url(#lineG);stroke-width:7;opacity:.22;
+  stroke-linejoin:round;stroke-linecap:round;}
+.market .msharp{fill:none;stroke:url(#lineG);stroke-width:1.5;opacity:.85;
+  stroke-linejoin:round;stroke-linecap:round;}
+.market .mdot{fill:#FFDE7A;}
+.market .mring{fill:none;stroke:#FFDE7A;stroke-width:1.5;transform-box:fill-box;
+  transform-origin:center;animation:ringp 2s ease-out infinite;}
+@keyframes ringp{0%{transform:scale(.4);opacity:.8;}100%{transform:scale(2.2);opacity:0;}}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(0,0,0,.5) 100%);}
+
+/* bell fx */
+.flash{position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 45%,rgba(255,222,122,.9),rgba(255,193,7,.35) 30%,transparent 72%);}
+.flash.go{animation:flashA 1s ease both;}
+@keyframes flashA{0%{opacity:0;}12%{opacity:.85;}100%{opacity:0;}}
+.wave{position:absolute;left:50%;top:45%;width:40px;height:40px;margin:-20px 0 0 -20px;
+  border:2px solid rgba(255,193,7,.8);border-radius:50%;opacity:0;pointer-events:none;will-change:transform,opacity;}
+.wave.go{animation:waveA 1.4s cubic-bezier(.2,.8,.3,1) both;}
+.wave.w2.go{animation-delay:.18s;}
+@keyframes waveA{0%{opacity:.9;transform:scale(0);}100%{opacity:0;transform:scale(16);}}
+
+/* ═══ CENTER ═══ */
+.hero{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;text-align:center;padding:0 60px;}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);
+  backdrop-filter:blur(8px);color:var(--yellow);
+  padding:7px 16px;font-family:var(--font-mono);font-size:10px;letter-spacing:.34em;text-transform:uppercase;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .05s both;}
+.eyebrow .dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow);}
+.eyebrow .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.7;}80%,100%{transform:scale(2.6);opacity:0;}}
+
+/* odometer reel — one clipped column, slides as a unit */
+.count{height:330px;min-width:420px;overflow:hidden;position:relative;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .1s both;}
+.reel{position:relative;width:100%;height:100%;will-change:transform;}
+.n{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:300px;line-height:1;letter-spacing:-.04em;
+  background:linear-gradient(180deg,#ffffff 15%,#86868e 95%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.n.next{transform:translateY(100%);}
+.n.hot{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 34px rgba(255,193,7,.35));}
+.n.word{font-size:230px;letter-spacing:-.03em;}
+
+.lbl{font-family:var(--font-mono);font-size:12px;letter-spacing:.5em;text-transform:uppercase;
+  color:var(--muted-fg);animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .2s both;}
+.lbl b{color:var(--yellow);font-weight:600;}
+
+.pline{width:320px;height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .3s both;}
+.pline i{display:block;height:100%;width:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--yellow),var(--yellow-hot));}
+
+.mascot-wrap{position:relative;width:136px;height:136px;margin-top:10px;
+  display:flex;align-items:center;justify-content:center;
+  animation:riseIn .9s cubic-bezier(.2,.9,.3,1) .4s both;}
+.pring{position:absolute;inset:0;transform:rotate(-90deg);}
+.pring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:5;}
+.pring-fg{fill:none;stroke:var(--yellow);stroke-width:5;stroke-linecap:round;stroke-dasharray:377;stroke-dashoffset:0;}
+.pring-fg.hot{stroke:var(--yellow-hot);}
+.mascot-wrap .brand{display:inline-flex;}
+.mascot-wrap .dw{filter:drop-shadow(0 6px 16px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(255,193,7,.18));}
+
+.hint{position:absolute;left:26px;bottom:78px;z-index:7;font-family:var(--font-mono);
+  font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);opacity:.7;}
+.hint b{color:var(--yellow);font-weight:600;}
+
+/* ═══ TICKER ═══ */
+.ticker{position:relative;z-index:6;display:flex;align-items:stretch;height:66px;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 26px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.18em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.65)) drop-shadow(0 0 5px rgba(0,0,0,.5));}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);font-weight:500;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted-fg);}
+.item::before{content:"✦";color:var(--yellow);margin-right:16px;font-size:10px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price{gap:9px;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.06em;}
+.item.price .pc{font-size:10px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flashp{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(5px);opacity:.1;}100%{transform:none;opacity:1;}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- ambient -->
+  <div class="ambient" aria-hidden="true">
+    <div class="dots"></div>
+    <div class="spotlight"></div>
+    <div class="aura"></div>
+    <div class="floor"></div>
+    <div class="beam b1"></div><div class="beam b2"></div><div class="beam b3"></div>
+    <div class="market">
+      <svg id="marketSvg" viewBox="0 0 1920 460" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="upG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0ECB81" stop-opacity=".55"/>
+            <stop offset="1" stop-color="#0ECB81" stop-opacity=".1"/>
+          </linearGradient>
+          <linearGradient id="downG" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#F6465D" stop-opacity=".5"/>
+            <stop offset="1" stop-color="#F6465D" stop-opacity=".1"/>
+          </linearGradient>
+          <linearGradient id="lineG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#FFC107" stop-opacity="0"/>
+            <stop offset=".4" stop-color="#FFC107" stop-opacity=".8"/>
+            <stop offset="1" stop-color="#FFDE7A"/>
+          </linearGradient>
+        </defs>
+        <g id="mcandles"></g>
+        <polyline id="mglow" class="mglow" points=""/>
+        <polyline id="msharp" class="msharp" points=""/>
+        <circle id="mring" class="mring" cx="0" cy="0" r="9"/>
+        <circle id="mdot" class="mdot" cx="0" cy="0" r="3.5"/>
+      </svg>
+    </div>
+    <div class="vignette"></div>
+  </div>
+
+  <div class="flash" id="flash"></div>
+  <div class="wave w1" id="wave1"></div>
+  <div class="wave w2" id="wave2"></div>
+
+  <!-- ═══ center ═══ -->
+  <main class="hero">
+    <span class="eyebrow"><span class="dot"></span>Nairobi Desk · Pre-Market</span>
+
+    <div class="count">
+      <div class="reel" id="reel">
+        <span class="n" id="nCur">10</span>
+        <span class="n next" id="nNext">10</span>
+      </div>
+    </div>
+
+    <div class="lbl" id="lbl">opening bell <b>in</b></div>
+
+    <div class="pline"><i id="pfill"></i></div>
+
+    <div class="mascot-wrap">
+      <svg class="pring" viewBox="0 0 136 136">
+        <circle class="pring-bg" cx="68" cy="68" r="60"/>
+        <circle class="pring-fg" id="pring" cx="68" cy="68" r="60"/>
+      </svg>
+      <span class="brand"><span class="dw" id="heroDw" style="width:112px;height:112px" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="48" fill="#FFC800"/><circle class="eye-l" cx="31" cy="35" r="5.5" fill="#000000"/>
+        <circle class="eye-r" cx="69" cy="35" r="5.5" fill="#000000"/>
+        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#000000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span></span>
+    </div>
+  </main>
+
+  <div class="hint">⏎ <b>enter</b> · skip to bell</div>
+
+  <!-- ═══ ticker ═══ -->
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="48" fill="#FFC800"/><circle cx="31" cy="35" r="5.5" fill="#000000"/>
+        <circle cx="69" cy="35" r="5.5" fill="#000000"/>
+        <path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#000000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>
+      <span>SMILE · LIVE</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>opening bell</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+          <span class="item">drop a 🙂 if you're new</span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>opening bell</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+          <span class="item">drop a 🙂 if you're new</span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right" id="rightCap">NOT FINANCIAL ADVICE — JUST GOOD VIBES</div>
+  </footer>
+</div>
+
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var FROM=Math.max(1,Math.min(99,parseInt(q.get('from'),10)||10));
+  var done=false,hype=false;
+
+  /* ── marquee ── */
+  var track=document.getElementById('tkTrack');
+  if(track){
+    var seq=track.children[0],W=0,x=0,last=performance.now();
+    function measure(){W=seq.getBoundingClientRect().width;}
+    measure();addEventListener('resize',measure);
+    (function step(now){
+      var dt=Math.min(50,now-last);last=now;
+      if(W>0){x-=dt*0.055;if(-x>=W)x+=W;track.style.transform='translateX('+x+'px)';}
+      requestAnimationFrame(step);
+    })(last);
+  }
+
+  /* ── live prices ── */
+  var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+  function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function setPrice(key,val,pct){
+    var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+    document.querySelectorAll('[data-sym="'+key+'"]').forEach(function(el){
+      var pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+      pv.textContent=fmtP(val);
+      if(pct!=null){
+        pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+        pc.className='pc num '+(pct>=0?'up':'down');
+      }
+      if(changed){pv.classList.remove('flashp');void pv.offsetWidth;pv.classList.add('flashp');}
+    });
+  }
+  function prices(){
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){
+        list.forEach(function(t){
+          var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+          if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+        });
+        setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);
+      })
+      .catch(function(){
+        setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+        setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+        setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+        setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);
+      });
+  }
+  setInterval(prices,5000);prices();
+
+  /* ── live market ── */
+  var mInt=null;
+  (function(){
+    var NS='http://www.w3.org/2000/svg';
+    var H=460,N=48,SLOT=1920/N,BW=22;
+    var gC=document.getElementById('mcandles');
+    var glow=document.getElementById('mglow'),sharp=document.getElementById('msharp');
+    var dot=document.getElementById('mdot'),ring=document.getElementById('mring');
+    var closes=[],v=230,i;
+    for(i=0;i<N;i++){v+=Math.sin(i*.55)*14+(Math.random()-.5)*36;
+      v=Math.max(70,Math.min(400,v));closes.push(v);}
+    var els=[];
+    for(i=0;i<N;i++){
+      var ln=document.createElementNS(NS,'line');ln.setAttribute('stroke-width','2');
+      var rc=document.createElementNS(NS,'rect');rc.setAttribute('width',BW);rc.setAttribute('rx','3');
+      gC.appendChild(ln);gC.appendChild(rc);els.push({ln:ln,rc:rc});
+    }
+    function y(vv){return H-vv;}
+    function redraw(){
+      var pts='';
+      for(var j=0;j<N;j++){
+        var o=j?closes[j-1]:closes[j],c=closes[j],up=c>=o;
+        var yO=y(o),yC=y(c),top=Math.min(yO,yC),h=Math.max(5,Math.abs(yO-yC));
+        var x=j*SLOT+(SLOT-BW)/2,cx=j*SLOT+SLOT/2,e=els[j];
+        e.rc.setAttribute('x',x);e.rc.setAttribute('y',top);e.rc.setAttribute('height',h);
+        e.ln.setAttribute('x1',cx);e.ln.setAttribute('x2',cx);
+        e.ln.setAttribute('y1',top-8);e.ln.setAttribute('y2',top+h+8);
+        var col=up?'rgba(14,203,129,':'rgba(246,70,93,';
+        e.rc.setAttribute('fill',up?'url(#upG)':'url(#downG)');
+        e.rc.setAttribute('stroke',col+(j===N-1?'.9)':'.4)'));
+        e.ln.setAttribute('stroke',col+'.5)');
+        pts+=cx+','+yC+' ';
+      }
+      glow.setAttribute('points',pts);sharp.setAttribute('points',pts);
+      var lx=(N-1)*SLOT+SLOT/2,ly=y(closes[N-1]);
+      dot.setAttribute('cx',lx);dot.setAttribute('cy',ly);
+      ring.setAttribute('cx',lx);ring.setAttribute('cy',ly);
+    }
+    redraw();
+    var ticks=0;
+    function tick(){
+      ticks++;
+      var drift=(Math.random()-.48)*30;
+      if(ticks%4===0){closes.shift();closes.push(Math.max(70,Math.min(400,closes[N-2]+drift)));}
+      else closes[N-1]=Math.max(70,Math.min(400,closes[N-1]+drift));
+      redraw();
+    }
+    window.setMarketSpeed=function(ms){if(mInt)clearInterval(mInt);mInt=setInterval(tick,ms);};
+    setMarketSpeed(650);
+  })();
+
+  /* ═══ countdown — one shared clock, odometer reel, smooth dial ═══ */
+  var reel=document.getElementById('reel'),
+      nCur=document.getElementById('nCur'),
+      nNext=document.getElementById('nNext'),
+      pring=document.getElementById('pring'),
+      pfill=document.getElementById('pfill'),
+      CIRC=2*Math.PI*60;
+  pring.style.strokeDasharray=CIRC;
+
+  function mood(m,ms){if(window.smileMood)smileMood(m,ms||900,document.querySelector('#heroDw svg'));}
+
+  var sliding=false;
+  function slideTo(val,hot,word){
+    if(sliding){ /* safety: never stack slides */
+      nCur.textContent=word?val:String(val);
+      nCur.className='n'+(hot?' hot':'')+(word?' word':'');
+      return;
+    }
+    nNext.textContent=word?val:String(val);
+    nNext.className='n next'+(hot?' hot':'')+(word?' word':'');
+    sliding=true;
+    reel.style.transition='transform .7s cubic-bezier(.3,.75,.2,1)';
+    reel.style.transform='translateY(-100%)';
+    setTimeout(function(){
+      reel.style.transition='none';
+      reel.style.transform='translateY(0)';
+      nCur.textContent=nNext.textContent;
+      nCur.className='n'+(hot?' hot':'')+(word?' word':'');
+      void reel.offsetWidth;
+      sliding=false;
+    },720);
+  }
+
+  var deadline=0,shown=FROM;
+  function bell(){
+    if(done)return;done=true;
+    slideTo('0',true);
+    pring.style.strokeDashoffset=CIRC;
+    pfill.style.width='0%';
+    pring.classList.add('hot');
+    document.getElementById('flash').classList.add('go');
+    document.getElementById('wave1').classList.add('go');
+    document.getElementById('wave2').classList.add('go');
+    document.getElementById('lbl').innerHTML='markets are <b>open.</b>';
+    document.getElementById('rightCap').textContent='🔔 OPENING BELL — WE ARE LIVE';
+    document.body.classList.add('hypeOn');
+    setMarketSpeed(350);
+    mood('celebrate',1200);
+    setTimeout(function(){slideTo('LIVE',true,true);},850);
+    setInterval(function(){mood(Math.random()<.6?'celebrate':'spin',1100);},2600);
+  }
+
+  function frame(now){
+    if(done)return;
+    var remMs=deadline-now;
+    /* smooth continuous dial + hairline */
+    var p=Math.max(0,remMs/(FROM*1000));
+    pring.style.strokeDashoffset=CIRC*(1-p);
+    pfill.style.width=(p*100)+'%';
+    /* digit changes on whole seconds */
+    var r=Math.max(0,Math.ceil(remMs/1000));
+    if(r<shown){
+      shown=r;
+      if(r>0){
+        slideTo(r,r<=3);
+        if(r<=5&&!hype){hype=true;document.body.classList.add('hypeOn');setMarketSpeed(450);}
+        if(r<=3)mood('bounce',700);
+        else if(r<=5)mood('nod',600);
+      }else bell();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* init */
+  nCur.textContent=String(FROM);
+  nCur.className='n'+(FROM<=3?' hot':'');
+  nNext.textContent=String(FROM);
+  setTimeout(function(){
+    deadline=performance.now()+FROM*1000;
+    requestAnimationFrame(frame);
+  },1100);
+
+  addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();bell();}
+  });
+
+  function sizeDw(){
+    document.querySelectorAll('.dw').forEach(function(d){
+      d.querySelectorAll('svg').forEach(function(s){
+        s.setAttribute('width','100%');s.setAttribute('height','100%');
+      });
+    });
+  }
+  sizeDw();setTimeout(sizeDw,300);setTimeout(sizeDw,1200);
+})();
+</script>
+</body>
+</html>
