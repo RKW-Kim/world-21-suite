@@ -5,5 +5,11 @@
     { "pair": "EUR/USD", "side": "long",  "pnl": "▲ +34 pips" },
     { "pair": "XAU/USD", "side": "long",  "pnl": "▲ +$126" },
     { "pair": "BTC/USD", "side": "short", "pnl": "▼ −0.8%" }
-  ]
+  ],
+  "ticker": [
+    { "symbol": "EUR/USD", "price": "1.0842", "change": "+0.12%" },
+    { "symbol": "XAU/USD", "price": "2034.12", "change": "+0.45%" },
+    { "symbol": "BTC/USD", "price": "43210", "change": "-0.8%" }
+  ],
+  "live": true
 }

@@ -10,17 +10,13 @@
   --up: #0ECB81;
   --down: #F6465D;
   --sky: #3FB6FF;
-  --font-display: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: transparent;
-  color: var(--paper);
-  font-family: var(--font-body);
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+
+/* base is already in shared.css — this file only adds smile-specific components */
+
 .stage {
   position: relative;
   width: 100vw;
@@ -55,7 +51,9 @@ body {
   font-family: var(--font-display);
   font-weight: 800;
 }
-.brand .dw { width: 48px; height: 48px; display: inline-block; }
+.brand .dw { width: 48px; height: 48px; display: inline-block; position: relative; }
+.brand b { font-size: 20px; letter-spacing: -0.02em; }
+
 .spark {
   position: absolute;
   width: 6px;
@@ -69,3 +67,7 @@ body {
   0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
   50% { transform: translateY(-30px) scale(1.5); opacity: 0.8; }
 }
+
+/* low-gfx mode for OBS */
+body.low-gfx .bg, body.low-gfx .spark { display: none !important; }
+body.low-gfx .card { backdrop-filter: none !important; }

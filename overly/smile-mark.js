@@ -1,11 +1,14 @@
 (function(){
+  if(window.__smileMarkLoaded) return;
+  window.__smileMarkLoaded = true;
+
   const EYES  = '<circle class="eye-l" cx="31" cy="35" r="5.5"/><circle class="eye-r" cx="69" cy="35" r="5.5"/>';
   const MOUTH = '<path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>';
-  const INNER = '<circle cx="50" cy="50" r="48" fill="#FFC800"/><g class="eyes">' + EYES + '</g>' + MOUTH;
+  const INNER = '<circle cx="50" cy="50" r="48" fill="#FFC107"/><g class="eyes">' + EYES + '</g>' + MOUTH;
   const FACE  = '<g class="eyes">' + EYES + '</g>' + MOUTH;
   const css = `
-  .smile-anim .eye-l,.smile-anim .eye-r{transform-box:fill-box;transform-origin:center;transition:transform .12s ease;fill:#000000}
-  .smile-anim .mouth{transform-box:fill-box;transform-origin:50% 60%;transition:transform .18s ease;fill:none;stroke:#000000;stroke-width:7.5 !important;stroke-linecap:round;stroke-linejoin:round}
+  .smile-anim .eye-l,.smile-anim .eye-r{transform-box:fill-box;transform-origin:center;transition:transform .12s ease;fill:#0a0a0a}
+  .smile-anim .mouth{transform-box:fill-box;transform-origin:50% 60%;transition:transform .18s ease;fill:none;stroke:#0a0a0a;stroke-width:7.5 !important;stroke-linecap:round;stroke-linejoin:round}
   .face-svg .mouth{transform:none !important}
   .face>svg.face-svg{position:absolute;inset:0;width:100%;height:100%}
   .smile-anim.is-blink .eye-l,.smile-anim.is-blink .eye-r{transform:scaleY(.08)}
@@ -20,25 +23,46 @@
   @keyframes sm-cel{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-9deg) scale(1.12)}45%{transform:rotate(8deg) scale(1.12)}70%{transform:rotate(-4deg)}}
   @keyframes sm-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6%)}40%{transform:translateX(6%)}60%{transform:translateX(-4%)}80%{transform:translateX(4%)}}`;
 
-  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  if(!document.getElementById('smile-mark-css')){
+    const st=document.createElement('style');st.id='smile-mark-css';st.textContent=css;document.head.appendChild(st);
+  }
   const reg=[];
   const moodOf=el=>el.getAttribute('data-mood')||(el.closest&&el.closest('[data-mood]')&&el.closest('[data-mood]').getAttribute('data-mood'))||'';
 
   function upgrade(el){
-    if(!el||!el.isConnected)return;let a;
-    if(el.matches('.face')){el.innerHTML='<svg class="face-svg smile-anim" viewBox="0 0 100 100">'+FACE+'</svg>';a=el.querySelector('svg');}
-    else if(el.matches('svg.disc')){const ex=(el.getAttribute('class')||'').replace(/\bdisc\b/,'').replace('smile-anim','').trim();el.setAttribute('class','disc smile-anim '+ex);el.innerHTML=INNER;a=el;}
-    else{el.innerHTML='<svg class="disc smile-anim" viewBox="0 0 100 100">'+INNER+'</svg>';a=el.querySelector('svg');}
-    if(!a)return;const m=moodOf(el)||moodOf(a);if(m){a.classList.add(m);a.dataset.locked='1';}reg.push(a);
+    if(!el||!el.isConnected||el.dataset.smileUpgraded) return;
+    let a;
+    if(el.matches('.face')){
+      el.innerHTML='<svg class="face-svg smile-anim" viewBox="0 0 100 100">'+FACE+'</svg>';
+      a=el.querySelector('svg');
+    } else if(el.matches('svg.disc')){
+      const ex=(el.getAttribute('class')||'').replace(/\bdisc\b/,'').replace('smile-anim','').trim();
+      el.setAttribute('class','disc smile-anim '+ex);
+      el.innerHTML=INNER;
+      a=el;
+    } else {
+      el.innerHTML='<svg class="disc smile-anim" viewBox="0 0 100 100">'+INNER+'</svg>';
+      a=el.querySelector('svg');
+    }
+    if(!a) return;
+    el.dataset.smileUpgraded='1';
+    const m=moodOf(el)||moodOf(a);
+    if(m){a.classList.add(m);a.dataset.locked='1';}
+    reg.push(a);
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
+  function init(){
     document.querySelectorAll('.brand .dw, svg.disc, .face').forEach(upgrade);
-  });
-  if(document.readyState !== 'loading') document.querySelectorAll('.brand .dw, svg.disc, .face').forEach(upgrade);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   function idle(){
-    const free=reg.filter(a=>!a.dataset.locked&&!a.classList.contains('is-blink'));
+    if(document.hidden){ setTimeout(idle, 2000); return; }
+    const free=reg.filter(a=>!a.dataset.locked&&!a.classList.contains('is-blink')&&a.isConnected);
     if(free.length){
       const a=free[Math.floor(Math.random()*free.length)];
       a.classList.add('is-blink');
@@ -51,7 +75,12 @@
 
   window.smileMood=function(mood,ms,target){
     ms=ms||900;
-    reg.forEach(a=>{if(a.dataset.locked||(target&&a!==target))return;a.classList.add(mood);setTimeout(()=>a.classList.remove(mood),ms);});
+    reg.forEach(a=>{
+      if(!a.isConnected) return;
+      if(a.dataset.locked||(target&&a!==target))return;
+      a.classList.add(mood);
+      setTimeout(()=>a.classList.remove(mood),ms);
+    });
   };
 
   function applyBrand(b){
@@ -62,6 +91,6 @@
 
   (function loadBrand(){
     if(window.BRAND){applyBrand(window.BRAND);return;}
-    fetch('brand.json').then(r=>r.ok?r.json():null).then(applyBrand).catch(()=>{});
+    fetch('brand.json', {cache:'no-store'}).then(r=>r.ok?r.json():null).then(applyBrand).catch(()=>{});
   })();
 })();
