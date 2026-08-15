@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SMILE · V10 — Studio+ Classroom</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap');
+:root{
+  --c-accent:#FFC107;--c-accent-rgb:255,193,7;--c-bg:#0a0a0b;--c-fg:#fafafa;--c-muted:#a1a1aa;--c-faint:#6b6b74;
+  --c-border:#232326;--c-on-accent:#0a0a0a;--c-up:#0ECB81;--c-down:#F6465D;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --font-display:'Space Grotesk',system-ui,sans-serif;--font-mono:'IBM Plex Mono',ui-monospace,monospace;--font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#000}
+body{font-family:var(--font-body);color:var(--c-fg);-webkit-font-smoothing:antialiased;user-select:none}
+svg{display:block}
+.stage{position:absolute;inset:0;background:var(--c-bg)}
+.bg-grad{position:absolute;inset:0;overflow:hidden;
+  background:radial-gradient(40% 32% at 15% 18%,rgba(var(--c-accent-rgb),.1),transparent 70%),
+             radial-gradient(28% 24% at 82% 24%,rgba(45,212,191,.06),transparent 70%),
+             radial-gradient(circle at 50% 46%,var(--c-bg),var(--c-bg))}
+.market-bg{position:absolute;left:0;right:0;bottom:78px;height:42vh;min-height:260px;opacity:.28;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 32%);mask-image:linear-gradient(180deg,transparent 0,#000 32%)}
+.market-bg svg{width:100%;height:100%}
+#help{position:fixed;top:24px;left:24px;z-index:99;font-family:var(--font-mono);font-size:11px;line-height:2;color:var(--c-muted);
+  background:#101013;border:1px solid var(--c-border);border-radius:10px;padding:10px 14px;transition:opacity .3s}
+#help.off{opacity:0;pointer-events:none}
+#help b{color:var(--c-accent)}
+
+/* SMILE — canonical 100-box, centered mouths, contact shadow */
+.smile{transform-box:fill-box;transform-origin:center;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 3px 6px rgba(0,0,0,.4))}
+.smile .face{fill:var(--c-accent)}
+.smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
+.smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
+.smile.is-grin .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
+.smile.is-frown .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
+.smile.is-frown .eye{transform:scale(.85)}
+.smile.is-blink .eye{transform:scaleY(.08)}
+.smile.is-nod{animation:nod .7s var(--expo)}
+@keyframes nod{0%,100%{transform:rotate(0)}30%{transform:rotate(7deg) translateY(1px)}60%{transform:rotate(-3deg)}}
+.smile.is-celebrate{animation:cel .9s var(--expo)}
+@keyframes cel{0%{transform:scale(1)}30%{transform:scale(1.09)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+.smile.is-shake{animation:shake .5s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
+.goalmark{position:relative;width:32px;height:32px;flex:none}
+.goalmark .gring-svg{position:absolute;inset:-3px;width:38px;height:38px}
+.goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
+.gring-track{fill:none;stroke:rgba(10,10,10,.12);stroke-width:4}
+.gring{fill:none;stroke:var(--c-on-accent);stroke-width:4;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;
+  transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset 1.2s var(--expo)}
+
+/* TICKER */
+.ticker{position:absolute;left:10px;right:10px;bottom:10px;height:74px;z-index:40;display:flex;align-items:stretch;overflow:hidden;
+  background:#101013;border:1px solid var(--c-border);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.5);
+  animation:tickin .9s var(--expo) .15s backwards}
+@keyframes tickin{from{transform:translateY(90px);opacity:0}to{transform:none;opacity:1}}
+.tline{position:absolute;top:0;left:0;right:0;height:2px;z-index:7;transform:scaleX(0);transform-origin:left;opacity:0;pointer-events:none}
+.tline.up{background:var(--c-up)} .tline.dn{background:var(--c-down)}
+.ticker.alert-up .tline.up,.ticker.alert-dn .tline.dn{animation:linedraw 2.6s var(--expo) forwards}
+@keyframes linedraw{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1);opacity:1}78%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+.cap{display:flex;align-items:center;gap:11px;padding:0 26px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.18em}
+.cap.left{background:var(--c-accent);color:var(--c-on-accent);z-index:6}
+.cells{flex:1;display:flex;align-items:stretch;min-width:0;z-index:6}
+.cell{flex:1;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:0 20px;min-width:0;position:relative;
+  opacity:0;transform:translateY(10px);animation:cellin .7s var(--expo) forwards}
+.cell:nth-child(1){animation-delay:.5s}.cell:nth-child(2){animation-delay:.57s}.cell:nth-child(3){animation-delay:.64s}
+.cell:nth-child(4){animation-delay:.71s}.cell:nth-child(5){animation-delay:.78s}.cell:nth-child(6){animation-delay:.85s}
+@keyframes cellin{to{opacity:1;transform:none}}
+.cell.done{animation:none;opacity:1;transform:none}
+.cell + .cell{border-left:1px solid var(--c-border)}
+.cell.done.fup{animation:fup 1.4s ease}
+.cell.done.fdn{animation:fdn 1.4s ease}
+@keyframes fup{0%{background:rgba(14,203,129,var(--heat,.09))}100%{background:transparent}}
+@keyframes fdn{0%{background:rgba(246,70,93,var(--heat,.09))}100%{background:transparent}}
+.ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.csym{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--c-faint)}
+.cchg{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9px;font-weight:700;border-radius:5px;padding:2.5px 7px}
+.cchg.up{color:var(--c-up);background:rgba(14,203,129,.1)}
+.cchg.down{color:var(--c-down);background:rgba(246,70,93,.1)}
+.caret{width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent}
+.caret.up{border-bottom:4px solid var(--c-up)} .caret.down{border-top:4px solid var(--c-down)}
+.cval{font-family:var(--font-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;color:var(--c-fg);line-height:1}
+.cval.roll{animation:roll .5s var(--expo)}
+@keyframes roll{0%{transform:translateY(45%);opacity:0}100%{transform:none;opacity:1}}
+
+/* WIRE SLOT — rotating 6th cell */
+.cell.wire .csym{color:var(--c-accent)}
+.cell.wire .wprog{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden}
+.cell.wire .wprog i{display:block;height:100%;background:var(--c-accent);opacity:.55;transform-origin:left;animation:wprog var(--wire-dur,7s) linear forwards}
+@keyframes wprog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.cell.wire .wswap{overflow:hidden;display:block}
+.cell.wire .wswap > span{display:block;transition:transform .45s var(--expo),opacity .3s ease}
+.cell.wire.swapping .wswap > span{transform:translateY(-110%);opacity:0}
+.cell.wire.moving .csym::after{content:" · MOVING";color:var(--c-down)}
+
+/* DESK-TIME PILL */
+.dclock{margin-left:auto;align-self:stretch;display:flex;align-items:center;padding:0 16px;border-left:1px solid var(--c-border)}
+.dpill{display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.05);
+  border:1px solid var(--c-border);font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--c-muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums;transition:all .5s ease}
+.ddot{width:6px;height:6px;border-radius:50%;background:var(--c-up);flex:none;animation:dpulse 2s ease infinite}
+@keyframes dpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dsep{opacity:.4}
+.dsub{font-size:8px;color:var(--c-faint)}
+body.tt-tape .ddot{background:var(--c-accent);animation:none}
+body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
+body.tt-stealth .dsub{color:#111}
+body.tt-stealth .ddot{background:#1a1a1a;animation:none}
+
+/* THE STRAP — V7's exact choreography, fixed positioning, no JS math */
+#strap{position:fixed;left:0;bottom:104px;z-index:45;pointer-events:none;padding-left:32px}
+#strap .scrim{position:absolute;left:0;bottom:-40px;width:760px;height:220px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(10,10,11,.88),rgba(10,10,11,.45) 55%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  -webkit-mask-image:linear-gradient(90deg,#000 40%,transparent);mask-image:linear-gradient(90deg,#000 40%,transparent);
+  opacity:0;transition:opacity .4s ease}
+#strap.on .scrim{opacity:1}
+#strap .srow{position:relative;display:flex;align-items:center;gap:18px}
+#strap .smark{width:34px;height:34px;flex:none;transform:scale(.6);opacity:0;transition:transform .5s var(--expo),opacity .3s ease}
+#strap.on .smark{transform:none;opacity:1}
+#strap .stack{min-width:0}
+.mw{overflow:hidden;display:block}
+#strap .kick{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;
+  letter-spacing:.24em;color:var(--c-fg);margin-bottom:7px;transform:translateY(130%);transition:transform .22s ease}
+#strap.on .kick{transform:none;transition:transform .55s var(--expo) .08s}
+#strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent)}
+#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)}
+#strap.st-note .tick{background:var(--c-faint)}
+#strap .head{font-family:var(--font-display);font-weight:700;font-size:31px;letter-spacing:-.02em;line-height:1.05;
+  white-space:nowrap;transform:translateY(115%);transition:transform .26s ease}
+#strap.on .head{transform:none;transition:transform .6s var(--expo) .16s}
+#strap.st-note .head{font-size:22px;color:var(--c-muted)}
+#strap .rule{display:block;height:2px;width:64px;background:var(--c-accent);margin-top:9px;
+  transform:scaleX(0);transform-origin:left;transition:transform .2s ease,background .3s}
+#strap.on .rule{transform:none;transition:transform .55s var(--expo) .3s}
+#strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
+#strap .sub{font-size:13px;color:var(--c-muted);margin-top:8px;white-space:nowrap;
+  transform:translateY(140%);transition:transform .22s ease}
+#strap.on .sub{transform:none;transition:transform .5s var(--expo) .34s}
+#strap .ladder{display:none;align-items:center;gap:10px;margin-top:11px;width:230px;opacity:0;transition:opacity .2s ease}
+#strap .ladder.show{display:flex}
+#strap.on .ladder.show{opacity:1;transition:opacity .45s ease .42s}
+#strap .ll{font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.14em}
+#strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
+#strap .lbar{position:relative;flex:1;height:2px;background:linear-gradient(90deg,rgba(246,70,93,.6),rgba(255,255,255,.14) 50%,rgba(14,203,129,.6))}
+#strap .lbar i{position:absolute;top:50%;left:50%;width:9px;height:9px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);transition:left .8s var(--expo)}
+/* STEPS — segmented lesson progress, same fade-in pattern as ladder */
+#strap .steps{display:none;align-items:center;gap:6px;margin-top:11px;opacity:0;transition:opacity .2s ease}
+#strap .steps.show{display:flex}
+#strap.on .steps.show{opacity:1;transition:opacity .45s ease .42s}
+#strap .step{position:relative;width:34px;height:3px;border-radius:2px;background:var(--c-border);overflow:hidden}
+#strap .step i{position:absolute;inset:0;background:var(--c-accent);transform:scaleX(0);transform-origin:left}
+#strap.on .step.done i{animation:stepfill .55s var(--expo) forwards}
+@keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#strap .num{flex:none;margin-left:26px;text-align:left;opacity:0;transform:translateY(10px);transition:.22s ease}
+#strap.on .num{opacity:1;transform:none;transition:.5s var(--expo) .3s}
+#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:30px;font-variant-numeric:tabular-nums;line-height:1}
+#strap .num .n.up{color:var(--c-up)} #strap .num .n.dn{color:var(--c-down)}
+#strap .num .nl{font-family:var(--font-mono);font-size:9px;letter-spacing:.2em;color:var(--c-faint);margin-top:5px}
+
+/* LIGHT + TEST SCENES (key V) */
+body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
+body.light .ticker{background:#ffffff;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+body.light #help{background:#ffffff}
+body.light #strap .scrim{background:linear-gradient(90deg,rgba(244,244,242,.92),rgba(244,244,242,.45) 55%,transparent)}
+body[data-scene="1"] .market-bg{opacity:.85}
+body[data-scene="1"] .bg-grad{background:radial-gradient(40% 32% at 15% 18%,rgba(var(--c-accent-rgb),.12),transparent 70%),radial-gradient(circle at 50% 46%,#101014,#0a0a0b)}
+body[data-scene="2"] .bg-grad{background:radial-gradient(50% 60% at 30% 45%,#3a2c20,transparent 75%),radial-gradient(40% 50% at 75% 30%,#20303a,transparent 70%),#151312}
+body[data-scene="2"] .market-bg{opacity:0}
+body[data-scene="3"] .bg-grad{background:linear-gradient(180deg,#0d1420 0%,#1a2333 45%,#241a20 100%)}
+body[data-scene="3"] .market-bg{opacity:.4}
+body[data-scene="4"] .market-bg{opacity:.18}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01s !important;transition-duration:.01s !important}}
+body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg-grad"></div>
+  <div class="market-bg" id="marketBg"><svg viewBox="0 0 1920 460" preserveAspectRatio="none">
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC107" stop-opacity=".22"/><stop offset="1" stop-color="#FFC107" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="M0 380 L160 350 L320 385 L480 320 L640 350 L800 270 L960 305 L1120 220 L1280 260 L1440 180 L1600 215 L1760 140 L1920 165 L1920 460 L0 460 Z" fill="url(#mg)"/>
+    <path d="M0 380 L160 350 L320 385 L480 320 L640 350 L800 270 L960 305 L1120 220 L1280 260 L1440 180 L1600 215 L1760 140 L1920 165" fill="none" stroke="#FFC107" stroke-width="1.5"/>
+  </svg></div>
+</div>
+
+<div id="help"><b>V10 — STUDIO+ CLASSROOM</b><br>
+[1] hide [2] lesson [3] TP [4] SL [5] poll [6] host [7] goal [8] wire [9] swap<br>
+[0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
+[V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[H] hide this</div>
+
+<div id="strap">
+  <div class="scrim"></div>
+  <div class="srow">
+    <svg class="smile smark" id="stSmile" viewBox="0 0 100 100">
+      <circle class="face" cx="50" cy="50" r="48"/>
+      <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+      <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+    </svg>
+    <div class="stack">
+      <span class="mw"><span class="kick"><span class="tick"></span><span id="sKick"></span></span></span>
+      <span class="mw"><span class="head" id="sHead"></span></span>
+      <span class="rule"></span>
+      <span class="mw"><span class="sub" id="sSub"></span></span>
+      <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i></div><span class="ll tp">TP</span></div>
+      <div class="steps" id="sSteps"></div>
+    </div>
+    <div class="num"><div class="n" id="sNum"></div><div class="nl" id="sNumLbl"></div></div>
+  </div>
+</div>
+
+<div class="ticker" id="ticker">
+  <div class="tline up"></div><div class="tline dn"></div>
+  <div class="cap left">
+    <div class="goalmark">
+      <svg class="gring-svg" viewBox="0 0 100 100">
+        <circle class="gring-track" cx="50" cy="50" r="46" pathLength="100"/>
+        <circle class="gring" id="gring" cx="50" cy="50" r="46" pathLength="100"/>
+      </svg>
+      <svg class="smile" id="capSmile" viewBox="0 0 100 100">
+        <circle class="face" cx="50" cy="50" r="48"/>
+        <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+      </svg>
+    </div>
+    SMILE · LIVE
+  </div>
+  <div class="cells" id="cells">
+    <div class="cell" id="cell0"><div class="ctop"><span class="csym">EUR/USD</span><span class="cchg up" id="chg0"></span></div><span class="cval" id="val0"></span></div>
+    <div class="cell" id="cell1"><div class="ctop"><span class="csym">GBP/USD</span><span class="cchg down" id="chg1"></span></div><span class="cval" id="val1"></span></div>
+    <div class="cell" id="cell2"><div class="ctop"><span class="csym">USD/JPY</span><span class="cchg up" id="chg2"></span></div><span class="cval" id="val2"></span></div>
+    <div class="cell" id="cell3"><div class="ctop"><span class="csym">XAU/USD</span><span class="cchg up" id="chg3"></span></div><span class="cval" id="val3"></span></div>
+    <div class="cell" id="cell4"><div class="ctop"><span class="csym">BTC/USD</span><span class="cchg down" id="chg4"></span></div><span class="cval" id="val4"></span></div>
+    <div class="cell wire" id="cell5">
+      <div class="ctop"><span class="wswap"><span class="csym" id="sym5"></span></span><span class="cchg up" id="chg5"></span></div>
+      <span class="wswap"><span class="cval" id="val5"></span></span>
+      <div class="wprog"><i id="wprog"></i></div>
+    </div>
+  </div>
+  <div class="dclock"><div class="dpill"><span class="ddot"></span><span id="dtime">--:--:--</span><span class="dsep">·</span><span class="dsub" id="dsub">DEMO</span></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const Power={awake:true,
+  every(fn,ms){return setInterval(()=>{if(this.awake)fn()},ms)},
+  init(){document.addEventListener('visibilitychange',()=>{this.awake=!document.hidden});
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.body.classList.add('perf-low');
+    if(new URLSearchParams(location.search).get('perf')==='low')document.body.classList.add('perf-low');}};
+Power.init();
+function fmt(x){return x.p.toLocaleString('en-US',{minimumFractionDigits:x.dp,maximumFractionDigits:x.dp})}
+
+/* data */
+const SESSIONS=[
+  {from:1,to:9,w:1,trades:['AUD','NZD']},{from:3,to:11,w:2,trades:['JPY','AUD','XAU']},
+  {from:10,to:18,w:3,trades:['EUR','GBP','CHF','XAU']},{from:15,to:23,w:3,trades:['USD','XAU','NAS','SPX','NVDA','AAPL','TSLA','US30','OIL']},
+  {from:10,to:15,w:2,trades:['KES','NSE']}];
+function sessionScore(tags){const h=new Date().getHours();let s=0;
+  for(const ses of SESSIONS){const open=ses.from<ses.to?(h>=ses.from&&h<ses.to):(h>=ses.from||h<ses.to);
+    if(open&&tags.some(t=>ses.trades.includes(t)))s+=ses.w;}return s;}
+const PINNED=[
+  {p:1.0842,dp:4,chg:.12,th:.0003},{p:1.2691,dp:4,chg:-.08,th:.0003},
+  {p:151.44,dp:2,chg:.31,th:.0003},{p:2384.5,dp:1,chg:.45,th:.0005},
+  {p:67240,dp:0,chg:-1.20,th:.0015}];
+const UNIVERSE=[
+  {s:'NAS100',p:18240,dp:0,chg:.42,tags:['NAS','USD'],th:.0005},{s:'SPX500',p:5212,dp:0,chg:.18,tags:['SPX','USD'],th:.0005},
+  {s:'US30',p:39112,dp:0,chg:.22,tags:['US30','USD'],th:.0005},{s:'NVDA',p:878.4,dp:1,chg:2.10,tags:['NVDA','USD'],th:.001},
+  {s:'AAPL',p:173.2,dp:1,chg:-.34,tags:['AAPL','USD'],th:.001},{s:'TSLA',p:177.9,dp:1,chg:-1.62,tags:['TSLA','USD'],th:.001},
+  {s:'ETH/USD',p:3412,dp:0,chg:.86,tags:['CRYPTO'],th:.0015},{s:'SOL/USD',p:172.4,dp:1,chg:3.20,tags:['CRYPTO'],th:.0015},
+  {s:'EUR/GBP',p:.8542,dp:4,chg:.05,tags:['EUR','GBP'],th:.0003},{s:'USD/KES',p:129.5,dp:2,chg:-.12,tags:['KES','USD'],th:.0003},
+  {s:'NSE 25',p:2984,dp:0,chg:.31,tags:['NSE','KES'],th:.0005},{s:'US OIL',p:82.40,dp:2,chg:-.74,tags:['OIL','USD'],th:.0008}];
+function rescore(){UNIVERSE.forEach(u=>u.score=sessionScore(u.tags)+(u.tags.includes('CRYPTO')?.5:0));UNIVERSE.sort((a,b)=>b.score-a.score);}
+rescore();setInterval(rescore,60000);
+
+/* flashes: soft, rare, no entrance replay */
+const flashLock=[0,0,0,0,0,0];
+function paint(x,i){
+  $('val'+i).textContent=fmt(x);
+  const chg=$('chg'+i);
+  chg.innerHTML=`<span class="caret ${x.chg>=0?'up':'down'}"></span>${x.chg>=0?'+':''}${x.chg.toFixed(2)}%`;
+  chg.className='cchg '+(x.chg>=0?'up':'down');
+}
+function tick(x,i){
+  const delta=(Math.random()-.48)*x.p*.0012;x.p+=delta;x.chg+=delta/x.p*100;
+  paint(x,i);
+  const now=performance.now();
+  if(Math.abs(delta)/x.p>=x.th && now-flashLock[i]>3000){
+    flashLock[i]=now;
+    const cell=$('cell'+i);
+    cell.style.setProperty('--heat',Math.min(.18,.05+(Math.abs(delta)/x.p/x.th)*.04).toFixed(3));
+    cell.classList.remove('fup','fdn');void cell.offsetWidth;cell.classList.add(delta>=0?'fup':'fdn');
+    const val=$('val'+i);val.classList.remove('roll');void val.offsetWidth;val.classList.add('roll');
+  }
+}
+PINNED.forEach((x,i)=>paint(x,i));
+
+/* wire slot */
+let wireIx=0,wireLock=0;const WIRE_DUR=7000;const wireCell=$('cell5');
+function paintWire(){
+  const x=UNIVERSE[wireIx];
+  $('sym5').textContent=x.s;paint(x,5);
+  const p=$('wprog');p.style.setProperty('--wire-dur',WIRE_DUR+'ms');
+  p.style.animation='none';void p.offsetWidth;p.style.animation='';
+  wireCell.classList.toggle('moving',wireLock>0);
+}
+function swapWire(){
+  if(wireLock>0){wireLock--;paintWire();return}
+  wireCell.classList.add('swapping');
+  setTimeout(()=>{wireIx=(wireIx+1)%UNIVERSE.length;paintWire();wireCell.classList.remove('swapping');},460);
+}
+Power.every(swapWire,WIRE_DUR);paintWire();
+Power.every(()=>{PINNED.forEach((x,i)=>tick(x,i));tick(UNIVERSE[wireIx],5);},1600);
+Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
+  const delta=(Math.random()-.5)*u.p*.001;u.p+=delta;u.chg+=delta/u.p*100;
+  if(Math.abs(delta)/u.p>=u.th*3&&ix!==wireIx){wireIx=ix;wireLock=2;paintWire();}});},5000);
+
+/* goal ring + mascot */
+let goal=640;const GOAL_MAX=1000,gring=$('gring');
+function paintGoal(){gring.style.strokeDashoffset=100-(goal/GOAL_MAX*100)}paintGoal();
+Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));paintGoal();
+  if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
+const capSmile=$('capSmile');
+function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
+function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
+Power.every(blink,6500);
+function mouth(c){capSmile.classList.remove('is-grin','is-frown');if(c)capSmile.classList.add(c)}
+const ticker=$('ticker');let lineTimer=null;
+function alertLine(dir){clearTimeout(lineTimer);
+  ticker.classList.remove('alert-up','alert-dn');void ticker.offsetWidth;
+  ticker.classList.add(dir==='up'?'alert-up':'alert-dn');
+  lineTimer=setTimeout(()=>ticker.classList.remove('alert-up','alert-dn'),2700);}
+
+/* desk-time pill — T cycles live / tape / stealth */
+const TT=['live','tape','stealth'];let ttIx=0;
+function applyTT(){document.body.classList.toggle('tt-tape',TT[ttIx]==='tape');
+  document.body.classList.toggle('tt-stealth',TT[ttIx]==='stealth');}
+Power.every(()=>{const now=new Date();
+  if(TT[ttIx]==='tape'){
+    $('dtime').textContent=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase()+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    $('dsub').textContent='REC · DEMO';
+  }else{
+    $('dtime').textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    $('dsub').textContent='DEMO';
+  }},1000);
+
+/* strap — V7 choreography verbatim + steps row for Chart School */
+const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sSub=$('sSub'),sNum=$('sNum'),sNumLbl=$('sNumLbl'),
+  stSmile=$('stSmile'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+sSteps.innerHTML='<span class="step"><i></i></span>'.repeat(4);
+let stTimer=null,countRaf=null,stBusy=false;
+function stMood(c){stSmile.classList.remove('is-nod','is-celebrate','is-shake');void stSmile.getBoundingClientRect();stSmile.classList.add(c)}
+function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
+  (function step(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
+    sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
+function showStrap(cls,k,h,s,opt){
+  clearTimeout(stTimer);cancelAnimationFrame(countRaf);
+  strap.classList.remove('on');void strap.offsetWidth;
+  strap.className='on st-'+cls;
+  sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
+  sLadder.classList.toggle('show',!!opt.ladder);
+  if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',450);
+  sSteps.classList.toggle('show',opt.steps!=null);
+  if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
+    st.classList.toggle('done',ix<opt.steps);
+    st.firstChild.style.animationDelay=(.5+ix*.09)+'s';
+  });
+  if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
+  else{sNum.textContent=opt.n||'';sNum.className='n';sNumLbl.textContent=opt.nl||''}
+  if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
+}
+function hideStrap(){clearTimeout(stTimer);strap.classList.remove('on');mouth(null);stBusy=false}
+const WIRE=[
+  {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
+  {k:'NOTICE',h:'Demo account · education only',s:'trading involves risk · not financial advice',note:1},
+  {k:'LESSON',h:'Chart School — part 2 of 4',s:'support & resistance · the mango test'},
+  {k:'NOTICE',h:'Losses are tuition',s:'we show ours so you pay less of yours',note:1}];
+let wcIx=0;
+function showWireCard(){if(stBusy||strap.classList.contains('on'))return;
+  const w=WIRE[wcIx%WIRE.length];wcIx++;
+  showStrap(w.note?'note':'lesson',w.k,w.h,w.s,{n:'smile.co.ke',nl:'',ttl:6500});}
+Power.every(showWireCard,90000);
+const STATES={
+  lesson:()=>{stBusy=true;showStrap('lesson','LESSON','Support & Resistance','Chart School · part 2 of 4 · the mango test',{n:'12:00',nl:'LEFT'})},
+  tp:()=>{stBusy=true;mood('is-celebrate');stMood('is-celebrate');mouth('is-grin');alertLine('up');
+    showStrap('tp','LIVE TRADE · DEMO','Take Profit Hit','EUR/USD · long from 1.0810 · plan followed',{count:32,sign:'+',dir:'up',ladder:88,ttl:7000});},
+  sl:()=>{stBusy=true;mood('is-shake');stMood('is-shake');mouth('is-frown');alertLine('dn');
+    showStrap('sl','LIVE TRADE · DEMO','Stop Loss Hit','GBP/USD · short from 1.2720 · risk respected',{count:18,sign:'-',dir:'dn',ladder:6,ttl:7000});},
+  poll:()=>{stBusy=true;showStrap('poll','POLL','You Pick the Next Lesson','A candles · B risk sizing · C news — type in chat',{n:'A·B·C',nl:'VOTE'})},
+  name:()=>{stBusy=true;showStrap('name','HOST','Mwangi','Smile TV · Chart School · Nairobi',{n:'smile.co.ke',nl:'',ttl:6000})},
+  goal:()=>{stBusy=true;mood('is-nod');stMood('is-nod');
+    showStrap('goal','STREAM GOAL',goal.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'ring on the smile tracks it live · thanks for the 4G smiles',{n:Math.round(goal/GOAL_MAX*100)+'%',nl:'FUNDED',ttl:6000});},
+  goalHit:()=>{stBusy=true;mood('is-celebrate');stMood('is-celebrate');mouth('is-grin');alertLine('up');
+    showStrap('goal','GOAL COMPLETE',GOAL_MAX.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'the smile is full · new goal loading',{n:'100%',nl:'FUNDED',ttl:8000});},
+  /* CLASSROOM — new strap types */
+  school:()=>{stBusy=true;mood('is-nod');stMood('is-nod');
+    showStrap('lesson','CHART SCHOOL','Part 2 — Support & Resistance','the mango test · 4 parts · live Mondays 9PM EAT',{steps:2,n:'2/4',nl:'PARTS'})},
+  question:()=>{stBusy=true;mood('is-nod');stMood('is-nod');
+    showStrap('poll','QUESTION','“How do you know when a level breaks?”','one question in, one skill out — answering on stream now',{n:'Q&A',nl:'FROM CHAT',ttl:8000});},
+  cal:()=>{stBusy=true;
+    showStrap('note','CALENDAR','US CPI — the inflation report','Thursday 15:30 EAT · high impact · we trade after the number, never into it',{n:'THU',nl:'15:30 EAT',ttl:7000});}
+};
+
+/* scenes + keys + boot */
+let sceneIx=0;
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='1')hideStrap();if(k==='2')STATES.lesson();if(k==='3')STATES.tp();
+  if(k==='4')STATES.sl();if(k==='5')STATES.poll();if(k==='6')STATES.name();
+  if(k==='7')STATES.goal();if(k==='8')showWireCard();if(k==='9')swapWire();
+  if(k==='0')STATES.school();if(k==='q')STATES.question();if(k==='e')STATES.cal();
+  if(k==='b')$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
+  if(k==='l')document.body.classList.toggle('light');
+  if(k==='t'){ttIx=(ttIx+1)%3;applyTT();}
+  if(k==='v'){sceneIx=(sceneIx+1)%5;document.body.dataset.scene=sceneIx;
+    document.body.classList.toggle('light',sceneIx===4);}
+  if(k==='h')$('help').classList.toggle('off');
+});
+document.body.dataset.scene='0';
+document.querySelectorAll('.cell').forEach(c=>c.addEventListener('animationend',e=>{
+  if(e.animationName==='cellin')c.classList.add('done');}));
+setTimeout(STATES.name,900);
+</script>
+</body>
+</html>
