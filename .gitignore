@@ -1,18 +1,27 @@
-secrets.env
-secrets.env.local
+# OS / editor cruft
 .DS_Store
 Thumbs.db
-node_modules/
-smile-profile/
-active.json
-dist/
-__pycache__/
 *.log
 *.zip
 
-# Added by migrate.py
+# Secrets (never commit)
+secrets.env
+secrets.env.local
+.env
+
+# Build artifacts
+dist/
+_site/
+
+# Legacy Python bridge artifacts (kept for ref; the bridge is removed from this repo)
+__pycache__/
 *.pyc
 .venv/
 venv/
-.env
-migrate.py
+
+# Smile profile (per-host local state)
+smile-profile/
+active.json
+
+# Node modules (if anyone runs html-validate locally)
+node_modules/
