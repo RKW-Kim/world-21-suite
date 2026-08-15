@@ -1,6 +1,6 @@
 # SMILE · Live Signals Integration (for the smile dev)
 
-The overlay (`overly/test-7.html`) already polls `overly/state.json` every 3s.
+The overlay (`overlay/test-7.html`) already polls `overlay/state.json` every 3s.
 When `trades` exists, the Dynamic Island switches from simulator to LIVE feed automatically.
 
 ## state.json schema
@@ -32,7 +32,7 @@ no secrets, no trade risk). Auto-close lives where the money lives:
 - Host closes manually on smile → bot detects (websocket/position diff) → same write.
 
 ## Integration paths (pick one)
-A. FILE (works today): bot/EA → tiny script writes overly/state.json. Done.
+A. FILE (works today): bot/EA → tiny script writes overlay/state.json. Done.
 B. BRIDGE (after modularize): bridge.py exposes POST /state; bot hits HTTP;
    overlay swaps polling for push. One-line change (watchState → EventSource).
 C. SMILE NATIVE (ask the dev): smile backend emits a webhook on position
