@@ -5,18 +5,21 @@
 
 ---
 
-## Step 1: Enable GitHub Pages (one-time)
+## Step 1: Configure GitHub Pages (one-time)
+
+We use **"Deploy from a branch"** mode — this avoids GitHub Actions entirely (which has been failing on this repo with runner allocation issues). The `gh-pages` branch contains a flat copy of `overlay/` at the root.
 
 1. Open <https://github.com/RKW-Kim/world-21-suite/settings/pages>
-2. Under "Build and deployment", set **Source: GitHub Actions**.
-3. Done. The next push to `main` triggers the [`deploy-pages`](../.github/workflows/deploy-pages.yml) workflow.
+2. Under "Build and deployment", set **Source: Deploy from a branch** (NOT "GitHub Actions").
+3. Under "Branch", select **`gh-pages`** and **`/ (root)`**.
+4. Click **Save**.
 
-You'll get a green checkmark on the workflow run when it succeeds. The site URL will be:
+Within ~1 minute, the site goes live at:
 ```
 https://rkw-kim.github.io/world-21-suite/
 ```
 
-> Pages deploys only from `main`. If you're on `prototype`, merge to `main` first.
+> The `gh-pages` branch is generated from `prototype/overlay/` by running `scripts/deploy-pages-branch.sh` (see [Step 6](#step-6-update-pages-when-overlay-changes) below). The `prototype` and `main` branches remain the source of truth.
 
 ---
 
@@ -142,14 +145,60 @@ The overlay can display **live** trades (instead of the demo simulator) if a bot
 ### Grin looks off-center
 - V8 bug. Use `smile-v9.html`. If you see this on v9: regression of landmine #4 — file a bug.
 
+### Pages shows old version after I updated the overlay
+- GitHub Pages caches aggressively. Wait 1–2 minutes for the CDN to refresh.
+- Force-refresh in OBS: right-click the Browser Source → **Refresh**.
+- Or hard-refresh in a browser: `Ctrl+F5` / `Cmd+Shift+R`.
+- If still stale after 5 minutes: verify the `gh-pages` branch was updated (Step 6 below) by checking <https://github.com/RKW-Kim/world-21-suite/commits/gh-pages>.
+
+---
+
+## Step 6: Update Pages when overlay changes
+
+Whenever you change `overlay/smile-v9.html` (or any other file in `overlay/`) on `prototype`, you must regenerate the `gh-pages` branch to publish the update to Pages. There's a one-command script for this:
+
+```bash
+# From the repo root, on the prototype branch:
+bash scripts/deploy-pages-branch.sh
+```
+
+What it does:
+1. Switches to `gh-pages` branch (creates it if missing).
+2. Replaces ALL files in `gh-pages` with the current contents of `overlay/` from `prototype`.
+3. Adds a `.nojekyll` file (disables Jekyll processing — ensures `_shared.css`, `_shared.js`, etc. are served).
+4. Commits with a clear message.
+5. Pushes `gh-pages` to origin.
+6. Switches back to `prototype`.
+
+After the push, GitHub Pages re-deploys automatically (1–2 minutes).
+
+### Manual alternative (if the script doesn't work)
+
+```bash
+git checkout prototype
+git checkout --orphan gh-pages
+git rm -rf .
+git checkout prototype -- overlay
+mv overlay/* .
+mv overlay/.* . 2>/dev/null || true
+rmdir overlay
+touch .nojekyll
+git add -A
+git commit -m "chore(pages): regenerate gh-pages from prototype/overlay/"
+git push origin gh-pages --force
+git checkout prototype
+```
+
+> ⚠️ The `--force` is necessary because `gh-pages` is regenerated from scratch each time.
+
 ---
 
 ## Going live
 
-When you're happy with `smile-v9.html` on `main`:
+When you're happy with `smile-v9.html`:
 
-1. Confirm the deploy-pages workflow ran (green checkmark at <https://github.com/RKW-Kim/world-21-suite/actions/workflows/deploy-pages.yml>).
-2. Open the URL in a regular browser tab first to verify: <https://rkw-kim.github.io/world-21-suite/smile-v9.html>
+1. Confirm Pages is serving it: open <https://rkw-kim.github.io/world-21-suite/smile-v9.html> in a browser tab. You should see the overlay render (not raw HTML text).
+2. If you see raw HTML text instead of the rendered overlay: the Pages source is wrong. Go to <https://github.com/RKW-Kim/world-21-suite/settings/pages> and confirm Source is **Deploy from a branch**, Branch is **gh-pages**, Path is **/ (root)**. Save.
 3. Add the Browser Source in OBS per Step 3 above.
 4. Press `H` to hide the keyboard help overlay.
 5. Press `T` until the clock pill shows **LIVE** (green dot, seconds).
