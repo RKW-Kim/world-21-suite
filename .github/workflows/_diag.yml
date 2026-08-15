@@ -1,0 +1,11 @@
+name: _diag
+on:
+  push:
+    branches: [prototype]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "ping"
+      - run: uname -a
