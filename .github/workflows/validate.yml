@@ -1,6 +1,6 @@
 # HTML validation CI — runs on PRs to prototype and main, and on pushes to prototype.
-# Catches: unclosed tags, malformed attributes, missing required attributes (alt, lang),
-# duplicate IDs, deprecated tags. Keeps the overlay HTML OBS-safe.
+# Catches: unclosed tags, malformed attributes, wrong nesting of parents.
+# Keeps the overlay HTML OBS-safe.
 name: validate
 
 on:
@@ -27,22 +27,43 @@ jobs:
       - name: Install html-validate
         run: npm install -g html-validate@8
 
-      - name: Run html-validate on overlay/
+      - name: List files to be validated
         run: |
-          echo "=== Validating HTML files in overlay/ ==="
-          find overlay -maxdepth 1 -name "*.html" -print0 | while IFS= read -r -d '' f; do
+          echo "=== Files in overlay/ (top-level .html only) ==="
+          ls -1 overlay/*.html 2>/dev/null || true
+          echo ""
+          echo "=== Files in overlay/archive/ ==="
+          ls -1 overlay/archive/*.html 2>/dev/null || true
+
+      - name: Validate active overlay HTML (hard fail on error)
+        run: |
+          set -e
+          shopt -s nullglob
+          files=(overlay/*.html)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No HTML files found in overlay/ — at least one (smile-v9.html) must exist."
+            exit 1
+          fi
+          echo "=== Validating ${#files[@]} file(s) ==="
+          for f in "${files[@]}"; do
             echo "--- $f ---"
-            html-validate --config .github/html-validate.json "$f" || {
+            if ! html-validate --config .github/html-validate.json "$f"; then
               echo "::error file=$f::HTML validation failed. See log above."
               exit 1
-            }
+            fi
           done
-          echo "All HTML files passed validation."
+          echo "All active overlay HTML files passed validation."
 
-      - name: Smoke-check archive/ (warn only)
+      - name: Smoke-check archive HTML (warn only, never fail the build)
         run: |
-          echo "=== Smoke-checking archive/ HTML (warnings allowed) ==="
-          find overlay/archive -name "*.html" -print0 2>/dev/null | while IFS= read -r -d '' f; do
+          shopt -s nullglob
+          files=(overlay/archive/*.html)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No archive HTML files to smoke-check."
+            exit 0
+          fi
+          echo "=== Smoke-checking ${#files[@]} archive file(s) (warnings allowed) ==="
+          for f in "${files[@]}"; do
             echo "--- $f (warning-only) ---"
             html-validate --config .github/html-validate.json "$f" || echo "::warning file=$f::Archive HTML has issues (non-blocking)."
           done
