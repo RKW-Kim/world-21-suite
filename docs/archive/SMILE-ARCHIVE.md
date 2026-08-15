@@ -343,6 +343,15 @@ VERDICT ON V9: accepted as the CURRENT GOOD BASELINE. This is the file to build 
 9. JARGON WITHOUT DEFINITIONS — confusion. Define inline.
 10. BATCHED HEREDOC CODE DELIVERY — truncation risk. FULL FILES ONLY, pasted in chat.
 11. SHARED-CHAT LINKS — AI cannot fetch them (tested). Archives must be pasted, not linked.
+12. INLINE ELEMENTS IGNORE TRANSFORM — `<span>` elements default to `display: inline`.
+    CSS `transform` DOES NOT APPLY to inline elements per the spec — it silently no-ops.
+    This broke `#strap .head` (translateY(115%)) and `#strap .sub` (translateY(140%))
+    since V7 — they were always at translateY(0), fully visible, the moment `.on` was added.
+    The "staggered mask reveal" was actually just: kicker slides up, then head/sub
+    appear INSTANTLY, then rule scales in. Fixed on 2026-08-15 by adding `display: block`
+    to both rules. RULE: any `<span>` with `transform:` MUST also have `display: block`
+    (or `flex` / `inline-block`) set explicitly. (Note: `<span>`s inside flex containers
+    or with `position: absolute` are auto-blockified, so they're safe.)
 
 ---
 
