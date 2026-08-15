@@ -12,13 +12,14 @@ _Work in progress on the `prototype` integration branch. Will become `v9` (or `v
 
 ### Added
 - **`prototype` branch is now the active dev branch** (GitFlow `develop` equivalent).
+- **`gh-pages` branch** — orphan branch containing a flat copy of `overlay/` at its root. GitHub Pages reads from it in "Deploy from a branch" mode. Bypasses Actions entirely (which has been failing to allocate runners on this repo).
+- **`scripts/deploy-pages-branch.sh`** — one-command script that regenerates `gh-pages` from `prototype/overlay/`, adds `.nojekyll`, commits, force-pushes. Idempotent. Auto-stashes uncommitted changes.
 - **`docs/development/VERSIONING.md`** — single source of truth for versioning rules in an HTML-only repo (no package.json, no semver — the filename IS the version).
 - **`docs/development/BRANCHING.md`** — branch model + commit conventions adapted for static-HTML dev.
 - **`docs/archive/SMILE-ARCHIVE.md`** — complete project history offload (every turn, every quote, every rule, every landmine). The AI context bridge.
 - **`README.md`** — first README on `prototype` (was previously on `main` only, describing the Python bridge).
-- **`docs/OBS_SETUP.md`** — how to point OBS at the GitHub Pages URL.
-- **`.github/workflows/validate.yml`** — HTML-validate CI on PRs (replaces broken Python `validate.py`).
-- **`.github/workflows/deploy-pages.yml`** — deploy `overlay/` to GitHub Pages on push to `main`.
+- **`docs/OBS_SETUP.md`** — how to point OBS at the GitHub Pages URL, with troubleshooting.
+- **`.github/workflows/validate.yml`** — HTML-validate CI on PRs (replaces broken Python `validate.py`). Note: Actions runners can't be allocated on this repo currently, so this CI is dormant — kept in case the issue is resolved later.
 - **`.github/html-validate.json`** — config tuned for OBS browser-source HTML.
 - **`CHANGELOG.md`** (this file).
 
@@ -29,6 +30,8 @@ _Work in progress on the `prototype` integration branch. Will become `v9` (or `v
 - **Updated `SIGNALS.md`** to reference `overlay/` (was `overly/`) in 2 places.
 - **Updated `.github/PULL_REQUEST_TEMPLATE.md`** — replaced `python scripts/validate.py passes` with `html-validate CI check passes` + OBS visual-verification block.
 - **Updated `.github/ISSUE_TEMPLATE/bug.md` and `feature.md`** — overlay-file-aware triage checklists.
+- **Updated `docs/OBS_SETUP.md`** — rewrote Step 1 to use Pages "Deploy from a branch" mode (was "GitHub Actions" mode). Added Step 6 documenting the deploy script.
+- **Updated `README.md`** — Setup section now describes the branch-based deploy, not Actions.
 - **Cleaned `.gitignore`** — removed Python bridge cruft, added `_site/` (Pages build output).
 
 ### Removed
@@ -36,6 +39,8 @@ _Work in progress on the `prototype` integration branch. Will become `v9` (or `v
 - **Deleted duplicates:** `overlay/test-7 copy.html`, `overlay/test-7 island.html`, `overlay/test-7.html.bak`.
 - **Deleted orphans:** root `test.html`, `countdown/test.html`, `starting-soon/test.html`, and the empty `countdown/` + `starting-soon/` directories.
 - **Deleted `.env.example`** (was Python bridge config; not needed for static HTML repo).
+- **Deleted `.github/workflows/deploy-pages.yml`** — we no longer use Actions to deploy Pages; `scripts/deploy-pages-branch.sh` does it instead.
+- **Deleted `scripts/generate-index.py`** — was only used by the now-deleted deploy-pages.yml workflow.
 - **Did NOT delete `smile-v8.html`** (kept for reference — it's the failed precision rebuild, per archive §6).
 
 ---

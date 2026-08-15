@@ -4,8 +4,7 @@
 > A finance/trading education livestream overlay system for Nairobi-based retail-trading-curious viewers.
 > Self-contained HTML files — no frameworks, no build step, no external assets except Google Fonts.
 
-[![CI](https://github.com/RKW-Kim/world-21-suite/actions/workflows/validate.yml/badge.svg?branch=prototype)](https://github.com/RKW-Kim/world-21-suite/actions/workflows/validate.yml)
-[![Deploy](https://github.com/RKW-Kim/world-21-suite/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://rkw-kim.github.io/world-21-suite/)
+[![Live](https://img.shields.io/website?up_message=live&down_message=down&url=https%3A%2F%2Frkw-kim.github.io%2Fworld-21-suite%2Fsmile-v9.html&label=pages)](https://rkw-kim.github.io/world-21-suite/smile-v9.html)
 
 ---
 
@@ -15,13 +14,12 @@ A **single-file overlay system** for OBS. Each `*.html` file in `overlay/` is a 
 
 The current good baseline is [`overlay/smile-v9.html`](./overlay/smile-v9.html). It is **sacred** — V7's strap choreography + V9's surgical fixes (see [`docs/archive/SMILE-ARCHIVE.md`](./docs/archive/SMILE-ARCHIVE.md) §7–8). New work extends it; never regresses it.
 
-## Live URLs (once GitHub Pages is enabled — see [Setup](#setup))
+## Live URLs (once GitHub Pages is configured — see [Setup](#setup))
 
 | File | OBS Browser Source URL |
 |---|---|
 | `overlay/smile-v9.html` (current) | `https://rkw-kim.github.io/world-21-suite/smile-v9.html` |
 | `overlay/test-7.html` (V7 baseline) | `https://rkw-kim.github.io/world-21-suite/test-7.html` |
-| Index (clickable list) | `https://rkw-kim.github.io/world-21-suite/` |
 
 **Setup**: 1 minute. See [`docs/OBS_SETUP.md`](./docs/OBS_SETUP.md).
 
@@ -79,13 +77,16 @@ world-21-suite/
 
 ## Setup
 
-### 1. Enable GitHub Pages (one-time, 1 minute)
+### 1. Configure GitHub Pages (one-time, 1 minute)
 
-1. Go to **repo → Settings → Pages**.
-2. Under "Build and deployment", set **Source: GitHub Actions**.
-3. Done. The next push to `main` triggers the [`deploy-pages`](./.github/workflows/deploy-pages.yml) workflow, which deploys `overlay/` to `https://rkw-kim.github.io/world-21-suite/`.
+The repo uses **"Deploy from a branch"** mode (not GitHub Actions) — Actions has been failing to allocate runners on this repo, so we bypass it entirely. The `gh-pages` branch already contains a flat copy of `overlay/` at its root; Pages just needs to be told to read from it.
 
-> Note: Pages won't deploy from `prototype` — only from `main`. Merge `prototype` → `main` to publish.
+1. Go to **<https://github.com/RKW-Kim/world-21-suite/settings/pages>**.
+2. Under "Build and deployment", set **Source: Deploy from a branch** (NOT "GitHub Actions").
+3. Under "Branch", select **`gh-pages`** and **`/ (root)`**.
+4. Click **Save**.
+
+Within ~1 minute, the site goes live at `https://rkw-kim.github.io/world-21-suite/`.
 
 ### 2. Point OBS at the URL
 
@@ -109,13 +110,24 @@ git checkout -b feat/<scope>-<description>      # e.g. feat/strap-poll-state
 git commit -m "feat(overlay): add poll strap state [Task ID: STRAP-POLL-1]"
 git push -u origin feat/<scope>-<description>
 # open PR: feat/* → prototype
-# CI runs html-validate; merge after review
-# when stable: PR prototype → main, tag v0.X.0
+# merge after review
+# when stable: PR prototype → main, tag v9 / v10 / etc.
 ```
 
+### Publishing to GitHub Pages
+
+Pages is **not** auto-deployed (we don't use Actions). When you want to ship the latest `overlay/` to Pages, run:
+
+```bash
+bash scripts/deploy-pages-branch.sh
+```
+
+This regenerates the `gh-pages` branch from `prototype/overlay/` and force-pushes it. Pages re-deploys within ~1-2 minutes. See [`docs/OBS_SETUP.md`](./docs/OBS_SETUP.md) §6 for details.
+
 - **`prototype`** = active dev branch (GitFlow `develop`).
-- **`main`** = production, deploys to Pages.
-- **Tag** = semver release marker (`v0.4.0`, `v0.5.0`, ...).
+- **`main`** = the tagged-stable snapshot. (Pages reads from `gh-pages`, not `main`.)
+- **`gh-pages`** = generated, do not edit directly. Run the script to regenerate.
+- **Tag** = overlay-file-lineage marker (`v9`, `v10`, ...).
 - See [`docs/development/BRANCHING.md`](./docs/development/BRANCHING.md) for full rules.
 - See [`docs/development/VERSIONING.md`](./docs/development/VERSIONING.md) for the version scheme.
 
