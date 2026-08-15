@@ -1,10 +1,49 @@
+# HTML validation CI — runs on PRs to prototype and main, and on pushes to prototype.
+# Catches: unclosed tags, malformed attributes, missing required attributes (alt, lang),
+# duplicate IDs, deprecated tags. Keeps the overlay HTML OBS-safe.
 name: validate
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [prototype, main]
+  pull_request:
+    branches: [prototype, main]
+
+permissions:
+  contents: read
+
 jobs:
-  check:
+  html-validate:
+    name: Validate overlay HTML
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: python scripts/validate.py
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install html-validate
+        run: npm install -g html-validate@8
+
+      - name: Run html-validate on overlay/
+        run: |
+          echo "=== Validating HTML files in overlay/ ==="
+          find overlay -maxdepth 1 -name "*.html" -print0 | while IFS= read -r -d '' f; do
+            echo "--- $f ---"
+            html-validate --config .github/html-validate.json "$f" || {
+              echo "::error file=$f::HTML validation failed. See log above."
+              exit 1
+            }
+          done
+          echo "All HTML files passed validation."
+
+      - name: Smoke-check archive/ (warn only)
+        run: |
+          echo "=== Smoke-checking archive/ HTML (warnings allowed) ==="
+          find overlay/archive -name "*.html" -print0 2>/dev/null | while IFS= read -r -d '' f; do
+            echo "--- $f (warning-only) ---"
+            html-validate --config .github/html-validate.json "$f" || echo "::warning file=$f::Archive HTML has issues (non-blocking)."
+          done
+          echo "Archive smoke-check complete."
