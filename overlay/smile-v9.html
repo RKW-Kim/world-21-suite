@@ -30,7 +30,7 @@ svg{display:block}
 
 /* SMILE — canonical 100-box, centered mouths, contact shadow */
 .smile{transform-box:fill-box;transform-origin:center;
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)) drop-shadow(0 3px 6px rgba(0,0,0,.4))}
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.4)) drop-shadow(0 2px 4px rgba(0,0,0,.45)) drop-shadow(0 6px 12px rgba(0,0,0,.35))}
 .smile .face{fill:var(--c-accent)}
 .smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
 .smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
@@ -45,11 +45,7 @@ svg{display:block}
 .smile.is-shake{animation:shake .5s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
-.goalmark .gring-svg{position:absolute;inset:-3px;width:38px;height:38px}
 .goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
-.gring-track{fill:none;stroke:rgba(10,10,10,.12);stroke-width:4}
-.gring{fill:none;stroke:var(--c-on-accent);stroke-width:4;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;
-  transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset 1.2s var(--expo)}
 
 /* TICKER */
 .ticker{position:absolute;left:10px;right:10px;bottom:10px;height:74px;z-index:40;display:flex;align-items:stretch;overflow:hidden;
@@ -71,10 +67,10 @@ svg{display:block}
 @keyframes cellin{to{opacity:1;transform:none}}
 .cell.done{animation:none;opacity:1;transform:none}
 .cell + .cell{border-left:1px solid var(--c-border)}
-.cell.done.fup{animation:fup 1.4s ease}
-.cell.done.fdn{animation:fdn 1.4s ease}
-@keyframes fup{0%{background:rgba(14,203,129,var(--heat,.09))}100%{background:transparent}}
-@keyframes fdn{0%{background:rgba(246,70,93,var(--heat,.09))}100%{background:transparent}}
+.cell.done.fup{animation:fup 1.6s var(--expo) forwards}
+.cell.done.fdn{animation:fdn 1.6s var(--expo) forwards}
+@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}15%{box-shadow:inset 0 0 0 1px rgba(14,203,129,.18),inset 0 0 24px rgba(14,203,129,.16)}100%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}}
+@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}15%{box-shadow:inset 0 0 0 1px rgba(246,70,93,.18),inset 0 0 24px rgba(246,70,93,.16)}100%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}}
 .ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .csym{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--c-faint)}
 .cchg{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:9px;font-weight:700;border-radius:5px;padding:2.5px 7px}
@@ -85,6 +81,11 @@ svg{display:block}
 .cval{font-family:var(--font-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;color:var(--c-fg);line-height:1}
 .cval.roll{animation:roll .5s var(--expo)}
 @keyframes roll{0%{transform:translateY(45%);opacity:0}100%{transform:none;opacity:1}}
+/* Subtle price-text color pulse on tick (no roll, no background flash) — sits under the text */
+.cell.done.fup .cval{animation:pulseUp 1.6s var(--expo) forwards}
+.cell.done.fdn .cval{animation:pulseDn 1.6s var(--expo) forwards}
+@keyframes pulseUp{0%{color:var(--c-fg)}15%{color:var(--c-up)}100%{color:var(--c-fg)}}
+@keyframes pulseDn{0%{color:var(--c-fg)}15%{color:var(--c-down)}100%{color:var(--c-fg)}}
 
 /* WIRE SLOT — rotating 6th cell */
 .cell.wire .csym{color:var(--c-accent)}
@@ -110,14 +111,18 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a;animation:none}
 
-/* THE STRAP — V7's exact choreography, fixed positioning, no JS math */
+/* THE STRAP — proper card with solid panel, accent border, layered shadow */
 #strap{position:fixed;left:0;bottom:104px;z-index:45;pointer-events:none;padding-left:32px}
 #strap .scrim{position:absolute;left:0;bottom:-40px;width:760px;height:220px;pointer-events:none;
-  background:linear-gradient(90deg,rgba(10,10,11,.88),rgba(10,10,11,.45) 55%,transparent);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  -webkit-mask-image:linear-gradient(90deg,#000 40%,transparent);mask-image:linear-gradient(90deg,#000 40%,transparent);
-  opacity:0;transition:opacity .4s ease}
+  background:linear-gradient(90deg,rgba(16,16,19,.96) 0%,rgba(16,16,19,.92) 60%,rgba(16,16,19,.72) 80%,rgba(16,16,19,0) 100%);
+  border-left:3px solid var(--c-accent);
+  border-radius:0 14px 14px 0;
+  box-shadow:0 1px 1px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.45);
+  backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
+  -webkit-mask-image:linear-gradient(90deg,#000 70%,transparent);mask-image:linear-gradient(90deg,#000 70%,transparent);
+  opacity:0;transition:opacity .45s var(--expo)}
 #strap.on .scrim{opacity:1}
+#strap.st-tp .scrim{border-left-color:var(--c-up)} #strap.st-sl .scrim{border-left-color:var(--c-down)} #strap.st-note .scrim{border-left-color:var(--c-faint)}
 #strap .srow{position:relative;display:flex;align-items:center;gap:18px}
 #strap .smark{width:34px;height:34px;flex:none;transform:scale(.6);opacity:0;transition:transform .5s var(--expo),opacity .3s ease}
 #strap.on .smark{transform:none;opacity:1}
@@ -219,10 +224,6 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
   <div class="tline up"></div><div class="tline dn"></div>
   <div class="cap left">
     <div class="goalmark">
-      <svg class="gring-svg" viewBox="0 0 100 100">
-        <circle class="gring-track" cx="50" cy="50" r="46" pathLength="100"/>
-        <circle class="gring" id="gring" cx="50" cy="50" r="46" pathLength="100"/>
-      </svg>
       <svg class="smile" id="capSmile" viewBox="0 0 100 100">
         <circle class="face" cx="50" cy="50" r="48"/>
         <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
@@ -294,7 +295,6 @@ function tick(x,i){
     const cell=$('cell'+i);
     cell.style.setProperty('--heat',Math.min(.18,.05+(Math.abs(delta)/x.p/x.th)*.04).toFixed(3));
     cell.classList.remove('fup','fdn');void cell.offsetWidth;cell.classList.add(delta>=0?'fup':'fdn');
-    const val=$('val'+i);val.classList.remove('roll');void val.offsetWidth;val.classList.add('roll');
   }
 }
 PINNED.forEach((x,i)=>paint(x,i));
@@ -319,10 +319,9 @@ Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
   const delta=(Math.random()-.5)*u.p*.001;u.p+=delta;u.chg+=delta/u.p*100;
   if(Math.abs(delta)/u.p>=u.th*3&&ix!==wireIx){wireIx=ix;wireLock=2;paintWire();}});},5000);
 
-/* goal ring + mascot */
-let goal=640;const GOAL_MAX=1000,gring=$('gring');
-function paintGoal(){gring.style.strokeDashoffset=100-(goal/GOAL_MAX*100)}paintGoal();
-Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));paintGoal();
+/* goal tracking (ring removed — goal value still drives goalHit trigger) */
+let goal=640;const GOAL_MAX=1000;
+Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
 const capSmile=$('capSmile');
 function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
