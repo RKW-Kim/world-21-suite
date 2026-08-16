@@ -128,42 +128,36 @@ body.tt-stealth .ddot{background:#1a1a1a}
 /* THE RAINDROP SMILE — smile lives IN the ticker (embedded in a well), detaches with raindrop physics (bulge → stretch → pinch → float), card unfolds behind it. Text slides to fill the gap. */
 #strap{position:fixed;left:24px;bottom:160px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
 
-/* Smile well — the socket in the ticker where the smile lives. No inset shadow (was creating black artifact on top-right). */
+/* Smile well — the socket in the ticker where the smile lives. No box-shadow (was creating black artifact). */
 .smile-slot{width:48px;flex:none;height:100%;display:flex;align-items:center;justify-content:center;position:relative;
-  transition:width .5s cubic-bezier(.16,1,.3,1),margin .5s cubic-bezier(.16,1,.3,1);margin-right:4px}
+  transition:width .4s cubic-bezier(.16,1,.3,1),margin .4s cubic-bezier(.16,1,.3,1);margin-right:4px}
 .smile-slot.departed{width:0;margin-right:0}
 .smile-well{width:40px;height:40px;border-radius:50%;
   background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.4),rgba(0,0,0,.2));
   transition:opacity .3s ease,transform .3s ease}
 .smile-slot.departed .smile-well{opacity:.25;transform:scale(.7)}
 
-/* The smile — position:fixed, travels between well and card. Smooth power3.out settle (not back.out — that's the #1 turn-off per spring-pop-entrance rule). */
+/* The smile — position:fixed at REST position. ALL motion via transform (translate+scale only — zero layout reflow, GPU composited). */
 #raindropSmile{position:fixed;left:36px;bottom:38px;width:40px;height:40px;z-index:50;
-  transform-origin:center bottom;
-  transition:width .45s cubic-bezier(.16,1,.3,1),height .45s cubic-bezier(.16,1,.3,1),
-    bottom .55s cubic-bezier(.16,1,.3,1),left .45s cubic-bezier(.16,1,.3,1),
-    filter .3s ease,transform .25s cubic-bezier(.16,1,.3,1);
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)) drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 8px 16px rgba(0,0,0,.3))}
+  transform-origin:center bottom;will-change:transform;
+  transition:transform .45s cubic-bezier(.16,1,.3,1),filter .3s ease;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 /* Phase 1: bulging (still in well, stretching up — anticipation) */
-#raindropSmile.bulging{transform:scaleY(1.15) translateY(-4px);
+#raindropSmile.bulging{transform:translateY(-4px) scaleY(1.15);
   transition:transform .2s cubic-bezier(.16,1,.3,1)}
-/* Phase 2: lifting (stretching upward toward card — smooth power3.out, no overshoot) */
-#raindropSmile.lifting{width:52px;height:52px;bottom:170px;left:22px;
-  transform:scaleY(1.2);
-  transition:width .45s cubic-bezier(.16,1,.3,1),height .45s cubic-bezier(.16,1,.3,1),
-    bottom .55s cubic-bezier(.16,1,.3,1),left .45s cubic-bezier(.16,1,.3,1),
-    transform .45s cubic-bezier(.16,1,.3,1)}
-/* Phase 3: settled at card (snapped back to 1:1 — smooth settle) */
-#raindropSmile.settled{width:52px;height:52px;bottom:170px;left:22px;transform:scaleY(1);
+/* Phase 2: lifting (travel to card position + grow + stretch — all in ONE transform) */
+#raindropSmile.lifting{transform:translate(-14px,-132px) scale(1.3,1.56);
+  transition:transform .45s cubic-bezier(.16,1,.3,1)}
+/* Phase 3: settled at card (drop the Y stretch, keep position+scale) */
+#raindropSmile.settled{transform:translate(-14px,-132px) scale(1.3);
   transition:transform .25s cubic-bezier(.16,1,.3,1)}
-/* Phase 4: falling back (returning to well — accelerating fall via power2.in) */
-#raindropSmile.falling{width:40px;height:40px;bottom:38px;left:36px;
-  transform:scaleY(1.18);
-  transition:width .35s ease,height .35s ease,bottom .4s cubic-bezier(.55,.085,.68,.53),left .35s ease,transform .3s ease}
-/* Phase 5: impact (settled back in well, slight squish — spring settle) */
-#raindropSmile.impact{transform:scaleY(.88) scaleX(1.08);
+/* Phase 4: falling back (return to rest + stretch down) */
+#raindropSmile.falling{transform:translate(0,0) scale(1,1.18);
+  transition:transform .4s cubic-bezier(.55,.085,.68,.53)}
+/* Phase 5: impact (squish on landing) */
+#raindropSmile.impact{transform:scale(1.08,0.88);
   transition:transform .12s ease-out}
-#raindropSmile.resting{transform:scaleY(1);
+#raindropSmile.resting{transform:scale(1);
   transition:transform .25s cubic-bezier(.16,1,.3,1)}
 
 #raindropSmile svg{width:100%;height:100%;display:block}
@@ -182,15 +176,15 @@ body.tt-stealth .ddot{background:#1a1a1a}
 .ripple.fire2{animation:rippleOut .8s ease-out .1s forwards}
 @keyframes rippleOut{0%{transform:scale(0);opacity:.5}100%{transform:scale(3);opacity:0}}
 
-/* Card panel — unfolds horizontally from behind the smile. Smooth power3.out (no back.out overshoot — per spring-pop-entrance rule). */
+/* Card panel — unfolds horizontally from behind the smile. Reduced backdrop blur (20px→8px) for GPU performance. */
 #strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
-  background:rgba(18,18,22,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
-  border-radius:0 16px 16px 0;overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 80px rgba(255,193,7,.15);
+  background:rgba(18,18,22,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-radius:0 16px 16px 0;overflow:hidden;will-change:transform;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);
   transform:scaleX(0) translateY(-4px);transform-origin:left;opacity:0;
-  transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .3s ease,box-shadow .4s ease}
+  transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .3s ease}
 #strap.on .card-panel{transform:scaleX(1) translateY(0);opacity:1;
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 120px rgba(255,193,7,.2)}
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35),0 0 60px rgba(255,193,7,.12)}
 /* Left accent edge — color-coded per state */
 #strap .card-panel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-accent);
   transition:background .3s ease}
@@ -243,6 +237,20 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap .num .nl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.28em;color:var(--c-faint);margin-top:5px}
 #strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:2px}
 
+/* Floating smile watermark — appears in a corner, can hold host name or session info */
+#floatSmile{position:fixed;top:24px;right:24px;z-index:44;display:flex;align-items:center;gap:12px;
+  opacity:0;transform:translateY(-10px);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);
+  pointer-events:none}
+#floatSmile.visible{opacity:1;transform:translateY(0)}
+#floatSmile .float-smile-icon{width:28px;height:28px;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+#floatSmile .float-info{display:flex;flex-direction:column;gap:2px}
+#floatSmile .float-label{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--c-faint);text-transform:uppercase}
+#floatSmile .float-value{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--c-fg);letter-spacing:-.01em}
+#floatSmile.pos-tl{top:24px;left:24px;right:auto}
+#floatSmile.pos-tr{top:24px;right:24px;left:auto}
+#floatSmile.pos-bl{bottom:92px;left:24px;top:auto}
+#floatSmile.pos-br{bottom:92px;right:24px;top:auto;left:auto}
+
 /* LIGHT + TEST SCENES (key V) */
 body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
 body.light .ticker{background:#ffffff;box-shadow:0 12px 32px rgba(0,0,0,.12)}
@@ -274,7 +282,19 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 <div id="help" class="off"><b>V10 — STUDIO+ CLASSROOM</b><br>
 [1] hide [2] lesson [3] TP [4] SL [5] poll [6] host [7] goal [8] wire [9] swap<br>
 [0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
-[V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[H] hide this</div>
+[V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[M] move smile &nbsp;[H] hide this</div>
+
+<div id="floatSmile" class="pos-tr">
+  <svg class="smile float-smile-icon" viewBox="0 0 100 100">
+    <circle class="face" cx="50" cy="50" r="48"/>
+    <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+    <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+  </svg>
+  <div class="float-info">
+    <span class="float-label" id="floatLabel">HOST</span>
+    <span class="float-value" id="floatValue">Mwangi</span>
+  </div>
+</div>
 
 <div id="ripple1" class="ripple"></div>
 <div id="ripple2" class="ripple"></div>
@@ -567,12 +587,37 @@ addEventListener('keydown',e=>{
   if(k==='b')$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
   if(k==='l')document.body.classList.toggle('light');
   if(k==='o')document.body.classList.toggle('overlay-mode');
+  if(k==='m')cycleFloatSmile();
   if(k==='t'){ttIx=(ttIx+1)%3;applyTT();}
   if(k==='v'){sceneIx=(sceneIx+1)%5;document.body.dataset.scene=sceneIx;
     document.body.classList.toggle('light',sceneIx===4);}
   if(k==='h')$('help').classList.toggle('off');
 });
 document.body.dataset.scene='0';
+
+/* Floating smile watermark — cycles through positions + content modes via M key or ?float= URL param */
+const FLOAT_POSITIONS=['pos-tr','pos-tl','pos-bl','pos-br','hidden'];
+const FLOAT_MODES=['host','session','logo'];
+let floatPosIx=0,floatModeIx=0;
+const floatSmileEl=$('floatSmile'),floatLabelEl=$('floatLabel'),floatValueEl=$('floatValue');
+function applyFloatSmile(){
+  const pos=FLOAT_POSITIONS[floatPosIx];
+  floatSmileEl.className=pos==='hidden'?'':'visible '+pos;
+  const mode=FLOAT_MODES[floatModeIx];
+  if(mode==='host'){floatLabelEl.textContent='HOST';floatValueEl.textContent='Mwangi';floatSmileEl.querySelector('.float-info').style.display=''}
+  else if(mode==='session'){floatLabelEl.textContent='CHART SCHOOL';floatValueEl.textContent='Part 2 of 4';floatSmileEl.querySelector('.float-info').style.display=''}
+  else{floatSmileEl.querySelector('.float-info').style.display='none'}
+}
+function cycleFloatSmile(){
+  floatModeIx=(floatModeIx+1)%FLOAT_MODES.length;
+  if(floatModeIx===0){floatPosIx=(floatPosIx+1)%FLOAT_POSITIONS.length}
+  applyFloatSmile();
+}
+try{const p=new URLSearchParams(location.search);
+  if(p.has('float')){const v=p.get('float');const pi=FLOAT_POSITIONS.indexOf(v);if(pi>=0)floatPosIx=pi;
+    const mi=FLOAT_MODES.indexOf(p.get('fmode')||'');if(mi>=0)floatModeIx=mi;}
+}catch(e){}
+applyFloatSmile();
 document.querySelectorAll('.cell').forEach(c=>c.addEventListener('animationend',e=>{
   if(e.animationName==='cellin')c.classList.add('done');}));
 setTimeout(STATES.name,900);
