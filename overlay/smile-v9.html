@@ -60,10 +60,13 @@ body.overlay-mode #strap .scrim{background:linear-gradient(90deg,rgba(16,16,19,.
 
 /* TICKER — reduced visual weight per GLM 5V critique. Tight broadcast shadow (no soft web-app shadow). Safe-area: bottom 24px for SDI broadcast safety. */
 .ticker{position:absolute;left:10px;right:10px;bottom:24px;height:68px;z-index:40;display:flex;align-items:stretch;overflow:hidden;
-  background:var(--c-surface);border:1px solid var(--c-border);border-radius:14px;
+  background:var(--c-surface);border:1px solid var(--c-border);border-top:1px solid rgba(255,255,255,.06);border-radius:14px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 0 0 1px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.25);
   animation:tickin .9s var(--expo) .15s backwards;opacity:.92}
 @keyframes tickin{from{transform:translateY(90px);opacity:0}to{transform:none;opacity:.92}}
+/* Idle breathing — ticker never looks frozen */
+.ticker.done{animation:tickin .9s var(--expo) .15s backwards,idleBreathe 4s ease-in-out 1s infinite}
+@keyframes idleBreathe{0%,100%{opacity:.92}50%{opacity:.96}}
 .tline{position:absolute;top:0;left:0;right:0;height:2px;z-index:7;transform:scaleX(0);transform-origin:left;opacity:0;pointer-events:none}
 .tline.up{background:var(--c-up)} .tline.dn{background:var(--c-down)}
 .ticker.alert-up .tline.up,.ticker.alert-dn .tline.dn{animation:linedraw 2.6s var(--expo) forwards}
@@ -150,6 +153,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap.st-note .tick{background:var(--c-faint)}
 #strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.02em;line-height:1.1;
   white-space:nowrap;transform:translateY(115%);transition:transform .26s ease}
+#strap .head.num-head{letter-spacing:-.03em;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
 #strap.on .head{transform:none;transition:transform .6s var(--expo) .16s}
 #strap.st-note .head{font-size:22px;color:var(--c-muted)}
 #strap .rule{display:block;height:2px;width:64px;background:var(--c-accent);margin-top:9px;
@@ -177,9 +181,10 @@ body.tt-stealth .ddot{background:#1a1a1a}
 @keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 #strap .num{flex:none;margin-left:26px;text-align:left;opacity:0;transform:translateY(10px);transition:.22s ease}
 #strap.on .num{opacity:1;transform:none;transition:.5s var(--expo) .3s}
-#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.01em}
+#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em}
 #strap .num .n.up{color:var(--c-up)} #strap .num .n.dn{color:var(--c-down)}
 #strap .num .nl{font-family:var(--font-mono);font-size:9px;letter-spacing:.28em;color:var(--c-faint);margin-top:6px}
+#strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:3px;letter-spacing:.02em}
 
 /* LIGHT + TEST SCENES (key V) */
 body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
@@ -387,7 +392,7 @@ function showStrap(cls,k,h,s,opt){
     st.firstChild.style.animationDelay=(.5+ix*.09)+'s';
   });
   if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
-  else{sNum.textContent=opt.n||'';sNum.className='n';sNumLbl.textContent=opt.nl||''}
+  else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
 }
 function hideStrap(){clearTimeout(stTimer);strap.classList.remove('on');mouth(null);stBusy=false}
@@ -408,7 +413,7 @@ const STATES={
   sl:()=>{stBusy=true;mood('is-shake');stMood('is-shake');mouth('is-frown');alertLine('dn');
     showStrap('sl','LIVE TRADE · DEMO','Stop Loss Hit','GBP/USD · short from 1.2720 · risk respected',{count:18,sign:'-',dir:'dn',ladder:6,ttl:7000});},
   poll:()=>{stBusy=true;showStrap('poll','POLL','You Pick the Next Lesson','A candles · B risk sizing · C news — type in chat',{n:'A·B·C',nl:'VOTE'})},
-  name:()=>{stBusy=true;showStrap('name','HOST','Mwangi','Smile TV · Chart School · Nairobi',{n:'smile.co.ke',nl:'',ttl:6000})},
+  name:()=>{stBusy=true;showStrap('name','HOST','Mwangi','Smile TV · Chart School · Nairobi',{n:'smile.co.ke',nl:'',ttl:6000,link:true})},
   goal:()=>{stBusy=true;mood('is-nod');stMood('is-nod');
     showStrap('goal','STREAM GOAL',goal.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'ring on the smile tracks it live · thanks for the 4G smiles',{n:Math.round(goal/GOAL_MAX*100)+'%',nl:'FUNDED',ttl:6000});},
   goalHit:()=>{stBusy=true;mood('is-celebrate');stMood('is-celebrate');mouth('is-grin');alertLine('up');
