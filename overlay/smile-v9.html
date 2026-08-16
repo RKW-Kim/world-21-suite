@@ -125,77 +125,87 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
-/* THE STRAP — 'THE CHALKBOARD': warm yellow brand bar + deep charcoal-green textured surface. Full overhaul per GLM 5V. */
-#strap{position:fixed;left:24px;bottom:92px;z-index:45;pointer-events:none}
-#strap .chalkboard{display:flex;min-height:96px;max-width:780px;border-radius:16px;overflow:hidden;
-  background:#1A1F1C;
-  box-shadow:0 4px 12px rgba(0,0,0,.45),0 16px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);
-  opacity:0;transform:translateY(20px);
-  transition:opacity .32s cubic-bezier(.34,1.56,.64,1),transform .36s cubic-bezier(.34,1.56,.64,1)}
-#strap.on .chalkboard{opacity:1;transform:translateY(0)}
-/* Chalk dust texture — barely visible noise */
-#strap .chalkboard::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity:.6;mix-blend-mode:overlay}
-/* Inner shadow on top edge (chalk tray recess — deepened per GLM 5V) */
-#strap .chalkboard::after{content:'';position:absolute;left:0;right:0;top:0;height:10px;pointer-events:none;
-  box-shadow:inset 0 3px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)}
+/* THE MAGNETIC SMILE — single smile lives in ticker, detaches + card unfolds from behind it. Full redesign per GLM 5V. */
+#strap{position:fixed;left:24px;bottom:80px;z-index:45;pointer-events:none;display:flex;align-items:flex-end;gap:0}
+/* The smile anchor — single DOM element that travels between ticker and card */
+#magnetic-smile{position:fixed;left:28px;bottom:30px;width:40px;height:40px;z-index:50;
+  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
+    bottom .4s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
+    filter .3s ease;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 6px 12px rgba(0,0,0,.2))}
+#magnetic-smile.active{width:52px;height:52px;bottom:96px;left:20px}
+#magnetic-smile svg{width:100%;height:100%}
+#magnetic-smile .face{fill:var(--c-accent);transition:fill .3s ease}
+#magnetic-smile.st-tp .face{fill:var(--c-up)}
+#magnetic-smile.st-sl .face{fill:var(--c-down)}
+#magnetic-smile.st-poll .face{fill:var(--c-sky)}
+#magnetic-smile.st-goal .face{fill:var(--c-violet)}
+#magnetic-smile.st-note .face{fill:#D97706}
 
-/* Brand bar — warm yellow, 72px wide, contains smile. Glows per state. */
-#strap .brand-bar{width:72px;flex:none;background:var(--c-accent);display:flex;align-items:center;justify-content:center;position:relative;
-  transition:background .4s ease,box-shadow .4s ease}
-#strap .brand-bar::after{content:'';position:absolute;inset:0;pointer-events:none;
-  box-shadow:inset -2px 0 8px rgba(0,0,0,.15)}
-#strap.st-tp .brand-bar{background:var(--c-up);box-shadow:0 0 24px rgba(14,203,129,.4)}
-#strap.st-sl .brand-bar{background:var(--c-down);box-shadow:0 0 24px rgba(246,70,93,.4)}
-#strap.st-poll .brand-bar{background:var(--c-sky);box-shadow:0 0 24px rgba(14,165,233,.4)}
-#strap.st-goal .brand-bar{background:var(--c-violet);box-shadow:0 0 24px rgba(168,85,247,.4)}
-#strap.st-note .brand-bar{background:#D97706;box-shadow:0 0 16px rgba(217,119,6,.3)}
+/* Umbilical cord — golden line connecting smile to its origin in the ticker */
+#umbilical{position:fixed;left:47px;bottom:50px;width:2px;height:0;z-index:49;
+  background:linear-gradient(180deg,rgba(255,193,7,.6),rgba(255,193,7,0));
+  transition:height .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;opacity:0}
+#umbilical.visible{height:60px;opacity:1;transition:height .3s ease,opacity .2s ease}
 
-/* Chalk surface — content area */
-#strap .chalk-surface{flex:1;display:flex;align-items:center;gap:24px;padding:16px 28px;position:relative;min-width:0}
+/* Card panel — unfolds horizontally from behind the smile */
+#strap .card-panel{position:relative;margin-left:64px;min-width:0;max-width:520px;width:auto;
+  background:rgba(18,18,22,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
+  border-radius:0 16px 16px 0;overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35);
+  transform:scaleX(0);transform-origin:left;opacity:0;
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
+#strap.on .card-panel{transform:scaleX(1);opacity:1}
+/* Left accent edge — color-coded per state */
+#strap .card-panel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-accent);
+  transition:background .3s ease}
+#strap.st-tp .card-panel::before{background:var(--c-up)}
+#strap.st-sl .card-panel::before{background:var(--c-down)}
+#strap.st-poll .card-panel::before{background:var(--c-sky)}
+#strap.st-goal .card-panel::before{background:var(--c-violet)}
+#strap.st-note .card-panel::before{background:#D97706}
+
+/* Card content — staggered reveal */
+#strap .card-content{padding:16px 24px 16px 20px;display:flex;align-items:center;gap:20px;min-height:72px}
 #strap .stack{min-width:0;flex:1}
-#strap .smark{width:36px;height:36px;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
-
-/* Kicker — chalk-written small caps, sage green */
 #strap .kick{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;
-  letter-spacing:.28em;color:#8B9A8B;margin-bottom:6px;text-transform:uppercase}
+  letter-spacing:.28em;color:var(--c-muted);margin-bottom:5px;text-transform:uppercase;
+  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .2s,transform .3s ease .2s}
+#strap.on .kick{opacity:1;transform:translateX(0)}
 #strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent);transition:background .3s ease}
-#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)} #strap.st-note .tick{background:var(--c-faint)}
-
-/* Headline — bold geometric sans, white */
-#strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;line-height:1.15;
-  white-space:nowrap;color:#fff}
-#strap.st-note .head{font-size:21px;color:#D4DDD4}
-
-/* Rule — accent colored */
-#strap .rule{display:block;height:2px;width:56px;background:var(--c-accent);margin-top:8px;transition:background .3s}
+#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)} #strap.st-note .tick{background:#D97706}
+#strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.15;
+  white-space:nowrap;color:var(--c-fg);
+  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .25s,transform .3s ease .25s}
+#strap.on .head{opacity:1;transform:translateX(0)}
+#strap.st-note .head{font-size:20px;color:var(--c-muted)}
+#strap .rule{display:block;height:2px;width:48px;background:var(--c-accent);margin-top:6px;
+  transform:scaleX(0);transform-origin:left;transition:transform .3s ease .3s,background .3s}
+#strap.on .rule{transform:scaleX(1)}
 #strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
-
-/* Sub — off-white */
-#strap .sub{display:block;font-size:13px;font-weight:500;color:#D4DDD4;margin-top:8px;white-space:nowrap;line-height:1.4;letter-spacing:.01em}
-
-/* Ladder + Steps */
-#strap .ladder{display:none;align-items:center;gap:10px;margin-top:10px;width:220px}
+#strap .sub{display:block;font-size:12px;font-weight:500;color:var(--c-muted);margin-top:6px;white-space:nowrap;line-height:1.4;
+  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .35s,transform .3s ease .35s}
+#strap.on .sub{opacity:1;transform:translateX(0)}
+#strap .ladder{display:none;align-items:center;gap:10px;margin-top:8px;width:200px}
 #strap .ladder.show{display:flex}
-#strap .ll{font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.14em}
+#strap .ll{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.14em}
 #strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
 #strap .lbar{position:relative;flex:1;height:2px;background:linear-gradient(90deg,rgba(246,70,93,.6),rgba(255,255,255,.14) 50%,rgba(14,203,129,.6))}
-#strap .lbar i{position:absolute;top:50%;left:50%;width:9px;height:9px;border-radius:50%;background:#fff;
-  transform:translate(-50%,-50%);transition:left .8s var(--expo);box-shadow:0 0 8px rgba(255,255,255,.4)}
-#strap .steps{display:none;align-items:center;gap:6px;margin-top:10px}
+#strap .lbar i{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);transition:left .8s var(--expo);box-shadow:0 0 6px rgba(255,255,255,.4)}
+#strap .steps{display:none;align-items:center;gap:5px;margin-top:8px}
 #strap .steps.show{display:flex}
-#strap .step{position:relative;width:32px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+#strap .step{position:relative;width:28px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
 #strap .step i{position:absolute;inset:0;background:var(--c-accent);transform:scaleX(0);transform-origin:left}
-#strap.on .step.done i{animation:stepfill .55s var(--expo) forwards}
+#strap.on .step.done i{animation:stepfill .5s var(--expo) forwards}
 @keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
-/* Number block — right side */
-#strap .num{flex:none;text-align:left}
-#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em;color:#fff}
+#strap .num{flex:none;text-align:left;
+  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .3s,transform .3s ease .3s}
+#strap.on .num{opacity:1;transform:translateX(0)}
+#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em;color:var(--c-fg)}
 #strap .num .n.up{color:var(--c-up)} #strap .num .n.dn{color:var(--c-down)}
-#strap .num .nl{font-family:var(--font-mono);font-size:9px;letter-spacing:.28em;color:#8B9A8B;margin-top:6px}
-#strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:3px;letter-spacing:.02em}
+#strap .num .nl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.28em;color:var(--c-faint);margin-top:5px}
+#strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:2px}
 
 /* LIGHT + TEST SCENES (key V) */
 body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
@@ -230,16 +240,19 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 [0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
 [V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[H] hide this</div>
 
+<div id="umbilical"></div>
+<svg class="smile" id="magnetic-smile" viewBox="0 0 100 100">
+  <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
+  </radialGradient></defs>
+  <circle class="face face-grad" cx="50" cy="50" r="48"/>
+  <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+  <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+</svg>
+
 <div id="strap">
-  <div class="chalkboard">
-    <div class="brand-bar">
-      <svg class="smile smark" id="stSmile" viewBox="0 0 100 100">
-        <circle class="face" cx="50" cy="50" r="48"/>
-        <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
-      </svg>
-    </div>
-    <div class="chalk-surface">
+  <div class="card-panel">
+    <div class="card-content">
       <div class="stack">
         <span class="kick"><span class="tick"></span><span id="sKick"></span></span>
         <span class="head" id="sHead"></span>
@@ -256,16 +269,6 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 <div class="ticker" id="ticker">
   <div class="tline up"></div><div class="tline dn"></div>
   <div class="cap left">
-    <div class="goalmark">
-      <svg class="smile" id="capSmile" viewBox="0 0 100 100">
-        <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
-        </radialGradient></defs>
-        <circle class="face face-grad" cx="50" cy="50" r="48"/>
-        <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
-      </svg>
-    </div>
     SMILE · LIVE
   </div>
   <div class="cells" id="cells">
@@ -359,7 +362,7 @@ Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
 let goal=640;const GOAL_MAX=1000;
 Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
-const capSmile=$('capSmile');
+const capSmile=$('magnetic-smile');
 function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
 function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
@@ -385,10 +388,10 @@ Power.every(()=>{const now=new Date();
 
 /* strap — V7 choreography verbatim + steps row for Chart School */
 const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sSub=$('sSub'),sNum=$('sNum'),sNumLbl=$('sNumLbl'),
-  stSmile=$('stSmile'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+  magneticSmile=$('magnetic-smile'),umbilical=$('umbilical'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
 sSteps.innerHTML='<span class="step"><i></i></span>'.repeat(4);
 let stTimer=null,countRaf=null,stBusy=false;
-function stMood(c){stSmile.classList.remove('is-nod','is-celebrate','is-shake');void stSmile.getBoundingClientRect();stSmile.classList.add(c)}
+function stMood(c){magneticSmile.classList.remove('is-nod','is-celebrate','is-shake');void magneticSmile.getBoundingClientRect();magneticSmile.classList.add(c)}
 function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
   (function step(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
     sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
@@ -396,6 +399,11 @@ function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
   strap.classList.remove('on');void strap.offsetWidth;
   strap.className='on st-'+cls;
+  // Magnetic smile: travel from ticker to card position + show umbilical
+  magneticSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note');
+  magneticSmile.classList.add('st-'+cls);
+  magneticSmile.classList.add('active');
+  umbilical.classList.add('visible');
   sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
   sLadder.classList.toggle('show',!!opt.ladder);
   if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',450);
@@ -408,7 +416,10 @@ function showStrap(cls,k,h,s,opt){
   else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
 }
-function hideStrap(){clearTimeout(stTimer);strap.classList.remove('on');mouth(null);stBusy=false}
+function hideStrap(){clearTimeout(stTimer);strap.classList.remove('on');
+  magneticSmile.classList.remove('active','st-tp','st-sl','st-poll','st-goal','st-note');
+  umbilical.classList.remove('visible');
+  mouth(null);stBusy=false}
 const WIRE=[
   {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
   {k:'NOTICE',h:'Demo account · education only',s:'trading involves risk · not financial advice',note:1},
