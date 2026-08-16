@@ -123,7 +123,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 #theSmile .smile-svg .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
 #theSmile .smile-svg .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
-#theSmile .face{fill:var(--c-accent);transition:fill .3s ease}
+#theSmile .face{fill:var(--c-accent);transition:fill .3s ease;stroke:rgba(0,0,0,.1);stroke-width:1.5}
 #theSmile.is-grin .smile-svg .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
 #theSmile.is-frown .smile-svg .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
 #theSmile.is-frown .smile-svg .eye{transform:scale(.85)}
@@ -145,10 +145,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
 .smile-slot{width:48px;flex:none;height:100%;display:flex;align-items:center;justify-content:center;position:relative;
   transition:width .4s cubic-bezier(.16,1,.3,1),margin .4s cubic-bezier(.16,1,.3,1);margin-right:4px;overflow:hidden}
 .smile-slot.departed{width:0;margin-right:0}
-.smile-well{width:40px;height:40px;border-radius:50%;
-  background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.4),rgba(0,0,0,.2));
-  transition:opacity .3s ease,transform .3s ease}
-.smile-slot.departed .smile-well{opacity:.2;transform:scale(.6)}
+.smile-well{display:none}
 
 /* Card panel — unfolds horizontally. Reduced backdrop blur for GPU performance. */
 #strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
