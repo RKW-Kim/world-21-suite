@@ -23,8 +23,7 @@ svg{display:block}
 body.overlay-mode .bg-grad{background:transparent}
 body.overlay-mode .market-bg{display:none}
 body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px rgba(255,255,255,.06),0 1px 3px rgba(0,0,0,.25)}
-body.overlay-mode #strap .scrim{background:linear-gradient(180deg,rgba(20,20,24,.92) 0%,rgba(16,16,19,.9) 40%,rgba(14,14,17,.88) 100%),
-    linear-gradient(90deg,rgba(16,16,19,.92) 0%,rgba(16,16,19,.85) 70%,rgba(16,16,19,.6) 88%,rgba(16,16,19,0) 100%)}
+body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 4px 12px rgba(0,0,0,.35),0 16px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
 .market-bg{position:absolute;left:0;right:0;bottom:78px;height:42vh;min-height:260px;opacity:0;pointer-events:none;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 32%);mask-image:linear-gradient(180deg,transparent 0,#000 32%)}
 .market-bg svg{width:100%;height:100%}
@@ -126,64 +125,76 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
-/* THE STRAP — proper card with solid panel, accent border, layered shadow. Sits flush on ticker (0px gap, broadcast-safe). */
-#strap{position:fixed;left:0;bottom:92px;z-index:45;pointer-events:none;padding-left:32px}
-#strap .scrim{position:absolute;left:0;bottom:0;min-width:760px;width:auto;max-width:760px;height:auto;min-height:130px;pointer-events:none;
-  background:linear-gradient(180deg,rgba(20,20,24,.96) 0%,rgba(16,16,19,.96) 40%,rgba(14,14,17,.96) 100%),
-    linear-gradient(90deg,rgba(16,16,19,.96) 0%,rgba(16,16,19,.92) 70%,rgba(16,16,19,.72) 88%,rgba(16,16,19,0) 100%);
-  border-left:3px solid var(--c-accent);
-  border-radius:0 14px 14px 0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 1px 1px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.45);
-  backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
-  -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent);
-  opacity:0;transform:translateY(20px);transition:opacity .28s cubic-bezier(.34,1.56,.64,1),transform .32s cubic-bezier(.34,1.56,.64,1)}
-#strap.on .scrim{opacity:1;transform:translateY(0)}
-#strap.st-tp .scrim{border-left-color:var(--c-up)} #strap.st-sl .scrim{border-left-color:var(--c-down)} #strap.st-note .scrim{border-left-color:var(--c-faint)}
-#strap.st-lesson .scrim{border-left-color:var(--c-accent)} #strap.st-poll .scrim{border-left-color:var(--c-sky)} #strap.st-name .scrim{border-left-color:var(--c-accent)} #strap.st-goal .scrim{border-left-color:var(--c-violet)}
-#strap .srow{position:relative;display:flex;align-items:center;gap:18px}
-#strap .smark{width:34px;height:34px;flex:none;transform:scale(.6);opacity:0;transition:transform .5s var(--expo),opacity .3s ease}
-#strap.on .smark{transform:none;opacity:1}
-#strap .stack{min-width:0}
-.mw{overflow:hidden;display:block}
+/* THE STRAP — 'THE CHALKBOARD': warm yellow brand bar + deep charcoal-green textured surface. Full overhaul per GLM 5V. */
+#strap{position:fixed;left:24px;bottom:92px;z-index:45;pointer-events:none}
+#strap .chalkboard{display:flex;min-height:96px;max-width:780px;border-radius:16px;overflow:hidden;
+  background:#1A1F1C;
+  box-shadow:0 4px 12px rgba(0,0,0,.45),0 16px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);
+  opacity:0;transform:translateY(20px);
+  transition:opacity .32s cubic-bezier(.34,1.56,.64,1),transform .36s cubic-bezier(.34,1.56,.64,1)}
+#strap.on .chalkboard{opacity:1;transform:translateY(0)}
+/* Chalk dust texture — barely visible noise */
+#strap .chalkboard::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.4;mix-blend-mode:overlay}
+/* Inner shadow on top edge (chalk tray recess) */
+#strap .chalkboard::after{content:'';position:absolute;left:0;right:0;top:0;height:8px;pointer-events:none;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.4)}
+
+/* Brand bar — warm yellow, 72px wide, contains smile. Glows per state. */
+#strap .brand-bar{width:72px;flex:none;background:var(--c-accent);display:flex;align-items:center;justify-content:center;position:relative;
+  transition:background .4s ease,box-shadow .4s ease}
+#strap .brand-bar::after{content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset -2px 0 8px rgba(0,0,0,.15)}
+#strap.st-tp .brand-bar{background:var(--c-up);box-shadow:0 0 24px rgba(14,203,129,.4)}
+#strap.st-sl .brand-bar{background:var(--c-down);box-shadow:0 0 24px rgba(246,70,93,.4)}
+#strap.st-poll .brand-bar{background:var(--c-sky);box-shadow:0 0 24px rgba(14,165,233,.4)}
+#strap.st-goal .brand-bar{background:var(--c-violet);box-shadow:0 0 24px rgba(168,85,247,.4)}
+#strap.st-note .brand-bar{background:var(--c-faint)}
+
+/* Chalk surface — content area */
+#strap .chalk-surface{flex:1;display:flex;align-items:center;gap:24px;padding:16px 28px;position:relative;min-width:0}
+#strap .stack{min-width:0;flex:1}
+#strap .smark{width:36px;height:36px;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+
+/* Kicker — chalk-written small caps, sage green */
 #strap .kick{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;
-  letter-spacing:.28em;color:var(--c-fg);margin-bottom:7px;transform:translateY(130%);transition:transform .22s ease}
-#strap.on .kick{transform:none;transition:transform .55s var(--expo) .08s}
-#strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent)}
-#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)}
-#strap.st-note .tick{background:var(--c-faint)}
-#strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.02em;line-height:1.1;
-  white-space:nowrap;transform:translateY(115%);transition:transform .26s ease}
-#strap .head.num-head{letter-spacing:-.03em;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
-#strap.on .head{transform:none;transition:transform .6s var(--expo) .16s}
-#strap.st-note .head{font-size:22px;color:var(--c-muted)}
-#strap .rule{display:block;height:2px;width:64px;background:var(--c-accent);margin-top:9px;
-  transform:scaleX(0);transform-origin:left;transition:transform .2s ease,background .3s}
-#strap.on .rule{transform:none;transition:transform .55s var(--expo) .3s}
+  letter-spacing:.28em;color:#8B9A8B;margin-bottom:6px;text-transform:uppercase}
+#strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent);transition:background .3s ease}
+#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)} #strap.st-note .tick{background:var(--c-faint)}
+
+/* Headline — bold geometric sans, white */
+#strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;line-height:1.15;
+  white-space:nowrap;color:#fff}
+#strap.st-note .head{font-size:21px;color:#D4DDD4}
+
+/* Rule — accent colored */
+#strap .rule{display:block;height:2px;width:56px;background:var(--c-accent);margin-top:8px;transition:background .3s}
 #strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
-#strap .sub{display:block;font-size:13px;font-weight:500;color:var(--c-muted);margin-top:10px;white-space:nowrap;line-height:1.4;letter-spacing:.01em;
-  transform:translateY(140%);transition:transform .22s ease}
-#strap.on .sub{transform:none;transition:transform .5s var(--expo) .34s}
-#strap .ladder{display:none;align-items:center;gap:10px;margin-top:11px;width:230px;opacity:0;transition:opacity .2s ease}
+
+/* Sub — off-white */
+#strap .sub{display:block;font-size:13px;font-weight:500;color:#D4DDD4;margin-top:8px;white-space:nowrap;line-height:1.4;letter-spacing:.01em}
+
+/* Ladder + Steps */
+#strap .ladder{display:none;align-items:center;gap:10px;margin-top:10px;width:220px}
 #strap .ladder.show{display:flex}
-#strap.on .ladder.show{opacity:1;transition:opacity .45s ease .42s}
 #strap .ll{font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.14em}
 #strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
 #strap .lbar{position:relative;flex:1;height:2px;background:linear-gradient(90deg,rgba(246,70,93,.6),rgba(255,255,255,.14) 50%,rgba(14,203,129,.6))}
 #strap .lbar i{position:absolute;top:50%;left:50%;width:9px;height:9px;border-radius:50%;background:#fff;
-  transform:translate(-50%,-50%);transition:left .8s var(--expo)}
-/* STEPS — segmented lesson progress, same fade-in pattern as ladder */
-#strap .steps{display:none;align-items:center;gap:6px;margin-top:11px;opacity:0;transition:opacity .2s ease}
+  transform:translate(-50%,-50%);transition:left .8s var(--expo);box-shadow:0 0 8px rgba(255,255,255,.4)}
+#strap .steps{display:none;align-items:center;gap:6px;margin-top:10px}
 #strap .steps.show{display:flex}
-#strap.on .steps.show{opacity:1;transition:opacity .45s ease .42s}
-#strap .step{position:relative;width:34px;height:3px;border-radius:2px;background:var(--c-border);overflow:hidden}
+#strap .step{position:relative;width:32px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
 #strap .step i{position:absolute;inset:0;background:var(--c-accent);transform:scaleX(0);transform-origin:left}
 #strap.on .step.done i{animation:stepfill .55s var(--expo) forwards}
 @keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-#strap .num{flex:none;margin-left:26px;text-align:left;opacity:0;transform:translateY(10px);transition:.22s ease}
-#strap.on .num{opacity:1;transform:none;transition:.5s var(--expo) .3s}
-#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:28px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em}
+
+/* Number block — right side */
+#strap .num{flex:none;text-align:left}
+#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em;color:#fff}
 #strap .num .n.up{color:var(--c-up)} #strap .num .n.dn{color:var(--c-down)}
-#strap .num .nl{font-family:var(--font-mono);font-size:9px;letter-spacing:.28em;color:var(--c-faint);margin-top:6px}
+#strap .num .nl{font-family:var(--font-mono);font-size:9px;letter-spacing:.28em;color:#8B9A8B;margin-top:6px}
 #strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:3px;letter-spacing:.02em}
 
 /* LIGHT + TEST SCENES (key V) */
@@ -220,22 +231,25 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 [V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[H] hide this</div>
 
 <div id="strap">
-  <div class="scrim"></div>
-  <div class="srow">
-    <svg class="smile smark" id="stSmile" viewBox="0 0 100 100">
-      <circle class="face" cx="50" cy="50" r="48"/>
-      <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-      <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
-    </svg>
-    <div class="stack">
-      <span class="mw"><span class="kick"><span class="tick"></span><span id="sKick"></span></span></span>
-      <span class="mw"><span class="head" id="sHead"></span></span>
-      <span class="rule"></span>
-      <span class="mw"><span class="sub" id="sSub"></span></span>
-      <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i></div><span class="ll tp">TP</span></div>
-      <div class="steps" id="sSteps"></div>
+  <div class="chalkboard">
+    <div class="brand-bar">
+      <svg class="smile smark" id="stSmile" viewBox="0 0 100 100">
+        <circle class="face" cx="50" cy="50" r="48"/>
+        <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+      </svg>
     </div>
-    <div class="num"><div class="n" id="sNum"></div><div class="nl" id="sNumLbl"></div></div>
+    <div class="chalk-surface">
+      <div class="stack">
+        <span class="kick"><span class="tick"></span><span id="sKick"></span></span>
+        <span class="head" id="sHead"></span>
+        <span class="rule"></span>
+        <span class="sub" id="sSub"></span>
+        <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i></div><span class="ll tp">TP</span></div>
+        <div class="steps" id="sSteps"></div>
+      </div>
+      <div class="num"><div class="n" id="sNum"></div><div class="nl" id="sNumLbl"></div></div>
+    </div>
   </div>
 </div>
 
