@@ -23,7 +23,8 @@ svg{display:block}
 body.overlay-mode .bg-grad{background:transparent}
 body.overlay-mode .market-bg{display:none}
 body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px rgba(255,255,255,.06),0 1px 3px rgba(0,0,0,.25)}
-body.overlay-mode #strap .scrim{background:linear-gradient(90deg,rgba(16,16,19,.92) 0%,rgba(16,16,19,.85) 70%,rgba(16,16,19,.6) 88%,rgba(16,16,19,0) 100%)}
+body.overlay-mode #strap .scrim{background:linear-gradient(180deg,rgba(20,20,24,.92) 0%,rgba(16,16,19,.9) 40%,rgba(14,14,17,.88) 100%),
+    linear-gradient(90deg,rgba(16,16,19,.92) 0%,rgba(16,16,19,.85) 70%,rgba(16,16,19,.6) 88%,rgba(16,16,19,0) 100%)}
 .market-bg{position:absolute;left:0;right:0;bottom:78px;height:42vh;min-height:260px;opacity:0;pointer-events:none;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 32%);mask-image:linear-gradient(180deg,transparent 0,#000 32%)}
 .market-bg svg{width:100%;height:100%}
@@ -130,10 +131,11 @@ body.tt-stealth .ddot{background:#1a1a1a}
 /* THE STRAP — proper card with solid panel, accent border, layered shadow. Sits flush on ticker (0px gap, broadcast-safe). */
 #strap{position:fixed;left:0;bottom:92px;z-index:45;pointer-events:none;padding-left:32px}
 #strap .scrim{position:absolute;left:0;bottom:0;min-width:760px;width:auto;max-width:760px;height:auto;min-height:130px;pointer-events:none;
-  background:linear-gradient(90deg,rgba(16,16,19,.96) 0%,rgba(16,16,19,.92) 70%,rgba(16,16,19,.72) 88%,rgba(16,16,19,0) 100%);
+  background:linear-gradient(180deg,rgba(20,20,24,.96) 0%,rgba(16,16,19,.96) 40%,rgba(14,14,17,.96) 100%),
+    linear-gradient(90deg,rgba(16,16,19,.96) 0%,rgba(16,16,19,.92) 70%,rgba(16,16,19,.72) 88%,rgba(16,16,19,0) 100%);
   border-left:3px solid var(--c-accent);
   border-radius:0 14px 14px 0;
-  box-shadow:0 1px 1px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 1px 1px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.45);
   backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
   -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent);
   opacity:0;transform:translateY(20px);transition:opacity .28s cubic-bezier(.34,1.56,.64,1),transform .32s cubic-bezier(.34,1.56,.64,1)}
