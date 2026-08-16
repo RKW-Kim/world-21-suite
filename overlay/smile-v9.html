@@ -35,7 +35,11 @@ svg{display:block}
 .smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
 .smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
 .smile.is-grin .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
+.smile.is-grin{animation:grinPop .6s var(--expo)}
+@keyframes grinPop{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.06) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
 .smile.is-frown .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
+.smile.is-frown{animation:frownDip .6s var(--expo)}
+@keyframes frownDip{0%{transform:scale(1) rotate(0)}40%{transform:scale(.97) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
 .smile.is-frown .eye{transform:scale(.85)}
 .smile.is-blink .eye{transform:scaleY(.08)}
 .smile.is-nod{animation:nod .7s var(--expo)}
@@ -44,6 +48,8 @@ svg{display:block}
 @keyframes cel{0%{transform:scale(1)}30%{transform:scale(1.09)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
 .smile.is-shake{animation:shake .5s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
+.smile.is-idle{animation:idle 3.2s ease-in-out infinite}
+@keyframes idle{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
 .goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
 
@@ -60,8 +66,8 @@ svg{display:block}
 .cap{display:flex;align-items:center;gap:11px;padding:0 22px;white-space:nowrap;
   font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.22em}
 .cap.left{background:var(--c-accent);color:var(--c-on-accent);z-index:6}
-.cells{flex:1;display:flex;align-items:stretch;min-width:0;z-index:6}
-.cell{flex:1;display:flex;flex-direction:column;justify-content:center;gap:7px;padding:0 18px;min-width:0;position:relative;
+.cells{flex:1;display:grid;grid-template-columns:repeat(6,1fr);align-items:stretch;min-width:0;z-index:6}
+.cell{display:flex;flex-direction:column;justify-content:center;gap:7px;padding:0 18px;min-width:0;position:relative;
   opacity:0;transform:translateY(10px);animation:cellin .7s var(--expo) forwards}
 .cell:nth-child(1){animation-delay:.5s}.cell:nth-child(2){animation-delay:.57s}.cell:nth-child(3){animation-delay:.64s}
 .cell:nth-child(4){animation-delay:.71s}.cell:nth-child(5){animation-delay:.78s}.cell:nth-child(6){animation-delay:.85s}
@@ -91,6 +97,7 @@ svg{display:block}
 /* WIRE SLOT — rotating 6th cell */
 .cell.wire .csym{color:var(--c-accent)}
 .cell.wire .wprog{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden}
+.cell.wire{background:linear-gradient(180deg,transparent 0%,rgba(255,193,7,.04) 100%)}
 .cell.wire .wprog i{display:block;height:100%;background:var(--c-accent);opacity:.55;transform-origin:left;animation:wprog var(--wire-dur,7s) linear forwards}
 @keyframes wprog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .cell.wire .wswap{overflow:hidden;display:block}
@@ -121,8 +128,8 @@ body.tt-stealth .ddot{background:#1a1a1a}
   box-shadow:0 1px 1px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.45);
   backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);
   -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent);
-  opacity:0;transition:opacity .45s var(--expo)}
-#strap.on .scrim{opacity:1}
+  opacity:0;transform:translateY(16px);transition:opacity .28s var(--expo),transform .28s var(--expo)}
+#strap.on .scrim{opacity:1;transform:translateY(0)}
 #strap.st-tp .scrim{border-left-color:var(--c-up)} #strap.st-sl .scrim{border-left-color:var(--c-down)} #strap.st-note .scrim{border-left-color:var(--c-faint)}
 #strap.st-lesson .scrim{border-left-color:var(--c-accent)} #strap.st-poll .scrim{border-left-color:var(--c-sky)} #strap.st-name .scrim{border-left-color:var(--c-accent)} #strap.st-goal .scrim{border-left-color:var(--c-violet)}
 #strap .srow{position:relative;display:flex;align-items:center;gap:18px}
@@ -144,7 +151,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
   transform:scaleX(0);transform-origin:left;transition:transform .2s ease,background .3s}
 #strap.on .rule{transform:none;transition:transform .55s var(--expo) .3s}
 #strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
-#strap .sub{display:block;font-size:13px;color:var(--c-muted);margin-top:10px;white-space:nowrap;line-height:1.4;
+#strap .sub{display:block;font-size:13px;font-weight:500;color:var(--c-muted);margin-top:10px;white-space:nowrap;line-height:1.4;letter-spacing:.01em;
   transform:translateY(140%);transition:transform .22s ease}
 #strap.on .sub{transform:none;transition:transform .5s var(--expo) .34s}
 #strap .ladder{display:none;align-items:center;gap:10px;margin-top:11px;width:230px;opacity:0;transition:opacity .2s ease}
@@ -329,7 +336,8 @@ let goal=640;const GOAL_MAX=1000;
 Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
 const capSmile=$('capSmile');
-function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
+capSmile.classList.add('is-idle');
+function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake','is-idle');void capSmile.getBoundingClientRect();capSmile.classList.add(c);setTimeout(()=>{if(!capSmile.classList.contains('is-nod')&&!capSmile.classList.contains('is-celebrate')&&!capSmile.classList.contains('is-shake'))capSmile.classList.add('is-idle')},2500)}
 function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
 function mouth(c){capSmile.classList.remove('is-grin','is-frown');if(c)capSmile.classList.add(c)}
