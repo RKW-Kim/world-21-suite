@@ -125,36 +125,71 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
-/* THE MAGNETIC SMILE — single smile lives in ticker, detaches + card unfolds from behind it. Full redesign per GLM 5V. */
-#strap{position:fixed;left:24px;bottom:80px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
-/* The smile anchor — single DOM element that travels between ticker and card */
-#magnetic-smile{position:fixed;left:28px;bottom:30px;width:40px;height:40px;z-index:50;
-  transition:width .5s cubic-bezier(.68,-.55,.265,1.55),height .5s cubic-bezier(.68,-.55,.265,1.55),
-    bottom .5s cubic-bezier(.68,-.55,.265,1.55),left .5s cubic-bezier(.68,-.55,.265,1.55),
-    filter .3s ease;
+/* THE RAINDROP SMILE — smile lives IN the ticker (embedded in a well), detaches with raindrop physics (bulge → stretch → pinch → float), card unfolds behind it. Text slides to fill the gap. */
+#strap{position:fixed;left:24px;bottom:160px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
+
+/* Smile well — the socket in the ticker where the smile lives */
+.smile-slot{width:48px;flex:none;height:100%;display:flex;align-items:center;justify-content:center;position:relative;
+  transition:width .5s cubic-bezier(.34,1.56,.64,1),margin .5s cubic-bezier(.34,1.56,.64,1);margin-right:4px}
+.smile-slot.departed{width:0;margin-right:0}
+.smile-well{width:40px;height:40px;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.35),rgba(0,0,0,.15));
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.4),inset 0 -1px 2px rgba(255,255,255,.05);
+  transition:opacity .3s ease,transform .3s ease}
+.smile-slot.departed .smile-well{opacity:.3;transform:scale(.8)}
+
+/* The smile — position:fixed, travels between well and card */
+#raindropSmile{position:fixed;left:36px;bottom:38px;width:40px;height:40px;z-index:50;
+  transform-origin:center bottom;
+  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
+    bottom .5s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
+    filter .3s ease,transform .15s ease;
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 6px 12px rgba(0,0,0,.2))}
-#magnetic-smile.active{width:56px;height:56px;bottom:88px;left:18px}
-#magnetic-smile svg{width:100%;height:100%}
-#magnetic-smile .face{fill:var(--c-accent);transition:fill .3s ease}
-#magnetic-smile.st-tp .face{fill:var(--c-up)}
-#magnetic-smile.st-sl .face{fill:var(--c-down)}
-#magnetic-smile.st-poll .face{fill:var(--c-sky)}
-#magnetic-smile.st-goal .face{fill:var(--c-violet)}
-#magnetic-smile.st-note .face{fill:#D97706}
+/* Phase 1: bulging (still in well, stretching up) */
+#raindropSmile.bulging{transform:scaleY(1.12) translateY(-3px);
+  transition:transform .2s ease-out}
+/* Phase 2: lifting (stretching upward toward card) */
+#raindropSmile.lifting{width:52px;height:52px;bottom:170px;left:22px;
+  transform:scaleY(1.25);
+  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
+    bottom .5s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
+    transform .4s cubic-bezier(.34,1.56,.64,1)}
+/* Phase 3: settled at card (snapped back to 1:1, same position as lifting) */
+#raindropSmile.settled{width:52px;height:52px;bottom:170px;left:22px;transform:scaleY(1);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+/* Phase 4: falling back (returning to well) */
+#raindropSmile.falling{width:40px;height:40px;bottom:38px;left:36px;
+  transform:scaleY(1.15);
+  transition:width .4s ease,height .4s ease,bottom .4s cubic-bezier(.5,0,.75,0),left .4s ease,transform .3s ease}
+/* Phase 5: impact (settled back in well, slight squish) */
+#raindropSmile.impact{transform:scaleY(.92) scaleX(1.05);
+  transition:transform .15s ease-out}
+#raindropSmile.resting{transform:scaleY(1);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
 
-/* Umbilical cord — golden line connecting smile to its origin in the ticker */
-#umbilical{position:fixed;left:47px;bottom:50px;width:2px;height:0;z-index:49;
-  background:linear-gradient(180deg,rgba(255,193,7,.6),rgba(255,193,7,0));
-  transition:height .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;opacity:0}
-#umbilical.visible{height:60px;opacity:1;transition:height .3s ease,opacity .2s ease}
+#raindropSmile svg{width:100%;height:100%;display:block}
+#raindropSmile .face{fill:var(--c-accent);transition:fill .3s ease}
+#raindropSmile.st-tp .face{fill:var(--c-up)}
+#raindropSmile.st-sl .face{fill:var(--c-down)}
+#raindropSmile.st-poll .face{fill:var(--c-sky)}
+#raindropSmile.st-goal .face{fill:var(--c-violet)}
+#raindropSmile.st-note .face{fill:#D97706}
 
-/* Card panel — unfolds horizontally from behind the smile with elastic spring + glow */
-#strap .card-panel{position:relative;margin-left:60px;min-width:0;max-width:520px;width:auto;
+/* Ripples on return impact */
+.ripple{position:fixed;left:56px;bottom:58px;width:40px;height:40px;border-radius:50%;
+  border:2px solid rgba(255,193,7,.4);z-index:48;pointer-events:none;
+  transform:scale(0);opacity:0}
+.ripple.fire{animation:rippleOut .6s ease-out forwards}
+.ripple.fire2{animation:rippleOut .8s ease-out .1s forwards}
+@keyframes rippleOut{0%{transform:scale(0);opacity:.5}100%{transform:scale(3);opacity:0}}
+
+/* Card panel — unfolds horizontally from behind the smile */
+#strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
   background:rgba(18,18,22,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
   border-radius:0 16px 16px 0;overflow:hidden;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 80px rgba(255,193,7,.15);
   transform:scaleX(0) translateY(-4px);transform-origin:left;opacity:0;
-  transition:transform .6s cubic-bezier(.68,-.55,.265,1.55),opacity .3s ease,box-shadow .4s ease}
+  transition:transform .6s cubic-bezier(.34,1.56,.64,1),opacity .3s ease,box-shadow .4s ease}
 #strap.on .card-panel{transform:scaleX(1) translateY(0);opacity:1;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 120px rgba(255,193,7,.2)}
 /* Left accent edge — color-coded per state */
@@ -241,15 +276,19 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 [0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
 [V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[H] hide this</div>
 
-<div id="umbilical"></div>
-<svg class="smile" id="magnetic-smile" viewBox="0 0 100 100">
-  <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
-    <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
-  </radialGradient></defs>
-  <circle class="face face-grad" cx="50" cy="50" r="48"/>
-  <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-  <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
-</svg>
+<div id="ripple1" class="ripple"></div>
+<div id="ripple2" class="ripple"></div>
+
+<div id="raindropSmile">
+  <svg class="smile" viewBox="0 0 100 100">
+    <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
+    </radialGradient></defs>
+    <circle class="face face-grad" cx="50" cy="50" r="48"/>
+    <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+    <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
+  </svg>
+</div>
 
 <div id="strap">
   <div class="card-panel">
@@ -270,7 +309,8 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 <div class="ticker" id="ticker">
   <div class="tline up"></div><div class="tline dn"></div>
   <div class="cap left">
-    SMILE · LIVE
+    <div class="smile-slot" id="smileSlot"><div class="smile-well"></div></div>
+    <span class="cap-text">SMILE · LIVE</span>
   </div>
   <div class="cells" id="cells">
     <div class="cell" id="cell0"><div class="ctop"><span class="csym">EUR/USD</span><span class="cchg up" id="chg0"></span></div><span class="cval" id="val0"></span></div>
@@ -363,7 +403,7 @@ Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
 let goal=640;const GOAL_MAX=1000;
 Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
-const capSmile=$('magnetic-smile');
+const capSmile=$('raindropSmile');
 function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
 function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
@@ -389,10 +429,10 @@ Power.every(()=>{const now=new Date();
 
 /* strap — V7 choreography verbatim + steps row for Chart School */
 const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sSub=$('sSub'),sNum=$('sNum'),sNumLbl=$('sNumLbl'),
-  magneticSmile=$('magnetic-smile'),umbilical=$('umbilical'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+  raindropSmile=$('raindropSmile'),smileSlot=$('smileSlot'),ripple1=$('ripple1'),ripple2=$('ripple2'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
 sSteps.innerHTML='<span class="step"><i></i></span>'.repeat(4);
 let stTimer=null,countRaf=null,stBusy=false;
-function stMood(c){magneticSmile.classList.remove('is-nod','is-celebrate','is-shake');void magneticSmile.getBoundingClientRect();magneticSmile.classList.add(c)}
+function stMood(c){raindropSmile.classList.remove('is-nod','is-celebrate','is-shake');void raindropSmile.getBoundingClientRect();raindropSmile.classList.add(c)}
 function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
   (function step(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
     sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
@@ -400,11 +440,19 @@ function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
   strap.classList.remove('on');void strap.offsetWidth;
   strap.className='on st-'+cls;
-  // Magnetic smile: travel from ticker to card position + show umbilical
-  magneticSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note');
-  magneticSmile.classList.add('st-'+cls);
-  magneticSmile.classList.add('active');
-  umbilical.classList.add('visible');
+  // Raindrop exit: bulge → stretch → pinch → settle
+  raindropSmile.classList.remove('bulging','lifting','settled','falling','impact','resting','st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+  raindropSmile.classList.add('st-'+cls);
+  void raindropSmile.offsetWidth;
+  // Phase 1: bulge (still in well, stretching up)
+  raindropSmile.classList.add('bulging');
+  // Collapse smile slot — text slides to fill the gap
+  smileSlot.classList.add('departed');
+  // Phase 2: lift (after 200ms — stretch up toward card)
+  setTimeout(()=>{raindropSmile.classList.remove('bulging');raindropSmile.classList.add('lifting');},200);
+  // Phase 3: settle (after 600ms — snap to 1:1 at card position, unfold card)
+  setTimeout(()=>{raindropSmile.classList.remove('lifting');raindropSmile.classList.add('settled');},600);
+  // Phase 4: card content staggers in (after 700ms)
   sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
   sLadder.classList.toggle('show',!!opt.ladder);
   if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',450);
@@ -417,9 +465,25 @@ function showStrap(cls,k,h,s,opt){
   else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
 }
-function hideStrap(){clearTimeout(stTimer);strap.classList.remove('on');
-  magneticSmile.classList.remove('active','st-tp','st-sl','st-poll','st-goal','st-note');
-  umbilical.classList.remove('visible');
+function hideStrap(){
+  clearTimeout(stTimer);strap.classList.remove('on');
+  // Raindrop return: fall → impact → ripple → settle → text slides back
+  raindropSmile.classList.remove('settled','st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+  raindropSmile.classList.add('falling');
+  // Phase: impact (after 400ms — smile hits the well)
+  setTimeout(()=>{
+    raindropSmile.classList.remove('falling');
+    raindropSmile.classList.add('impact');
+    // Fire ripples
+    ripple1.classList.remove('fire','fire2');ripple2.classList.remove('fire','fire2');
+    void ripple1.offsetWidth;void ripple2.offsetWidth;
+    ripple1.classList.add('fire');ripple2.classList.add('fire2');
+    // Restore smile slot — text slides to make room
+    smileSlot.classList.remove('departed');
+    // Settle back to resting (after 150ms — squish recovers)
+    setTimeout(()=>{raindropSmile.classList.remove('impact');raindropSmile.classList.add('resting');
+      setTimeout(()=>{raindropSmile.classList.remove('resting');},250);},150);
+  },400);
   mouth(null);stBusy=false}
 const WIRE=[
   {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
