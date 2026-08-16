@@ -54,8 +54,6 @@ body.overlay-mode #strap .scrim{background:linear-gradient(180deg,rgba(20,20,24,
 @keyframes cel{0%{transform:scale(1)}30%{transform:scale(1.09)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
 .smile.is-shake{animation:shake .5s ease}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
-.smile.is-idle{animation:idle 3.2s ease-in-out infinite}
-@keyframes idle{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
 .goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
 
@@ -348,8 +346,7 @@ let goal=640;const GOAL_MAX=1000;
 Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
 const capSmile=$('capSmile');
-capSmile.classList.add('is-idle');
-function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake','is-idle');void capSmile.getBoundingClientRect();capSmile.classList.add(c);setTimeout(()=>{if(!capSmile.classList.contains('is-nod')&&!capSmile.classList.contains('is-celebrate')&&!capSmile.classList.contains('is-shake'))capSmile.classList.add('is-idle')},2500)}
+function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
 function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
 function mouth(c){capSmile.classList.remove('is-grin','is-frown');if(c)capSmile.classList.add(c)}
