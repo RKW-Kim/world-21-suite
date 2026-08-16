@@ -51,8 +51,8 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
   animation:tickin .9s var(--expo) .15s backwards;opacity:.92}
 @keyframes tickin{from{transform:translateY(90px);opacity:0}to{transform:none;opacity:.92}}
 /* Idle breathing — ticker never looks frozen */
-.ticker.done{animation:tickin .9s var(--expo) .15s backwards,idleBreathe 4s ease-in-out 1s infinite}
-@keyframes idleBreathe{0%,100%{opacity:.92}50%{opacity:.96}}
+.ticker.done{animation:tickin .9s var(--expo) .15s backwards,idleBreathe 5.2s cubic-bezier(.4,0,.6,1) 1s infinite}
+@keyframes idleBreathe{0%,100%{opacity:.92}45%{opacity:.94}55%{opacity:.96}}
 .tline{position:absolute;top:0;left:0;right:0;height:2px;z-index:7;transform:scaleX(0);transform-origin:left;opacity:0;pointer-events:none}
 .tline.up{background:var(--c-up)} .tline.dn{background:var(--c-down)}
 .ticker.alert-up .tline.up,.ticker.alert-dn .tline.dn{animation:linedraw 2.6s var(--expo) forwards}
@@ -68,10 +68,10 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 @keyframes cellin{to{opacity:1;transform:none}}
 .cell.done{animation:none;opacity:1;transform:none}
 .cell + .cell{border-left:1px solid rgba(255,255,255,.045)}
-.cell.done.fup{animation:fup 1.8s cubic-bezier(.16,1,.3,1) forwards}
-.cell.done.fdn{animation:fdn 1.8s cubic-bezier(.16,1,.3,1) forwards}
-@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}20%{box-shadow:inset 0 0 0 1px rgba(14,203,129,.2),inset 0 0 32px rgba(14,203,129,.18)}100%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}}
-@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}20%{box-shadow:inset 0 0 0 1px rgba(246,70,93,.2),inset 0 0 32px rgba(246,70,93,.18)}100%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}}
+.cell.done.fup{animation:fup .7s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn{animation:fdn .7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(46,168,118,0),inset 0 0 24px rgba(46,168,118,0)}18%{box-shadow:inset 0 0 0 1px rgba(46,168,118,.2),inset 0 0 32px rgba(46,168,118,.18)}55%{box-shadow:inset 0 0 0 1px rgba(46,168,118,.1),inset 0 0 24px rgba(46,168,118,.08)}100%{box-shadow:inset 0 0 0 1px rgba(46,168,118,0),inset 0 0 24px rgba(46,168,118,0)}}
+@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(217,83,79,0),inset 0 0 24px rgba(217,83,79,0)}18%{box-shadow:inset 0 0 0 1px rgba(217,83,79,.2),inset 0 0 32px rgba(217,83,79,.18)}55%{box-shadow:inset 0 0 0 1px rgba(217,83,79,.1),inset 0 0 24px rgba(217,83,79,.08)}100%{box-shadow:inset 0 0 0 1px rgba(217,83,79,0),inset 0 0 24px rgba(217,83,79,0)}}
 .ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .csym{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--c-faint)}
 .cchg{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;font-weight:700;border-radius:5px;padding:2px 8px;letter-spacing:.08em;min-width:52px}
@@ -83,10 +83,10 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 .cval.roll{animation:roll .5s var(--expo)}
 @keyframes roll{0%{transform:translateY(45%);opacity:0}100%{transform:none;opacity:1}}
 /* Subtle price-text color pulse on tick (no roll, no background flash) — sits under the text */
-.cell.done.fup .cval{animation:pulseUp 1.8s cubic-bezier(.16,1,.3,1) forwards}
-.cell.done.fdn .cval{animation:pulseDn 1.8s cubic-bezier(.16,1,.3,1) forwards}
-@keyframes pulseUp{0%{color:var(--c-fg)}20%{color:var(--c-up)}60%{color:var(--c-up)}100%{color:var(--c-fg)}}
-@keyframes pulseDn{0%{color:var(--c-fg)}20%{color:var(--c-down)}60%{color:var(--c-down)}100%{color:var(--c-fg)}}
+.cell.done.fup .cval{animation:pulseUp .7s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn .cval{animation:pulseDn .7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes pulseUp{0%{color:var(--c-fg)}18%{color:var(--c-up)}55%{color:var(--c-up)}100%{color:var(--c-fg)}}
+@keyframes pulseDn{0%{color:var(--c-fg)}18%{color:var(--c-down)}55%{color:var(--c-down)}100%{color:var(--c-fg)}}
 
 /* WIRE SLOT — rotating 6th cell */
 .cell.wire .csym{color:var(--c-accent)}
@@ -104,8 +104,8 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 .dpill{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.05);
   border:1px solid var(--c-border);font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--c-muted);
   white-space:nowrap;font-variant-numeric:tabular-nums;transition:all .35s var(--expo)}
-.ddot{width:6px;height:6px;border-radius:50%;background:var(--c-up);flex:none}
-@keyframes dpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.ddot{width:6px;height:6px;border-radius:50%;background:var(--c-up);flex:none;animation:dpulse 2.5s ease-in-out infinite}
+@keyframes dpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .dsep{opacity:.4}
 .dsub{font-size:8px;color:var(--c-faint)}
 body.tt-tape .ddot{background:var(--c-accent)}
@@ -116,19 +116,20 @@ body.tt-stealth .ddot{background:#1a1a1a}
 /* THE PILL — one unified element. Smile circle is the left cap, card extends right. When no card, smile is a standalone button. */
 #strap{position:fixed;left:24px;bottom:109px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0;
   transition:left .6s cubic-bezier(.16,1,.3,1),bottom .6s cubic-bezier(.16,1,.3,1),top .6s cubic-bezier(.16,1,.3,1),right .6s cubic-bezier(.16,1,.3,1)}
-/* Smile cap — the permanent left end of the pill. When alone, looks like a button. When card extends, becomes the pill's left cap. */
+/* Smile cap — permanent left end. Premium shadow stack with warm ambient. */
 #strap .smile-cap{width:86px;height:86px;flex:none;border-radius:50%;
-  background:rgba(14,14,16,.85);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
+  background:rgba(16,13,10,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
   border:1px solid rgba(255,255,255,.1);
-  box-shadow:0 8px 32px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
   display:flex;align-items:center;justify-content:center;position:relative;z-index:2;
-  transition:box-shadow .4s ease,border-radius .4s ease}
+  transition:box-shadow .5s var(--expo),border-radius .5s cubic-bezier(.34,1.56,.64,1)}
 /* When card is active, smile-cap right side flattens to merge seamlessly with card */
 #strap.on .smile-cap{border-radius:50% 0 0 50%}
-#strap.st-tp .smile-cap{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 28px rgba(14,203,129,.3),inset 0 1px 0 rgba(255,255,255,.08)}
-#strap.st-sl .smile-cap{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 28px rgba(246,70,93,.3),inset 0 1px 0 rgba(255,255,255,.08)}
-#strap.st-poll .smile-cap{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 28px rgba(14,165,233,.3),inset 0 1px 0 rgba(255,255,255,.08)}
-#strap.st-goal .smile-cap{box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 28px rgba(168,85,247,.3),inset 0 1px 0 rgba(255,255,255,.08)}
+/* State glow on smile cap */
+#strap.st-tp .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(46,168,118,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
+#strap.st-sl .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(217,83,79,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
+#strap.st-poll .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(14,165,233,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
+#strap.st-goal .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(168,85,247,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 #strap .smile-cap svg{width:58px;height:58px;display:block;transition:transform .4s cubic-bezier(.16,1,.3,1);transform-origin:center}
 #strap.on .smile-cap svg{transform:translateX(-4px)}
 #strap .smile-cap .face{fill:var(--c-accent);transition:fill .3s ease}
@@ -146,14 +147,14 @@ body.tt-stealth .ddot{background:#1a1a1a}
 /* Ticker slot — removed (smile lives in the pill now) */
 .smile-slot{display:none}.smile-well{display:none}
 
-/* CARD PANEL — extends right from behind the smile cap. Pill shape: flat left, rounded right. */
+/* CARD PANEL — extends right from smile cap. Pill shape. Premium 6-layer shadow stack. */
 #strap .card-panel{position:relative;margin-left:-10px;height:86px;width:fit-content;min-width:300px;max-width:560px;
-  background:rgba(14,14,16,.85);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
+  background:rgba(16,13,10,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
   border:1px solid rgba(255,255,255,.08);border-left:none;border-radius:0 43px 43px 0;overflow:hidden;will-change:transform;
-  box-shadow:0 8px 32px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06);
-  transform:scaleX(0);transform-origin:left;opacity:0;
-  transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .3s ease}
-#strap.on .card-panel{transform:scaleX(1);opacity:1}
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04),inset 0 -1px 0 rgba(0,0,0,.2);
+  transform:translateY(20px) scale(.96);opacity:0;filter:blur(4px);
+  transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s ease,filter .3s ease}
+#strap.on .card-panel{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
 /* Inner content — padded to clear pill curves. Left padding gives space from smile. */
 #strap .card-grid{display:flex;flex-direction:column;justify-content:center;height:86px;padding:0 36px 0 20px;gap:6px;transition:opacity .15s ease}
 #strap.swapping .card-grid{opacity:0}
