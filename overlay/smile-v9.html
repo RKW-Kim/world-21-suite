@@ -39,20 +39,6 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 .smile .face-grad{fill:url(#smileGrad)}
 .smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
 .smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
-.smile.is-grin .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
-.smile.is-grin{animation:grinPop .6s var(--expo)}
-@keyframes grinPop{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.06) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
-.smile.is-frown .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
-.smile.is-frown{animation:frownDip .6s var(--expo)}
-@keyframes frownDip{0%{transform:scale(1) rotate(0)}40%{transform:scale(.97) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
-.smile.is-frown .eye{transform:scale(.85)}
-.smile.is-blink .eye{transform:scaleY(.08)}
-.smile.is-nod{animation:nod .7s var(--expo)}
-@keyframes nod{0%,100%{transform:rotate(0)}30%{transform:rotate(7deg) translateY(1px)}60%{transform:rotate(-3deg)}}
-.smile.is-celebrate{animation:cel .9s var(--expo)}
-@keyframes cel{0%{transform:scale(1)}30%{transform:scale(1.09)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
-.smile.is-shake{animation:shake .5s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
 .goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
 
@@ -125,58 +111,46 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
-/* THE RAINDROP SMILE — smile lives IN the ticker (embedded in a well), detaches with raindrop physics (bulge → stretch → pinch → float), card unfolds behind it. Text slides to fill the gap. */
-#strap{position:fixed;left:24px;bottom:160px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
+/* THE SINGLE SMILE — one entity that smoothly slides between positions (ticker → card → watermark). Like a product demo cursor. */
+#theSmile{position:fixed;left:0;top:0;width:40px;height:40px;z-index:50;
+  will-change:transform;
+  transition:transform .6s cubic-bezier(.16,1,.3,1);
+  transform:translate3d(36px,1002px,0)}
+#theSmile .smile-svg{width:100%;height:100%;display:block;
+  will-change:transform;
+  transition:transform .6s cubic-bezier(.16,1,.3,1);
+  transform-origin:0 0;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+#theSmile .smile-svg .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
+#theSmile .smile-svg .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
+#theSmile .face{fill:var(--c-accent);transition:fill .3s ease}
+#theSmile.is-grin .smile-svg .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
+#theSmile.is-frown .smile-svg .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
+#theSmile.is-frown .smile-svg .eye{transform:scale(.85)}
+#theSmile.is-blink .smile-svg .eye{transform:scaleY(.08)}
+#theSmile.st-tp .face{fill:var(--c-up)}
+#theSmile.st-sl .face{fill:var(--c-down)}
+#theSmile.st-poll .face{fill:var(--c-sky)}
+#theSmile.st-goal .face{fill:var(--c-violet)}
+#theSmile.st-note .face{fill:#D97706}
+#theSmile .smile-info{position:absolute;left:100%;top:50%;transform:translateY(-50%);
+  margin-left:12px;opacity:0;transition:opacity .4s ease .2s;white-space:nowrap;pointer-events:none;
+  display:flex;flex-direction:column;gap:1px}
+#theSmile.show-info .smile-info{opacity:1}
+#theSmile.label-left .smile-info{left:auto;right:100%;margin-left:0;margin-right:12px}
+#theSmile .smile-info-label{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--c-faint);text-transform:uppercase}
+#theSmile .smile-info-value{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--c-fg);letter-spacing:-.01em}
 
-/* Smile well — the socket in the ticker where the smile lives. No box-shadow (was creating black artifact). */
+#strap{position:fixed;left:24px;bottom:160px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
 .smile-slot{width:48px;flex:none;height:100%;display:flex;align-items:center;justify-content:center;position:relative;
-  transition:width .4s cubic-bezier(.16,1,.3,1),margin .4s cubic-bezier(.16,1,.3,1);margin-right:4px}
+  transition:width .4s cubic-bezier(.16,1,.3,1),margin .4s cubic-bezier(.16,1,.3,1);margin-right:4px;overflow:hidden}
 .smile-slot.departed{width:0;margin-right:0}
 .smile-well{width:40px;height:40px;border-radius:50%;
   background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.4),rgba(0,0,0,.2));
   transition:opacity .3s ease,transform .3s ease}
-.smile-slot.departed .smile-well{opacity:.25;transform:scale(.7)}
+.smile-slot.departed .smile-well{opacity:.2;transform:scale(.6)}
 
-/* The smile — position:fixed at REST position. ALL motion via transform (translate+scale only — zero layout reflow, GPU composited). */
-#raindropSmile{position:fixed;left:36px;bottom:38px;width:40px;height:40px;z-index:50;
-  transform-origin:center bottom;will-change:transform;
-  transition:transform .45s cubic-bezier(.16,1,.3,1),filter .3s ease;
-  filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
-/* Phase 1: bulging (still in well, stretching up — anticipation) */
-#raindropSmile.bulging{transform:translateY(-4px) scaleY(1.15);
-  transition:transform .2s cubic-bezier(.16,1,.3,1)}
-/* Phase 2: lifting (travel to card position + grow + stretch — all in ONE transform) */
-#raindropSmile.lifting{transform:translate(-14px,-132px) scale(1.3,1.56);
-  transition:transform .45s cubic-bezier(.16,1,.3,1)}
-/* Phase 3: settled at card (drop the Y stretch, keep position+scale) */
-#raindropSmile.settled{transform:translate(-14px,-132px) scale(1.3);
-  transition:transform .25s cubic-bezier(.16,1,.3,1)}
-/* Phase 4: falling back (return to rest + stretch down) */
-#raindropSmile.falling{transform:translate(0,0) scale(1,1.18);
-  transition:transform .4s cubic-bezier(.55,.085,.68,.53)}
-/* Phase 5: impact (squish on landing) */
-#raindropSmile.impact{transform:scale(1.08,0.88);
-  transition:transform .12s ease-out}
-#raindropSmile.resting{transform:scale(1);
-  transition:transform .25s cubic-bezier(.16,1,.3,1)}
-
-#raindropSmile svg{width:100%;height:100%;display:block}
-#raindropSmile .face{fill:var(--c-accent);transition:fill .3s ease}
-#raindropSmile.st-tp .face{fill:var(--c-up)}
-#raindropSmile.st-sl .face{fill:var(--c-down)}
-#raindropSmile.st-poll .face{fill:var(--c-sky)}
-#raindropSmile.st-goal .face{fill:var(--c-violet)}
-#raindropSmile.st-note .face{fill:#D97706}
-
-/* Ripples on return impact */
-.ripple{position:fixed;left:56px;bottom:58px;width:40px;height:40px;border-radius:50%;
-  border:2px solid rgba(255,193,7,.4);z-index:48;pointer-events:none;
-  transform:scale(0);opacity:0}
-.ripple.fire{animation:rippleOut .6s ease-out forwards}
-.ripple.fire2{animation:rippleOut .8s ease-out .1s forwards}
-@keyframes rippleOut{0%{transform:scale(0);opacity:.5}100%{transform:scale(3);opacity:0}}
-
-/* Card panel — unfolds horizontally from behind the smile. Reduced backdrop blur (20px→8px) for GPU performance. */
+/* Card panel — unfolds horizontally. Reduced backdrop blur for GPU performance. */
 #strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
   background:rgba(18,18,22,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   border-radius:0 16px 16px 0;overflow:hidden;will-change:transform;
@@ -237,19 +211,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap .num .nl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.28em;color:var(--c-faint);margin-top:5px}
 #strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:2px}
 
-/* Floating smile watermark — appears in a corner, can hold host name or session info */
-#floatSmile{position:fixed;top:24px;right:24px;z-index:44;display:flex;align-items:center;gap:12px;
-  opacity:0;transform:translateY(-10px);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);
-  pointer-events:none}
-#floatSmile.visible{opacity:1;transform:translateY(0)}
-#floatSmile .float-smile-icon{width:28px;height:28px;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
-#floatSmile .float-info{display:flex;flex-direction:column;gap:2px}
-#floatSmile .float-label{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--c-faint);text-transform:uppercase}
-#floatSmile .float-value{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--c-fg);letter-spacing:-.01em}
-#floatSmile.pos-tl{top:24px;left:24px;right:auto}
-#floatSmile.pos-tr{top:24px;right:24px;left:auto}
-#floatSmile.pos-bl{bottom:92px;left:24px;top:auto}
-#floatSmile.pos-br{bottom:92px;right:24px;top:auto;left:auto}
+/* Floating smile watermark — REMOVED, merged into #theSmile */
 
 /* LIGHT + TEST SCENES (key V) */
 body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
@@ -284,23 +246,8 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 [0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
 [V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[M] move smile &nbsp;[H] hide this</div>
 
-<div id="floatSmile" class="pos-tr">
-  <svg class="smile float-smile-icon" viewBox="0 0 100 100">
-    <circle class="face" cx="50" cy="50" r="48"/>
-    <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-    <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
-  </svg>
-  <div class="float-info">
-    <span class="float-label" id="floatLabel">HOST</span>
-    <span class="float-value" id="floatValue">Mwangi</span>
-  </div>
-</div>
-
-<div id="ripple1" class="ripple"></div>
-<div id="ripple2" class="ripple"></div>
-
-<div id="raindropSmile">
-  <svg class="smile" viewBox="0 0 100 100">
+<div id="theSmile">
+  <svg class="smile smile-svg" viewBox="0 0 100 100">
     <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
     </radialGradient></defs>
@@ -308,6 +255,10 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
     <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
     <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
   </svg>
+  <div class="smile-info">
+    <span class="smile-info-label" id="smileInfoLabel">HOST</span>
+    <span class="smile-info-value" id="smileInfoValue">Mwangi</span>
+  </div>
 </div>
 
 <div id="strap">
@@ -423,7 +374,7 @@ Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
 let goal=640;const GOAL_MAX=1000;
 Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
   if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
-const capSmile=$('raindropSmile');
+const capSmile=$('theSmile');
 function mood(c){capSmile.classList.remove('is-nod','is-celebrate','is-shake');void capSmile.getBoundingClientRect();capSmile.classList.add(c)}
 function blink(){capSmile.classList.add('is-blink');setTimeout(()=>capSmile.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
@@ -449,63 +400,81 @@ Power.every(()=>{const now=new Date();
 
 /* strap — V7 choreography verbatim + steps row for Chart School */
 const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sSub=$('sSub'),sNum=$('sNum'),sNumLbl=$('sNumLbl'),
-  raindropSmile=$('raindropSmile'),smileSlot=$('smileSlot'),ripple1=$('ripple1'),ripple2=$('ripple2'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+  theSmile=$('theSmile'),smileSvg=theSmile.querySelector('.smile-svg'),smileSlot=$('smileSlot'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+
+/* SMILE POSITION SYSTEM — one entity, smoothly slides between positions. Like a product demo cursor. */
+const SMILE_HOMES=['ticker','top-right','top-left','bottom-right','bottom-left'];
+let smileHomeIx=0; // default: ticker
+let smileAtCard=false;
+// Positions are translate3d values from top-left (base is left:0,top:0)
+const SMILE_POS={
+  ticker:{x:36,y:1002,scale:1,showInfo:false,labelLeft:false,slotDeparted:false},
+  card:{x:22,y:868,scale:1.3,showInfo:false,labelLeft:false,slotDeparted:true},
+  'top-right':{x:1872,y:24,scale:0.7,showInfo:true,labelLeft:true,slotDeparted:true},
+  'top-left':{x:24,y:24,scale:0.7,showInfo:true,labelLeft:false,slotDeparted:true},
+  'bottom-right':{x:1872,y:972,scale:0.7,showInfo:true,labelLeft:true,slotDeparted:true},
+  'bottom-left':{x:24,y:972,scale:0.7,showInfo:true,labelLeft:false,slotDeparted:true}
+};
+function moveSmileTo(posKey){
+  const p=SMILE_POS[posKey];if(!p)return;
+  theSmile.style.transform='translate3d('+p.x+'px,'+p.y+'px,0)';
+  smileSvg.style.transform='scale('+p.scale+')';
+  theSmile.classList.toggle('show-info',p.showInfo);
+  theSmile.classList.toggle('label-left',p.labelLeft);
+  // Only collapse the slot if smile's HOME is ticker and it left for card
+  const home=SMILE_HOMES[smileHomeIx];
+  if(home==='ticker'&&posKey==='card')smileSlot.classList.add('departed');
+  else if(home==='ticker'&&posKey==='ticker')smileSlot.classList.remove('departed');
+  else if(home!=='ticker')smileSlot.classList.add('departed'); // corner homes = slot always collapsed
+}
+function moveSmileHome(){moveSmileTo(SMILE_HOMES[smileHomeIx]);smileAtCard=false}
+function moveSmileToCard(){moveSmileTo('card');smileAtCard=true}
+function cycleSmileHome(){
+  smileHomeIx=(smileHomeIx+1)%SMILE_HOMES.length;
+  if(!smileAtCard)moveSmileHome(); // only move if not at card
+}
+// Read ?home= from URL
+try{const p=new URLSearchParams(location.search);if(p.has('home')){const h=p.get('home');const hi=SMILE_HOMES.indexOf(h);if(hi>=0)smileHomeIx=hi;}}catch(e){}
+moveSmileHome();
 sSteps.innerHTML='<span class="step"><i></i></span>'.repeat(4);
 let stTimer=null,countRaf=null,stBusy=false;
-function stMood(c){raindropSmile.classList.remove('is-nod','is-celebrate','is-shake');void raindropSmile.getBoundingClientRect();raindropSmile.classList.add(c)}
+function stMood(c){theSmile.classList.remove('is-nod','is-celebrate','is-shake');void theSmile.getBoundingClientRect();theSmile.classList.add(c)}
 function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
   (function step(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
     sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
 function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
   const wasOn=strap.classList.contains('on');
-  // If swapping from an active card, do a quick crossfade instead of full raindrop exit
   if(wasOn){
-    // Quick content swap: fade out current content, swap, fade in new
+    // Quick content swap: fade out, swap, fade in
     strap.classList.add('swapping');
     setTimeout(()=>{
-      // Update content while invisible
       sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
       sLadder.classList.toggle('show',!!opt.ladder);
       if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',200);
       sSteps.classList.toggle('show',opt.steps!=null);
-      if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
-        st.classList.toggle('done',ix<opt.steps);
-        st.firstChild.style.animationDelay=(.1+ix*.06)+'s';
-      });
+      if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{st.classList.toggle('done',ix<opt.steps);st.firstChild.style.animationDelay=(.1+ix*.06)+'s';});
       if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
       else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
-      // Update strap state class (color)
       strap.className='on st-'+cls;
-      // Update smile state color
-      raindropSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
-      raindropSmile.classList.add('st-'+cls);
-      // Fade back in
+      theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+      theSmile.classList.add('st-'+cls);
       strap.classList.remove('swapping');
     },150);
     if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
     return;
   }
-  // Fresh entrance (card was hidden): full raindrop animation
+  // Fresh entrance: smile smoothly slides to card, card unfolds
   strap.classList.remove('on','swapping');void strap.offsetWidth;
-  // Reset content to hidden state (so it can animate in)
   sKick.style.opacity='0';sKick.style.transform='translateX(-12px)';
   sHead.style.opacity='0';sHead.style.transform='translateX(-12px)';
   sSub.style.opacity='0';sSub.style.transform='translateX(-12px)';
   strap.className='on st-'+cls;
-  // Raindrop exit: bulge → stretch → pinch → settle
-  raindropSmile.classList.remove('bulging','lifting','settled','falling','impact','resting','st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
-  raindropSmile.classList.add('st-'+cls);
-  void raindropSmile.offsetWidth;
-  // Phase 1: bulge (still in well, stretching up — anticipation)
-  raindropSmile.classList.add('bulging');
-  // Collapse smile slot — text slides to fill the gap (smooth nudge-curve)
-  smileSlot.classList.add('departed');
-  // Phase 2: lift (after 180ms — stretch up toward card)
-  setTimeout(()=>{raindropSmile.classList.remove('bulging');raindropSmile.classList.add('lifting');},180);
-  // Phase 3: settle (after 550ms — snap to 1:1 at card position, unfold card)
-  setTimeout(()=>{raindropSmile.classList.remove('lifting');raindropSmile.classList.add('settled');},550);
-  // Phase 4: card content staggers in (after 400ms — during card unfold)
+  // Smile slides to card position (smooth, like a cursor)
+  theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+  theSmile.classList.add('st-'+cls);
+  moveSmileToCard();
+  // Card content staggers in after 300ms (smile is mid-slide)
   setTimeout(()=>{
     sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
     sKick.style.opacity='';sKick.style.transform='';
@@ -514,35 +483,19 @@ function showStrap(cls,k,h,s,opt){
     sLadder.classList.toggle('show',!!opt.ladder);
     if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',250);
     sSteps.classList.toggle('show',opt.steps!=null);
-    if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
-      st.classList.toggle('done',ix<opt.steps);
-      st.firstChild.style.animationDelay=(.1+ix*.06)+'s';
-    });
+    if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{st.classList.toggle('done',ix<opt.steps);st.firstChild.style.animationDelay=(.1+ix*.06)+'s';});
     if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
     else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
-  },400);
+  },300);
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
 }
 function hideStrap(){
   clearTimeout(stTimer);strap.classList.remove('on');
-  // Raindrop return: fall → impact → ripple → settle → text slides back
-  raindropSmile.classList.remove('settled','st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
-  raindropSmile.classList.add('falling');
-  // Phase: impact (after 400ms — smile hits the well)
-  setTimeout(()=>{
-    raindropSmile.classList.remove('falling');
-    raindropSmile.classList.add('impact');
-    // Fire ripples
-    ripple1.classList.remove('fire','fire2');ripple2.classList.remove('fire','fire2');
-    void ripple1.offsetWidth;void ripple2.offsetWidth;
-    ripple1.classList.add('fire');ripple2.classList.add('fire2');
-    // Restore smile slot — text slides to make room
-    smileSlot.classList.remove('departed');
-    // Settle back to resting (after 150ms — squish recovers)
-    setTimeout(()=>{raindropSmile.classList.remove('impact');raindropSmile.classList.add('resting');
-      setTimeout(()=>{raindropSmile.classList.remove('resting');},250);},150);
-  },400);
-  mouth(null);stBusy=false}
+  // Smile smoothly slides back to its home position
+  theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+  moveSmileHome();
+  mouth(null);stBusy=false
+}
 const WIRE=[
   {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
   {k:'NOTICE',h:'Demo account · education only',s:'trading involves risk · not financial advice',note:1},
@@ -587,7 +540,7 @@ addEventListener('keydown',e=>{
   if(k==='b')$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
   if(k==='l')document.body.classList.toggle('light');
   if(k==='o')document.body.classList.toggle('overlay-mode');
-  if(k==='m')cycleFloatSmile();
+  if(k==='m')cycleSmileHome();
   if(k==='t'){ttIx=(ttIx+1)%3;applyTT();}
   if(k==='v'){sceneIx=(sceneIx+1)%5;document.body.dataset.scene=sceneIx;
     document.body.classList.toggle('light',sceneIx===4);}
@@ -595,29 +548,6 @@ addEventListener('keydown',e=>{
 });
 document.body.dataset.scene='0';
 
-/* Floating smile watermark — cycles through positions + content modes via M key or ?float= URL param */
-const FLOAT_POSITIONS=['pos-tr','pos-tl','pos-bl','pos-br','hidden'];
-const FLOAT_MODES=['host','session','logo'];
-let floatPosIx=0,floatModeIx=0;
-const floatSmileEl=$('floatSmile'),floatLabelEl=$('floatLabel'),floatValueEl=$('floatValue');
-function applyFloatSmile(){
-  const pos=FLOAT_POSITIONS[floatPosIx];
-  floatSmileEl.className=pos==='hidden'?'':'visible '+pos;
-  const mode=FLOAT_MODES[floatModeIx];
-  if(mode==='host'){floatLabelEl.textContent='HOST';floatValueEl.textContent='Mwangi';floatSmileEl.querySelector('.float-info').style.display=''}
-  else if(mode==='session'){floatLabelEl.textContent='CHART SCHOOL';floatValueEl.textContent='Part 2 of 4';floatSmileEl.querySelector('.float-info').style.display=''}
-  else{floatSmileEl.querySelector('.float-info').style.display='none'}
-}
-function cycleFloatSmile(){
-  floatModeIx=(floatModeIx+1)%FLOAT_MODES.length;
-  if(floatModeIx===0){floatPosIx=(floatPosIx+1)%FLOAT_POSITIONS.length}
-  applyFloatSmile();
-}
-try{const p=new URLSearchParams(location.search);
-  if(p.has('float')){const v=p.get('float');const pi=FLOAT_POSITIONS.indexOf(v);if(pi>=0)floatPosIx=pi;
-    const mi=FLOAT_MODES.indexOf(p.get('fmode')||'');if(mi>=0)floatModeIx=mi;}
-}catch(e){}
-applyFloatSmile();
 document.querySelectorAll('.cell').forEach(c=>c.addEventListener('animationend',e=>{
   if(e.animationName==='cellin')c.classList.add('done');}));
 setTimeout(STATES.name,900);
