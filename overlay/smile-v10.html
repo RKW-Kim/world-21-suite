@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SMILE · V10 — Studio+ Classroom</title>
+<title>SMILE · V10 — Studio+ Classroom (animation variants)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap');
 :root{
@@ -123,6 +123,55 @@ body.tt-stealth .ddot{background:#1a1a1a}
   opacity:0;transition:opacity .45s var(--expo)}
 #strap.on .scrim{opacity:1}
 #strap.st-tp .scrim{border-left-color:var(--c-up)} #strap.st-sl .scrim{border-left-color:var(--c-down)} #strap.st-note .scrim{border-left-color:var(--c-faint)}
+
+/* ANIMATION VARIANT A — STRETCH: card grows from smile position (left accent bar shoots up, then panel unfolds right) */
+body.anim-stretch #strap .scrim{
+  opacity:1;
+  transform-origin:left bottom;
+  transform:scaleY(0) scaleX(.004);
+  transition:transform .4s var(--expo),opacity .15s ease;
+}
+body.anim-stretch #strap.on .scrim{
+  transform:scaleY(1) scaleX(.004);
+  transition:transform .35s var(--expo);
+}
+body.anim-stretch #strap.on.anim-phase2 .scrim{
+  transform:scaleY(1) scaleX(1);
+  transition:transform .5s var(--expo) .32s;
+}
+
+/* ANIMATION VARIANT B — RISE: card slides up from behind the ticker (mask-reveal from bottom) */
+body.anim-rise #strap{
+  bottom:0;
+  overflow:hidden;
+  height:84px;
+  transition:none;
+}
+body.anim-rise #strap.on{
+  height:400px;
+  transition:height .5s var(--expo);
+}
+body.anim-rise #strap .scrim{
+  opacity:1;
+  transform:translateY(100%);
+  transition:transform .5s var(--expo);
+}
+body.anim-rise #strap.on .scrim{
+  transform:translateY(0);
+}
+
+/* ANIMATION VARIANT C — SPAWN: card scales up from smile position (thought-bubble style) */
+body.anim-spawn #strap .scrim{
+  opacity:0;
+  transform-origin:0 100%;
+  transform:scale(.2) translateY(40%);
+  transition:opacity .3s ease,transform .5s var(--expo);
+}
+body.anim-spawn #strap.on .scrim{
+  opacity:1;
+  transform:scale(1) translateY(0);
+  transition:opacity .2s ease .1s,transform .55s var(--expo) .05s;
+}
 #strap .srow{position:relative;display:flex;align-items:center;gap:18px}
 #strap .smark{width:34px;height:34px;flex:none;transform:scale(.6);opacity:0;transition:transform .5s var(--expo),opacity .3s ease}
 #strap.on .smark{transform:none;opacity:1}
@@ -198,7 +247,9 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 <div id="help"><b>V10 — STUDIO+ CLASSROOM</b><br>
 [1] hide [2] lesson [3] TP [4] SL [5] poll [6] host [7] goal [8] wire [9] swap<br>
 [0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
-[V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[H] hide this</div>
+[V] scenes &nbsp;[T] clock mode &nbsp;[L] light &nbsp;[B] market &nbsp;[H] hide this<br><br>
+<b>ANIMATION VARIANT:</b> <span id="anim-label">fade (default)</span><br>
+[Shift+A] stretch &nbsp;[Shift+B] rise &nbsp;[Shift+C] spawn &nbsp;[Shift+D] fade</div>
 
 <div id="strap">
   <div class="scrim"></div>
@@ -358,8 +409,16 @@ function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=perfor
     sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
 function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
-  strap.classList.remove('on');void strap.offsetWidth;
+  strap.classList.remove('on','anim-phase2');void strap.offsetWidth;
   strap.className='on st-'+cls;
+  // Variant A (stretch) triggers phase 2 (scaleX expand) after the vertical bar grows
+  if(document.body.classList.contains('anim-stretch')){
+    setTimeout(()=>strap.classList.add('anim-phase2'),350);
+  }
+  // Variant B (rise) + C (spawn) trigger smile acknowledgment
+  if(document.body.classList.contains('anim-rise')||document.body.classList.contains('anim-spawn')){
+    mood('is-nod');
+  }
   sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
   sLadder.classList.toggle('show',!!opt.ladder);
   if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',450);
@@ -406,13 +465,35 @@ const STATES={
 
 /* scenes + keys + boot */
 let sceneIx=0;
+
+/* ANIMATION VARIANT SWITCHER */
+const ANIM_VARIANTS=['fade','stretch','rise','spawn'];
+const ANIM_LABELS={'fade':'fade (default)','stretch':'stretch (grow from smile)','rise':'rise (emerge from ticker)','spawn':'spawn (scale from smile)'};
+function setAnimVariant(v){
+  if(!ANIM_VARIANTS.includes(v))return;
+  document.body.classList.remove('anim-stretch','anim-rise','anim-spawn');
+  if(v!=='fade')document.body.classList.add('anim-'+v);
+  const label=$('anim-label');if(label)label.textContent=ANIM_LABELS[v]||v;
+  // Update URL param for shareable links
+  try{const u=new URL(location.href);if(v==='fade')u.searchParams.delete('anim');else u.searchParams.set('anim',v);history.replaceState(null,'',u);}catch(e){}
+}
+// Read ?anim= from URL on load
+try{const p=new URL(location.href).searchParams.get('anim');if(p)setAnimVariant(p);}catch(e){}
+
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
+  // Shift+A/B/C/D to switch animation variants (tournament testing)
+  if(e.shiftKey){
+    if(k==='a')setAnimVariant('stretch');
+    if(k==='b')setAnimVariant('rise');
+    if(k==='c')setAnimVariant('spawn');
+    if(k==='d')setAnimVariant('fade');
+  }
   if(k==='1')hideStrap();if(k==='2')STATES.lesson();if(k==='3')STATES.tp();
   if(k==='4')STATES.sl();if(k==='5')STATES.poll();if(k==='6')STATES.name();
   if(k==='7')STATES.goal();if(k==='8')showWireCard();if(k==='9')swapWire();
   if(k==='0')STATES.school();if(k==='q')STATES.question();if(k==='e')STATES.cal();
-  if(k==='b')$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
+  if(k==='b'&&!e.shiftKey)$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
   if(k==='l')document.body.classList.toggle('light');
   if(k==='t'){ttIx=(ttIx+1)%3;applyTT();}
   if(k==='v'){sceneIx=(sceneIx+1)%5;document.body.dataset.scene=sceneIx;
