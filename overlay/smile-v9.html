@@ -123,7 +123,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 #theSmile .smile-svg .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .12s ease}
 #theSmile .smile-svg .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round;transition:d .4s var(--expo)}
-#theSmile .face{fill:var(--c-accent);transition:fill .3s ease;stroke:rgba(0,0,0,.1);stroke-width:1.5}
+#theSmile .face{fill:#FFD54F;transition:fill .3s ease;stroke:rgba(0,0,0,.15);stroke-width:2}
 #theSmile.is-grin .smile-svg .mouth{d:path("M 15 44 A 35 35 0 0 0 85 44")}
 #theSmile.is-frown .smile-svg .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
 #theSmile.is-frown .smile-svg .eye{transform:scale(.85)}
@@ -147,66 +147,57 @@ body.tt-stealth .ddot{background:#1a1a1a}
 .smile-slot.departed{width:0;margin-right:0}
 .smile-well{display:none}
 
-/* Card panel — unfolds horizontally. Reduced backdrop blur for GPU performance. */
-#strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
-  background:rgba(18,18,22,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  border-radius:0 16px 16px 0;overflow:hidden;will-change:transform;
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);
-  transform:scaleX(0) translateY(-4px);transform-origin:left;opacity:0;
+/* CARD V2 — COMPLETE REDESIGN per GLM 5V. Fixed 96px height (3 rows × 32px). Only width changes. */
+#strap .card-panel{position:relative;margin-left:66px;height:96px;width:fit-content;min-width:320px;max-width:600px;
+  background:#1A1D24;border:1px solid rgba(255,255,255,.06);border-left:4px solid var(--c-accent);
+  border-radius:0 12px 12px 0;overflow:hidden;will-change:transform;
+  box-shadow:0 4px 24px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+  transform:scaleX(0);transform-origin:left;opacity:0;
   transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .3s ease}
-#strap.on .card-panel{transform:scaleX(1) translateY(0);opacity:1;
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35),0 0 60px rgba(255,193,7,.12)}
-/* Left accent edge — color-coded per state */
-#strap .card-panel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-accent);
-  transition:background .3s ease}
-#strap.st-tp .card-panel::before{background:var(--c-up)}
-#strap.st-sl .card-panel::before{background:var(--c-down)}
-#strap.st-poll .card-panel::before{background:var(--c-sky)}
-#strap.st-goal .card-panel::before{background:var(--c-violet)}
-#strap.st-note .card-panel::before{background:#D97706}
-
-/* Card content — staggered reveal. Smooth power3.out settle. */
-#strap .card-content{padding:16px 24px 16px 20px;display:flex;align-items:center;gap:20px;min-height:72px;transition:opacity .15s ease}
-#strap.swapping .card-content{opacity:0}
-#strap .stack{min-width:0;flex:1}
-#strap .kick{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;
-  letter-spacing:.28em;color:var(--c-muted);margin-bottom:5px;text-transform:uppercase;
-  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .15s,transform .4s cubic-bezier(.16,1,.3,1) .15s}
-#strap.on .kick{opacity:1;transform:translateX(0)}
-#strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent);transition:background .3s ease}
-#strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)} #strap.st-note .tick{background:#D97706}
-#strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.15;
-  white-space:nowrap;color:var(--c-fg);
-  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .2s,transform .4s cubic-bezier(.16,1,.3,1) .2s}
-#strap.on .head{opacity:1;transform:translateX(0)}
-#strap.st-note .head{font-size:20px;color:var(--c-muted)}
-#strap .rule{display:block;height:2px;width:48px;background:var(--c-accent);margin-top:6px;
-  transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.16,1,.3,1) .25s,background .3s}
-#strap.on .rule{transform:scaleX(1)}
-#strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
-#strap .sub{display:block;font-size:12px;font-weight:500;color:var(--c-muted);margin-top:6px;white-space:nowrap;line-height:1.4;
-  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .3s,transform .4s cubic-bezier(.16,1,.3,1) .3s}
-#strap.on .sub{opacity:1;transform:translateX(0)}
-#strap .ladder{display:none;align-items:center;gap:10px;margin-top:8px;width:200px}
+#strap.on .card-panel{transform:scaleX(1);opacity:1}
+#strap.st-tp .card-panel{border-left-color:var(--c-up)}
+#strap.st-sl .card-panel{border-left-color:var(--c-down)}
+#strap.st-poll .card-panel{border-left-color:var(--c-sky)}
+#strap.st-goal .card-panel{border-left-color:var(--c-violet)}
+#strap.st-note .card-panel{border-left-color:#D97706}
+/* 3-row grid: identity / context / evidence */
+#strap .card-grid{display:grid;grid-template-rows:32px 32px 32px;height:96px;padding:0 16px;gap:0;transition:opacity .15s ease}
+#strap.swapping .card-grid{opacity:0}
+/* Row 1: kicker + headline + badge */
+#strap .r1{display:flex;align-items:center;gap:10px;overflow:hidden}
+#strap .kick{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--c-faint);text-transform:uppercase;flex-shrink:0;white-space:nowrap}
+#strap .head{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--c-fg);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#strap.st-note .head{color:var(--c-muted)}
+#strap .badge{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--c-accent);
+  background:rgba(255,255,255,.05);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-left:4px;
+  font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+#strap.st-tp .badge{color:var(--c-up)} #strap.st-sl .badge{color:var(--c-down)}
+/* Row 2: subtext + number */
+#strap .r2{display:flex;align-items:center;gap:12px;overflow:hidden}
+#strap .sub{font-size:12px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;line-height:1.3}
+#strap .num{font-family:var(--font-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum' 1;color:var(--c-fg);flex-shrink:0;text-align:right;letter-spacing:-.02em}
+#strap .num.up{color:var(--c-up)} #strap .num.dn{color:var(--c-down)}
+#strap .num.link{color:rgba(255,193,7,.85);font-size:13px;text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:2px}
+/* Row 3: horizontal ladder / steps / meta */
+#strap .r3{display:flex;align-items:center;gap:8px;overflow:hidden}
+#strap .ladder{display:none;align-items:center;gap:6px;width:100%}
 #strap .ladder.show{display:flex}
-#strap .ll{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.14em}
+#strap .ll{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.1em;flex-shrink:0}
 #strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
-#strap .lbar{position:relative;flex:1;height:2px;background:linear-gradient(90deg,rgba(246,70,93,.6),rgba(255,255,255,.14) 50%,rgba(14,203,129,.6))}
-#strap .lbar i{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;background:#fff;
-  transform:translate(-50%,-50%);transition:left .8s var(--expo);box-shadow:0 0 6px rgba(255,255,255,.4)}
-#strap .steps{display:none;align-items:center;gap:5px;margin-top:8px}
+#strap .lbar{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;position:relative;overflow:visible}
+#strap .lbar i{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);transition:left .6s cubic-bezier(.16,1,.3,1);box-shadow:0 0 0 2px #1A1D24}
+#strap .lbar .lfill{position:absolute;top:0;left:0;height:100%;border-radius:2px;background:var(--c-accent);opacity:.3;transition:width .6s cubic-bezier(.16,1,.3,1)}
+#strap.st-tp .lbar .lfill{background:var(--c-up)} #strap.st-sl .lbar .lfill{background:var(--c-down)}
+#strap .steps{display:none;align-items:center;gap:3px;width:100%}
 #strap .steps.show{display:flex}
-#strap .step{position:relative;width:28px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
-#strap .step i{position:absolute;inset:0;background:var(--c-accent);transform:scaleX(0);transform-origin:left}
-#strap.on .step.done i{animation:stepfill .5s var(--expo) forwards}
-@keyframes stepfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-#strap .num{flex:none;text-align:left;
-  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .3s,transform .3s ease .3s}
-#strap.on .num{opacity:1;transform:translateX(0)}
-#strap .num .n{font-family:var(--font-display);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1;letter-spacing:-.03em;color:var(--c-fg)}
-#strap .num .n.up{color:var(--c-up)} #strap .num .n.dn{color:var(--c-down)}
-#strap .num .nl{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.28em;color:var(--c-faint);margin-top:5px}
-#strap .num .n.link{color:rgba(255,193,7,.85);text-decoration:underline;text-decoration-color:rgba(255,193,7,.3);text-underline-offset:2px}
+#strap .step{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.1);flex-shrink:0;transition:all .3s}
+#strap .step.done{background:var(--c-accent)}
+#strap .step-line{flex:1;height:2px;background:rgba(255,255,255,.08)}
+#strap .step-line.done{background:var(--c-accent)}
+#strap .meta{font-size:11px;color:var(--c-faint);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Floating smile watermark — REMOVED, merged into #theSmile */
 
@@ -260,16 +251,21 @@ body.perf-low #strap .scrim{backdrop-filter:none;-webkit-backdrop-filter:none}
 
 <div id="strap">
   <div class="card-panel">
-    <div class="card-content">
-      <div class="stack">
-        <span class="kick"><span class="tick"></span><span id="sKick"></span></span>
+    <div class="card-grid">
+      <div class="r1">
+        <span class="kick" id="sKick"></span>
         <span class="head" id="sHead"></span>
-        <span class="rule"></span>
-        <span class="sub" id="sSub"></span>
-        <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i></div><span class="ll tp">TP</span></div>
-        <div class="steps" id="sSteps"></div>
+        <span class="badge" id="sBadge"></span>
       </div>
-      <div class="num"><div class="n" id="sNum"></div><div class="nl" id="sNumLbl"></div></div>
+      <div class="r2">
+        <span class="sub" id="sSub"></span>
+        <span class="num" id="sNum"></span>
+      </div>
+      <div class="r3" id="sR3">
+        <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i><div class="lfill" id="sLfill"></div></div><span class="ll tp">TP</span></div>
+        <div class="steps" id="sSteps"></div>
+        <span class="meta" id="sMeta"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -396,8 +392,9 @@ Power.every(()=>{const now=new Date();
   }},1000);
 
 /* strap — V7 choreography verbatim + steps row for Chart School */
-const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sSub=$('sSub'),sNum=$('sNum'),sNumLbl=$('sNumLbl'),
-  theSmile=$('theSmile'),smileSvg=theSmile.querySelector('.smile-svg'),smileSlot=$('smileSlot'),sLadder=$('sLadder'),sDot=$('sDot'),sSteps=$('sSteps');
+const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sBadge=$('sBadge'),sSub=$('sSub'),sNum=$('sNum'),
+  theSmile=$('theSmile'),smileSvg=theSmile.querySelector('.smile-svg'),smileSlot=$('smileSlot'),
+  sLadder=$('sLadder'),sDot=$('sDot'),sLfill=$('sLfill'),sSteps=$('sSteps'),sMeta=$('sMeta'),sR3=$('sR3');
 
 /* SMILE POSITION SYSTEM — one entity, smoothly slides between positions. Like a product demo cursor. */
 const SMILE_HOMES=['ticker','top-right','top-left','bottom-right','bottom-left'];
@@ -433,7 +430,7 @@ function cycleSmileHome(){
 // Read ?home= from URL
 try{const p=new URLSearchParams(location.search);if(p.has('home')){const h=p.get('home');const hi=SMILE_HOMES.indexOf(h);if(hi>=0)smileHomeIx=hi;}}catch(e){}
 moveSmileHome();
-sSteps.innerHTML='<span class="step"><i></i></span>'.repeat(4);
+sSteps.innerHTML='';for(let i=0;i<4;i++){const d=document.createElement('span');d.className='step';sSteps.appendChild(d);if(i<3){const l=document.createElement('span');l.className='step-line';sSteps.appendChild(l)}}
 let stTimer=null,countRaf=null,stBusy=false;
 function stMood(c){theSmile.classList.remove('is-nod','is-celebrate','is-shake');void theSmile.getBoundingClientRect();theSmile.classList.add(c)}
 function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
@@ -443,52 +440,45 @@ function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
   const wasOn=strap.classList.contains('on');
   if(wasOn){
-    // Quick content swap: fade out, swap, fade in
     strap.classList.add('swapping');
     setTimeout(()=>{
-      sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
-      sLadder.classList.toggle('show',!!opt.ladder);
-      if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',200);
-      sSteps.classList.toggle('show',opt.steps!=null);
-      if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{st.classList.toggle('done',ix<opt.steps);st.firstChild.style.animationDelay=(.1+ix*.06)+'s';});
-      if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
-      else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
-      strap.className='on st-'+cls;
-      theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
-      theSmile.classList.add('st-'+cls);
+      populateCard(cls,k,h,s,opt);
       strap.classList.remove('swapping');
     },150);
     if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
     return;
   }
-  // Fresh entrance: smile smoothly slides to card, card unfolds
+  // Fresh entrance
   strap.classList.remove('on','swapping');void strap.offsetWidth;
-  sKick.style.opacity='0';sKick.style.transform='translateX(-12px)';
-  sHead.style.opacity='0';sHead.style.transform='translateX(-12px)';
-  sSub.style.opacity='0';sSub.style.transform='translateX(-12px)';
   strap.className='on st-'+cls;
-  // Smile slides to card position (smooth, like a cursor)
   theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
   theSmile.classList.add('st-'+cls);
   moveSmileToCard();
-  // Card content staggers in after 300ms (smile is mid-slide)
-  setTimeout(()=>{
-    sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
-    sKick.style.opacity='';sKick.style.transform='';
-    sHead.style.opacity='';sHead.style.transform='';
-    sSub.style.opacity='';sSub.style.transform='';
-    sLadder.classList.toggle('show',!!opt.ladder);
-    if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',250);
-    sSteps.classList.toggle('show',opt.steps!=null);
-    if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{st.classList.toggle('done',ix<opt.steps);st.firstChild.style.animationDelay=(.1+ix*.06)+'s';});
-    if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
-    else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
-  },300);
+  setTimeout(()=>{populateCard(cls,k,h,s,opt);},200);
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
+}
+function populateCard(cls,k,h,s,opt){
+  strap.className='on st-'+cls;
+  theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+  theSmile.classList.add('st-'+cls);
+  sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
+  // Badge (row 1 right)
+  sBadge.textContent='';sBadge.style.display='';
+  if(opt.count!=null){sBadge.textContent=(opt.sign||'')+opt.count+' PIPS';sBadge.className='badge';
+    sNum.className='num '+(opt.dir||'');countTo(opt.count,1,opt.sign);sNum.textContent=(opt.sign||'+')+opt.count.toFixed(1)}
+  else if(opt.n){sNum.textContent=opt.n;sNum.className='num'+(opt.link?' link':'');
+    if(opt.nl)sBadge.textContent=opt.nl;sBadge.className='badge'}
+  else{sNum.textContent='';sNum.className='num'}
+  // Row 3: ladder / steps / meta
+  sLadder.classList.toggle('show',!!opt.ladder);
+  sSteps.classList.toggle('show',opt.steps!=null);
+  sMeta.textContent='';sMeta.style.display='none';
+  if(opt.ladder){setTimeout(()=>{sDot.style.left=opt.ladder+'%';sLfill.style.width=opt.ladder+'%';},200)}
+  if(opt.steps!=null){[...sSteps.querySelectorAll('.step')].forEach((d,i)=>d.classList.toggle('done',i<opt.steps));
+    [...sSteps.querySelectorAll('.step-line')].forEach((l,i)=>l.classList.toggle('done',i<opt.steps-1))}
 }
 function hideStrap(){
   clearTimeout(stTimer);strap.classList.remove('on');
-  // Smile smoothly slides back to its home position
   theSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
   moveSmileHome();
   mouth(null);stBusy=false
