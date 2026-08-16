@@ -80,10 +80,10 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 @keyframes cellin{to{opacity:1;transform:none}}
 .cell.done{animation:none;opacity:1;transform:none}
 .cell + .cell{border-left:1px solid var(--c-border)}
-.cell.done.fup{animation:fup 1.6s var(--expo) forwards}
-.cell.done.fdn{animation:fdn 1.6s var(--expo) forwards}
-@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}15%{box-shadow:inset 0 0 0 1px rgba(14,203,129,.18),inset 0 0 24px rgba(14,203,129,.16)}100%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}}
-@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}15%{box-shadow:inset 0 0 0 1px rgba(246,70,93,.18),inset 0 0 24px rgba(246,70,93,.16)}100%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}}
+.cell.done.fup{animation:fup 1.8s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn{animation:fdn 1.8s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}20%{box-shadow:inset 0 0 0 1px rgba(14,203,129,.2),inset 0 0 32px rgba(14,203,129,.18)}100%{box-shadow:inset 0 0 0 1px rgba(14,203,129,0),inset 0 0 24px rgba(14,203,129,0)}}
+@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}20%{box-shadow:inset 0 0 0 1px rgba(246,70,93,.2),inset 0 0 32px rgba(246,70,93,.18)}100%{box-shadow:inset 0 0 0 1px rgba(246,70,93,0),inset 0 0 24px rgba(246,70,93,0)}}
 .ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .csym{font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--c-faint)}
 .cchg{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:8.5px;font-weight:700;border-radius:4px;padding:2px 6px;letter-spacing:.08em}
@@ -95,10 +95,10 @@ body.overlay-mode #strap .chalkboard{background:rgba(26,31,28,.92);box-shadow:0 
 .cval.roll{animation:roll .5s var(--expo)}
 @keyframes roll{0%{transform:translateY(45%);opacity:0}100%{transform:none;opacity:1}}
 /* Subtle price-text color pulse on tick (no roll, no background flash) — sits under the text */
-.cell.done.fup .cval{animation:pulseUp 1.6s var(--expo) forwards}
-.cell.done.fdn .cval{animation:pulseDn 1.6s var(--expo) forwards}
-@keyframes pulseUp{0%{color:var(--c-fg)}15%{color:var(--c-up)}100%{color:var(--c-fg)}}
-@keyframes pulseDn{0%{color:var(--c-fg)}15%{color:var(--c-down)}100%{color:var(--c-fg)}}
+.cell.done.fup .cval{animation:pulseUp 1.8s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn .cval{animation:pulseDn 1.8s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes pulseUp{0%{color:var(--c-fg)}20%{color:var(--c-up)}60%{color:var(--c-up)}100%{color:var(--c-fg)}}
+@keyframes pulseDn{0%{color:var(--c-fg)}20%{color:var(--c-down)}60%{color:var(--c-down)}100%{color:var(--c-fg)}}
 
 /* WIRE SLOT — rotating 6th cell */
 .cell.wire .csym{color:var(--c-accent)}
@@ -128,44 +128,43 @@ body.tt-stealth .ddot{background:#1a1a1a}
 /* THE RAINDROP SMILE — smile lives IN the ticker (embedded in a well), detaches with raindrop physics (bulge → stretch → pinch → float), card unfolds behind it. Text slides to fill the gap. */
 #strap{position:fixed;left:24px;bottom:160px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
 
-/* Smile well — the socket in the ticker where the smile lives */
+/* Smile well — the socket in the ticker where the smile lives. No inset shadow (was creating black artifact on top-right). */
 .smile-slot{width:48px;flex:none;height:100%;display:flex;align-items:center;justify-content:center;position:relative;
-  transition:width .5s cubic-bezier(.34,1.56,.64,1),margin .5s cubic-bezier(.34,1.56,.64,1);margin-right:4px}
+  transition:width .5s cubic-bezier(.16,1,.3,1),margin .5s cubic-bezier(.16,1,.3,1);margin-right:4px}
 .smile-slot.departed{width:0;margin-right:0}
 .smile-well{width:40px;height:40px;border-radius:50%;
-  background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.35),rgba(0,0,0,.15));
-  box-shadow:inset 0 2px 4px rgba(0,0,0,.4),inset 0 -1px 2px rgba(255,255,255,.05);
+  background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.4),rgba(0,0,0,.2));
   transition:opacity .3s ease,transform .3s ease}
-.smile-slot.departed .smile-well{opacity:.3;transform:scale(.8)}
+.smile-slot.departed .smile-well{opacity:.25;transform:scale(.7)}
 
-/* The smile — position:fixed, travels between well and card */
+/* The smile — position:fixed, travels between well and card. Smooth power3.out settle (not back.out — that's the #1 turn-off per spring-pop-entrance rule). */
 #raindropSmile{position:fixed;left:36px;bottom:38px;width:40px;height:40px;z-index:50;
   transform-origin:center bottom;
-  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
-    bottom .5s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
-    filter .3s ease,transform .15s ease;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 6px 12px rgba(0,0,0,.2))}
-/* Phase 1: bulging (still in well, stretching up) */
-#raindropSmile.bulging{transform:scaleY(1.12) translateY(-3px);
-  transition:transform .2s ease-out}
-/* Phase 2: lifting (stretching upward toward card) */
+  transition:width .45s cubic-bezier(.16,1,.3,1),height .45s cubic-bezier(.16,1,.3,1),
+    bottom .55s cubic-bezier(.16,1,.3,1),left .45s cubic-bezier(.16,1,.3,1),
+    filter .3s ease,transform .25s cubic-bezier(.16,1,.3,1);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)) drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 8px 16px rgba(0,0,0,.3))}
+/* Phase 1: bulging (still in well, stretching up — anticipation) */
+#raindropSmile.bulging{transform:scaleY(1.15) translateY(-4px);
+  transition:transform .2s cubic-bezier(.16,1,.3,1)}
+/* Phase 2: lifting (stretching upward toward card — smooth power3.out, no overshoot) */
 #raindropSmile.lifting{width:52px;height:52px;bottom:170px;left:22px;
-  transform:scaleY(1.25);
-  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
-    bottom .5s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
-    transform .4s cubic-bezier(.34,1.56,.64,1)}
-/* Phase 3: settled at card (snapped back to 1:1, same position as lifting) */
+  transform:scaleY(1.2);
+  transition:width .45s cubic-bezier(.16,1,.3,1),height .45s cubic-bezier(.16,1,.3,1),
+    bottom .55s cubic-bezier(.16,1,.3,1),left .45s cubic-bezier(.16,1,.3,1),
+    transform .45s cubic-bezier(.16,1,.3,1)}
+/* Phase 3: settled at card (snapped back to 1:1 — smooth settle) */
 #raindropSmile.settled{width:52px;height:52px;bottom:170px;left:22px;transform:scaleY(1);
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
-/* Phase 4: falling back (returning to well) */
+  transition:transform .25s cubic-bezier(.16,1,.3,1)}
+/* Phase 4: falling back (returning to well — accelerating fall via power2.in) */
 #raindropSmile.falling{width:40px;height:40px;bottom:38px;left:36px;
-  transform:scaleY(1.15);
-  transition:width .4s ease,height .4s ease,bottom .4s cubic-bezier(.5,0,.75,0),left .4s ease,transform .3s ease}
-/* Phase 5: impact (settled back in well, slight squish) */
-#raindropSmile.impact{transform:scaleY(.92) scaleX(1.05);
-  transition:transform .15s ease-out}
+  transform:scaleY(1.18);
+  transition:width .35s ease,height .35s ease,bottom .4s cubic-bezier(.55,.085,.68,.53),left .35s ease,transform .3s ease}
+/* Phase 5: impact (settled back in well, slight squish — spring settle) */
+#raindropSmile.impact{transform:scaleY(.88) scaleX(1.08);
+  transition:transform .12s ease-out}
 #raindropSmile.resting{transform:scaleY(1);
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+  transition:transform .25s cubic-bezier(.16,1,.3,1)}
 
 #raindropSmile svg{width:100%;height:100%;display:block}
 #raindropSmile .face{fill:var(--c-accent);transition:fill .3s ease}
@@ -183,13 +182,13 @@ body.tt-stealth .ddot{background:#1a1a1a}
 .ripple.fire2{animation:rippleOut .8s ease-out .1s forwards}
 @keyframes rippleOut{0%{transform:scale(0);opacity:.5}100%{transform:scale(3);opacity:0}}
 
-/* Card panel — unfolds horizontally from behind the smile */
+/* Card panel — unfolds horizontally from behind the smile. Smooth power3.out (no back.out overshoot — per spring-pop-entrance rule). */
 #strap .card-panel{position:relative;margin-left:66px;min-width:0;max-width:520px;width:auto;
   background:rgba(18,18,22,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
   border-radius:0 16px 16px 0;overflow:hidden;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 80px rgba(255,193,7,.15);
   transform:scaleX(0) translateY(-4px);transform-origin:left;opacity:0;
-  transition:transform .6s cubic-bezier(.34,1.56,.64,1),opacity .3s ease,box-shadow .4s ease}
+  transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .3s ease,box-shadow .4s ease}
 #strap.on .card-panel{transform:scaleX(1) translateY(0);opacity:1;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 120px rgba(255,193,7,.2)}
 /* Left accent edge — color-coded per state */
@@ -201,26 +200,27 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap.st-goal .card-panel::before{background:var(--c-violet)}
 #strap.st-note .card-panel::before{background:#D97706}
 
-/* Card content — staggered reveal */
-#strap .card-content{padding:16px 24px 16px 20px;display:flex;align-items:center;gap:20px;min-height:72px}
+/* Card content — staggered reveal. Smooth power3.out settle. */
+#strap .card-content{padding:16px 24px 16px 20px;display:flex;align-items:center;gap:20px;min-height:72px;transition:opacity .15s ease}
+#strap.swapping .card-content{opacity:0}
 #strap .stack{min-width:0;flex:1}
 #strap .kick{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:10px;font-weight:600;
   letter-spacing:.28em;color:var(--c-muted);margin-bottom:5px;text-transform:uppercase;
-  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .2s,transform .3s ease .2s}
+  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .15s,transform .4s cubic-bezier(.16,1,.3,1) .15s}
 #strap.on .kick{opacity:1;transform:translateX(0)}
 #strap .tick{width:8px;height:8px;flex:none;background:var(--c-accent);transition:background .3s ease}
 #strap.st-tp .tick{background:var(--c-up)} #strap.st-sl .tick{background:var(--c-down)} #strap.st-note .tick{background:#D97706}
 #strap .head{display:block;font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.15;
   white-space:nowrap;color:var(--c-fg);
-  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .25s,transform .3s ease .25s}
+  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .2s,transform .4s cubic-bezier(.16,1,.3,1) .2s}
 #strap.on .head{opacity:1;transform:translateX(0)}
 #strap.st-note .head{font-size:20px;color:var(--c-muted)}
 #strap .rule{display:block;height:2px;width:48px;background:var(--c-accent);margin-top:6px;
-  transform:scaleX(0);transform-origin:left;transition:transform .3s ease .3s,background .3s}
+  transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.16,1,.3,1) .25s,background .3s}
 #strap.on .rule{transform:scaleX(1)}
 #strap.st-tp .rule{background:var(--c-up)} #strap.st-sl .rule{background:var(--c-down)}
 #strap .sub{display:block;font-size:12px;font-weight:500;color:var(--c-muted);margin-top:6px;white-space:nowrap;line-height:1.4;
-  opacity:0;transform:translateX(-8px);transition:opacity .3s ease .35s,transform .3s ease .35s}
+  opacity:0;transform:translateX(-12px);transition:opacity .4s cubic-bezier(.16,1,.3,1) .3s,transform .4s cubic-bezier(.16,1,.3,1) .3s}
 #strap.on .sub{opacity:1;transform:translateX(0)}
 #strap .ladder{display:none;align-items:center;gap:10px;margin-top:8px;width:200px}
 #strap .ladder.show{display:flex}
@@ -438,31 +438,69 @@ function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=perfor
     sNum.textContent=sign+(target*e).toFixed(dec);if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
 function showStrap(cls,k,h,s,opt){
   clearTimeout(stTimer);cancelAnimationFrame(countRaf);
-  strap.classList.remove('on');void strap.offsetWidth;
+  const wasOn=strap.classList.contains('on');
+  // If swapping from an active card, do a quick crossfade instead of full raindrop exit
+  if(wasOn){
+    // Quick content swap: fade out current content, swap, fade in new
+    strap.classList.add('swapping');
+    setTimeout(()=>{
+      // Update content while invisible
+      sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
+      sLadder.classList.toggle('show',!!opt.ladder);
+      if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',200);
+      sSteps.classList.toggle('show',opt.steps!=null);
+      if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
+        st.classList.toggle('done',ix<opt.steps);
+        st.firstChild.style.animationDelay=(.1+ix*.06)+'s';
+      });
+      if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
+      else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
+      // Update strap state class (color)
+      strap.className='on st-'+cls;
+      // Update smile state color
+      raindropSmile.classList.remove('st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
+      raindropSmile.classList.add('st-'+cls);
+      // Fade back in
+      strap.classList.remove('swapping');
+    },150);
+    if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
+    return;
+  }
+  // Fresh entrance (card was hidden): full raindrop animation
+  strap.classList.remove('on','swapping');void strap.offsetWidth;
+  // Reset content to hidden state (so it can animate in)
+  sKick.style.opacity='0';sKick.style.transform='translateX(-12px)';
+  sHead.style.opacity='0';sHead.style.transform='translateX(-12px)';
+  sSub.style.opacity='0';sSub.style.transform='translateX(-12px)';
   strap.className='on st-'+cls;
   // Raindrop exit: bulge → stretch → pinch → settle
   raindropSmile.classList.remove('bulging','lifting','settled','falling','impact','resting','st-tp','st-sl','st-poll','st-goal','st-note','st-name','st-lesson');
   raindropSmile.classList.add('st-'+cls);
   void raindropSmile.offsetWidth;
-  // Phase 1: bulge (still in well, stretching up)
+  // Phase 1: bulge (still in well, stretching up — anticipation)
   raindropSmile.classList.add('bulging');
-  // Collapse smile slot — text slides to fill the gap
+  // Collapse smile slot — text slides to fill the gap (smooth nudge-curve)
   smileSlot.classList.add('departed');
-  // Phase 2: lift (after 200ms — stretch up toward card)
-  setTimeout(()=>{raindropSmile.classList.remove('bulging');raindropSmile.classList.add('lifting');},200);
-  // Phase 3: settle (after 600ms — snap to 1:1 at card position, unfold card)
-  setTimeout(()=>{raindropSmile.classList.remove('lifting');raindropSmile.classList.add('settled');},600);
-  // Phase 4: card content staggers in (after 700ms)
-  sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
-  sLadder.classList.toggle('show',!!opt.ladder);
-  if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',450);
-  sSteps.classList.toggle('show',opt.steps!=null);
-  if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
-    st.classList.toggle('done',ix<opt.steps);
-    st.firstChild.style.animationDelay=(.5+ix*.09)+'s';
-  });
-  if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
-  else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
+  // Phase 2: lift (after 180ms — stretch up toward card)
+  setTimeout(()=>{raindropSmile.classList.remove('bulging');raindropSmile.classList.add('lifting');},180);
+  // Phase 3: settle (after 550ms — snap to 1:1 at card position, unfold card)
+  setTimeout(()=>{raindropSmile.classList.remove('lifting');raindropSmile.classList.add('settled');},550);
+  // Phase 4: card content staggers in (after 400ms — during card unfold)
+  setTimeout(()=>{
+    sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
+    sKick.style.opacity='';sKick.style.transform='';
+    sHead.style.opacity='';sHead.style.transform='';
+    sSub.style.opacity='';sSub.style.transform='';
+    sLadder.classList.toggle('show',!!opt.ladder);
+    if(opt.ladder)setTimeout(()=>sDot.style.left=opt.ladder+'%',250);
+    sSteps.classList.toggle('show',opt.steps!=null);
+    if(opt.steps!=null)[...sSteps.children].forEach((st,ix)=>{
+      st.classList.toggle('done',ix<opt.steps);
+      st.firstChild.style.animationDelay=(.1+ix*.06)+'s';
+    });
+    if(opt.count!=null){sNum.className='n '+(opt.dir||'');sNumLbl.textContent='PIPS';countTo(opt.count,1,opt.sign)}
+    else{sNum.textContent=opt.n||'';sNum.className='n'+(opt.link?' link':'');sNumLbl.textContent=opt.nl||''}
+  },400);
   if(opt.ttl)stTimer=setTimeout(hideStrap,opt.ttl);
 }
 function hideStrap(){
