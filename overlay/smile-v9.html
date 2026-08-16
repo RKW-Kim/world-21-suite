@@ -126,14 +126,14 @@ body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
 /* THE MAGNETIC SMILE — single smile lives in ticker, detaches + card unfolds from behind it. Full redesign per GLM 5V. */
-#strap{position:fixed;left:24px;bottom:80px;z-index:45;pointer-events:none;display:flex;align-items:flex-end;gap:0}
+#strap{position:fixed;left:24px;bottom:80px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0}
 /* The smile anchor — single DOM element that travels between ticker and card */
 #magnetic-smile{position:fixed;left:28px;bottom:30px;width:40px;height:40px;z-index:50;
-  transition:width .4s cubic-bezier(.34,1.56,.64,1),height .4s cubic-bezier(.34,1.56,.64,1),
-    bottom .4s cubic-bezier(.34,1.56,.64,1),left .4s cubic-bezier(.34,1.56,.64,1),
+  transition:width .5s cubic-bezier(.68,-.55,.265,1.55),height .5s cubic-bezier(.68,-.55,.265,1.55),
+    bottom .5s cubic-bezier(.68,-.55,.265,1.55),left .5s cubic-bezier(.68,-.55,.265,1.55),
     filter .3s ease;
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.3)) drop-shadow(0 6px 12px rgba(0,0,0,.2))}
-#magnetic-smile.active{width:52px;height:52px;bottom:96px;left:20px}
+#magnetic-smile.active{width:56px;height:56px;bottom:88px;left:18px}
 #magnetic-smile svg{width:100%;height:100%}
 #magnetic-smile .face{fill:var(--c-accent);transition:fill .3s ease}
 #magnetic-smile.st-tp .face{fill:var(--c-up)}
@@ -148,14 +148,15 @@ body.tt-stealth .ddot{background:#1a1a1a}
   transition:height .4s cubic-bezier(.34,1.56,.64,1);pointer-events:none;opacity:0}
 #umbilical.visible{height:60px;opacity:1;transition:height .3s ease,opacity .2s ease}
 
-/* Card panel — unfolds horizontally from behind the smile */
-#strap .card-panel{position:relative;margin-left:64px;min-width:0;max-width:520px;width:auto;
+/* Card panel — unfolds horizontally from behind the smile with elastic spring + glow */
+#strap .card-panel{position:relative;margin-left:60px;min-width:0;max-width:520px;width:auto;
   background:rgba(18,18,22,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
   border-radius:0 16px 16px 0;overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35);
-  transform:scaleX(0);transform-origin:left;opacity:0;
-  transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s ease}
-#strap.on .card-panel{transform:scaleX(1);opacity:1}
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 60px rgba(255,193,7,.08);
+  transform:scaleX(0) translateY(-4px);transform-origin:left;opacity:0;
+  transition:transform .6s cubic-bezier(.68,-.55,.265,1.55),opacity .3s ease,box-shadow .4s ease}
+#strap.on .card-panel{transform:scaleX(1) translateY(0);opacity:1;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.35),0 0 80px rgba(255,193,7,.12)}
 /* Left accent edge — color-coded per state */
 #strap .card-panel::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-accent);
   transition:background .3s ease}
