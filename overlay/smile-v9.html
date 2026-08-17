@@ -113,16 +113,20 @@ body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
 body.tt-stealth .dsub{color:#111}
 body.tt-stealth .ddot{background:#1a1a1a}
 
-/* THE PILL — one unified element. Smile is a FULL CIRCLE always (never flattens). Card slides behind it. */
+/* THE PILL — ONE unified element. Smile circle is the visual left end but they're the same glass surface. */
 #strap{position:fixed;left:24px;bottom:109px;z-index:45;pointer-events:none;display:flex;align-items:center;gap:0;
   transition:left .6s cubic-bezier(.16,1,.3,1),bottom .6s cubic-bezier(.16,1,.3,1),top .6s cubic-bezier(.16,1,.3,1),right .6s cubic-bezier(.16,1,.3,1)}
-/* Smile cap — ALWAYS a full circle. Never changes shape. */
+/* Smile cap — FULL CIRCLE always. Same glass as card. A subtle inset ring separates it visually. */
 #strap .smile-cap{width:86px;height:86px;flex:none;border-radius:50%;
   background:rgba(16,13,10,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
   border:1px solid rgba(255,255,255,.1);
-  box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset 0 0 0 2px rgba(255,255,255,.04);
   display:flex;align-items:center;justify-content:center;position:relative;z-index:2;
-  transition:box-shadow .5s var(--expo)}
+  transition:box-shadow .5s var(--expo),background .4s ease}
+/* When no card (idle), smile cap is slightly darker to read as a standalone button */
+#strap:not(.on) .smile-cap{background:rgba(12,10,8,.92)}
+/* When card active, smile cap matches card bg (same glass) */
+#strap.on .smile-cap{background:rgba(16,13,10,.88)}
 /* State glow on smile cap */
 #strap.st-tp .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(46,168,118,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 #strap.st-sl .smile-cap{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(217,83,79,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
@@ -152,47 +156,49 @@ body.tt-stealth .ddot{background:#1a1a1a}
   transform:translateY(16px) scale(.94);opacity:0;filter:blur(4px);
   transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s ease,filter .3s ease}
 #strap.on .card-panel{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
-/* Inner content — left padding clears the smile circle overlap */
-#strap .card-grid{display:flex;flex-direction:column;justify-content:center;height:86px;padding:0 32px 0 48px;gap:4px;transition:opacity .15s ease}
+/* Inner content — redesigned for glance-able heuristics. 2 zones: TITLE + DATA. */
+#strap .card-grid{display:flex;flex-direction:column;justify-content:center;height:86px;padding:0 28px 0 52px;gap:6px;transition:opacity .15s ease}
 #strap.swapping .card-grid{opacity:0}
-/* Zone 1: Kicker (colored dot + label) + Headline + Badge. Font sizes for broadcast: senior-readable + young-friendly. */
+/* Zone 1: TITLE row — colored dot + kicker label + headline. Instantly tells WHAT. */
 #strap .r1{display:flex;align-items:center;gap:8px;overflow:hidden}
-#strap .kick{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--c-accent);text-transform:uppercase;flex-shrink:0;white-space:nowrap;transition:color .3s ease;display:flex;align-items:center;gap:6px}
-#strap .kick::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--c-accent);flex-shrink:0;transition:background .3s ease}
+#strap .kick{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--c-accent);text-transform:uppercase;flex-shrink:0;white-space:nowrap;transition:color .3s ease;display:flex;align-items:center;gap:6px}
+#strap .kick::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--c-accent);flex-shrink:0;transition:background .3s ease;box-shadow:0 0 8px currentColor}
 #strap.st-tp .kick{color:var(--c-up)} #strap.st-tp .kick::before{background:var(--c-up)}
 #strap.st-sl .kick{color:var(--c-down)} #strap.st-sl .kick::before{background:var(--c-down)}
 #strap.st-poll .kick{color:var(--c-sky)} #strap.st-poll .kick::before{background:var(--c-sky)}
 #strap.st-goal .kick{color:var(--c-violet)} #strap.st-goal .kick::before{background:var(--c-violet)}
 #strap.st-note .kick{color:#D97706} #strap.st-note .kick::before{background:#D97706}
-#strap .head{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.02em;color:#fff;line-height:1.1;
+#strap .head{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.02em;color:#fff;line-height:1.1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-#strap.st-note .head{color:rgba(255,255,255,.75);font-weight:600;font-size:15px}
+#strap.st-note .head{color:rgba(255,255,255,.75);font-weight:600;font-size:16px}
+/* Zone 2: DATA row — subtext + badge/number. Instantly tells the VALUE. */
+#strap .r2{display:flex;align-items:center;gap:10px;overflow:hidden}
+#strap .sub{font-size:13px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;line-height:1.3}
 #strap .badge{font-family:var(--font-mono);font-size:13px;font-weight:700;color:#fff;
-  background:var(--c-accent);padding:4px 12px;border-radius:9999px;flex-shrink:0;margin-left:8px;
-  font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1;transition:background .3s ease,color .3s ease}
-#strap.st-tp .badge{background:var(--c-up);color:#0a0a0a} #strap.st-sl .badge{background:var(--c-down);color:#fff}
-/* Zone 2: Subtext + Number. Consistent sizing for broadcast legibility. */
-#strap .r2{display:flex;align-items:center;gap:12px;overflow:hidden}
-#strap .sub{font-size:13px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;line-height:1.3}
+  background:var(--c-accent);padding:4px 12px;border-radius:9999px;flex-shrink:0;
+  font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1;transition:background .3s ease,color .3s ease;
+  box-shadow:0 0 12px rgba(255,176,32,.15)}
+#strap.st-tp .badge{background:var(--c-up);color:#0a0a0a;box-shadow:0 0 12px rgba(46,168,118,.2)}
+#strap.st-sl .badge{background:var(--c-down);color:#fff;box-shadow:0 0 12px rgba(217,83,79,.2)}
 #strap .num{font-family:var(--font-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;
   font-feature-settings:'tnum' 1,'zero' 1;color:#fff;flex-shrink:0;text-align:right;letter-spacing:-.02em;line-height:1.1}
 #strap .num.up{color:var(--c-up)} #strap .num.dn{color:var(--c-down)}
-#strap .num.link{color:rgba(255,193,7,.9);font-size:14px;text-decoration:underline;text-decoration-color:rgba(255,193,7,.4);text-underline-offset:2px}
-/* Zone 3: Ladder / Steps / Meta. All elements minimum 11px for broadcast. */
+#strap .num.link{color:rgba(255,176,32,.9);font-size:14px;text-decoration:underline;text-decoration-color:rgba(255,176,32,.4);text-underline-offset:2px}
+/* Zone 3: PROOF row — ladder/steps/meta. Only shows when there's data to prove. */
 #strap .r3{display:flex;align-items:center;gap:8px;overflow:hidden;height:18px}
 #strap .ladder{display:none;align-items:center;gap:8px;width:100%}
 #strap .ladder.show{display:flex}
-#strap .ll{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.08em;flex-shrink:0}
+#strap .ll{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.06em;flex-shrink:0}
 #strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
-#strap .lbar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;position:relative;overflow:visible}
-#strap .lbar i{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;
-  transform:translate(-50%,-50%);transition:left .6s cubic-bezier(.16,1,.3,1);box-shadow:0 0 0 2px rgba(14,14,16,.8)}
-#strap .lbar .lfill{position:absolute;top:0;left:0;height:100%;border-radius:2px;background:var(--c-accent);opacity:.4;transition:width .6s cubic-bezier(.16,1,.3,1)}
+#strap .lbar{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible}
+#strap .lbar i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);transition:left .6s cubic-bezier(.16,1,.3,1);box-shadow:0 0 0 2px rgba(16,13,10,.8),0 0 8px rgba(255,255,255,.3)}
+#strap .lbar .lfill{position:absolute;top:0;left:0;height:100%;border-radius:3px;background:var(--c-accent);opacity:.4;transition:width .6s cubic-bezier(.16,1,.3,1)}
 #strap.st-tp .lbar .lfill{background:var(--c-up)} #strap.st-sl .lbar .lfill{background:var(--c-down)}
-#strap .steps{display:none;align-items:center;gap:3px;width:100%}
+#strap .steps{display:none;align-items:center;gap:4px;width:100%}
 #strap .steps.show{display:flex}
-#strap .step{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.08);flex-shrink:0;transition:all .3s}
-#strap .step.done{background:var(--c-accent)}
+#strap .step{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);flex-shrink:0;transition:all .3s}
+#strap .step.done{background:var(--c-accent);box-shadow:0 0 6px currentColor}
 #strap .step-line{flex:1;height:2px;background:rgba(255,255,255,.06);border-radius:1px}
 #strap .step-line.done{background:var(--c-accent)}
 #strap .meta{font-size:11px;color:rgba(255,255,255,.4);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -445,6 +451,8 @@ function populateCard(cls,k,h,s,opt){
 }
 function hideStrap(){
   clearTimeout(stTimer);strap.classList.remove('on');
+  // Reset smile face color back to default accent (was staying whatever state color it was)
+  strap.className='';
   mouth(null);stBusy=false
 }
 const WIRE=[
