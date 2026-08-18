@@ -32,35 +32,28 @@ body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0
 #help b{color:var(--c-accent)}
 #help .pos{color:var(--c-up);font-weight:700}
 
-/* SMILE — canonical 100-box. SOLID horizontal mouth line (no bow/arrow arc). */
+/* SMILE — canonical 100-box. Default face: smiling arc mouth (NEVER modify).
+   Only allowed animations: blink (eyes scale thin briefly) + look-around (eyes shift).
+   No grin, no frown, no teeth, no tongue, no sad. Simplicity wins. */
 .smile{transform-box:fill-box;transform-origin:center;
   filter:drop-shadow(0 1px 1px rgba(0,0,0,.4)) drop-shadow(0 2px 4px rgba(0,0,0,.45)) drop-shadow(0 6px 12px rgba(0,0,0,.35))}
 .smile .face{fill:var(--c-accent);transition:fill .3s ease}
 .smile .face-grad{fill:url(#smileGrad)}
 .smile-cap .face-grad{fill:var(--c-accent)}
-.smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .15s ease}
-/* MOUTH — SOLID horizontal line, no arc. tip-to-tip. */
+.smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .25s var(--expo)}
+/* MOUTH — curved smile arc (DEFAULT). Never modified. */
 .smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
-/* Default mouth is a straight line. Happy/sad overlays sit ON TOP, never modify the line itself. */
-.smile .overlay{opacity:0;transition:opacity .25s ease;pointer-events:none}
-.smile.show-happy .overlay-happy{opacity:1}
-.smile.show-sad .overlay-sad{opacity:1}
-/* HAPPY overlay — open mouth + teeth (like 😀). Sits BELOW the solid line (line becomes upper lip). */
-.smile .overlay-happy{transform-box:fill-box;transform-origin:50% 30%;transform:scale(.4) translateY(-4px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
-.smile.show-happy .overlay-happy{transform:scale(1) translateY(0);opacity:1}
-.smile .happy-mouth{fill:var(--c-on-accent)}
-.smile .happy-teeth rect{fill:#FBF7EE}
-.smile .happy-tongue{fill:var(--c-tongue)}
-/* SAD overlay — small tongue sticking out (like 😛). Sits BELOW the line. */
-.smile .overlay-sad{transform-box:fill-box;transform-origin:50% 0%;transform:scale(.4) translateY(-10px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
-.smile.show-sad .overlay-sad{transform:scale(1) translateY(0);opacity:1}
-.smile .sad-tongue{fill:var(--c-tongue)}
 /* BLINK — eyes shrink to thin lines briefly */
-.smile.is-blink .eye{transform:scaleY(.15)}
+.smile.is-blink .eye{transform:scaleY(.15);transition:transform .08s ease}
+/* LOOK AROUND — eyes shift in a direction briefly. Subtle, doesn't touch the mouth. */
+.smile.look-left .eye{transform:translateX(-3px)}
+.smile.look-right .eye{transform:translateX(3px)}
+.smile.look-up .eye{transform:translateY(-2px)}
+.smile.is-blink.look-left .eye,.smile.is-blink.look-right .eye,.smile.is-blink.look-up .eye{transform:scaleY(.15)}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
 .goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
 
-/* TICKER — bottom-anchored. NO cap.left yellow bar (smile face lives in strap when idle). */
+/* TICKER — bottom-anchored. cap.left yellow gradient bar with SMILE · LIVE text (original v9 design, restored). */
 .ticker{position:absolute;left:24px;right:24px;bottom:24px;height:68px;z-index:40;display:flex;align-items:stretch;overflow:hidden;
   background:linear-gradient(180deg,var(--c-surface),var(--c-bg));border:1px solid rgba(255,255,255,.045);border-radius:14px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 0 0 1px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.4);
@@ -68,27 +61,13 @@ body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0
 @keyframes tickin{from{transform:translateY(90px);opacity:0}to{transform:none;opacity:.92}}
 .ticker.done{animation:tickin .9s var(--expo) .15s backwards,idleBreathe 5.2s cubic-bezier(.4,0,.6,1) 1s infinite}
 @keyframes idleBreathe{0%,100%{opacity:.92}45%{opacity:.94}55%{opacity:.96}}
-/* BRAND SLOT — left edge of ticker. 64px wide "well" that the smile face sits inside when idle.
-   Has subtle inset shadow (recessed look) + thin yellow accent stripe on far left edge. */
-.ticker .brand-slot{width:64px;flex:none;position:relative;z-index:6;
-  background:linear-gradient(90deg,rgba(255,193,7,.06) 0,rgba(255,193,7,.02) 30%,transparent 100%);
-  border-right:1px solid rgba(255,255,255,.045)}
-.ticker .brand-slot::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,#FFD54A,#FFB020);box-shadow:0 0 8px rgba(255,176,32,.4)}
-.ticker .brand-slot::after{content:'';position:absolute;inset:0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),inset 0 -1px 0 rgba(0,0,0,.2);
-  pointer-events:none}
-/* Placeholder text shown when strap is OUT of slot (active or moved) */
-.ticker .brand-slot .slot-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.18em;color:rgba(255,193,7,.3);
-  text-transform:uppercase;text-align:center;line-height:1.2;pointer-events:none;transition:opacity .3s ease}
-.ticker .brand-slot .slot-label .ll2{display:block;color:rgba(251,247,238,.18);font-size:7px;letter-spacing:.12em;margin-top:2px}
-body.strap-active .ticker .brand-slot .slot-label{opacity:1}
-body:not(.strap-active) .ticker .brand-slot .slot-label{opacity:0}
 .tline{position:absolute;top:0;left:0;right:0;height:2px;z-index:7;transform:scaleX(0);transform-origin:left;opacity:0;pointer-events:none}
 .tline.up{background:var(--c-up)} .tline.dn{background:var(--c-down)}
 .ticker.alert-up .tline.up,.ticker.alert-dn .tline.dn{animation:linedraw 2.6s var(--expo) forwards}
 @keyframes linedraw{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1);opacity:1}78%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+.cap{display:flex;align-items:center;gap:12px;padding:0 24px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.22em}
+.cap.left{background:linear-gradient(180deg,#FFD54A,#FFB020);color:var(--c-on-accent);z-index:6}
 .cells{flex:1;display:grid;grid-template-columns:repeat(6,1fr);align-items:stretch;min-width:0;z-index:6}
 .cell{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:0 16px;min-width:0;position:relative;
   opacity:0;transform:translateY(10px);animation:cellin .7s var(--expo) forwards}
@@ -199,16 +178,13 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap.on.st-poll .smile-face .face{fill:var(--c-sky)}
 #strap.on.st-goal .smile-face .face{fill:var(--c-violet)}
 #strap.on.st-note .smile-face .face{fill:#D97706}
-#strap .smile-face .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .15s ease}
+#strap .smile-face .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .25s var(--expo)}
 #strap .smile-face .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
-#strap .smile-face .overlay{opacity:0;transition:opacity .25s ease;pointer-events:none}
-#strap .smile-face.show-happy .overlay-happy{opacity:1}
-#strap .smile-face.show-sad .overlay-sad{opacity:1}
-#strap .smile-face .overlay-happy{transform-box:fill-box;transform-origin:50% 30%;transform:scale(.4) translateY(-4px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
-#strap .smile-face.show-happy .overlay-happy{transform:scale(1) translateY(0);opacity:1}
-#strap .smile-face .overlay-sad{transform-box:fill-box;transform-origin:50% 0%;transform:scale(.4) translateY(-10px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
-#strap .smile-face.show-sad .overlay-sad{transform:scale(1) translateY(0);opacity:1}
-#strap .smile-face.is-blink .eye{transform:scaleY(.15)}
+#strap .smile-face.is-blink .eye{transform:scaleY(.15);transition:transform .08s ease}
+#strap .smile-face.look-left .eye{transform:translateX(-3px)}
+#strap .smile-face.look-right .eye{transform:translateX(3px)}
+#strap .smile-face.look-up .eye{transform:translateY(-2px)}
+#strap .smile-face.is-blink.look-left .eye,#strap .smile-face.is-blink.look-right .eye,#strap .smile-face.is-blink.look-up .eye{transform:scaleY(.15)}
 
 /* Island content — hidden when idle, fades in when active. Padding adapts based on flip state. */
 #strap .island-content{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px 0 8px;gap:5px;
@@ -303,7 +279,9 @@ body.perf-low #strap .island{backdrop-filter:none;-webkit-backdrop-filter:none}
   </svg></div>
 </div>
 
-<div id="help" class="off"><b>SMILE V11 — INSIDE-TICKER HOME</b><br>
+<div id="help" class="off"><b>SMILE V11 — REVERTED TO SIMPLICITY</b><br>
+Default smile face preserved (curved arc). No emoji overlays.<br>
+Allowed animations: blink (every 6.5s) + look-around (every 5-9s, random direction).<br><br>
 [1] hide &nbsp;[2] lesson &nbsp;[3] TP &nbsp;[4] SL &nbsp;[5] poll &nbsp;[6] host<br>
 [7] goal &nbsp;[8] wire &nbsp;[9] swap &nbsp;[0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
 [M] cycle position (current: <span id="posLabel" class="pos">inside-ticker</span>)<br>
@@ -319,31 +297,8 @@ body.perf-low #strap .island{backdrop-filter:none;-webkit-backdrop-filter:none}
         </radialGradient></defs>
         <circle class="face face-grad" cx="50" cy="50" r="48"/>
         <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-        <!-- SOLID STRAIGHT MOUTH LINE — tip to tip, no arc. The emoji "neutral" mouth. -->
-        <line class="mouth" x1="22" y1="52" x2="78" y2="52"/>
-        <!-- HAPPY OVERLAY: open mouth + teeth + tongue (like 😀). Sits BELOW the line, line becomes upper lip. -->
-        <g class="overlay overlay-happy">
-          <!-- Open mouth: dark filled shape from (26,52) down to (50,72) and back up to (74,52). Slightly inside the line so the line stays as upper lip. -->
-          <path class="happy-mouth" d="M 26 52 Q 26 72 50 72 Q 74 72 74 52 Z"/>
-          <!-- Upper teeth: 6 white rectangles with gaps (more emoji-like than one solid strip) -->
-          <g class="happy-teeth">
-            <rect x="28" y="53" width="6" height="5" rx="1"/>
-            <rect x="36" y="53" width="6" height="5" rx="1"/>
-            <rect x="44" y="53" width="6" height="5" rx="1"/>
-            <rect x="52" y="53" width="6" height="5" rx="1"/>
-            <rect x="60" y="53" width="6" height="5" rx="1"/>
-            <rect x="68" y="53" width="4" height="5" rx="1"/>
-          </g>
-          <!-- Tongue: pink shape at bottom of mouth -->
-          <path class="happy-tongue" d="M 44 68 Q 50 76 56 68 L 56 72 Q 50 76 44 72 Z"/>
-        </g>
-        <!-- SAD OVERLAY: tongue sticking out below the line (like 😛). Line stays as closed mouth. -->
-        <g class="overlay overlay-sad">
-          <!-- Tongue: pink ellipse below the line -->
-          <ellipse class="sad-tongue" cx="50" cy="62" rx="7" ry="9"/>
-          <!-- Center groove line on tongue (anatomical detail) -->
-          <path class="sad-tongue-groove" d="M 50 55 L 50 68" stroke="#000" stroke-opacity=".15" stroke-width="1" fill="none"/>
-        </g>
+        <!-- DEFAULT SMILE MOUTH — curved arc. NEVER modify. No emoji overlays. -->
+        <path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>
       </svg>
     </div>
     <div class="island-content">
@@ -367,7 +322,7 @@ body.perf-low #strap .island{backdrop-filter:none;-webkit-backdrop-filter:none}
 </div>
 
 <div class="ticker" id="ticker">
-  <div class="brand-slot"><div class="slot-label">SMILE<span class="ll2">· LIVE ·</span></div></div>
+  <div class="cap left">SMILE · LIVE</div>
   <div class="tline up"></div><div class="tline dn"></div>
   <div class="cells" id="cells">
     <div class="cell" id="cell0"><div class="ctop"><span class="csym">EUR/USD</span><span class="cchg up" id="chg0"></span></div><span class="cval" id="val0"></span></div>
@@ -462,7 +417,19 @@ Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random
 const smileCap=$('smileCap');
 function blink(){smileCap.classList.add('is-blink');setTimeout(()=>smileCap.classList.remove('is-blink'),150)}
 Power.every(blink,6500);
-function mouth(c){smileCap.classList.remove('show-happy','show-sad');if(c)smileCap.classList.add(c)}
+/* LOOK AROUND — picks a random direction every 5-9s, holds for 1.2s, returns to center. */
+const LOOK_DIRS=['look-left','look-right','look-up'];
+let lookTimer=null;
+function lookAround(){
+  const dir=LOOK_DIRS[Math.floor(Math.random()*LOOK_DIRS.length)];
+  smileCap.classList.add(dir);
+  lookTimer=setTimeout(()=>{smileCap.classList.remove(dir);},1200);
+}
+function scheduleNextLook(){
+  const delay=5000+Math.random()*4000; // 5-9s
+  setTimeout(()=>{lookAround();scheduleNextLook();},delay);
+}
+scheduleNextLook();
 const ticker=$('ticker');let lineTimer=null;
 function alertLine(dir){clearTimeout(lineTimer);
   ticker.classList.remove('alert-up','alert-dn');void ticker.offsetWidth;
@@ -566,7 +533,7 @@ function hideStrap(){
   strap.classList.remove('on','timing','swapping');
   strap.className=PILL_HOMES[pillHomeIx];
   document.body.classList.remove('strap-active');
-  mouth(null);stBusy=false;
+  stBusy=false;
 }
 const WIRE=[
   {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
@@ -580,15 +547,15 @@ function showWireCard(){if(stBusy||strap.classList.contains('on'))return;
 Power.every(showWireCard,90000);
 const STATES={
   lesson:()=>{stBusy=true;showStrap('lesson','LESSON','Support & Resistance','Chart School · part 2 of 4 · the mango test',{n:'12:00',nl:'LEFT',ttl:8000})},
-  tp:()=>{stBusy=true;mouth('show-happy');alertLine('up');
+  tp:()=>{stBusy=true;alertLine('up');
     showStrap('tp','LIVE TRADE · DEMO','Take Profit Hit','EUR/USD · long from 1.0810 · plan followed',{count:32,sign:'+',dir:'up',ladder:88,ttl:6000});},
-  sl:()=>{stBusy=true;mouth('show-sad');alertLine('dn');
+  sl:()=>{stBusy=true;alertLine('dn');
     showStrap('sl','LIVE TRADE · DEMO','Stop Loss Hit','GBP/USD · short from 1.2720 · risk respected',{count:18,sign:'-',dir:'dn',ladder:6,ttl:6000});},
   poll:()=>{stBusy=true;showStrap('poll','POLL','You Pick the Next Lesson','A candles · B risk sizing · C news — type in chat',{n:'A·B·C',nl:'VOTE',ttl:10000})},
   name:()=>{stBusy=true;showStrap('name','HOST','Mwangi','Smile TV · Chart School · Nairobi',{n:'smile.co.ke',nl:'',ttl:6000,link:true})},
   goal:()=>{stBusy=true;
     showStrap('goal','STREAM GOAL',goal.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'ring on the smile tracks it live · thanks for the 4G smiles',{n:Math.round(goal/GOAL_MAX*100)+'%',nl:'FUNDED',ttl:6000});},
-  goalHit:()=>{stBusy=true;mouth('show-happy');alertLine('up');
+  goalHit:()=>{stBusy=true;alertLine('up');
     showStrap('goal','GOAL COMPLETE',GOAL_MAX.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'the smile is full · new goal loading',{n:'100%',nl:'FUNDED',ttl:8000});},
   school:()=>{stBusy=true;
     showStrap('lesson','CHART SCHOOL','Part 2 — Support & Resistance','the mango test · 4 parts · live Mondays 9PM EAT',{steps:2,n:'2/4',nl:'PARTS',ttl:10000})},
