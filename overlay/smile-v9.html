@@ -118,19 +118,19 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap{position:fixed;left:24px;bottom:109px;z-index:45;pointer-events:none;
   transition:left .6s cubic-bezier(.16,1,.3,1),bottom .6s cubic-bezier(.16,1,.3,1),top .6s cubic-bezier(.16,1,.3,1),right .6s cubic-bezier(.16,1,.3,1)}
 /* The island — ONE container. width animates from 86px (circle) to fit-content (pill). */
-#strap .island{position:relative;height:86px;width:86px;min-width:86px;
+#strap .island{position:relative;height:86px;width:86px;display:flex;align-items:stretch;
   background:rgba(12,10,8,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
   border:1px solid rgba(255,255,255,.08);border-radius:43px;overflow:hidden;will-change:width;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
   transition:width .5s cubic-bezier(.16,1,.3,1),background .4s ease,box-shadow .5s var(--expo)}
-#strap.on .island{width:fit-content;max-width:560px;background:rgba(16,13,10,.88)}
+#strap.on .island{width:fit-content;max-width:560px;min-width:340px;background:rgba(16,13,10,.88)}
 /* State glow */
 #strap.st-tp .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(46,168,118,.3),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 #strap.st-sl .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(217,83,79,.3),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 #strap.st-poll .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(14,165,233,.3),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 #strap.st-goal .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(168,85,247,.3),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15)}
 /* Smile face — lives INSIDE the island. Left-aligned. Stays in the circle area. */
-#strap .smile-face{position:absolute;left:0;top:0;width:86px;height:86px;
+#strap .smile-face{width:86px;height:86px;flex:none;
   display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;
   transition:transform .4s cubic-bezier(.16,1,.3,1)}
 #strap .smile-face svg{width:58px;height:58px;display:block}
@@ -147,10 +147,9 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap .smile-face.is-frown .mouth{d:path("M 30 64 A 22 22 0 0 1 70 64")}
 #strap .smile-face.is-frown .eye{transform:scale(.85)}
 #strap .smile-face.is-blink .eye{transform:scaleY(.15)}
-/* Content — lives INSIDE the island. Hidden when circle, revealed when pill. Left padding clears smile. */
-#strap .island-content{position:absolute;left:86px;top:0;right:0;bottom:0;
-  display:flex;flex-direction:column;justify-content:center;padding:0 28px 0 8px;gap:6px;
-  opacity:0;transform:translateX(-10px);transition:opacity .3s ease .15s,transform .3s ease .15s;overflow:hidden}
+/* Content — in-flow so it contributes to island width. Hidden via opacity when idle. */
+#strap .island-content{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px 0 8px;gap:6px;
+  opacity:0;transform:translateX(-10px);transition:opacity .3s ease .15s,transform .3s ease .15s;overflow:hidden;min-width:0}
 #strap.on .island-content{opacity:1;transform:translateX(0)}
 #strap.swapping .island-content{opacity:0;transition:opacity .12s ease}
 /* Zone 1: TITLE — colored dot + kicker + headline. WHAT happened. */
