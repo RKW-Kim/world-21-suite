@@ -49,13 +49,12 @@ body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0
 .smile .overlay-happy{transform-box:fill-box;transform-origin:50% 30%;transform:scale(.4) translateY(-4px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
 .smile.show-happy .overlay-happy{transform:scale(1) translateY(0);opacity:1}
 .smile .happy-mouth{fill:var(--c-on-accent)}
-.smile .happy-teeth{fill:#FBF7EE}
+.smile .happy-teeth rect{fill:#FBF7EE}
 .smile .happy-tongue{fill:var(--c-tongue)}
 /* SAD overlay — small tongue sticking out (like 😛). Sits BELOW the line. */
 .smile .overlay-sad{transform-box:fill-box;transform-origin:50% 0%;transform:scale(.4) translateY(-10px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
 .smile.show-sad .overlay-sad{transform:scale(1) translateY(0);opacity:1}
 .smile .sad-tongue{fill:var(--c-tongue)}
-.smile .sad-tongue-strip{fill:var(--c-on-accent);opacity:.4}
 /* BLINK — eyes shrink to thin lines briefly */
 .smile.is-blink .eye{transform:scaleY(.15)}
 .goalmark{position:relative;width:32px;height:32px;flex:none}
@@ -320,18 +319,30 @@ body.perf-low #strap .island{backdrop-filter:none;-webkit-backdrop-filter:none}
         </radialGradient></defs>
         <circle class="face face-grad" cx="50" cy="50" r="48"/>
         <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
-        <!-- SOLID STRAIGHT MOUTH LINE — tip to tip, no arc -->
+        <!-- SOLID STRAIGHT MOUTH LINE — tip to tip, no arc. The emoji "neutral" mouth. -->
         <line class="mouth" x1="22" y1="52" x2="78" y2="52"/>
-        <!-- HAPPY OVERLAY: open mouth + teeth + tongue (like 😀). Sits BELOW the line. -->
+        <!-- HAPPY OVERLAY: open mouth + teeth + tongue (like 😀). Sits BELOW the line, line becomes upper lip. -->
         <g class="overlay overlay-happy">
-          <path class="happy-mouth" d="M 24 52 Q 24 74 50 74 Q 76 74 76 52 Z"/>
-          <rect class="happy-teeth" x="28" y="52" width="44" height="5" rx="1.5"/>
-          <path class="happy-tongue" d="M 42 70 Q 50 78 58 70 L 58 74 Q 50 78 42 74 Z"/>
+          <!-- Open mouth: dark filled shape from (26,52) down to (50,72) and back up to (74,52). Slightly inside the line so the line stays as upper lip. -->
+          <path class="happy-mouth" d="M 26 52 Q 26 72 50 72 Q 74 72 74 52 Z"/>
+          <!-- Upper teeth: 6 white rectangles with gaps (more emoji-like than one solid strip) -->
+          <g class="happy-teeth">
+            <rect x="28" y="53" width="6" height="5" rx="1"/>
+            <rect x="36" y="53" width="6" height="5" rx="1"/>
+            <rect x="44" y="53" width="6" height="5" rx="1"/>
+            <rect x="52" y="53" width="6" height="5" rx="1"/>
+            <rect x="60" y="53" width="6" height="5" rx="1"/>
+            <rect x="68" y="53" width="4" height="5" rx="1"/>
+          </g>
+          <!-- Tongue: pink shape at bottom of mouth -->
+          <path class="happy-tongue" d="M 44 68 Q 50 76 56 68 L 56 72 Q 50 76 44 72 Z"/>
         </g>
-        <!-- SAD OVERLAY: tongue sticking out (like 😛). Sits BELOW the line. -->
+        <!-- SAD OVERLAY: tongue sticking out below the line (like 😛). Line stays as closed mouth. -->
         <g class="overlay overlay-sad">
-          <ellipse class="sad-tongue" cx="50" cy="64" rx="6" ry="10"/>
-          <rect class="sad-tongue-strip" x="46" y="52" width="8" height="3" rx="1.5"/>
+          <!-- Tongue: pink ellipse below the line -->
+          <ellipse class="sad-tongue" cx="50" cy="62" rx="7" ry="9"/>
+          <!-- Center groove line on tongue (anatomical detail) -->
+          <path class="sad-tongue-groove" d="M 50 55 L 50 68" stroke="#000" stroke-opacity=".15" stroke-width="1" fill="none"/>
         </g>
       </svg>
     </div>
