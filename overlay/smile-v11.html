@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SMILE · V11 — Inside-ticker home + Solid mouth + Emoji overlays</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --c-accent:#FFB020;--c-accent-rgb:255,176,32;--c-bg:#100d0a;--c-surface:#1a1612;--c-elevated:#221d18;--c-fg:#FBF7EE;--c-muted:#a1a1aa;--c-faint:#8a8a93;
+  --c-border:#2a2620;--c-on-accent:#0a0a0a;--c-up:#2EA876;--c-down:#D9534F;--c-sky:#0ea5e9;--c-violet:#A855F7;
+  --c-up-soft:#5BE9B0;--c-down-soft:#FF8A98;--c-tongue:#FF6B7A;
+  --expo:cubic-bezier(.16,1,.3,1);--spring:cubic-bezier(.34,1.56,.64,1);
+  --font-display:'Space Grotesk',system-ui,sans-serif;--font-mono:'IBM Plex Mono',ui-monospace,monospace;--font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#000}
+body{font-family:var(--font-body);color:var(--c-fg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;user-select:none}
+svg{display:block}
+.stage{position:absolute;inset:0;background:var(--c-bg)}
+.stage.overlay-mode{background:transparent}
+.bg-grad{position:absolute;inset:0;overflow:hidden;
+  background:radial-gradient(60% 40% at 20% 80%,rgba(var(--c-accent-rgb),.06),transparent 70%),var(--c-bg)}
+body.overlay-mode .bg-grad{background:transparent}
+body.overlay-mode .market-bg{display:none}
+body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px rgba(255,255,255,.06),0 1px 3px rgba(0,0,0,.25)}
+.market-bg{position:absolute;left:0;right:0;bottom:78px;height:42vh;min-height:260px;opacity:0;pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 32%);mask-image:linear-gradient(180deg,transparent 0,#000 32%)}
+.market-bg svg{width:100%;height:100%}
+#help{position:fixed;top:24px;left:24px;z-index:99;font-family:var(--font-mono);font-size:11px;line-height:2;color:var(--c-muted);
+  background:#101013;border:1px solid var(--c-border);border-radius:10px;padding:10px 14px;transition:opacity .3s;max-width:340px}
+#help.off{opacity:0;pointer-events:none}
+#help b{color:var(--c-accent)}
+#help .pos{color:var(--c-up);font-weight:700}
+
+/* SMILE — canonical 100-box. SOLID horizontal mouth line (no bow/arrow arc). */
+.smile{transform-box:fill-box;transform-origin:center;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.4)) drop-shadow(0 2px 4px rgba(0,0,0,.45)) drop-shadow(0 6px 12px rgba(0,0,0,.35))}
+.smile .face{fill:var(--c-accent);transition:fill .3s ease}
+.smile .face-grad{fill:url(#smileGrad)}
+.smile-cap .face-grad{fill:var(--c-accent)}
+.smile .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .15s ease}
+/* MOUTH — SOLID horizontal line, no arc. tip-to-tip. */
+.smile .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
+/* Default mouth is a straight line. Happy/sad overlays sit ON TOP, never modify the line itself. */
+.smile .overlay{opacity:0;transition:opacity .25s ease;pointer-events:none}
+.smile.show-happy .overlay-happy{opacity:1}
+.smile.show-sad .overlay-sad{opacity:1}
+/* HAPPY overlay — open mouth + teeth (like 😀). Sits BELOW the solid line (line becomes upper lip). */
+.smile .overlay-happy{transform-box:fill-box;transform-origin:50% 30%;transform:scale(.4) translateY(-4px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
+.smile.show-happy .overlay-happy{transform:scale(1) translateY(0);opacity:1}
+.smile .happy-mouth{fill:var(--c-on-accent)}
+.smile .happy-teeth{fill:#FBF7EE}
+.smile .happy-tongue{fill:var(--c-tongue)}
+/* SAD overlay — small tongue sticking out (like 😛). Sits BELOW the line. */
+.smile .overlay-sad{transform-box:fill-box;transform-origin:50% 0%;transform:scale(.4) translateY(-10px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
+.smile.show-sad .overlay-sad{transform:scale(1) translateY(0);opacity:1}
+.smile .sad-tongue{fill:var(--c-tongue)}
+.smile .sad-tongue-strip{fill:var(--c-on-accent);opacity:.4}
+/* BLINK — eyes shrink to thin lines briefly */
+.smile.is-blink .eye{transform:scaleY(.15)}
+.goalmark{position:relative;width:32px;height:32px;flex:none}
+.goalmark .smile{position:absolute;inset:0;width:100%;height:100%}
+
+/* TICKER — bottom-anchored. NO cap.left yellow bar (smile face lives in strap when idle). */
+.ticker{position:absolute;left:24px;right:24px;bottom:24px;height:68px;z-index:40;display:flex;align-items:stretch;overflow:hidden;
+  background:linear-gradient(180deg,var(--c-surface),var(--c-bg));border:1px solid rgba(255,255,255,.045);border-radius:14px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 0 0 1px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.4);
+  animation:tickin .9s var(--expo) .15s backwards;opacity:.92}
+@keyframes tickin{from{transform:translateY(90px);opacity:0}to{transform:none;opacity:.92}}
+.ticker.done{animation:tickin .9s var(--expo) .15s backwards,idleBreathe 5.2s cubic-bezier(.4,0,.6,1) 1s infinite}
+@keyframes idleBreathe{0%,100%{opacity:.92}45%{opacity:.94}55%{opacity:.96}}
+/* BRAND SLOT — left edge of ticker. 64px wide "well" that the smile face sits inside when idle.
+   Has subtle inset shadow (recessed look) + thin yellow accent stripe on far left edge. */
+.ticker .brand-slot{width:64px;flex:none;position:relative;z-index:6;
+  background:linear-gradient(90deg,rgba(255,193,7,.06) 0,rgba(255,193,7,.02) 30%,transparent 100%);
+  border-right:1px solid rgba(255,255,255,.045)}
+.ticker .brand-slot::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,#FFD54A,#FFB020);box-shadow:0 0 8px rgba(255,176,32,.4)}
+.ticker .brand-slot::after{content:'';position:absolute;inset:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),inset 0 -1px 0 rgba(0,0,0,.2);
+  pointer-events:none}
+/* Placeholder text shown when strap is OUT of slot (active or moved) */
+.ticker .brand-slot .slot-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.18em;color:rgba(255,193,7,.3);
+  text-transform:uppercase;text-align:center;line-height:1.2;pointer-events:none;transition:opacity .3s ease}
+.ticker .brand-slot .slot-label .ll2{display:block;color:rgba(251,247,238,.18);font-size:7px;letter-spacing:.12em;margin-top:2px}
+body.strap-active .ticker .brand-slot .slot-label{opacity:1}
+body:not(.strap-active) .ticker .brand-slot .slot-label{opacity:0}
+.tline{position:absolute;top:0;left:0;right:0;height:2px;z-index:7;transform:scaleX(0);transform-origin:left;opacity:0;pointer-events:none}
+.tline.up{background:var(--c-up)} .tline.dn{background:var(--c-down)}
+.ticker.alert-up .tline.up,.ticker.alert-dn .tline.dn{animation:linedraw 2.6s var(--expo) forwards}
+@keyframes linedraw{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1);opacity:1}78%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+.cells{flex:1;display:grid;grid-template-columns:repeat(6,1fr);align-items:stretch;min-width:0;z-index:6}
+.cell{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:0 16px;min-width:0;position:relative;
+  opacity:0;transform:translateY(10px);animation:cellin .7s var(--expo) forwards}
+.cell:nth-child(1){animation-delay:.50s}.cell:nth-child(2){animation-delay:.60s}.cell:nth-child(3){animation-delay:.74s}
+.cell:nth-child(4){animation-delay:.92s}.cell:nth-child(5){animation-delay:1.14s}.cell:nth-child(6){animation-delay:1.40s}
+@keyframes cellin{to{opacity:1;transform:none}}
+.cell.done{animation:none;opacity:1;transform:none}
+.cell + .cell{border-left:1px solid rgba(255,255,255,.045)}
+.cell.done.fup{animation:fup .7s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn{animation:fdn .7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fup{0%{box-shadow:inset 0 0 0 1px rgba(46,168,118,0),inset 0 0 24px rgba(46,168,118,0)}18%{box-shadow:inset 0 0 0 1px rgba(46,168,118,.2),inset 0 0 32px rgba(46,168,118,.18)}55%{box-shadow:inset 0 0 0 1px rgba(46,168,118,.1),inset 0 0 24px rgba(46,168,118,.08)}100%{box-shadow:inset 0 0 0 1px rgba(46,168,118,0),inset 0 0 24px rgba(46,168,118,0)}}
+@keyframes fdn{0%{box-shadow:inset 0 0 0 1px rgba(217,83,79,0),inset 0 0 24px rgba(217,83,79,0)}18%{box-shadow:inset 0 0 0 1px rgba(217,83,79,.2),inset 0 0 32px rgba(217,83,79,.18)}55%{box-shadow:inset 0 0 0 1px rgba(217,83,79,.1),inset 0 0 24px rgba(217,83,79,.08)}100%{box-shadow:inset 0 0 0 1px rgba(217,83,79,0),inset 0 0 24px rgba(217,83,79,0)}}
+.ctop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.csym{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--c-faint)}
+.cchg{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;font-weight:700;border-radius:5px;padding:2px 8px;letter-spacing:.06em;min-width:52px}
+.cchg.up{color:var(--c-up);background:rgba(14,203,129,.1)}
+.cchg.down{color:var(--c-down);background:rgba(246,70,93,.1)}
+.caret{width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent}
+.caret.up{border-bottom:4px solid var(--c-up)} .caret.down{border-top:4px solid var(--c-down)}
+.cval{font-family:var(--font-mono);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1;color:var(--c-fg);line-height:1;letter-spacing:-.01em;text-align:left;min-width:5ch}
+.cval.roll{animation:roll .5s var(--expo)}
+@keyframes roll{0%{transform:translateY(45%);opacity:0}100%{transform:none;opacity:1}}
+.cell.done.fup .cval{animation:pulseUp .7s cubic-bezier(.16,1,.3,1) forwards}
+.cell.done.fdn .cval{animation:pulseDn .7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes pulseUp{0%{color:var(--c-fg)}18%{color:var(--c-up)}55%{color:var(--c-up)}100%{color:var(--c-fg)}}
+@keyframes pulseDn{0%{color:var(--c-fg)}18%{color:var(--c-down)}55%{color:var(--c-down)}100%{color:var(--c-fg)}}
+
+/* WIRE SLOT */
+.cell.wire .csym{color:var(--c-accent)}
+.cell.wire .wprog{position:absolute;left:0;right:0;bottom:0;height:2px;overflow:hidden}
+.cell.wire{background:linear-gradient(180deg,transparent 0%,rgba(255,193,7,.04) 100%)}
+.cell.wire .wprog i{display:block;height:100%;background:var(--c-accent);opacity:.55;transform-origin:left;animation:wprog var(--wire-dur,7s) linear forwards}
+@keyframes wprog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.cell.wire .wswap{overflow:hidden;display:block}
+.cell.wire .wswap > span{display:block;transition:transform .45s var(--expo),opacity .3s ease}
+.cell.wire.swapping .wswap > span{transform:translateY(-110%);opacity:0}
+.cell.wire.moving .csym::after{content:" · MOVING";color:var(--c-down)}
+
+/* DESK-TIME PILL */
+.dclock{margin-left:auto;align-self:stretch;display:flex;align-items:center;padding:0 16px;border-left:1px solid var(--c-border)}
+.dpill{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.05);
+  border:1px solid var(--c-border);font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;color:var(--c-muted);
+  white-space:nowrap;font-variant-numeric:tabular-nums;transition:all .35s var(--expo)}
+.ddot{width:6px;height:6px;border-radius:50%;background:var(--c-up);flex:none}
+.dsep{opacity:.4}
+.dsub{font-size:8px;color:var(--c-faint)}
+body.tt-tape .ddot{background:var(--c-accent)}
+body.tt-stealth .dpill{background:#000;border-color:#000;color:#161616}
+body.tt-stealth .dsub{color:#111}
+body.tt-stealth .ddot{background:#1a1a1a}
+
+/* THE ISLAND — ONE element that morphs. Idle = inside ticker (small 48px). Active = above ticker (86px) + pill grows. */
+/* Register CSS custom properties for smooth animation between homes */
+@property --smile-size{syntax:'<length>';inherits:true;initial-value:48px}
+@property --island-w{syntax:'<length>';inherits:true;initial-value:56px}
+@property --island-h{syntax:'<length>';inherits:true;initial-value:56px}
+
+/* 5 homes. Each has IDLE coords (small smile) and ACTIVE coords (full island + pill).
+   home-inside: idle IN ticker brand-slot, active slides UP to bottom-left above ticker.
+   Other homes: idle and active share coords (only size differs). */
+#strap{position:fixed;left:28px;bottom:30px;z-index:45;pointer-events:none;
+  transition:left .55s var(--expo),bottom .55s var(--expo),top .55s var(--expo),right .55s var(--expo),width .55s var(--expo),height .55s var(--expo),--smile-size .55s var(--expo),--island-w .55s var(--expo),--island-h .55s var(--expo);
+  --smile-size:48px;--island-w:56px;--island-h:56px;width:var(--island-w);height:var(--island-h)}
+
+/* IDLE states — small smile face (56x56 strap, 48px smile) */
+#strap.home-inside{left:28px;bottom:30px;top:auto;right:auto;--smile-size:48px;--island-w:56px;--island-h:56px}
+#strap.home-bottom-left{left:24px;bottom:102px;top:auto;right:auto;--smile-size:48px;--island-w:56px;--island-h:56px}
+#strap.home-bottom-right{left:auto;bottom:102px;top:auto;right:24px;--smile-size:48px;--island-w:56px;--island-h:56px}
+#strap.home-top-left{left:24px;bottom:auto;top:24px;right:auto;--smile-size:48px;--island-w:56px;--island-h:56px}
+#strap.home-top-right{left:auto;bottom:auto;top:24px;right:24px;--smile-size:48px;--island-w:56px;--island-h:56px}
+
+/* ACTIVE states (popup fired) — full island 86x86, smile 64px. Position matches idle (except home-inside slides up). */
+#strap.home-inside.on{left:24px;bottom:102px;top:auto;right:auto;--smile-size:64px;--island-w:86px;--island-h:86px}
+#strap.home-bottom-left.on{left:24px;bottom:102px;top:auto;right:auto;--smile-size:64px;--island-w:86px;--island-h:86px}
+#strap.home-bottom-right.on{left:auto;bottom:102px;top:auto;right:24px;--smile-size:64px;--island-w:86px;--island-h:86px}
+#strap.home-top-left.on{left:24px;bottom:auto;top:24px;right:auto;--smile-size:64px;--island-w:86px;--island-h:86px}
+#strap.home-top-right.on{left:auto;bottom:auto;top:24px;right:24px;--smile-size:64px;--island-w:86px;--island-h:86px}
+
+/* The island — ONE container. Width animates from base (idle) to fit-content (pill). */
+#strap .island{position:relative;height:100%;width:100%;display:flex;align-items:stretch;flex-direction:row;
+  background:rgba(12,10,8,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
+  border:1px solid rgba(255,255,255,.08);border-radius:9999px;overflow:hidden;will-change:width;
+  box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
+  transition:width .55s var(--expo),height .55s var(--expo),background .4s ease,box-shadow .5s var(--expo)}
+/* When strap is active, island grows to pill */
+#strap.on .island{width:fit-content;max-width:560px;min-width:340px;background:rgba(16,13,10,.88)}
+/* When inside-ticker home and NOT active, island has NO background — just the smile face sitting in the brand-slot. */
+#strap.home-inside:not(.on) .island{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+  border:none;box-shadow:none}
+/* When inside-ticker home and active (popup fired), island gains its glass background as it slides up */
+#strap.home-inside.on .island{background:rgba(16,13,10,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%)}
+/* Neon glow per state — only when active. */
+#strap.on.st-tp .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(46,168,118,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset -3px 0 12px rgba(46,168,118,.18)}
+#strap.on.st-sl .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(217,83,79,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset -3px 0 12px rgba(217,83,79,.18)}
+#strap.on.st-poll .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(14,165,233,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset -3px 0 12px rgba(14,165,233,.18)}
+#strap.on.st-goal .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(168,85,247,.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset -3px 0 12px rgba(168,85,247,.18)}
+/* On right-side homes (flip), the neon glow is on the LEFT edge of smile (toward content). */
+#strap.home-bottom-right.on .island,
+#strap.home-top-right.on .island{box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 0 32px rgba(var(--c-accent-rgb),.35),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15),inset 3px 0 12px rgba(var(--c-accent-rgb),.18)}
+
+/* Smile face — flex:none, scales between idle (48px) and active (64px). */
+#strap .smile-face{flex:none;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;position:relative;
+  width:var(--smile-size);height:var(--smile-size);transition:width .55s var(--expo),height .55s var(--expo)}
+#strap .smile-face svg.smile{width:88%;height:88%;display:block}
+#strap .smile-face .face{fill:var(--c-accent);transition:fill .3s ease}
+#strap.on.st-tp .smile-face .face{fill:var(--c-up)}
+#strap.on.st-sl .smile-face .face{fill:var(--c-down)}
+#strap.on.st-poll .smile-face .face{fill:var(--c-sky)}
+#strap.on.st-goal .smile-face .face{fill:var(--c-violet)}
+#strap.on.st-note .smile-face .face{fill:#D97706}
+#strap .smile-face .eye{fill:var(--c-on-accent);transform-box:fill-box;transform-origin:center;transition:transform .15s ease}
+#strap .smile-face .mouth{fill:none;stroke:var(--c-on-accent);stroke-width:7.5;stroke-linecap:round;stroke-linejoin:round}
+#strap .smile-face .overlay{opacity:0;transition:opacity .25s ease;pointer-events:none}
+#strap .smile-face.show-happy .overlay-happy{opacity:1}
+#strap .smile-face.show-sad .overlay-sad{opacity:1}
+#strap .smile-face .overlay-happy{transform-box:fill-box;transform-origin:50% 30%;transform:scale(.4) translateY(-4px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
+#strap .smile-face.show-happy .overlay-happy{transform:scale(1) translateY(0);opacity:1}
+#strap .smile-face .overlay-sad{transform-box:fill-box;transform-origin:50% 0%;transform:scale(.4) translateY(-10px);opacity:0;transition:transform .35s var(--spring),opacity .2s ease}
+#strap .smile-face.show-sad .overlay-sad{transform:scale(1) translateY(0);opacity:1}
+#strap .smile-face.is-blink .eye{transform:scaleY(.15)}
+
+/* Island content — hidden when idle, fades in when active. Padding adapts based on flip state. */
+#strap .island-content{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 28px 0 8px;gap:5px;
+  opacity:0;transform:translateX(-10px);transition:opacity .3s ease .15s,transform .3s ease .15s;overflow:hidden;min-width:0;order:2}
+#strap.on .island-content{opacity:1;transform:translateX(0)}
+#strap.swapping .island-content{opacity:0;transition:opacity .12s ease}
+/* Flip: when island is on right side homes, smile goes on RIGHT (order 2), content on LEFT (order 1) */
+#strap.home-bottom-right .smile-face,
+#strap.home-top-right .smile-face{order:2}
+#strap.home-bottom-right .island-content,
+#strap.home-top-right .island-content{order:1;padding:0 8px 0 28px}
+#strap.home-bottom-right.swapping .island-content,
+#strap.home-top-right.swapping .island-content{transform:translateX(10px)}
+
+/* Zone 1: Kicker label + Headline */
+#strap .r1{display:flex;align-items:center;gap:8px;overflow:hidden}
+#strap .kick{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--c-accent);text-transform:uppercase;flex-shrink:0;white-space:nowrap;transition:color .3s ease}
+#strap.on.st-tp .kick{color:var(--c-up)}
+#strap.on.st-sl .kick{color:var(--c-down)}
+#strap.on.st-poll .kick{color:var(--c-sky)}
+#strap.on.st-goal .kick{color:var(--c-violet)}
+#strap.on.st-note .kick{color:#D97706}
+#strap .head{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.02em;color:#fff;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#strap.on.st-note .head{color:rgba(255,255,255,.75);font-weight:600;font-size:16px}
+/* Zone 2: Subtext + badge/number */
+#strap .r2{display:flex;align-items:center;gap:10px;overflow:hidden}
+#strap .sub{font-size:13px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;line-height:1.3}
+#strap .badge{font-family:var(--font-mono);font-size:13px;font-weight:700;color:#fff;
+  background:var(--c-accent);padding:4px 12px;border-radius:9999px;flex-shrink:0;
+  font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1;transition:background .3s ease,color .3s ease;
+  box-shadow:0 0 12px rgba(255,176,32,.15)}
+#strap.on.st-tp .badge{background:var(--c-up);color:#0a0a0a;box-shadow:0 0 12px rgba(46,168,118,.2)}
+#strap.on.st-sl .badge{background:var(--c-down);color:#fff;box-shadow:0 0 12px rgba(217,83,79,.2)}
+#strap .num{font-family:var(--font-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum' 1,'zero' 1;color:#fff;flex-shrink:0;text-align:right;letter-spacing:-.02em;line-height:1.1}
+#strap .num.up{color:var(--c-up)} #strap .num.dn{color:var(--c-down)}
+#strap .num.link{color:rgba(255,176,32,.9);font-size:14px;text-decoration:underline;text-decoration-color:rgba(255,176,32,.4);text-underline-offset:2px}
+/* Zone 3: Ladder / Steps / Meta */
+#strap .r3{display:flex;align-items:center;gap:8px;overflow:hidden;height:16px}
+#strap .ladder{display:none;align-items:center;gap:8px;width:100%}
+#strap .ladder.show{display:flex}
+#strap .ll{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.06em;flex-shrink:0}
+#strap .ll.sl{color:var(--c-down)} #strap .ll.tp{color:var(--c-up)}
+#strap .lbar{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;position:relative;overflow:visible}
+#strap .lbar i{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:#fff;
+  transform:translate(-50%,-50%);transition:left .6s var(--expo);box-shadow:0 0 0 2px rgba(16,13,10,.8),0 0 8px rgba(255,255,255,.3)}
+#strap .lbar .lfill{position:absolute;top:0;left:0;height:100%;border-radius:3px;background:var(--c-accent);opacity:.4;transition:width .6s var(--expo)}
+#strap.on.st-tp .lbar .lfill{background:var(--c-up)} #strap.on.st-sl .lbar .lfill{background:var(--c-down)}
+#strap .steps{display:none;align-items:center;gap:4px;width:100%}
+#strap .steps.show{display:flex}
+#strap .step{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);flex-shrink:0;transition:all .3s}
+#strap .step.done{background:var(--c-accent);box-shadow:0 0 6px currentColor}
+#strap .step-line{flex:1;height:2px;background:rgba(255,255,255,.06);border-radius:1px}
+#strap .step-line.done{background:var(--c-accent)}
+#strap .meta{font-size:11px;color:rgba(255,255,255,.4);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* POPUP TIMEOUT PROGRESS BAR — thin 2px bar at bottom of island. Only when active. */
+#strap .progress{position:absolute;left:14px;right:14px;bottom:5px;height:2px;border-radius:1px;background:rgba(255,255,255,.05);overflow:hidden;opacity:0;transition:opacity .25s ease .2s;pointer-events:none}
+#strap.on .progress{opacity:1}
+#strap.on .progress i{display:block;height:100%;width:100%;transform-origin:left;background:var(--c-accent);transform:scaleX(0);transition:transform linear var(--ttl,6s)}
+#strap.on.timing .progress i{transform:scaleX(1)}
+#strap.on.st-tp .progress i{background:var(--c-up)}
+#strap.on.st-sl .progress i{background:var(--c-down)}
+#strap.on.st-poll .progress i{background:var(--c-sky)}
+#strap.on.st-goal .progress i{background:var(--c-violet)}
+
+/* LIGHT + TEST SCENES */
+body.light{--c-bg:#f4f4f2;--c-fg:#111113;--c-muted:#52525b;--c-faint:#8a8a93;--c-border:#dcdcd6}
+body.light .ticker{background:#ffffff;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+body.light #help{background:#ffffff}
+body[data-scene="1"] .market-bg{opacity:.85}
+body[data-scene="1"] .bg-grad{background:radial-gradient(40% 32% at 15% 18%,rgba(var(--c-accent-rgb),.12),transparent 70%),radial-gradient(circle at 50% 46%,#101014,#0a0a0b)}
+body[data-scene="2"] .bg-grad{background:radial-gradient(50% 60% at 30% 45%,#3a2c20,transparent 75%),radial-gradient(40% 50% at 75% 30%,#20303a,transparent 70%),#151312}
+body[data-scene="2"] .market-bg{opacity:0}
+body[data-scene="3"] .bg-grad{background:linear-gradient(180deg,#0d1420 0%,#1a2333 45%,#241a20 100%)}
+body[data-scene="3"] .market-bg{opacity:.4}
+body[data-scene="4"] .market-bg{opacity:.18}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01s !important;transition-duration:.01s !important}}
+body.perf-low #strap .island{backdrop-filter:none;-webkit-backdrop-filter:none}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg-grad"></div>
+  <div class="market-bg" id="marketBg"><svg viewBox="0 0 1920 460" preserveAspectRatio="none">
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC107" stop-opacity=".22"/><stop offset="1" stop-color="#FFC107" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="M0 380 L160 350 L320 385 L480 320 L640 350 L800 270 L960 305 L1120 220 L1280 260 L1440 180 L1600 215 L1760 140 L1920 165 L1920 460 L0 460 Z" fill="url(#mg)"/>
+    <path d="M0 380 L160 350 L320 385 L480 320 L640 350 L800 270 L960 305 L1120 220 L1280 260 L1440 180 L1600 215 L1760 140 L1920 165" fill="none" stroke="#FFC107" stroke-width="1.5"/>
+  </svg></div>
+</div>
+
+<div id="help" class="off"><b>SMILE V11 — INSIDE-TICKER HOME</b><br>
+[1] hide &nbsp;[2] lesson &nbsp;[3] TP &nbsp;[4] SL &nbsp;[5] poll &nbsp;[6] host<br>
+[7] goal &nbsp;[8] wire &nbsp;[9] swap &nbsp;[0] chart school &nbsp;[Q] question &nbsp;[E] calendar<br>
+[M] cycle position (current: <span id="posLabel" class="pos">inside-ticker</span>)<br>
+[V] scenes &nbsp;[T] clock &nbsp;[L] light &nbsp;[B] market &nbsp;[O] overlay &nbsp;[D] demo cycle &nbsp;[H] hide this<br><br>
+<b>POPUP TIMEOUT:</b> <span id="ttlLabel" class="pos">6s default</span> &nbsp;(progress bar shows remaining)</div>
+
+<div id="strap" class="home-inside">
+  <div class="island">
+    <div class="smile-face" id="smileCap">
+      <svg class="smile smile-cap" viewBox="0 0 100 100">
+        <defs><radialGradient id="smileGrad" cx="38" cy="32" r="62" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFD54F"/><stop offset="1" stop-color="#FFC107"/>
+        </radialGradient></defs>
+        <circle class="face face-grad" cx="50" cy="50" r="48"/>
+        <circle class="eye" cx="31" cy="35" r="5.5"/><circle class="eye" cx="69" cy="35" r="5.5"/>
+        <!-- SOLID STRAIGHT MOUTH LINE — tip to tip, no arc -->
+        <line class="mouth" x1="22" y1="52" x2="78" y2="52"/>
+        <!-- HAPPY OVERLAY: open mouth + teeth + tongue (like 😀). Sits BELOW the line. -->
+        <g class="overlay overlay-happy">
+          <path class="happy-mouth" d="M 24 52 Q 24 74 50 74 Q 76 74 76 52 Z"/>
+          <rect class="happy-teeth" x="28" y="52" width="44" height="5" rx="1.5"/>
+          <path class="happy-tongue" d="M 42 70 Q 50 78 58 70 L 58 74 Q 50 78 42 74 Z"/>
+        </g>
+        <!-- SAD OVERLAY: tongue sticking out (like 😛). Sits BELOW the line. -->
+        <g class="overlay overlay-sad">
+          <ellipse class="sad-tongue" cx="50" cy="64" rx="6" ry="10"/>
+          <rect class="sad-tongue-strip" x="46" y="52" width="8" height="3" rx="1.5"/>
+        </g>
+      </svg>
+    </div>
+    <div class="island-content">
+      <div class="r1">
+        <span class="kick" id="sKick"></span>
+        <span class="head" id="sHead"></span>
+      </div>
+      <div class="r2">
+        <span class="sub" id="sSub"></span>
+        <span class="badge" id="sBadge"></span>
+        <span class="num" id="sNum"></span>
+      </div>
+      <div class="r3" id="sR3">
+        <div class="ladder" id="sLadder"><span class="ll sl">SL</span><div class="lbar"><i id="sDot"></i><div class="lfill" id="sLfill"></div></div><span class="ll tp">TP</span></div>
+        <div class="steps" id="sSteps"></div>
+        <span class="meta" id="sMeta"></span>
+      </div>
+    </div>
+    <div class="progress"><i id="sProgress"></i></div>
+  </div>
+</div>
+
+<div class="ticker" id="ticker">
+  <div class="brand-slot"><div class="slot-label">SMILE<span class="ll2">· LIVE ·</span></div></div>
+  <div class="tline up"></div><div class="tline dn"></div>
+  <div class="cells" id="cells">
+    <div class="cell" id="cell0"><div class="ctop"><span class="csym">EUR/USD</span><span class="cchg up" id="chg0"></span></div><span class="cval" id="val0"></span></div>
+    <div class="cell" id="cell1"><div class="ctop"><span class="csym">GBP/USD</span><span class="cchg down" id="chg1"></span></div><span class="cval" id="val1"></span></div>
+    <div class="cell" id="cell2"><div class="ctop"><span class="csym">USD/JPY</span><span class="cchg up" id="chg2"></span></div><span class="cval" id="val2"></span></div>
+    <div class="cell" id="cell3"><div class="ctop"><span class="csym">XAU/USD</span><span class="cchg up" id="chg3"></span></div><span class="cval" id="val3"></span></div>
+    <div class="cell" id="cell4"><div class="ctop"><span class="csym">BTC/USD</span><span class="cchg down" id="chg4"></span></div><span class="cval" id="val4"></span></div>
+    <div class="cell wire" id="cell5">
+      <div class="ctop"><span class="wswap"><span class="csym" id="sym5"></span></span><span class="cchg up" id="chg5"></span></div>
+      <span class="wswap"><span class="cval" id="val5"></span></span>
+      <div class="wprog"><i id="wprog"></i></div>
+    </div>
+  </div>
+  <div class="dclock"><div class="dpill"><span class="ddot"></span><span id="dtime">--:--:--</span><span class="dsep">·</span><span class="dsub" id="dsub">DEMO</span></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const Power={awake:true,
+  every(fn,ms){return setInterval(()=>{if(this.awake)fn()},ms)},
+  init(){document.addEventListener('visibilitychange',()=>{this.awake=!document.hidden});
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.body.classList.add('perf-low');
+    if(new URLSearchParams(location.search).get('perf')==='low')document.body.classList.add('perf-low');}};
+Power.init();
+function fmt(x){return x.p.toLocaleString('en-US',{minimumFractionDigits:x.dp,maximumFractionDigits:x.dp})}
+
+/* data */
+const SESSIONS=[
+  {from:1,to:9,w:1,trades:['AUD','NZD']},{from:3,to:11,w:2,trades:['JPY','AUD','XAU']},
+  {from:10,to:18,w:3,trades:['EUR','GBP','CHF','XAU']},{from:15,to:23,w:3,trades:['USD','XAU','NAS','SPX','NVDA','AAPL','TSLA','US30','OIL']},
+  {from:10,to:15,w:2,trades:['KES','NSE']}];
+function sessionScore(tags){const h=new Date().getHours();let s=0;
+  for(const ses of SESSIONS){const open=ses.from<ses.to?(h>=ses.from&&h<ses.to):(h>=ses.from||h<ses.to);
+    if(open&&tags.some(t=>ses.trades.includes(t)))s+=ses.w;}return s;}
+const PINNED=[
+  {p:1.0842,dp:4,chg:.12,th:.0003},{p:1.2691,dp:4,chg:-.08,th:.0003},
+  {p:151.44,dp:2,chg:.31,th:.0003},{p:2384.5,dp:1,chg:.45,th:.0005},
+  {p:67240,dp:0,chg:-1.20,th:.0015}];
+const UNIVERSE=[
+  {s:'NAS100',p:18240,dp:0,chg:.42,tags:['NAS','USD'],th:.0005},{s:'SPX500',p:5212,dp:0,chg:.18,tags:['SPX','USD'],th:.0005},
+  {s:'US30',p:39112,dp:0,chg:.22,tags:['US30','USD'],th:.0005},{s:'NVDA',p:878.4,dp:1,chg:2.10,tags:['NVDA','USD'],th:.001},
+  {s:'AAPL',p:173.2,dp:1,chg:-.34,tags:['AAPL','USD'],th:.001},{s:'TSLA',p:177.9,dp:1,chg:-1.62,tags:['TSLA','USD'],th:.001},
+  {s:'ETH/USD',p:3412,dp:0,chg:.86,tags:['CRYPTO'],th:.0015},{s:'SOL/USD',p:172.4,dp:1,chg:3.20,tags:['CRYPTO'],th:.0015},
+  {s:'EUR/GBP',p:.8542,dp:4,chg:.05,tags:['EUR','GBP'],th:.0003},{s:'USD/KES',p:129.5,dp:2,chg:-.12,tags:['KES','USD'],th:.0003},
+  {s:'NSE 25',p:2984,dp:0,chg:.31,tags:['NSE','KES'],th:.0005},{s:'US OIL',p:82.40,dp:2,chg:-.74,tags:['OIL','USD'],th:.0008}];
+function rescore(){UNIVERSE.forEach(u=>u.score=sessionScore(u.tags)+(u.tags.includes('CRYPTO')?.5:0));UNIVERSE.sort((a,b)=>b.score-a.score);}
+rescore();setInterval(rescore,60000);
+
+const flashLock=[0,0,0,0,0,0];
+function paint(x,i){
+  $('val'+i).textContent=fmt(x);
+  const chg=$('chg'+i);
+  chg.innerHTML=`<span class="caret ${x.chg>=0?'up':'down'}"></span>${x.chg>=0?'+':''}${x.chg.toFixed(2)}%`;
+  chg.className='cchg '+(x.chg>=0?'up':'down');
+}
+function tick(x,i){
+  const delta=(Math.random()-.48)*x.p*.0012;x.p+=delta;x.chg+=delta/x.p*100;
+  paint(x,i);
+  const now=performance.now();
+  if(Math.abs(delta)/x.p>=x.th && now-flashLock[i]>3000){
+    flashLock[i]=now;
+    const cell=$('cell'+i);
+    cell.style.setProperty('--heat',Math.min(.18,.05+(Math.abs(delta)/x.p/x.th)*.04).toFixed(3));
+    cell.classList.remove('fup','fdn');void cell.offsetWidth;cell.classList.add(delta>=0?'fup':'fdn');
+  }
+}
+PINNED.forEach((x,i)=>paint(x,i));
+
+let wireIx=0,wireLock=0;const WIRE_DUR=7000;const wireCell=$('cell5');
+function paintWire(){
+  const x=UNIVERSE[wireIx];
+  $('sym5').textContent=x.s;paint(x,5);
+  const p=$('wprog');p.style.setProperty('--wire-dur',WIRE_DUR+'ms');
+  p.style.animation='none';void p.offsetWidth;p.style.animation='';
+  wireCell.classList.toggle('moving',wireLock>0);
+}
+function swapWire(){
+  if(wireLock>0){wireLock--;paintWire();return}
+  wireCell.classList.add('swapping');
+  setTimeout(()=>{wireIx=(wireIx+1)%UNIVERSE.length;paintWire();wireCell.classList.remove('swapping');},460);
+}
+Power.every(swapWire,WIRE_DUR);paintWire();
+Power.every(()=>{PINNED.forEach((x,i)=>tick(x,i));tick(UNIVERSE[wireIx],5);},1600);
+Power.every(()=>{UNIVERSE.forEach((u,ix)=>{
+  const delta=(Math.random()-.5)*u.p*.001;u.p+=delta;u.chg+=delta/u.p*100;
+  if(Math.abs(delta)/u.p>=u.th*3&&ix!==wireIx){wireIx=ix;wireLock=2;paintWire();}});},5000);
+
+/* goal tracking */
+let goal=640;const GOAL_MAX=1000;
+Power.every(()=>{const b=goal;goal=Math.min(GOAL_MAX,goal+Math.floor(Math.random()*9));
+  if(b<GOAL_MAX&&goal>=GOAL_MAX)STATES.goalHit();},4000);
+
+const smileCap=$('smileCap');
+function blink(){smileCap.classList.add('is-blink');setTimeout(()=>smileCap.classList.remove('is-blink'),150)}
+Power.every(blink,6500);
+function mouth(c){smileCap.classList.remove('show-happy','show-sad');if(c)smileCap.classList.add(c)}
+const ticker=$('ticker');let lineTimer=null;
+function alertLine(dir){clearTimeout(lineTimer);
+  ticker.classList.remove('alert-up','alert-dn');void ticker.offsetWidth;
+  ticker.classList.add(dir==='up'?'alert-up':'alert-dn');
+  lineTimer=setTimeout(()=>ticker.classList.remove('alert-up','alert-dn'),2700);}
+
+/* desk-time pill — T cycles live / tape / stealth */
+const TT=['live','tape','stealth'];let ttIx=0;
+function applyTT(){document.body.classList.toggle('tt-tape',TT[ttIx]==='tape');
+  document.body.classList.toggle('tt-stealth',TT[ttIx]==='stealth');}
+Power.every(()=>{const now=new Date();
+  if(TT[ttIx]==='tape'){
+    $('dtime').textContent=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase()+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    $('dsub').textContent='REC · DEMO';
+  }else{
+    $('dtime').textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    $('dsub').textContent='DEMO';
+  }},1000);
+
+/* strap (island) state machine */
+const strap=$('strap'),sKick=$('sKick'),sHead=$('sHead'),sBadge=$('sBadge'),sSub=$('sSub'),sNum=$('sNum'),
+  sLadder=$('sLadder'),sDot=$('sDot'),sLfill=$('sLfill'),sSteps=$('sSteps'),sMeta=$('sMeta'),sR3=$('sR3'),
+  sProgress=$('sProgress'),posLabel=$('posLabel'),ttlLabel=$('ttlLabel');
+
+/* 5 HOME POSITIONS — cycled by M key */
+const PILL_HOMES=['home-inside','home-bottom-left','home-bottom-right','home-top-left','home-top-right'];
+const PILL_HOME_LABELS={'home-inside':'inside-ticker','home-bottom-left':'bottom-left','home-bottom-right':'bottom-right','home-top-left':'top-left','home-top-right':'top-right'};
+let pillHomeIx=0;
+function applyPillHome(){
+  PILL_HOMES.forEach(c=>strap.classList.remove(c));
+  strap.classList.add(PILL_HOMES[pillHomeIx]);
+  posLabel.textContent=PILL_HOME_LABELS[PILL_HOMES[pillHomeIx]];
+}
+function cyclePillHome(){
+  pillHomeIx=(pillHomeIx+1)%PILL_HOMES.length;
+  applyPillHome();
+}
+try{const p=new URLSearchParams(location.search);if(p.has('home')){const h=p.get('home');const map={'inside':0,'bottom-left':1,'bottom-right':2,'top-left':3,'top-right':4};if(h in map)pillHomeIx=map[h];}}catch(e){}
+applyPillHome();
+
+sSteps.innerHTML='';for(let i=0;i<4;i++){const d=document.createElement('span');d.className='step';sSteps.appendChild(d);if(i<3){const l=document.createElement('span');l.className='step-line';sSteps.appendChild(l)}}
+let stTimer=null,countRaf=null,stBusy=false;
+function countTo(target,dec,sign){cancelAnimationFrame(countRaf);const t0=performance.now();
+  (function step(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
+    const val=(target*e).toFixed(dec);
+    sBadge.textContent=(sign||'')+val+' PIPS';if(k<1)countRaf=requestAnimationFrame(step);})(t0);}
+
+/* Default TTL per state family — visible in help panel + drives progress bar */
+const DEFAULT_TTL=6000;
+function showStrap(cls,k,h,s,opt){
+  clearTimeout(stTimer);cancelAnimationFrame(countRaf);
+  const ttl=opt.ttl||DEFAULT_TTL;
+  strap.style.setProperty('--ttl',ttl+'ms');
+  ttlLabel.textContent=(ttl/1000)+'s '+(opt.ttl?'(custom)':'(default)');
+  document.body.classList.add('strap-active');
+  const wasOn=strap.classList.contains('on');
+  if(wasOn){
+    strap.classList.add('swapping');
+    setTimeout(()=>{
+      populateCard(cls,k,h,s,opt);
+      strap.classList.remove('swapping');
+      restartProgress();
+    },150);
+    stTimer=setTimeout(hideStrap,ttl);
+    return;
+  }
+  // Fresh entrance — island grows from current home position
+  strap.classList.remove('on','timing','swapping');void strap.offsetWidth;
+  strap.className=`on st-${cls} ${PILL_HOMES[pillHomeIx]}`;
+  strap.style.setProperty('--ttl',ttl+'ms');
+  setTimeout(()=>{populateCard(cls,k,h,s,opt);},200);
+  setTimeout(()=>{strap.classList.add('timing');},280);
+  stTimer=setTimeout(hideStrap,ttl);
+}
+function restartProgress(){
+  strap.classList.remove('timing');void strap.offsetWidth;strap.classList.add('timing');
+}
+function populateCard(cls,k,h,s,opt){
+  strap.className=`on st-${cls} ${PILL_HOMES[pillHomeIx]}`;
+  sKick.textContent=k;sHead.innerHTML=h;sSub.innerHTML=s;
+  sBadge.textContent='';sBadge.style.display='none';
+  sNum.textContent='';sNum.style.display='none';
+  sMeta.textContent='';sMeta.style.display='none';
+  if(opt.count!=null){
+    sBadge.textContent=(opt.sign||'')+opt.count+' PIPS';sBadge.className='badge';sBadge.style.display='';
+    countTo(opt.count,1,opt.sign);
+    sNum.style.display='none';
+  }else if(opt.n){
+    sNum.textContent=opt.n;sNum.className='num'+(opt.link?' link':'');sNum.style.display='';
+    if(opt.nl){sBadge.textContent=opt.nl;sBadge.className='badge';sBadge.style.display=''}
+  }
+  sLadder.classList.toggle('show',!!opt.ladder);
+  sSteps.classList.toggle('show',opt.steps!=null);
+  sMeta.style.display = (!opt.ladder && opt.steps==null) ? 'none' : 'none';
+  if(opt.ladder){setTimeout(()=>{sDot.style.left=opt.ladder+'%';sLfill.style.width=opt.ladder+'%';},200)}
+  if(opt.steps!=null){[...sSteps.querySelectorAll('.step')].forEach((d,i)=>d.classList.toggle('done',i<opt.steps));
+    [...sSteps.querySelectorAll('.step-line')].forEach((l,i)=>l.classList.toggle('done',i<opt.steps-1))}
+}
+function hideStrap(){
+  clearTimeout(stTimer);
+  strap.classList.remove('on','timing','swapping');
+  strap.className=PILL_HOMES[pillHomeIx];
+  document.body.classList.remove('strap-active');
+  mouth(null);stBusy=false;
+}
+const WIRE=[
+  {k:'DESK',h:'Live lesson Monday 9PM EAT',s:'one question in, one skill out — drop yours in chat'},
+  {k:'NOTICE',h:'Demo account · education only',s:'trading involves risk · not financial advice',note:1},
+  {k:'LESSON',h:'Chart School — part 2 of 4',s:'support & resistance · the mango test'},
+  {k:'NOTICE',h:'Losses are tuition',s:'we show ours so you pay less of yours',note:1}];
+let wcIx=0;
+function showWireCard(){if(stBusy||strap.classList.contains('on'))return;
+  const w=WIRE[wcIx%WIRE.length];wcIx++;
+  showStrap(w.note?'note':'lesson',w.k,w.h,w.s,{n:'smile.co.ke',nl:'',ttl:6500});}
+Power.every(showWireCard,90000);
+const STATES={
+  lesson:()=>{stBusy=true;showStrap('lesson','LESSON','Support & Resistance','Chart School · part 2 of 4 · the mango test',{n:'12:00',nl:'LEFT',ttl:8000})},
+  tp:()=>{stBusy=true;mouth('show-happy');alertLine('up');
+    showStrap('tp','LIVE TRADE · DEMO','Take Profit Hit','EUR/USD · long from 1.0810 · plan followed',{count:32,sign:'+',dir:'up',ladder:88,ttl:6000});},
+  sl:()=>{stBusy=true;mouth('show-sad');alertLine('dn');
+    showStrap('sl','LIVE TRADE · DEMO','Stop Loss Hit','GBP/USD · short from 1.2720 · risk respected',{count:18,sign:'-',dir:'dn',ladder:6,ttl:6000});},
+  poll:()=>{stBusy=true;showStrap('poll','POLL','You Pick the Next Lesson','A candles · B risk sizing · C news — type in chat',{n:'A·B·C',nl:'VOTE',ttl:10000})},
+  name:()=>{stBusy=true;showStrap('name','HOST','Mwangi','Smile TV · Chart School · Nairobi',{n:'smile.co.ke',nl:'',ttl:6000,link:true})},
+  goal:()=>{stBusy=true;
+    showStrap('goal','STREAM GOAL',goal.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'ring on the smile tracks it live · thanks for the 4G smiles',{n:Math.round(goal/GOAL_MAX*100)+'%',nl:'FUNDED',ttl:6000});},
+  goalHit:()=>{stBusy=true;mouth('show-happy');alertLine('up');
+    showStrap('goal','GOAL COMPLETE',GOAL_MAX.toLocaleString()+' / '+GOAL_MAX.toLocaleString(),'the smile is full · new goal loading',{n:'100%',nl:'FUNDED',ttl:8000});},
+  school:()=>{stBusy=true;
+    showStrap('lesson','CHART SCHOOL','Part 2 — Support & Resistance','the mango test · 4 parts · live Mondays 9PM EAT',{steps:2,n:'2/4',nl:'PARTS',ttl:10000})},
+  question:()=>{stBusy=true;
+    showStrap('poll','QUESTION','“How do you know when a level breaks?”','one question in, one skill out — answering on stream now',{n:'Q&A',nl:'FROM CHAT',ttl:8000});},
+  cal:()=>{stBusy=true;
+    showStrap('note','CALENDAR','US CPI — the inflation report','Thursday 15:30 EAT · high impact · we trade after the number, never into it',{n:'THU',nl:'15:30 EAT',ttl:7000});}
+};
+
+/* scenes + keys + boot */
+let sceneIx=0;
+if(new URLSearchParams(location.search).has('overlay'))document.body.classList.add('overlay-mode');
+
+/* DEMO CYCLE — D key auto-cycles through STATES every 4s for hands-off preview */
+let demoTimer=null,demoIx=0;
+const DEMO_KEYS=['name','lesson','tp','sl','poll','school','question','cal','goal'];
+function toggleDemo(){
+  if(demoTimer){clearInterval(demoTimer);demoTimer=null;return}
+  demoTimer=setInterval(()=>{
+    const k=DEMO_KEYS[demoIx%DEMO_KEYS.length];demoIx++;
+    if(typeof STATES[k]==='function')STATES[k]();
+  },4500);
+}
+
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='1')hideStrap();if(k==='2')STATES.lesson();if(k==='3')STATES.tp();
+  if(k==='4')STATES.sl();if(k==='5')STATES.poll();if(k==='6')STATES.name();
+  if(k==='7')STATES.goal();if(k==='8')showWireCard();if(k==='9')swapWire();
+  if(k==='0')STATES.school();if(k==='q')STATES.question();if(k==='e')STATES.cal();
+  if(k==='b')$('marketBg').style.opacity=$('marketBg').style.opacity==='0'?'':'0';
+  if(k==='l')document.body.classList.toggle('light');
+  if(k==='o')document.body.classList.toggle('overlay-mode');
+  if(k==='m')cyclePillHome();
+  if(k==='d')toggleDemo();
+  if(k==='t'){ttIx=(ttIx+1)%3;applyTT();}
+  if(k==='v'){sceneIx=(sceneIx+1)%5;document.body.dataset.scene=sceneIx;
+    document.body.classList.toggle('light',sceneIx===4);}
+  if(k==='h')$('help').classList.toggle('off');
+});
+document.body.dataset.scene='0';
+document.querySelectorAll('.cell').forEach(c=>c.addEventListener('animationend',e=>{
+  if(e.animationName==='cellin')c.classList.add('done');}));
+setTimeout(STATES.name,1200);
+</script>
+</body>
+</html>
