@@ -126,7 +126,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
 @property --island-h{syntax:'<length>';inherits:true;initial-value:56px}
 
 /* 5 homes. Each has IDLE coords (small smile) and ACTIVE coords (full island + pill).
-   home-inside: idle IN ticker brand-slot, active slides UP to bottom-left above ticker.
+   home-inside: idle IN ticker cap.left area, active slides UP to bottom-left above ticker.
    Other homes: idle and active share coords (only size differs). */
 #strap{position:fixed;left:28px;bottom:30px;z-index:45;pointer-events:none;
   transition:left .55s var(--expo),bottom .55s var(--expo),top .55s var(--expo),right .55s var(--expo),width .55s var(--expo),height .55s var(--expo),--smile-size .55s var(--expo),--island-w .55s var(--expo),--island-h .55s var(--expo);
@@ -154,7 +154,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
   transition:width .55s var(--expo),height .55s var(--expo),background .4s ease,box-shadow .5s var(--expo)}
 /* When strap is active, island grows to pill */
 #strap.on .island{width:fit-content;max-width:560px;min-width:340px;background:rgba(16,13,10,.88)}
-/* When inside-ticker home and NOT active, island has NO background — just the smile face sitting in the brand-slot. */
+/* When inside-ticker home and NOT active, island has NO background — just the smile face sitting over the cap.left yellow bar. */
 #strap.home-inside:not(.on) .island{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
   border:none;box-shadow:none}
 /* When inside-ticker home and active (popup fired), island gains its glass background as it slides up */
