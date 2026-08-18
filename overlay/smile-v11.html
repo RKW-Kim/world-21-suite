@@ -67,7 +67,11 @@ body.overlay-mode .ticker{background:rgba(20,22,28,.88);box-shadow:inset 0 1px 0
 @keyframes linedraw{0%{transform:scaleX(0);opacity:1}22%{transform:scaleX(1);opacity:1}78%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
 .cap{display:flex;align-items:center;gap:12px;padding:0 24px;white-space:nowrap;
   font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.22em}
-.cap.left{background:linear-gradient(180deg,#FFD54A,#FFB020);color:var(--c-on-accent);z-index:6}
+/* IDLE: cap.left reserves space (60px) at left edge for the smile logo to sit on top of. */
+/* When strap pops out (body.strap-active), padding collapses back to 24px so text shifts left into the now-empty slot. */
+.cap.left{background:linear-gradient(180deg,#FFD54A,#FFB020);color:var(--c-on-accent);z-index:6;
+  padding-left:60px;transition:padding-left .55s var(--expo)}
+body.strap-active .cap.left{padding-left:24px}
 .cells{flex:1;display:grid;grid-template-columns:repeat(6,1fr);align-items:stretch;min-width:0;z-index:6}
 .cell{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:0 16px;min-width:0;position:relative;
   opacity:0;transform:translateY(10px);animation:cellin .7s var(--expo) forwards}
@@ -147,7 +151,7 @@ body.tt-stealth .ddot{background:#1a1a1a}
 #strap.home-top-right.on{left:auto;bottom:auto;top:24px;right:24px;--smile-size:64px;--island-w:86px;--island-h:86px}
 
 /* The island — ONE container. Width animates from base (idle) to fit-content (pill). */
-#strap .island{position:relative;height:100%;width:100%;display:flex;align-items:stretch;flex-direction:row;
+#strap .island{position:relative;height:100%;width:100%;display:flex;align-items:center;flex-direction:row;
   background:rgba(12,10,8,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
   border:1px solid rgba(255,255,255,.08);border-radius:9999px;overflow:hidden;will-change:width;
   box-shadow:0 1px 0 rgba(255,255,255,.06),0 2px 4px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.35),0 16px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.15);
