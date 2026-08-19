@@ -102,3 +102,35 @@ Plus: grin rendered off-center (wrong viewBox paths), wire slot's counter badge 
 ## Earlier history (before this repo was reorganized)
 
 For the complete annotated chat log — every turn, every quote, every rule, every landmine — see [`docs/archive/SMILE-ARCHIVE.md`](./docs/archive/SMILE-ARCHIVE.md). That file is the canonical context bridge for any AI agent picking up the project.
+
+---
+
+## Worklog
+
+### APPLY-R3-FIXES — GLM 5V R3 safe fixes (broadcast polish pass)
+
+Source critique: `glm-frames/r3-response.txt` (GLM 5V Round 3 audit, scorecard 7.5/10 → ship-block on safe-area, tabular nums, spring damping). Applied the 3 safe fixes only; left the 2 sign-off-blocked items (gold `#FFB020` color shift, `backdrop-filter` on progress bar) untouched per user direction.
+
+**Fix 1 (P0) — Ticker anchored to broadcast safe area** (`overlay/smile-v11.html` `.ticker`)
+- `bottom: 24px` → `bottom: 0` (no more 8px "floating island" gap)
+- `left/right: 24px` → `left/right: 48px` (broadcast safe area per Apple/Bloomberg convention)
+- `border-radius: 14px` → `0` and `border: 1px solid rgba(255,255,255,.045)` → `0` (flush to screen edges now that it's anchored)
+- Replaced the multi-layer inset/outset shadow with a 3-layer drop shadow: `0 -12px 40px rgba(0,0,0,.6)` (ambient occlusion) + `0 -4px 12px rgba(0,0,0,.4)` (contact shadow) + `inset 0 1px 0 rgba(255,255,255,.06)` (top edge highlight). Verified via computed-style probe: `rectBottom=0, rectLeft=48, rectRight=48`.
+
+**Fix 2 (P1) — Tabular nums on data columns**
+- Verified `.cval` (ticker prices, line ~100) already has `font-variant-numeric: tabular-nums` + `font-feature-settings: 'tnum' 1, 'zero' 1`. ✓
+- Verified `.num` (popup card numbers, line ~242) already has both. ✓
+- **Added** both properties to `.cchg` (change percentages, line ~95) — was the lone holdout. Verified via computed-style probe: `fontVariantNumeric="tabular-nums"`, `fontFeatureSettings='"tnum", "zero"'`.
+
+**Fix 3 (P2) — Critically damped spring**
+- `--spring` variable (line ~12): `cubic-bezier(.34,1.56,.64,1)` → `cubic-bezier(.22,1,.36,1)` (no overshoot, broadcast "News fast" feel)
+- Island `width/height` transition (line ~164): `0.4s var(--spring)` → `0.32s cubic-bezier(.22,1,.36,1)` — explicit, <350ms settling per R3 §5 spec. Verified via computed-style probe: `transition = width 0.32s cubic-bezier(0.22,1,0.36,1), height 0.32s cubic-bezier(0.22,1,0.36,1), ...`.
+
+**Skipped (user sign-off required):**
+- R3 #3 "broadcast gold" palette shift (`#FFB020` → `#E6B84F`) — gold color is sacred per archive, needs explicit user approval.
+- R3 #4 progress-bar `backdrop-filter: inherit` — unifying glass across progress bar + ticker risks performance regression on OBS browser source.
+
+**Verification:**
+- `agent-browser` loaded `file://.../smile-v11.html`, pressed `3` (TP state), 0 console errors, screenshot saved (`/tmp/r3-tp-state.png`).
+- Computed-style probe confirms all 3 fixes landed in the cascade (ticker rect, cchg font features, spring var + transition string all match spec).
+- Commit: `feat(overlay): GLM 5V R3 fixes — broadcast safe area, tabular nums, critically damped spring [Task ID: APPLY-R3-FIXES]`
