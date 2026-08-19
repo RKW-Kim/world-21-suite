@@ -134,3 +134,40 @@ Source critique: `glm-frames/r3-response.txt` (GLM 5V Round 3 audit, scorecard 7
 - `agent-browser` loaded `file://.../smile-v11.html`, pressed `3` (TP state), 0 console errors, screenshot saved (`/tmp/r3-tp-state.png`).
 - Computed-style probe confirms all 3 fixes landed in the cascade (ticker rect, cchg font features, spring var + transition string all match spec).
 - Commit: `feat(overlay): GLM 5V R3 fixes — broadcast safe area, tabular nums, critically damped spring [Task ID: APPLY-R3-FIXES]`
+
+---
+
+### REVERT-R3-HARSH — undo R3 broadcast harshness; restore soft floating ticker + original bevel direction
+
+User feedback: "everything looks horrible" after the R3 commit (`41309e4`) landed. The broadcast-safe-area pass made the ticker flush to the screen edges with no rounding and a heavy ambient-occlusion drop shadow — that industrial/News-fast aesthetic is what looked wrong, not the gold or the smile. Reverted surgically (3 CSS rule blocks + 1 variable + 1 transition string); kept every other R3/R2 improvement that wasn't the problem.
+
+**Reverted — Ticker (`.ticker` rule, lines ~56-62):**
+- `bottom: 0` → `bottom: 24px` (soft 24px float above screen edge, was the original floating-island feel)
+- `left/right: 48px` → `left/right: 24px` (closer to edges, more intimate — broadcast safe area was over-correcting)
+- `border-radius: 0` → `border-radius: 14px` (soft rounded corners)
+- `border: 0` → `border: 1px solid rgba(255,255,255,.045)` (subtle edge definition)
+- Drop shadow `0 -12px 40px rgba(0,0,0,.6), 0 -4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06)` → original soft floating `inset 0 1px 0 rgba(255,255,255,.03), 0 0 0 1px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.4)`. The heavy ambient-occlusion drop shadow was the single biggest "harsh" contributor.
+- ALSO dropped the R2 glassmorphic-separation layer (`border-top: 1px solid rgba(255,255,255,.06)` + `inset 0 -1px 0 rgba(0,0,0,.3)`). It was stacking weight on top of weight. Original was cleaner.
+
+**Reverted — cap.left bevel (`.cap.left` rule, lines ~74-78):**
+- R2 inverted bevel `inset 0 -1px 0 rgba(255,255,255,.15), inset 0 1px 0 rgba(0,0,0,.4), inset -1px 0 0 rgba(0,0,0,.3)` → original A4 convex bevel `inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(0,0,0,.22), inset -1px 0 0 rgba(0,0,0,.08)`. The R2 inversion made the cap look "stamped into" the strap (concave/recessed); the original highlight-on-top makes it look like it "sits on" the strap (convex/raised). That's the right read for a primary action surface.
+
+**Reverted — Spring (used discretion per task):**
+- Task offered the choice between KEEP (critically damped `cubic-bezier(.22,1,.36,1)`) and REVERT-TO-`--expo` (luxurious `cubic-bezier(.16,1,.3,1)`). User said "everything looks horrible" → erred toward the more luxurious feel.
+- `--spring` variable: `cubic-bezier(.22,1,.36,1)` → `cubic-bezier(.16,1,.3,1)` (= `--expo` value, slow ease-out, no snap).
+- Island `width/height` transition: `0.32s cubic-bezier(.22,1,.36,1)` → `0.4s var(--spring)` (back to R2-style .4s duration using the now-luxurious spring var; hardcoded curve removed so the variable is the single source of truth again).
+
+**Kept (not the problem, per task):**
+- Smile face stays GOLD (`#FFB020`) — sacred.
+- `.cchg` tabular-nums + `font-feature-settings:'tnum' 1,'zero' 1` — R3 fix #2, helps alignment, no harm. Verified live: `fontVariantNumeric="tabular-nums"`.
+- Reactive eye micro-expressions, blink timing, look-around.
+- Progress bar depletion direction (1→0), R2 progress track alpha `.18`, 6/12px typography rhythm, 64px cap.left padding collapse on strap-active. All preserved.
+
+**Verification:**
+- `agent-browser` loaded `file://.../smile-v11.html`, viewport 1600×900, waited 3.5s for entry animation. 0 console errors. Screenshot saved (`/tmp/revert-r3-tp-state.png`).
+- Computed-style probe on `.ticker`: `bottom=24px, left=24px, right=24px, borderRadius=14px, border=1px solid rgba(255,255,255,0.043), boxShadow="rgba(255,255,255,0.03) 0px 1px 0px 0px inset, rgba(0,0,0,0.4) 0px 0px 0px 1px, rgba(0,0,0,0.25) 0px 1px 3px 0px, rgba(0,0,0,0.4) 0px 8px 24px 0px"` — all soft-floating values confirmed in cascade.
+- Computed-style probe on `.cap.left`: `boxShadow="rgba(255,255,255,0.28) 0px 1px 0px 0px inset, rgba(0,0,0,0.22) 0px -1px 0px 0px inset, rgba(0,0,0,0.08) -1px 0px 0px 0px inset"` — highlight on top, A4 convex bevel restored.
+- Computed-style probe on `:root`: `--spring="cubic-bezier(.16,1,.3,1)"` (= `--expo`); on `.island`: `transition="width 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), ..."` — luxurious .4s spring confirmed.
+- Live URL verified post-deploy: `curl -sI https://rkw-kim.github.io/world-21-suite/smile-v11.html` → HTTP/2 200, `last-modified: Wed, 19 Aug 2026 01:13:45 GMT`. Body grep confirms all reverted rules are live (soft ticker rect, soft shadow, convex bevel, `--spring` = `--expo`, island `width .4s var(--spring)`).
+- Remote URL restored to clean non-PAT form after push (PAT was injected only for the duration of `git push` + deploy script).
+- Commit: `revert(overlay): undo R3 harsh broadcast changes — restore soft floating ticker, original bevel direction [Task ID: REVERT-R3-HARSH]` (hash `5a260ec`, on `prototype`, pushed; `gh-pages` regenerated to `a90e5c7`).
