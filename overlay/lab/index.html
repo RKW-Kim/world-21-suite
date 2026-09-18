@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB — Overlay Tournament · 5 Variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0D0F13; --panel:#14171D; --line:#23272F;
+  --fg:#F2F4F8; --muted:#9BA3B0; --faint:#626B7A;
+  --gold:#FFB020; --up:#0ECB81; --down:#F6465D;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:Inter,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:56px 24px 100px}
+h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;letter-spacing:.01em}
+h1 span{color:var(--gold)}
+.kick{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.28em;color:var(--gold);margin-bottom:14px}
+.lede{color:var(--muted);font-size:15px;line-height:1.65;max-width:760px;margin-top:14px}
+.spec{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
+.spec h2{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--muted);margin-bottom:10px}
+.spec p{font-size:13px;color:var(--muted);line-height:1.7}
+.spec p b{color:var(--fg);font-weight:600}
+.grid{margin-top:52px;display:flex;flex-direction:column;gap:56px}
+.v{display:grid;grid-template-columns:1fr 330px;gap:26px;align-items:start}
+.v .shot{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0A0C10;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.v .shot .frame{position:relative;width:100%;aspect-ratio:16/9}
+.v .shot iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;transform-origin:top left;pointer-events:none}
+.v .shot .tag{position:absolute;left:14px;top:14px;z-index:5;padding:5px 12px;border-radius:8px;background:rgba(10,12,16,.8);border:1px solid rgba(255,255,255,.12);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.v .info .no{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.26em;color:var(--faint)}
+.v .info h3{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:27px;margin-top:8px}
+.v .info .from{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.6}
+.v .info .from b{color:var(--fg);font-weight:600}
+.v .kv{margin-top:18px;display:flex;flex-direction:column;gap:9px}
+.v .kv .row{display:flex;gap:12px;font-size:12.5px;line-height:1.5}
+.v .kv .k{flex:none;width:112px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.14em;color:var(--faint);padding-top:2px}
+.v .kv .val{color:var(--muted)}
+.v .kv .val b{color:var(--fg);font-weight:600}
+.open{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:9px 16px;border-radius:10px;background:var(--gold);color:#1A1205;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.14em;text-decoration:none}
+.open:hover{filter:brightness(1.06)}
+.picks{margin-top:60px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
+.picks h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
+.picks p{font-size:13.5px;color:var(--muted);line-height:1.7;margin-top:10px}
+.picks p b{color:var(--gold);font-weight:600}
+footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 1</div>
+  <h1>Five broadcast overlays.<br>One locked spec. <span>You pick the winner.</span></h1>
+  <p class="lede">Every variant carries the same DNA — the SMILE mark in broadcast gold, the same market data (with USD/KES and NSE 20 for the Nairobi desk), the same fonts, and the sacred motion rules: expo easing, staggered mask reveals, soft 1.4s flashes, no strobe, no glow. What changes is the <b>layout, the webcam placement, and the styling language</b> — studied from TraderTV Live, Bloomberg TV, Yahoo Finance, and the modern consumer-fintech look (Revolut / Monzo / Tradeify-era dashboards).</p>
+  <div class="spec">
+    <h2>LOCKED SPEC — WHAT'S IDENTICAL IN ALL FIVE</h2>
+    <p><b>Canvas:</b> 1920×1080 OBS browser source, transparent background · <b>Slots:</b> brand + host, EAT clock, ticker, watchlist, positions/P&amp;L, market sessions, lower-third strap (lesson / TP / SL / poll), alert popups, squad goal, “education only · not financial advice” disclaimer · <b>Keys:</b> <b>1</b> lesson · <b>2</b> TP · <b>3</b> SL/poll · <b>A</b> alert · <b>V</b> test backdrop · <b>H</b> hide help · <b>Cam:</b> the silhouette frame marks exactly where your webcam source sits in OBS.</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="picks">
+    <h2>How to vote</h2>
+    <p>Open each variant full screen (button on each card), press <b>V</b> a few times to see it over a chart, press <b>1 / 2 / 3</b> to feel the strap states and <b>A</b> for alerts. Then tell me, per variant: <b>what you like</b> (a whole variant, or single elements — e.g. “BRIEF's episode queue, PULSE's ticker cap, LEDGER's banner”) and <b>what you don't</b>. The winner becomes the new baseline and the rest becomes a parts-bin for it.</p>
+  </div>
+
+  <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
+</div>
+<script>
+const V=[
+ {id:'pulse',no:'VARIANT 01 · FLAGSHIP MODERN',name:'PULSE',from:'The <b>TraderTV × Revolut × Robinhood</b> blend — floating glass islands on obsidian, broadcast gold as the accent, a right-hand data rail and a floating rounded ticker.',
+  kv:[['Webcam','Bottom-left, 420×236, <b>gold gradient ring</b> + host nameplate'],
+      ['Ticker','Floating rounded island, gold angled cap, 8 cells + disclaimer end chip'],
+      ['Data rail','Right: P&amp;L hero card, sessions, watchlist, open positions'],
+      ['Signature','Top-center <b>focus island</b> cycling the symbol being taught; lower-third glass strap; goal island beside cam'],
+      ['Feels like','A modern trading desk — professional but warm, the flagship modern fintech look']]},
+ {id:'ledger',no:'VARIANT 02 · AUTHORITY',name:'LEDGER',from:'<b>Bloomberg TV</b> energy — the 2024 “softer” relaunch, not the harsh classic. Sharp corners, amber-on-black, density with intent. The most authoritative of the five.',
+  kv:[['Webcam','Bottom-right, sharp frame with a <b>gold top edge line</b>'],
+      ['Ticker','Full-width flush strip, gold cap, 8 cells; separate thin disclaimer strip above'],
+      ['Data rail','Right column with <b>function-key chips</b> (P&amp;L / WL·8 / MOV): watchlist, movers, squad goal'],
+      ['Signature','Huge <b>left banner lower-third</b> with gold logo tile + segment ribbon in the top bar that rotates headlines'],
+      ['Feels like','A real broadcast network — instant credibility for the classroom']]},
+ {id:'brief',no:'VARIANT 03 · EDITORIAL LIGHT',name:'BRIEF',from:'<b>Yahoo Finance</b> — the light one. Ivory cards, purple accent, morning-show warmth. Nothing else like it in the lineup; daytime education vibes.',
+  kv:[['Webcam','Right side, light card frame with dark chip + name pill'],
+      ['Ticker','White bar, purple cap, all 8 cells + disclaimer end'],
+      ['Data rail','Right: <b>Market Snapshot</b> 2×2, <b>Chart School Queue</b> (episode 1–4 with NOW/DONE states), sessions card'],
+      ['Signature','The only light theme; purple lower-third with status meta row; “Friday Brief” date chip'],
+      ['Feels like','A trusted morning finance show — friendly, editorial, approachable']]},
+ {id:'island',no:'VARIANT 04 · CONSUMER FINTECH',name:'ISLAND',from:'The most 2025 of the five — <b>Revolut / Monzo / Tradeify-era</b> consumer fintech. Electric blue on deep navy, oversized radii, pill-shaped everything, a true dynamic island.',
+  kv:[['Webcam','Bottom-left, <b>oversized 480×270</b> with blue gradient ring, live audio-meter bars in the nameplate'],
+      ['Ticker','Pill-chip strip — each instrument its own rounded chip inside a full-width capsule'],
+      ['Data rail','Left rail (watchlist + positions), right stack: P&amp;L gradient card + <b>goal ring around the smile</b>'],
+      ['Signature','<b>Dynamic island</b> top-center (LIVE pill + symbol + EQ bars); session chips row; centered big strap'],
+      ['Feels like','A Gen-Z fintech app came alive on stream — the boldest, most playful']]},
+ {id:'deskpro',no:'VARIANT 05 · THE PROVEN DESK',name:'DESKPRO',from:'The most faithful to <b>TraderTV Live</b> — the layout the archive calls the north star, executed with modern polish. Dense, honest, zero gimmicks.',
+  kv:[['Webcam','Bottom-left, 380×214 compact frame with a <b>gold top hairline</b>'],
+      ['Ticker','Full-width flush strip, text-only cap, all 8 cells + disclaimer end'],
+      ['Data rail','Tall right rail: 8-row watchlist, positions with entry prices, <b>trade log with timestamps</b>, squad goal bar'],
+      ['Signature','Top status strip with <b>account / today P&amp;L / win-rate cells</b> + session chips; strap states show entry→result numbers'],
+      ['Feels like','A professional trading desk — the proven formula, modernized']]}
+];
+const grid=document.getElementById('grid');
+V.forEach((v,i)=>{
+  const el=document.createElement('div');el.className='v';
+  el.innerHTML=`
+  <div class="shot"><span class="tag">LIVE PREVIEW · LOOPING DEMO</span><div class="frame"><iframe src="${v.id}.html?g=1" loading="${i<2?'eager':'lazy'}" title="${v.name}"></iframe></div></div>
+  <div class="info">
+    <div class="no">${v.no}</div>
+    <h3>${v.name}</h3>
+    <div class="from">${v.from}</div>
+    <div class="kv">${v.kv.map(r=>`<div class="row"><span class="k">${r[0].toUpperCase()}</span><span class="val">${r[1]}</span></div>`).join('')}</div>
+    <a class="open" href="${v.id}.html?v=1" target="_blank">OPEN FULL SCREEN ↗</a>
+  </div>`;
+  grid.appendChild(el);
+});
+function fitFrames(){document.querySelectorAll('.v .frame').forEach(fr=>{
+  const ifr=fr.querySelector('iframe');const w=fr.clientWidth;const s=w/1920;
+  ifr.style.transform=`scale(${s})`;ifr.style.width='1920px';ifr.style.height='1080px';});}
+addEventListener('resize',fitFrames);
+addEventListener('load',fitFrames);fitFrames();
+</script>
+</body>
+</html>
