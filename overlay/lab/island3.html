@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · ISLAND R3 — centered adaptive island · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14;
+  --card:rgba(18,22,34,.74);
+  --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#96A0B8; --faint:#5A6478;
+  --gold:#FFCE00; --gold-2:#F0B90B; --gold-ink:#1F1702;
+  --blue:#3E6EFF; --up:#10B981; --dn:#F6465D;
+  --r-xl:30px; --r-lg:22px; --r-md:16px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --blur:blur(22px) saturate(1.35);
+  --sh:inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(0,0,0,.32), 0 3px 8px rgba(0,0,0,.24), 0 24px 60px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#bg{position:absolute;inset:0;display:none;overflow:hidden;background:radial-gradient(120% 110% at 50% -10%,#12152A,#0A0C14 62%)}
+#bg.on{display:block}
+#bg::after{content:"";position:absolute;inset:0;background:radial-gradient(100% 80% at 50% 45%,transparent 40%,rgba(0,0,0,.5))}
+.cndl{position:absolute;bottom:0;width:26px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,rgba(16,185,129,.8),rgba(16,185,129,.2))}
+.cndl.dn{background:linear-gradient(180deg,rgba(246,70,93,.75),rgba(246,70,93,.18))}
+.cndl.wick{width:2px;border-radius:0;background:rgba(255,255,255,.14)}
+.card{background:var(--card);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:var(--r-lg);box-shadow:var(--sh);border:1px solid var(--line)}
+.enter{opacity:0;transform:translateY(22px) scale(.97);animation:enter .95s var(--expo) forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+.up{color:var(--up)} .dn{color:var(--dn)}
+.h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
+.dot{width:6px;height:6px;border-radius:50%}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes eq{0%,100%{height:30%}50%{height:95%}}
+
+/* ============ THE ISLAND — centered by WRAPPER, never transform ============ */
+/* Wrapper owns centering (left:0;right:0;margin:auto). The island itself never
+   carries a positional transform, so entrance animations can never knock it
+   off-centre. max-width:50vw = island can grow to HALF the screen, leaving the
+   25% left + 25% right safe zones the brand reserves. */
+#islandWrap{position:absolute;top:22px;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:40}
+#island{max-width:960px;height:64px;display:flex;align-items:center;gap:0;padding:8px;border-radius:999px;
+  overflow:hidden;animation-delay:.1s}
+#island .seg{display:flex;align-items:center;gap:10px;flex:none}
+#island .div{flex:none;width:1px;height:26px;background:var(--line);margin:0 6px}
+#island .logo{height:30px;display:block;flex:none}
+#island .live{flex:none;display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:999px;background:var(--gold);
+  color:var(--gold-ink);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.16em;
+  box-shadow:0 6px 18px rgba(255,206,0,.32)}
+#island .live i{width:7px;height:7px;border-radius:50%;background:var(--gold-ink);animation:pulse 1.7s ease-in-out infinite}
+#island .sym{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px;letter-spacing:.04em;color:var(--muted)}
+#island .px{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;letter-spacing:.01em}
+#island .chg{display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600}
+#island .chg.up{background:rgba(16,185,129,.13);box-shadow:inset 0 0 0 1px rgba(16,185,129,.32)}
+#island .chg.dn{background:rgba(246,70,93,.13);box-shadow:inset 0 0 0 1px rgba(246,70,93,.32)}
+#island .clock{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:var(--fg)}
+#island .sess{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;
+  background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;font-weight:600;letter-spacing:.18em;color:var(--muted)}
+#island .sess b{color:var(--gold);font-weight:600}
+#island .mini{display:flex;align-items:baseline;gap:6px}
+#island .mini .k{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.16em;color:var(--faint)}
+#island .mini .v{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;color:var(--fg)}
+#island .expand{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+  background:rgba(255,206,0,.1);box-shadow:inset 0 0 0 1px rgba(255,206,0,.3);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--gold);
+  animation:maskin .8s var(--expo) both}
+@keyframes maskin{from{opacity:0;transform:translateX(-14px);clip-path:inset(0 100% 0 0)}to{opacity:1;transform:none;clip-path:inset(0 0 0 0)}}
+.hide{display:none!important}
+
+/* ============ LEFT DOCK — watchlist ============ */
+#dock{position:absolute;left:24px;top:120px;width:280px;padding:16px 14px 10px;animation-delay:.2s}
+#dock .h{padding:0 4px 10px}
+#dock .row{display:flex;align-items:center;gap:9px;padding:8.5px 6px;border-radius:12px}
+#dock .row:hover{background:rgba(255,255,255,.04)}
+#dock .row+.row{border-top:1px solid rgba(255,255,255,.04)}
+#dock .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;letter-spacing:.03em}
+#dock .s em{font-style:normal;font-size:8.5px;font-weight:600;letter-spacing:.1em;color:var(--gold);background:rgba(255,206,0,.12);border-radius:5px;padding:2px 5px;margin-left:5px;vertical-align:1px}
+#dock .n{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px}
+#dock .c{width:64px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600}
+#dock .pin{flex:none;width:5px;height:16px;border-radius:3px;background:var(--gold);opacity:.9}
+
+/* ============ CAM CARD — modern frame + avatar placeholder ============ */
+#cam{position:absolute;left:24px;bottom:120px;width:320px;height:400px;border-radius:var(--r-xl);padding:0;overflow:hidden;
+  background:#0D1019;box-shadow:0 30px 70px rgba(0,0,0,.55),0 6px 18px rgba(0,0,0,.4);animation-delay:.34s}
+#cam::before{content:"";position:absolute;inset:0;border-radius:var(--r-xl);padding:2.5px;
+  background:linear-gradient(140deg,var(--gold),rgba(255,206,0,.16) 45%,rgba(255,255,255,.05) 70%,rgba(255,206,0,.5));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:5}
+/* the hole: capture goes HERE (transparent window under the overlay) */
+#cam .hole{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#cam .ph{display:none;flex-direction:column;align-items:center;gap:14px;width:100%;height:100%;justify-content:center;
+  background:radial-gradient(120% 100% at 50% 0%,#141827,#0B0E17 70%)}
+#cam.off .ph{display:flex}
+#cam .ph img{width:96px;height:96px;filter:drop-shadow(0 10px 26px rgba(255,206,0,.22));animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.03)}}
+#cam .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.22em;color:var(--faint)}
+#cam .idc{position:absolute;left:12px;bottom:12px;z-index:6;display:flex;align-items:center;gap:8px;padding:8px 14px 8px 10px;
+  border-radius:14px;background:rgba(10,12,20,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+#cam .idc .nm{font-weight:700;font-size:13.5px;letter-spacing:-.01em}
+#cam .idc .rl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.16em;color:var(--gold);margin-top:1.5px}
+#cam .lvl{position:absolute;right:12px;bottom:16px;z-index:6;display:flex;align-items:flex-end;gap:2.5px;height:22px}
+#cam .lvl i{width:3px;border-radius:2px;background:var(--gold);animation:eq 0.9s ease-in-out infinite}
+#cam .lvl i:nth-child(2){animation-delay:.15s}#cam .lvl i:nth-child(3){animation-delay:.3s}
+#cam .lvl i:nth-child(4){animation-delay:.45s}#cam .lvl i:nth-child(5){animation-delay:.6s}
+#cam .camlive{position:absolute;right:12px;top:12px;z-index:6;display:flex;align-items:center;gap:6px;padding:5px 11px;
+  border-radius:999px;background:rgba(10,12,20,.82);font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  font-weight:600;letter-spacing:.18em;color:var(--muted)}
+#cam .camlive i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:pulse 1.7s infinite}
+
+/* ============ RIGHT — movers sparkbars ============ */
+#movers{position:absolute;right:24px;top:120px;width:284px;padding:16px 16px 12px;animation-delay:.26s}
+#movers .h{padding:0 2px 10px}
+#movers .row{display:flex;align-items:center;gap:10px;padding:9px 2px}
+#movers .row+.row{border-top:1px solid rgba(255,255,255,.045)}
+#movers .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;width:44px}
+#movers .bar{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+#movers .bar i{display:block;height:100%;border-radius:3px;background:var(--up)}
+#movers .bar i.dn{background:var(--dn)}
+#movers .bar i.hi{background:var(--gold)}
+#movers .pct{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;width:56px;text-align:right}
+
+/* ============ LOWER THIRD (L) ============ */
+#strap{position:absolute;left:384px;bottom:96px;z-index:30;display:none;align-items:center;height:64px;
+  border-radius:18px;overflow:hidden;box-shadow:var(--sh)}
+#strap.on{display:flex}
+#strap .kick{display:flex;align-items:center;gap:10px;height:100%;padding:0 22px 0 18px;background:var(--gold);color:var(--gold-ink);
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.24em;
+  clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%)}
+#strap .kick .sq{width:8px;height:8px;border-radius:3px;background:var(--gold-ink);flex:none;animation:pulse 1.6s infinite}
+#strap .bd{display:flex;align-items:center;gap:16px;height:100%;padding:0 26px 0 30px;background:rgba(12,14,22,.92);
+  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+#strap .t1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:-.01em}
+#strap .t2{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--muted)}
+#strap .maskin{animation:maskin .8s var(--expo) both}
+
+/* ============ SPONSOR CARD (S) ============ */
+#sponsor{position:absolute;right:24px;top:430px;width:300px;border-radius:var(--r-lg);overflow:hidden;display:none;box-shadow:var(--sh);animation-delay:0s}
+#sponsor.on{display:block}
+#sponsor .cap{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:rgba(255,206,0,.12);
+  box-shadow:inset 0 -1px 0 rgba(255,206,0,.25)}
+#sponsor .cap .h{color:var(--gold);font-size:9px}
+#sponsor .cap .slot{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.16em;color:var(--faint)}
+#sponsor .hole{position:relative;height:150px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 50% 0%,#131726,#0B0E17)}
+#sponsor .hole .play{width:52px;height:52px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 26px rgba(255,206,0,.35)}
+#sponsor .hole .play::after{content:"";width:0;height:0;border-left:16px solid var(--gold-ink);border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:4px}
+#sponsor .hole .msg{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+
+/* ============ TICKER — centered pill, sponsor rotation ============ */
+#tickerWrap{position:absolute;left:0;right:0;bottom:24px;display:flex;justify-content:center;z-index:35}
+#ticker{max-width:1190px;width:fit-content;height:56px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;animation-delay:.5s}
+#ticker .cap{flex:none;display:flex;align-items:center;gap:10px;padding:0 26px 0 20px;background:var(--gold);color:var(--gold-ink);
+  clip-path:polygon(0 0,100% 0,calc(100% - 22px) 100%,0 100%)}
+#ticker .cap .live{width:8px;height:8px;border-radius:50%;background:var(--gold-ink);animation:pulse 1.7s infinite}
+#ticker .cap .t{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.2em}
+#ticker .clip{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 26px calc(100% - 26px),transparent);
+  mask:linear-gradient(90deg,transparent,#000 26px calc(100% - 26px),transparent)}
+#ticker .tk{display:flex;align-items:center;gap:34px;padding:0 17px;white-space:nowrap;will-change:transform}
+#ticker .it{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600}
+#ticker .it .s{color:var(--muted);letter-spacing:.06em}
+#ticker .it.sponsor{background:rgba(255,206,0,.12);box-shadow:inset 0 0 0 1px rgba(255,206,0,.35);border-radius:999px;padding:7px 16px;color:var(--gold)}
+#ticker .it.sponsor .s{color:rgba(255,206,0,.75)}
+#ticker .it.social{color:var(--fg)}
+#ticker .it.social .s{color:var(--gold)}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#ticker .tk{animation:tk 36s linear infinite}
+
+/* ============ ALERT ZONE ============ */
+#alerts{position:absolute;right:24px;bottom:96px;z-index:45;--al-w:380px}
+
+/* ============ CALIBRATION OVERLAY (C) ============ */
+#cal{position:absolute;inset:0;display:none;z-index:90;font-family:'IBM Plex Mono',monospace}
+#cal.on{display:block}
+#cal .sl{position:absolute;border:1.5px dashed rgba(255,206,0,.85);border-radius:12px;box-shadow:0 0 0 3000px rgba(0,0,0,.16)}
+#cal .sl .tag{position:absolute;top:-11px;left:12px;background:#FFCE00;color:#1F1702;font-size:9.5px;font-weight:600;
+  letter-spacing:.08em;padding:3px 9px;border-radius:6px;white-space:nowrap}
+#cal .safe{position:absolute;left:0;right:0;top:0;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:9px;letter-spacing:.2em;color:rgba(255,206,0,.55)}
+#cal .sheet{position:absolute;left:384px;top:150px;width:340px;background:rgba(8,10,16,.94);border:1px solid rgba(255,206,0,.4);
+  border-radius:14px;padding:16px;font-size:10.5px;line-height:1.75;color:#C6CEDF}
+#cal .sheet b{color:var(--gold)}
+#cal .sheet .t{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-bottom:8px}
+#cal .sheet .rw{display:flex;justify-content:space-between;gap:10px}
+#cal .sheet .rw span:last-child{color:var(--fg);white-space:nowrap}
+
+/* ============ HELP — keybar pill (nothing to collide with) ============ */
+#island #expand:empty{display:none}
+#helpWrap{position:absolute;left:0;right:0;top:102px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:14px;padding:8px 22px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;font-weight:600;letter-spacing:.08em;color:var(--muted);animation-delay:.55s}
+#help b{color:var(--gold);font-weight:600;margin-right:2px}
+#help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="bg"></div>
+
+  <!-- THE ISLAND: wrapper centers it; island max 960px = 50% of 1920 -->
+  <div id="islandWrap"><div id="island" class="card enter">
+    <img class="logo" src="assets/smile-logo.svg" alt="smile.co.ke">
+    <div class="div"></div>
+    <div class="seg"><span class="live"><i></i>LIVE</span></div>
+    <div class="seg m2" id="segSym"><span class="sym">USD/KES</span><span class="px num" id="iPx">129.42</span><span class="chg up" id="iChg">+0.31%</span></div>
+    <div class="div m2"></div>
+    <div class="seg m2"><span class="clock num" id="iClk">09:42:17</span><span class="sess"><b>●</b> <span id="iSess">NAIROBI OPEN</span></span></div>
+    <div class="div m3"></div>
+    <div class="seg m3"><span class="mini"><span class="k">NSE20</span><span class="v num up">82.41</span></span><span class="mini"><span class="k">VOL</span><span class="v num">24.6M</span></span><span class="mini"><span class="k">BTC</span><span class="v num dn">-1.2%</span></span></div>
+    <div class="seg" id="segExpand"><span class="expand" id="expand"></span></div>
+  </div></div>
+
+  <!-- LEFT DOCK -->
+  <div id="dock" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--gold)"></span>WATCHLIST · KE + GLOBAL</div>
+    <div id="dockRows"></div>
+  </div>
+
+  <!-- HELP KEYBAR -->
+  <div id="helpWrap"><div id="help" class="card enter">
+    <span><b>I</b> island</span><i>·</i><span><b>L</b> lower third</span><i>·</i><span><b>S</b> sponsor</span><i>·</i>
+    <span><b>P</b> avatar</span><i>·</i><span><b>A</b> alert</span><i>·</i><span><b>⇧A</b> spam test</span><i>·</i>
+    <span><b>X</b> clear</span><i>·</i><span><b>V</b> backdrop</span><i>·</i><span><b>C</b> calibrate</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+
+  <!-- CAM -->
+  <div id="cam" class="enter">
+    <div class="hole"><!-- OBS capture window (below overlay) shows here -->
+      <div class="ph">
+        <img src="assets/smile-mark.svg" alt="smile avatar">
+        <div class="t">CAM OFF · SMILE AVATAR</div>
+      </div>
+    </div>
+    <div class="camlive"><i></i>CAM</div>
+    <div class="idc"><div><div class="nm" id="camNm">WANJIKU M.</div><div class="rl" id="camRl">HOST · NAIROBI DESK</div></div></div>
+    <div class="lvl"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- MOVERS -->
+  <div id="movers" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--up)"></span>TOP MOVERS · TODAY</div>
+    <div id="mvRows"></div>
+  </div>
+
+  <!-- SPONSOR CARD -->
+  <div id="sponsor" class="enter">
+    <div class="cap"><span class="h">SPONSOR SPOT</span><span class="slot">VIDEO · 300×150</span></div>
+    <div class="hole">
+      <div class="play"></div>
+      <div class="msg">DROP A WEBM/MP4 URL OR BANNER HERE</div>
+    </div>
+  </div>
+
+  <!-- LOWER THIRD -->
+  <div id="strap">
+    <div class="kick"><span class="sq"></span><span id="sKick">NOW</span></div>
+    <div class="bd"><span class="t1" id="sT1">MARKET OPENING BELL</span><span class="t2" id="sT2">NAIROBI SECURITIES EXCHANGE · EAT</span></div>
+  </div>
+
+  <!-- ALERTS -->
+  <div id="alerts"></div>
+
+  <!-- TICKER -->
+  <div id="tickerWrap"><div id="ticker" class="card enter">
+    <div class="cap"><span class="live"></span><span class="t">SMILE MARKETS</span></div>
+    <div class="clip"><div class="tk" id="tk"></div></div>
+  </div></div>
+
+  <!-- CALIBRATION -->
+  <div id="cal">
+    <div class="safe">1920 × 1080 CANVAS · ISLAND SAFE ZONE: CENTER 50% · SIDE MARGINS 25% EACH</div>
+    <div class="sheet" id="calSheet"></div>
+  </div>
+</div>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+
+/* ---------- fit scaler: any window/resolution keeps 16:9 composition ---------- */
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')';fit.s=s}
+addEventListener('resize',fit);fit();
+
+/* ---------- clock + sessions (EAT / Nairobi — stream truth, not viewer time) ---------- */
+function eatParts(){var f=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',hour12:false,hourCycle:'h23',hour:'2-digit',minute:'2-digit',second:'2-digit'}),p={};
+  f.formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});return p}
+var SESSIONS=[['ASIA',3,9],['NAIROBI',9,15],['LONDON',10,19],['NEW YORK',16.5,23]];
+function sessLabel(){var p=eatParts(),h=parseInt(p.hour,10)+parseInt(p.minute,10)/60,act=SESSIONS.filter(function(s){return h>=s[1]&&h<s[2]});
+  return act.length?act[act.length-1][0]+' OPEN':'AFTER HOURS'}
+function tickClock(){var p=eatParts();
+  $('#iClk').textContent=p.hour+':'+p.minute+':'+p.second+' EAT';
+  $('#iSess')&&($('#iSess').textContent=sessLabel())}
+setInterval(tickClock,1000);tickClock();
+
+/* ---------- data ---------- */
+var DOCK=[['SCOM','Safaricom','28.75','+4.2%',1,1],['EQTY','Equity Group','52.10','+2.8%',1,1],['KCB','KCB Group','44.60','+2.1%',1,1],
+  ['EABL','East African Breweries','224.00','-1.4%',1,0],['USD/KES','Shilling','129.42','+0.31%',0,0],
+  ['BTC/USD','Bitcoin','97,240','-1.2%',0,0],['XAU/USD','Gold spot','2,412','+0.6%',0,0],['NSE20','Index','82.41','+0.9%',0,0]];
+$('#dockRows').innerHTML=DOCK.map(function(r){return '<div class="row">'+(r[5]?'<span class="pin"></span>':'')+
+  '<span class="s">'+r[0]+(r[4]&&!r[5]?'':'')+'</span><span class="n num">'+r[2]+'</span><span class="c num '+(r[3][0]==='+'?'up':'dn')+'">'+r[3]+'</span></div>'}).join('');
+
+var MV=[['SCOM',78,'+4.2%',1],['EQTY',52,'+2.8%',0],['KCB',40,'+2.1%',0],['EABL',30,'-1.4%',2],['BAT',22,'-2.6%',2]];
+$('#mvRows').innerHTML=MV.map(function(r){var cls=r[3]===1?'hi':(r[3]===2?'dn':'');
+  return '<div class="row"><span class="s">'+r[0]+'</span><span class="bar"><i class="'+cls+'" style="width:'+r[1]+'%"></i></span><span class="pct num '+(r[3]===2?'dn':'up')+'">'+r[2]+'</span></div>'}).join('');
+
+/* ---------- ticker: market + sponsor + social rotation ---------- */
+var TK=[['USD/KES','129.42','+0.31%',1],['NSE 20','82.41','+0.9%',1],['SCOM','28.75 KES','+4.2%',1],['BTC','97,240','-1.2%',0],
+  ['XAU','2,412','+0.6%',1],['EQTY','52.10 KES','+2.8%',1],
+  ['SP','AD · SMILE QUANTUM — INVEST FROM 100 KES','',2],['SOC','#TradeSmile — tag your setups','',3],
+  ['SOC','@smile.co.ke — the desk, everywhere','',3],['SP','AD · TREASURY BOND AUCTION MAR 26 — 16.8% YTM','',2]];
+function tkHTML(){return TK.map(function(t){
+  if(t[3]===2)return '<span class="it sponsor"><span class="s">AD</span>'+t[1]+'</span>';
+  if(t[3]===3)return '<span class="it social"><span class="s">'+t[0]+'</span>'+t[1]+'</span>';
+  return '<span class="it"><span class="s">'+t[0]+'</span><span class="num">'+t[1]+'</span><span class="num '+(t[2][0]==='+'?'up':'dn')+'">'+t[2]+'</span></span>'}).join('')}
+$('#tk').innerHTML=tkHTML()+tkHTML();
+
+/* ---------- island symbol live wiggle ---------- */
+var px=129.42; setInterval(function(){px+=(Math.random()-.46)*.06;
+  $('#iPx').textContent=px.toFixed(2);
+  var up=Math.random()>.4;var e=$('#iChg');e.textContent=(up?'+':'-')+(Math.random()*0.5+.05).toFixed(2)+'%';e.className='chg '+(up?'up':'dn')},2600);
+
+/* ---------- alerts ---------- */
+var alerts=SmileAlerts.mount('#alerts');
+if(G.get('g')==='1'){document.body.classList.add('g')}
+
+/* ---------- island adaptive modes: I key ---------- */
+var mode=2;
+function applyMode(){document.querySelectorAll('#island .m2').forEach(function(e){e.classList.toggle('hide',mode<2)});
+  document.querySelectorAll('#island .m3').forEach(function(e){e.classList.toggle('hide',mode<3)});}
+applyMode();
+
+/* ---------- lower third + island expansion (adaptive island in action) ---------- */
+var straps=[['NOW','MARKET OPENING BELL','NAIROBI SECURITIES EXCHANGE · EAT'],
+  ['GUEST','DAVID OTIENO · CFA','MACRO OUTLOOK · KES RATE PATH'],
+  ['TEACH','READING THE ORDER BOOK','CHART SCHOOL · LEVEL 2'],
+  ['SPONSOR','SMILE QUANTUM','INVEST FROM 100 KES · smile.co.ke']];
+var sIx=0;
+function fireStrap(){var s=straps[sIx%straps.length];sIx++;
+  $('#sKick').textContent=s[0];$('#sT1').textContent=s[1];$('#sT2').textContent=s[2];
+  $('#strap').classList.remove('on');void $('#strap').offsetWidth;$('#strap').classList.add('on');
+  var ex=$('#expand');ex.classList.remove('expand');void ex.offsetWidth;ex.classList.add('expand');
+  ex.innerHTML='<span style="width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.6s infinite"></span>'+s[1];}
+function dropStrap(){$('#strap').classList.remove('on');$('#expand').textContent=''}
+
+/* ---------- calibration (C): real rects -> OBS transform values ---------- */
+function calOn(on){
+  var cal=$('#cal');cal.classList.toggle('on',on);if(!on)return;
+  cal.querySelectorAll('.sl').forEach(function(e){e.remove()});
+  var s=fit.s||1,rows=[],defs=[['ISLAND (top center)','#island'],['CAM HOLE 320×400','#cam'],['WATCHLIST DOCK','#dock'],
+    ['MOVERS RAIL','#movers'],['TICKER PILL','#ticker'],['ALERT ZONE','#alerts']];
+  defs.forEach(function(d){var el=$(d[1]),r=el.getBoundingClientRect();
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s);
+    var w=Math.round(r.width/s),h=Math.round(r.height/s);
+    if(r.width<8&&r.height<8){ if(d[1]==='#alerts'){x=1516;y=834;w=380;h=150}else return; }
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">'+d[0]+' — '+w+'×'+h+' @ '+x+','+y+'</span>';
+    cal.appendChild(sl);
+    rows.push([d[0],w+'×'+h+' @ '+x+','+y]);});
+  $('#calSheet').innerHTML='<div class="t">OBS SLOT SHEET · BASE 1920×1080</div>'+
+    rows.map(function(r){return '<div class="rw"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('')+
+    '<div style="margin-top:8px;color:#96A0B8">Captures go UNDER this overlay at these exact values. Alt: full-canvas source + crop. Details: <b>guide.html</b></div>';
+}
+
+/* ---------- backdrop skyline ---------- */
+function buildBG(){var bg=$('#bg');if(bg.childNodes.length)return;
+  for(var i=0;i<26;i++){var h=90+Math.random()*300,w=(h>240?26:20);
+    var c=document.createElement('div');c.className='cndl'+(Math.random()>.6?' dn':'');
+    c.style.cssText='left:'+(i*76+Math.random()*30)+'px;height:'+h+'px;width:'+w+'px;opacity:'+(.5+Math.random()*.5);
+    bg.appendChild(c);
+    var wk=document.createElement('div');wk.className='cndl wick';
+    wk.style.cssText='left:'+(i*76+Math.random()*30+w/2-1)+'px;height:'+(h+40+Math.random()*80)+'px';
+    bg.appendChild(wk);}}
+buildBG();
+
+/* ---------- keys ---------- */
+var camOff=false;
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='i'){mode=mode>=3?1:mode+1;applyMode()}
+  else if(k==='l'){$('#strap').classList.contains('on')?dropStrap():fireStrap()}
+  else if(k==='s'){$('#sponsor').classList.toggle('on')}
+  else if(k==='p'){camOff=!camOff;$('#cam').classList.toggle('off',camOff);
+    $('#camRl').textContent=camOff?'AVATAR ACTIVE · CAM HIDDEN':'HOST · NAIROBI DESK'}
+  else if(k==='v'){$('#bg').classList.toggle('on')}
+  else if(k==='c'){calOn(!$('#cal').classList.contains('on'))}
+  else if(k==='h'){document.body.classList.toggle('g')}
+});
+if(G.get('cal')==='1'){document.body.classList.add('calm');calOn(true)}
+if(G.get('g')!=='1'&&G.get('ademo')!=='1')setTimeout(function(){alerts.push({user:'njeri.w',type:'tip',amount:'500 KES',msg:'ndio hii chai — leak the NSE watchlist!',platform:'youtube'})},4200);
+
+</script>
+</body>
+</html>
