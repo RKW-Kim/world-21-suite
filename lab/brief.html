@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · BRIEF — editorial light</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F6F1; --card:rgba(255,255,255,.94);
+  --line:rgba(20,20,24,.09); --line-2:rgba(20,20,24,.16);
+  --ink:#1B1B1F; --muted:#5D5D66; --faint:#8B8B94;
+  --purple:#5F01D1; --purple-soft:rgba(95,1,209,.08);
+  --gold:#FFB020;
+  --up:#0A9955; --down:#D32F44;
+  --r:16px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --sh:0 1px 2px rgba(20,20,30,.05), 0 6px 20px rgba(20,20,30,.08), 0 18px 44px rgba(20,20,30,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:transparent;overflow:hidden}
+body{font-family:Inter,-apple-system,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#bg{position:absolute;inset:0;display:none;overflow:hidden;background:linear-gradient(160deg,#EFEBE0,#E3E7DE 55%,#EAE6DC)}
+#bg.on{display:block}
+#bg::after{content:"";position:absolute;inset:0;background:radial-gradient(100% 80% at 50% 40%,transparent 45%,rgba(120,110,90,.18))}
+.cndl{position:absolute;bottom:0;width:26px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,rgba(10,153,85,.75),rgba(10,153,85,.22))}
+.cndl.dn{background:linear-gradient(180deg,rgba(211,47,68,.7),rgba(211,47,68,.18))}
+.cndl.wick{width:2px;border-radius:0;background:rgba(27,27,31,.2)}
+.enter{opacity:0;transform:translateY(16px);animation:enter .8s var(--expo) forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+.up{color:var(--up)} .dn{color:var(--down)}
+.card{background:var(--card);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 0}
+.ch .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;letter-spacing:.02em}
+.ch .lnk{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--purple)}
+/* ============ TOP WORDMARK BAR ============ */
+#top{position:absolute;left:24px;top:24px;display:flex;align-items:center;gap:0}
+#top .brand{display:flex;align-items:center;gap:14px;padding:12px 22px 12px 14px}
+#top .mark{width:44px;height:44px;flex:none}
+#top .mark svg{width:100%;height:100%;filter:drop-shadow(0 1px 2px rgba(20,20,30,.18))}
+#top .wm{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;letter-spacing:.02em}
+#top .wm i{font-style:normal;color:var(--purple)}
+#top .sub{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted);margin-top:3px}
+#top .date{display:flex;flex-direction:column;justify-content:center;padding:12px 22px;border-left:1px solid var(--line)}
+#top .date .a{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.22em;color:var(--faint)}
+#top .date .b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin-top:2px}
+#top .liveb{display:flex;align-items:center;gap:7px;margin-left:14px;padding:6px 14px;border-radius:999px;background:var(--purple);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.18em;box-shadow:0 4px 14px rgba(95,1,209,.3)}
+#top .liveb i{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#clockbox{position:absolute;right:24px;top:24px;display:flex;align-items:center;gap:12px;padding:12px 18px}
+#clockbox .t{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px}
+#clockbox .z{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+#clockbox .demo{padding:4px 10px;border-radius:999px;background:var(--purple-soft);color:var(--purple);font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.16em}
+/* ============ RIGHT STACK ============ */
+#col{position:absolute;right:24px;top:96px;width:392px;display:flex;flex-direction:column;gap:14px}
+#snap .grid{display:grid;grid-template-columns:1fr 1fr;padding:8px 6px 10px}
+#snap .cell{padding:10px 12px}
+#snap .cell:nth-child(-n+2){border-bottom:1px solid var(--line)}
+#snap .cell:nth-child(odd){border-right:1px solid var(--line)}
+#snap .s{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
+#snap .v{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16.5px;margin-top:4px;display:flex;align-items:baseline;gap:7px}
+#snap .c{font-size:11px;font-weight:600}
+#snap .cell.flash{background:rgba(95,1,209,.045)}
+#queue .ep{display:flex;gap:12px;align-items:center;padding:10px 18px}
+#queue .ep+.ep{border-top:1px solid var(--line)}
+#queue .n{flex:none;width:26px;height:26px;border-radius:8px;background:var(--purple-soft);color:var(--purple);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600}
+#queue .t{font-size:13.5px;font-weight:600}
+#queue .t small{display:block;font-size:11px;color:var(--faint);font-weight:500;margin-top:2px}
+#queue .st{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.14em;padding:3px 9px;border-radius:999px}
+#queue .st.now{background:var(--purple);color:#fff}
+#queue .st.next{background:rgba(20,20,24,.05);color:var(--muted)}
+#sess{padding:14px 18px}
+#sess .row{display:flex;align-items:center;gap:10px;padding:7px 0}
+#sess .row+.row{border-top:1px solid var(--line)}
+#sess .city{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--muted);width:84px}
+#sess .tm{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px}
+#sess .st{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.16em;padding:3px 9px;border-radius:999px}
+#sess .st.open{background:rgba(10,153,85,.1);color:var(--up)}
+#sess .st.closed{background:rgba(20,20,24,.05);color:var(--faint)}
+/* ============ LOWER THIRD (light strap) ============ */
+#strap{position:absolute;left:24px;bottom:132px;max-width:900px;display:none}
+#strap.on{display:block}
+#strap .card{display:flex;overflow:hidden}
+#strap .bar{flex:none;width:8px;background:var(--purple);opacity:0}
+#strap .cnt{padding:20px 30px 20px 24px;min-width:560px}
+#strap .kick{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.24em;color:var(--purple)}
+#strap .head{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;line-height:1.06;margin-top:8px}
+#strap .sub{font-size:14px;color:var(--muted);font-weight:500;margin-top:9px}
+#strap .meta{display:flex;gap:18px;align-items:center;margin-top:13px;padding-top:12px;border-top:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--faint)}
+#strap .meta b{color:var(--ink)}
+.l{display:block;overflow:hidden}
+.l>span{display:block}
+.play .l.kick>span{animation:rise .65s var(--expo) .08s forwards}
+.play .l.head>span{animation:rise .7s var(--expo) .16s forwards}
+.play .l.sub>span{animation:rise .7s var(--expo) .3s forwards}
+.play .meta{animation:fadein .5s var(--expo) .34s both}
+.play .bar{animation:fadein .6s var(--expo) .1s both}
+#strap .meta,#strap .bar{opacity:0}
+@keyframes rise{from{transform:translateY(115%)}to{transform:translateY(0)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+/* ============ CAM (light frame) ============ */
+#cam{position:absolute;right:24px;bottom:132px;width:392px;height:220px;border-radius:var(--r);background:#FFFFFF;box-shadow:var(--sh);border:1px solid var(--line);animation-delay:.4s}
+#cam .in{position:relative;width:100%;height:100%;border-radius:calc(var(--r) - 1px);background:#EFEDE6;overflow:hidden}
+#cam .person{position:absolute;left:50%;bottom:-12%;transform:translateX(-50%);width:78%;height:88%;background:
+  radial-gradient(88px 88px at 50% 26%,#C9C4B6 0 48%,transparent 50%),
+  radial-gradient(148px 110px at 50% 96%,#BFBAAC 0 52%,transparent 54%);opacity:.95}
+#cam .chip{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:var(--ink);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em}
+#cam .chip i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:pulse 2s infinite}
+#cam .name{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--line);box-shadow:0 4px 14px rgba(20,20,30,.1)}
+#cam .name b{font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:700}
+#cam .name span{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.16em;color:var(--faint)}
+/* ============ BOTTOM TICKER (white bar) ============ */
+#ticker{position:absolute;left:0;right:0;bottom:0;height:72px;background:rgba(255,255,255,.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line-2);display:flex;align-items:stretch}
+#ticker .cap{flex:none;display:flex;flex-direction:column;justify-content:center;padding:0 22px;background:var(--purple);color:#fff}
+#ticker .cap .a{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;letter-spacing:.04em}
+#ticker .cap .b{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.26em;opacity:.8;margin-top:2px}
+#ticker .cells{flex:1;display:flex;align-items:stretch;overflow:hidden}
+#ticker .cell{flex:1;min-width:140px;padding:12px 16px 0;display:flex;flex-direction:column;gap:3px;border-left:1px solid var(--line);transition:background 1.4s ease}
+#ticker .cell .s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--muted)}
+#ticker .cell .v{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15.5px;display:flex;gap:8px;align-items:baseline}
+#ticker .cell .c{font-size:10.5px;font-weight:600}
+#ticker .cell.flash{background:var(--purple-soft)}
+#ticker .cell.flash.up{background:rgba(10,153,85,.08)}
+#ticker .cell.flash.dn{background:rgba(211,47,68,.07)}
+#ticker .end{flex:none;display:flex;align-items:center;padding:0 20px;border-left:1px solid var(--line)}
+#ticker .end .disc{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.14em;color:var(--faint);max-width:200px;line-height:1.7}
+#ticker .end .disc b{color:var(--muted)}
+/* alerts */
+#alerts{position:absolute;right:440px;top:96px;width:360px;display:flex;flex-direction:column;gap:12px;z-index:50;pointer-events:none}
+.toast{padding:14px 18px;border-radius:var(--r);background:var(--card);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-left:4px solid var(--purple);box-shadow:var(--sh);transform:translateX(120%);animation:slidein .7s var(--expo) forwards,slideout .6s var(--expo) 6.4s forwards}
+.toast .t1{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.22em;color:var(--purple)}
+.toast .t2{font-size:13.5px;font-weight:700;margin-top:3px}
+.toast .t3{font-size:11.5px;color:var(--muted);margin-top:2px}
+@keyframes slidein{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideout{to{transform:translateX(120%);opacity:0}}
+#goal{position:absolute;left:24px;bottom:396px;width:300px;padding:16px 18px;animation-delay:.5s}
+#goal .hd{display:flex;justify-content:space-between;align-items:baseline}
+#goal .a{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+#goal .b{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px}
+#goal .b i{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--faint);font-weight:600}
+#goal .track{height:8px;border-radius:999px;background:rgba(20,20,24,.07);margin-top:12px;overflow:hidden}
+#goal .fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#7A2FE0,var(--purple));transition:width 1.6s var(--expo)}
+#goal .foot{display:flex;justify-content:space-between;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+#help{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.9);border:1px solid var(--line-2);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted);z-index:60}
+#help b{color:var(--purple)}
+#help.off{display:none}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="bg"><div id="candles" style="position:absolute;inset:0"></div></div>
+
+  <div id="top">
+    <div class="card brand enter">
+      <div class="mark"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#FFB020"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0b"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0b"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0b" stroke-width="7" stroke-linecap="round"/></svg></div>
+      <div><div class="wm">SMILE<i>.</i>TV</div><div class="sub">CHART SCHOOL · NAIROBI</div></div>
+    </div>
+    <div class="card date enter" style="animation-delay:.1s"><span class="a">TODAY · EAT</span><span class="b" id="day">Tuesday Brief</span></div>
+    <div class="liveb enter" style="animation-delay:.18s"><i></i>LIVE</div>
+  </div>
+
+  <div id="clockbox" class="card enter" style="animation-delay:.14s">
+    <span class="t num" id="eat">--:--:--</span><span class="z">EAT</span><span class="demo">DEMO ACCT</span>
+  </div>
+
+  <div id="col">
+    <div class="card enter" style="animation-delay:.2s" id="snap">
+      <div class="ch"><span class="t">Market Snapshot</span><span class="lnk">LIVE · 15MIN</span></div>
+      <div class="grid" id="sgrid"></div>
+    </div>
+    <div class="card enter" style="animation-delay:.3s" id="queue">
+      <div class="ch"><span class="t">Chart School Queue</span><span class="lnk">EP 1–4</span></div>
+      <div class="ep"><span class="n">1</span><span class="t">Candles 101<small>how a candle tells a story</small></span><span class="st next">DONE</span></div>
+      <div class="ep"><span class="n">2</span><span class="t">The Trend Is A River<small>higher highs, higher lows</small></span><span class="st next">DONE</span></div>
+      <div class="ep"><span class="n">3</span><span class="t">Risk First, Always<small>why 1% beats 10%</small></span><span class="st next">DONE</span></div>
+      <div class="ep"><span class="n">4</span><span class="t">The Mango Test<small>support &amp; resistance on fruit</small></span><span class="st now">NOW</span></div>
+    </div>
+    <div class="card enter" style="animation-delay:.4s" id="sess">
+      <div class="rows"></div>
+    </div>
+  </div>
+
+  <div id="alerts"></div>
+
+  <div id="goal" class="card enter">
+    <div class="hd"><span class="a">SQUAD VAULT · 4G SMILES</span><span class="b num" id="g-now">0<i> / 1,000</i></span></div>
+    <div class="track"><div class="fill" id="g-fill"></div></div>
+    <div class="foot"><span>GROWING ON SMILE.CO.KE</span><span id="g-pct">0%</span></div>
+  </div>
+
+  <div id="cam" class="enter">
+    <div class="in">
+      <div class="person"></div>
+      <div class="chip"><i></i>CAM · MWANGI</div>
+      <div class="name"><b>Mwangi</b><span>HOST · NAIROBI EAT</span></div>
+    </div>
+  </div>
+
+  <div id="strap">
+    <div class="card">
+      <div class="bar"></div>
+      <div class="cnt">
+        <div class="l kick"><span id="s-kick">CHART SCHOOL · LESSON 04</span></div>
+        <div class="l head"><span id="s-head">The Mango Test</span></div>
+        <div class="l sub"><span id="s-sub">support &amp; resistance, drawn on fruit — one question in, one skill out</span></div>
+        <div class="meta"><span>STATUS <b id="s-st">LIVE LESSON</b></span><span>UP NEXT <b>VIEW Q&amp;A</b></span><span style="margin-left:auto"><b>DEMO ACCOUNT ONLY</b></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ticker" class="enter" style="animation-delay:.25s">
+    <div class="cap"><span class="a">SMILE · LIVE</span><span class="b">EDU · DEMO</span></div>
+    <div class="cells" id="cells"></div>
+    <div class="end"><span class="disc"><b>EDUCATION ONLY</b> · NOT FINANCIAL ADVICE · TRADING INVOLVES RISK</span></div>
+  </div>
+
+  <div id="help"><b>1</b> lesson · <b>2</b> TP · <b>3</b> poll · <b>A</b> alert · <b>V</b> backdrop · <b>H</b> hide</div>
+</div>
+<script>
+/* ============ BRIEF demo engine — locked lab spec ============ */
+const GALLERY=new URLSearchParams(location.search).has('g');
+if(GALLERY){document.addEventListener('DOMContentLoaded',()=>{const h=document.querySelector('#help');if(h)h.classList.add('off');});}
+const $=s=>document.querySelector(s);
+const fmt=(n,d)=>n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const UNI=[
+ {s:'EUR/USD',p:1.0854,d:4,ch:0.23},{s:'GBP/USD',p:1.2698,d:4,ch:-0.03},
+ {s:'USD/JPY',p:151.45,d:2,ch:0.32},{s:'XAU/USD',p:2383.9,d:1,ch:0.43},
+ {s:'BTC/USD',p:67227,d:0,ch:-1.22},{s:'ETH/USD',p:3415,d:0,ch:0.93},
+ {s:'USD/KES',p:129.20,d:2,ch:0.05,ref:true},{s:'NSE 20',p:2914.55,d:2,ch:0.18,ref:true}
+];
+/* snapshot grid (4 mains) */
+const sg=$('#sgrid');
+UNI.slice(0,4).forEach(u=>{const c=document.createElement('div');c.className='cell';c.dataset.s=u.s;
+ c.innerHTML=`<div class="s">${u.s}</div><div class="v num"><span class="px">${fmt(u.p,u.d)}</span><span class="c num ${u.ch>=0?'up':'dn'}">${u.ch>=0?'+':''}${u.ch.toFixed(2)}%</span></div>`;sg.appendChild(c);});
+/* ticker cells (all 8) */
+const cEl=$('#cells');
+UNI.forEach(u=>{const c=document.createElement('div');c.className='cell';c.dataset.s=u.s;
+ c.innerHTML=`<span class="s">${u.s}</span><span class="v num"><span class="px">${fmt(u.p,u.d)}</span><span class="c num ${u.ch>=0?'up':'dn'}">${u.ch>=0?'+':''}${u.ch.toFixed(2)}%</span></span>`;cEl.appendChild(c);});
+/* sessions */
+const SESS=[{c:'TOKYO',l:'04:00',e:'13:00',o:1,x:10},{c:'LONDON',l:'11:00',e:'19:30',o:8,x:16.5},{c:'NEW YORK',l:'17:00',e:'00:00',o:14.5,x:23}];
+$('#sess .rows').innerHTML=SESS.map(S=>`<div class="row"><span class="city">${S.c}</span><span class="tm num">${S.l}–${S.e} EAT</span><span class="st open">OPEN</span></div>`).join('');
+/* price life */
+function tick(){const i=Math.floor(Math.random()*6);const u=UNI[i];
+ const dir=Math.random()>0.5?1:-1;const drift=u.d===0?dir*Math.random()*90:dir*Math.random()*0.0012;
+ u.p=Math.max(0.0001,u.p+drift);u.ch=Math.max(-2.5,Math.min(2.5,u.ch+dir*(Math.random()*0.12)));
+ document.querySelectorAll(`[data-s="${u.s}"]`).forEach(el=>{
+  const px=el.querySelector('.px');if(px)px.textContent=fmt(u.p,u.d);
+  const c=el.querySelector('.c');if(c){c.className='c num '+(u.ch>=0?'up':'dn');c.textContent=(u.ch>=0?'+':'')+u.ch.toFixed(2)+'%';}
+  el.classList.remove('flash','up','dn');void el.offsetWidth;el.classList.add('flash',u.ch>=0?'up':'dn');
+  setTimeout(()=>el.classList.remove('flash','up','dn'),1500);});}
+setInterval(tick,2600);
+/* clock + sessions */
+function updClock(){const now=new Date(Date.now()+(3*60+new Date().getTimezoneOffset())*60000);
+ const h=now.getUTCHours(),m=now.getUTCMinutes();
+ $('#eat').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(now.getUTCSeconds()).padStart(2,'0')}`;
+ $('#day').textContent=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getUTCDay()]+' Brief';
+ const hn=h+m/60;
+ document.querySelectorAll('#sess .row').forEach((row,i)=>{const S=SESS[i];
+  const open=S.x>S.o?(hn>=S.o&&hn<S.x):(hn>=S.o||hn<S.x);
+  row.querySelector('.st').className='st '+(open?'open':'closed');row.querySelector('.st').textContent=open?'OPEN':'CLOSED';});}
+setInterval(updClock,1000);
+/* strap engine */
+const STATES={
+ lesson:{kick:'CHART SCHOOL · LESSON 04',head:'The Mango Test',sub:'support & resistance, drawn on fruit — one question in, one skill out',st:'LIVE LESSON'},
+ tp:{kick:'TRADE UPDATE · DEMO ACCOUNT',head:'Take Profit Hit — EUR/USD Long',sub:'losses are tuition — we show ours so you pay less of yours',st:'TP · +34 PIPS'},
+ poll:{kick:'VIEW POLL · ONE QUESTION IN',head:'Will NSE 20 Hold 2,900 This Week?',sub:'drop YES or NO in chat — results at the top of the hour',st:'POLL OPEN'},
+ sl:{kick:'TRADE UPDATE · DEMO ACCOUNT',head:'Stop Loss Respected — XAU/USD',sub:'tuition is cheaper on demo; the ledger stays honest',st:'SL · -0.8%'}
+};
+let si=0,sTimer=null;
+function playStrap(name){const st=STATES[name];const el=$('#strap');el.classList.remove('play','on');void el.offsetWidth;
+ $('#s-kick').textContent=st.kick;$('#s-head').textContent=st.head;$('#s-sub').textContent=st.sub;$('#s-st').textContent=st.st;
+ el.classList.add('on','play');}
+function autoStrap(){playStrap(['lesson','tp','poll','sl'][si%4]);si++;}
+sTimer=setInterval(autoStrap,9000);autoStrap();
+/* alerts */
+const ALERTS=[
+ {t1:'NEW SMILE IN THE SQUAD',t2:'@kendex_ke just followed',t3:'4G smiles only — karibu'},
+ {t1:'MARKET NOTE',t2:'XAU/USD +0.8% in 5 minutes',t3:'demo tape — honest data only'},
+ {t1:'CHAT QUESTION',t2:'"Can I start with $50?"',t3:'one question in, one skill out'}];
+let ai=0;
+function fireAlert(){const a=ALERTS[ai%ALERTS.length];ai++;
+ const t=document.createElement('div');t.className='toast';
+ t.innerHTML=`<div><div class="t1">${a.t1}</div><div class="t2">${a.t2}</div><div class="t3">${a.t3}</div></div>`;
+ $('#alerts').appendChild(t);setTimeout(()=>t.remove(),7200);}
+if(!GALLERY){setInterval(fireAlert,13000);setTimeout(fireAlert,3500);}
+/* goal */
+setTimeout(()=>{$('#g-fill').style.width='85%';$('#g-pct').textContent='85%';
+ const t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/1600);const e=1-Math.pow(1-k,4);
+ $('#g-now').innerHTML=Math.round(850*e).toLocaleString()+'<i> / 1,000</i>';if(k<1)requestAnimationFrame(f);})(t0);},900);
+/* candles (light) */
+(function(){const c=$('#candles');let y=560;for(let i=0;i<64;i++){const h=40+Math.random()*130;const x=i*30+((i%3)*4);
+ const w=document.createElement('i');w.className='cndl wick';w.style.cssText=`left:${x+12}px;height:${h*1.35}px;bottom:${y+20}px`;c.appendChild(w);
+ const b=document.createElement('i');b.className='cndl'+(Math.random()>0.55?'':' dn');b.style.cssText=`left:${x}px;height:${h}px;bottom:${y}px`;c.appendChild(b);
+ y=Math.max(120,Math.min(680,y+(Math.random()-0.48)*70));}})();
+/* keys + fit */
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+ if(k==='1'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('lesson');}
+ if(k==='2'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('tp');}
+ if(k==='3'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('poll');}
+ if(k==='a')fireAlert();
+ if(k==='v')$('#bg').classList.toggle('on');
+ if(k==='h')$('#help').classList.toggle('off');});
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform=`translate(-50%,-50%) scale(${s})`;}
+addEventListener('resize',fit);fit();updClock();
+</script>
+</body>
+</html>
