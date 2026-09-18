@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>SMILE LAB — Overlay Tournament · 5 Variants</title>
+<title>SMILE LAB — Overlay Tournament · Round 2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0D0F13; --panel:#14171D; --line:#23272F;
   --fg:#F2F4F8; --muted:#9BA3B0; --faint:#626B7A;
-  --gold:#FFB020; --up:#0ECB81; --down:#F6465D;
+  --gold:#F0B90B; --up:#0ECB81; --down:#F6465D;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:Inter,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
@@ -18,12 +18,16 @@ body{background:var(--bg);color:var(--fg);font-family:Inter,-apple-system,sans-s
 h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;letter-spacing:.01em}
 h1 span{color:var(--gold)}
 .kick{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.28em;color:var(--gold);margin-bottom:14px}
-.lede{color:var(--muted);font-size:15px;line-height:1.65;max-width:760px;margin-top:14px}
+.lede{color:var(--muted);font-size:15px;line-height:1.65;max-width:780px;margin-top:14px}
+.lede b{color:var(--fg);font-weight:600}
 .spec{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
 .spec h2{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--muted);margin-bottom:10px}
 .spec p{font-size:13px;color:var(--muted);line-height:1.7}
 .spec p b{color:var(--fg);font-weight:600}
-.grid{margin-top:52px;display:flex;flex-direction:column;gap:56px}
+.rlabel{margin-top:64px;display:flex;align-items:center;gap:14px}
+.rlabel .t{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;white-space:nowrap}
+.rlabel .ln{flex:1;height:1px;background:var(--line)}
+.grid{margin-top:34px;display:flex;flex-direction:column;gap:52px}
 .v{display:grid;grid-template-columns:1fr 330px;gap:26px;align-items:start}
 .v .shot{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0A0C10;box-shadow:0 24px 60px rgba(0,0,0,.45)}
 .v .shot .frame{position:relative;width:100%;aspect-ratio:16/9}
@@ -40,6 +44,12 @@ h1 span{color:var(--gold)}
 .v .kv .val b{color:var(--fg);font-weight:600}
 .open{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:9px 16px;border-radius:10px;background:var(--gold);color:#1A1205;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.14em;text-decoration:none}
 .open:hover{filter:brightness(1.06)}
+.open.ghost{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+.v .verdict{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:6px 12px;border-radius:9px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em}
+.v .verdict.loved{background:rgba(240,185,11,.12);box-shadow:inset 0 0 0 1px rgba(240,185,11,.35);color:var(--gold)}
+.v .verdict.liked{background:rgba(14,203,129,.1);box-shadow:inset 0 0 0 1px rgba(14,203,129,.3);color:var(--up)}
+.v .verdict.out{background:rgba(246,70,93,.08);box-shadow:inset 0 0 0 1px rgba(246,70,93,.25);color:var(--down)}
+.v .verdict.bench{background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);color:var(--muted)}
 .picks{margin-top:60px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px 28px}
 .picks h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
 .picks p{font-size:13.5px;color:var(--muted);line-height:1.7;margin-top:10px}
@@ -49,70 +59,90 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
 </head>
 <body>
 <div class="wrap">
-  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 1</div>
-  <h1>Five broadcast overlays.<br>One locked spec. <span>You pick the winner.</span></h1>
-  <p class="lede">Every variant carries the same DNA — the SMILE mark in broadcast gold, the same market data (with USD/KES and NSE 20 for the Nairobi desk), the same fonts, and the sacred motion rules: expo easing, staggered mask reveals, soft 1.4s flashes, no strobe, no glow. What changes is the <b>layout, the webcam placement, and the styling language</b> — studied from TraderTV Live, Bloomberg TV, Yahoo Finance, and the modern consumer-fintech look (Revolut / Monzo / Tradeify-era dashboards).</p>
+  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 2</div>
+  <h1>The Island family grows.<br>Plus the Tradify desk. <span>True smile.co.ke gold this time.</span></h1>
+  <p class="lede">Round 1 verdicts are in — <b>ISLAND loved</b>, <b>PULSE liked</b>, LEDGER and DESKPRO retired, BRIEF on the bench. Round 2 rebuilds from the real smile.co.ke brand system: the gold <b>#F0B90B</b>, the lowercase <b>smile</b> wordmark with the yellow smiley, Inter, big soft radii. Same locked spec as always — same demo data (USD/KES + NSE 20 for the Nairobi desk), same expo motion, same keys.</p>
   <div class="spec">
-    <h2>LOCKED SPEC — WHAT'S IDENTICAL IN ALL FIVE</h2>
-    <p><b>Canvas:</b> 1920×1080 OBS browser source, transparent background · <b>Slots:</b> brand + host, EAT clock, ticker, watchlist, positions/P&amp;L, market sessions, lower-third strap (lesson / TP / SL / poll), alert popups, squad goal, “education only · not financial advice” disclaimer · <b>Keys:</b> <b>1</b> lesson · <b>2</b> TP · <b>3</b> SL/poll · <b>A</b> alert · <b>V</b> test backdrop · <b>H</b> hide help · <b>Cam:</b> the silhouette frame marks exactly where your webcam source sits in OBS.</p>
+    <h2>LOCKED SPEC — IDENTICAL IN EVERY VARIANT</h2>
+    <p><b>Canvas:</b> 1920×1080 OBS browser source (auto letterbox-scales in any browser window, so it never looks wonky on your screen) · <b>Keys:</b> <b>1</b> lesson · <b>2</b> TP · <b>3</b> poll · <b>A</b> alert · <b>V</b> test backdrop · <b>H</b> hide help · <b>Cam:</b> the silhouette frame marks exactly where your webcam source sits in OBS.</p>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <div class="rlabel"><span class="t">ROUND 2 — NEW LINEUP</span><span class="ln"></span></div>
+  <div class="grid" id="grid2"></div>
+
+  <div class="rlabel"><span class="t">ROUND 1 — VERDICTS</span><span class="ln"></span></div>
+  <div class="grid" id="grid1"></div>
 
   <div class="picks">
     <h2>How to vote</h2>
-    <p>Open each variant full screen (button on each card), press <b>V</b> a few times to see it over a chart, press <b>1 / 2 / 3</b> to feel the strap states and <b>A</b> for alerts. Then tell me, per variant: <b>what you like</b> (a whole variant, or single elements — e.g. “BRIEF's episode queue, PULSE's ticker cap, LEDGER's banner”) and <b>what you don't</b>. The winner becomes the new baseline and the rest becomes a parts-bin for it.</p>
+    <p>Open each variant full screen, press <b>V</b> a few times to see it over a chart, <b>1 / 2 / 3</b> to feel the strap states, <b>A</b> for alerts. Then tell me per variant — <b>what you like</b> and <b>what you don't</b>, whole variant or single elements (“VAULT's bento, TRADEIFY's payout bar, ISLAND R2's left dock”). Elements you love get merged into the final build.</p>
   </div>
 
   <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
 </div>
 <script>
-const V=[
- {id:'pulse',no:'VARIANT 01 · FLAGSHIP MODERN',name:'PULSE',from:'The <b>TraderTV × Revolut × Robinhood</b> blend — floating glass islands on obsidian, broadcast gold as the accent, a right-hand data rail and a floating rounded ticker.',
-  kv:[['Webcam','Bottom-left, 420×236, <b>gold gradient ring</b> + host nameplate'],
-      ['Ticker','Floating rounded island, gold angled cap, 8 cells + disclaimer end chip'],
-      ['Data rail','Right: P&amp;L hero card, sessions, watchlist, open positions'],
-      ['Signature','Top-center <b>focus island</b> cycling the symbol being taught; lower-third glass strap; goal island beside cam'],
-      ['Feels like','A modern trading desk — professional but warm, the flagship modern fintech look']]},
- {id:'ledger',no:'VARIANT 02 · AUTHORITY',name:'LEDGER',from:'<b>Bloomberg TV</b> energy — the 2024 “softer” relaunch, not the harsh classic. Sharp corners, amber-on-black, density with intent. The most authoritative of the five.',
-  kv:[['Webcam','Bottom-right, sharp frame with a <b>gold top edge line</b>'],
-      ['Ticker','Full-width flush strip, gold cap, 8 cells; separate thin disclaimer strip above'],
-      ['Data rail','Right column with <b>function-key chips</b> (P&amp;L / WL·8 / MOV): watchlist, movers, squad goal'],
-      ['Signature','Huge <b>left banner lower-third</b> with gold logo tile + segment ribbon in the top bar that rotates headlines'],
-      ['Feels like','A real broadcast network — instant credibility for the classroom']]},
- {id:'brief',no:'VARIANT 03 · EDITORIAL LIGHT',name:'BRIEF',from:'<b>Yahoo Finance</b> — the light one. Ivory cards, purple accent, morning-show warmth. Nothing else like it in the lineup; daytime education vibes.',
-  kv:[['Webcam','Right side, light card frame with dark chip + name pill'],
-      ['Ticker','White bar, purple cap, all 8 cells + disclaimer end'],
-      ['Data rail','Right: <b>Market Snapshot</b> 2×2, <b>Chart School Queue</b> (episode 1–4 with NOW/DONE states), sessions card'],
-      ['Signature','The only light theme; purple lower-third with status meta row; “Friday Brief” date chip'],
-      ['Feels like','A trusted morning finance show — friendly, editorial, approachable']]},
- {id:'island',no:'VARIANT 04 · CONSUMER FINTECH',name:'ISLAND',from:'The most 2025 of the five — <b>Revolut / Monzo / Tradeify-era</b> consumer fintech. Electric blue on deep navy, oversized radii, pill-shaped everything, a true dynamic island.',
-  kv:[['Webcam','Bottom-left, <b>oversized 480×270</b> with blue gradient ring, live audio-meter bars in the nameplate'],
-      ['Ticker','Pill-chip strip — each instrument its own rounded chip inside a full-width capsule'],
-      ['Data rail','Left rail (watchlist + positions), right stack: P&amp;L gradient card + <b>goal ring around the smile</b>'],
-      ['Signature','<b>Dynamic island</b> top-center (LIVE pill + symbol + EQ bars); session chips row; centered big strap'],
-      ['Feels like','A Gen-Z fintech app came alive on stream — the boldest, most playful']]},
- {id:'deskpro',no:'VARIANT 05 · THE PROVEN DESK',name:'DESKPRO',from:'The most faithful to <b>TraderTV Live</b> — the layout the archive calls the north star, executed with modern polish. Dense, honest, zero gimmicks.',
-  kv:[['Webcam','Bottom-left, 380×214 compact frame with a <b>gold top hairline</b>'],
-      ['Ticker','Full-width flush strip, text-only cap, all 8 cells + disclaimer end'],
-      ['Data rail','Tall right rail: 8-row watchlist, positions with entry prices, <b>trade log with timestamps</b>, squad goal bar'],
-      ['Signature','Top status strip with <b>account / today P&amp;L / win-rate cells</b> + session chips; strap states show entry→result numbers'],
-      ['Feels like','A professional trading desk — the proven formula, modernized']]}
+const R2=[
+ {id:'island2',no:'R2 · 01 · THE ISLAND, REFINED',name:'ISLAND R2',badge:['loved','♥ FROM ROUND 1 — REBUILT'],
+  from:'The one you loved, de-wonked. <b>True smile.co.ke</b> now: gold #F0B90B, lowercase smile wordmark, gold LIVE pill and gold ticker cap. The left side is one continuous glass dock — watchlist (all 8, USD/KES + NSE 20 pinned with KE tags) → positions → tall portrait cam — no more floating gaps.',
+  kv:[['Webcam','Bottom-left inside the dock, <b>tall 340×318 portrait</b> with gold gradient ring + audio-meter nameplate'],
+      ['Ticker','Pill-chip strip, <b>gold smile cap</b> — the real logo, not a parody'],
+      ['Data rail','Right: gold P&amp;L card, squad-vault ring, <b>movers with sparkbars</b>; alerts slide bottom-right — dedicated zone, never overlaps'],
+      ['Signature','Dynamic island top-center now wears <b>gold LIVE</b>; strap got a right stat-bay (always filled) so it reads balanced'],
+      ['Feels like','Your Island — but sharper, warmer, and unmistakably smile.co.ke']]},
+ {id:'vault',no:'R2 · 02 · ISLAND DNA, TILED',name:'VAULT',badge:null,
+  from:'Island shapes &amp; colours pushed to their logical end — a full <b>bento grid</b>. Every element is a rounded tile: top dock row, watchlist column, a huge center chart stage with session chips and the smiley watermark, strap as a tile, cam as a tile.',
+  kv:[['Webcam','Bottom-right tile, 360×224, gold gradient ring'],
+      ['Ticker','Same loved pill strip with gold smile cap'],
+      ['Data rail','Left column: watchlist → positions → <b>squad-vault ring → live squad chat</b> (KES chat lines); right column: P&amp;L + movers, alerts slot, cam'],
+      ['Signature','The <b>center stage tile</b> — grid-lined chart canvas with TOKYO/LONDON/NY chips inside and a giant ghost smiley watermark'],
+      ['Feels like','A fintech app home screen came alive — the most “more of that” version of Island']]},
+ {id:'halo',no:'R2 · 03 · THE SPEAKER HALO',name:'HALO',badge:null,
+  from:'Island DNA with the webcam everyone asks about — a <b>circular halo cam top-right</b> with a slow rotating gold orbit ring, like modern keynote / IRL streams. Your face is the first thing the eye lands on; data rails hang under it.',
+  kv:[['Webcam','<b>Top-right circle, 330px</b>, rotating gold conic orbit + name pill inside the disc'],
+      ['Ticker','Pill strip, gold smile cap'],
+      ['Data rail','Left: watchlist → positions → movers. Right under the halo: EAT clock, P&amp;L, squad-vault ring'],
+      ['Signature','The orbit ring — 14s slow spin, gold on gold; session chips stay under the island'],
+      ['Feels like','A modern creator-keynote hybrid — warm, premium, personal']]},
+ {id:'notch',no:'R2 · 04 · THE ONE-BAR WONDER',name:'NOTCH',badge:null,
+  from:'The dynamic island grew up and swallowed the whole top row — brand, LIVE price, EQ bars, session chips and clock live in <b>one continuous glass notch bar</b>. Maximum stage clearance: the whole middle of the frame is yours for charts.',
+  kv:[['Webcam','Bottom-right, 420×236, gold gradient ring + nameplate'],
+      ['Ticker','Pill strip, gold smile cap'],
+      ['Data rail','Left: watchlist → positions → vault ring. Right: wide P&amp;L card above the cam; alerts slot mid-left'],
+      ['Signature','The notch bar itself — everything at a glance with zero top clutter; session chips abbreviated TYO/LDN/NY'],
+      ['Feels like','Clean, confident, Apple-clean — the quietest of the family']]},
+ {id:'tradeify',no:'R2 · 05 · THE PROPFIRM DESK',name:'TRADEIFY',badge:null,
+  from:'The Tradify-style one you asked for — built from <b>Tradeify TV</b> (the futures prop-firm livestreams): deep navy, mint green, sharp corners, and the whole funded-trader narrative: payout quest, profit target, daily loss limit, leaderboard, trade log.',
+  kv:[['Webcam','Bottom-left, sharp mint-hairline frame with a <b>payout progress bar under your name</b>'],
+      ['Ticker','Flush sharp strip, mint smile cap — deliberately not pill-shaped, this is the anti-Island'],
+      ['Data rail','Left: demo account → profit target → loss limit → <b>payout leaderboard</b>. Right: 8-row rail → trade log → payouts paid'],
+      ['Signature','The <b>animated equity curve</b> with the amber payout-target line, plus “PAYOUT APPROVED” toasts'],
+      ['Feels like','Tradeify TV energy — funded-account hype, honest DEMO labels everywhere']]}
 ];
-const grid=document.getElementById('grid');
-V.forEach((v,i)=>{
+const R1=[
+ {id:'pulse',no:'R1 · 01',name:'PULSE',badge:['liked','LIKED — KEEP AS PARTS BIN'],
+  from:'Gold-glass islands on obsidian — the flagship modern blend. Right data rail, floating ticker, cam bottom-left with gold ring.',
+  kv:[['Status','Liked. Its floating-island ticker and goal-island live on inside the Round 2 DNA.']]},
+ {id:'island',no:'R1 · 04',name:'ISLAND (V1)',badge:['loved','LOVED → SUPERSEDED BY ISLAND R2'],
+  from:'The original consumer-fintech island — electric blue, oversized radii, pill ticker. Now refined into ISLAND R2 above.',
+  kv:[['Status','Superseded. Keep for comparison; R2 fixes the wonk with the true smile brand.']]}
+];
+function card(v,grid){
   const el=document.createElement('div');el.className='v';
+  const badge=v.badge?`<div class="verdict ${v.badge[0]}">${v.badge[1]}</div>`:'';
   el.innerHTML=`
-  <div class="shot"><span class="tag">LIVE PREVIEW · LOOPING DEMO</span><div class="frame"><iframe src="${v.id}.html?g=1" loading="${i<2?'eager':'lazy'}" title="${v.name}"></iframe></div></div>
+  <div class="shot"><span class="tag">LIVE PREVIEW · LOOPING DEMO</span><div class="frame"><iframe src="${v.id}.html?g=1" loading="lazy" title="${v.name}"></iframe></div></div>
   <div class="info">
     <div class="no">${v.no}</div>
     <h3>${v.name}</h3>
     <div class="from">${v.from}</div>
     <div class="kv">${v.kv.map(r=>`<div class="row"><span class="k">${r[0].toUpperCase()}</span><span class="val">${r[1]}</span></div>`).join('')}</div>
+    ${badge}
     <a class="open" href="${v.id}.html?v=1" target="_blank">OPEN FULL SCREEN ↗</a>
   </div>`;
   grid.appendChild(el);
-});
+}
+R2.forEach(v=>card(v,document.getElementById('grid2')));
+R1.forEach(v=>card(v,document.getElementById('grid1')));
 function fitFrames(){document.querySelectorAll('.v .frame').forEach(fr=>{
   const ifr=fr.querySelector('iframe');const w=fr.clientWidth;const s=w/1920;
   ifr.style.transform=`scale(${s})`;ifr.style.width='1920px';ifr.style.height='1080px';});}

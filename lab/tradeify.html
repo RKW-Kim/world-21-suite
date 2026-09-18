@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · TRADEIFY — prop-firm desk · tradeify tv energy</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#071018; --panel:rgba(12,24,37,.82); --panel-2:rgba(17,32,48,.6);
+  --line:rgba(148,190,220,.12); --line-2:rgba(148,190,220,.2);
+  --fg:#E9F4F1; --muted:#7E99A8; --faint:#4A6272;
+  --mint:#10D48E; --mint-ink:#032015; --amber:#EFA22B; --red:#F6465D; --blue:#2A7AFF;
+  --gold:#F0B90B;
+  --r:14px; --r-sm:10px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --sh:inset 0 1px 0 rgba(255,255,255,.05), 0 0 0 1px rgba(0,0,0,.4), 0 3px 8px rgba(0,0,0,.3), 0 18px 44px rgba(0,0,0,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#04090F;overflow:hidden}
+body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'zero' 1}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#bg{position:absolute;inset:0;display:none;overflow:hidden;background:radial-gradient(120% 110% at 50% -10%,#0C1B29,#071018 62%)}
+#bg.on{display:block}
+#bg::after{content:"";position:absolute;inset:0;background:radial-gradient(100% 80% at 50% 45%,transparent 40%,rgba(0,0,0,.5))}
+.cndl{position:absolute;bottom:0;width:26px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,rgba(16,212,142,.7),rgba(16,212,142,.15))}
+.cndl.dn{background:linear-gradient(180deg,rgba(246,70,93,.65),rgba(246,70,93,.13))}
+.cndl.wick{width:2px;border-radius:0;background:rgba(255,255,255,.12)}
+.panel{background:var(--panel);-webkit-backdrop-filter:blur(18px) saturate(1.2);backdrop-filter:blur(18px) saturate(1.2);border-radius:var(--r);box-shadow:var(--sh);border:1px solid var(--line)}
+.enter{opacity:0;transform:translateY(20px) scale(.98);animation:enter .9s var(--expo) forwards}
+@keyframes enter{to{opacity:1;transform:none}}
+.up{color:var(--mint)} .dn{color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+/* ============ TOP BAR ============ */
+#top{position:absolute;left:24px;right:24px;top:24px;height:62px;border-radius:var(--r);display:flex;align-items:center;gap:0;padding:0 16px;animation-delay:.04s}
+#top .brand{display:flex;align-items:center;gap:11px;padding-right:18px}
+#top .mark{width:36px;height:36px;flex:none}
+#top .mark svg{width:100%;height:100%}
+#top .wm{font-weight:800;font-size:18px;letter-spacing:-.02em;line-height:1}
+#top .wm i{font-style:normal;color:var(--mint)}
+#top .wm b{color:var(--muted);font-weight:600;font-size:13px;letter-spacing:0;margin-left:7px}
+#top .div{width:1px;height:30px;background:var(--line-2);margin:0 16px}
+#top .phase{padding:5px 12px;border-radius:8px;background:rgba(16,212,142,.12);box-shadow:inset 0 0 0 1px rgba(16,212,142,.35);color:var(--mint);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em}
+#top .quest{flex:1;display:flex;align-items:center;gap:14px;padding:0 22px;min-width:0}
+#top .quest .ql{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--muted);white-space:nowrap}
+#top .track{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
+#top .fill{height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,rgba(16,212,142,.55),var(--mint));transition:width 1.6s var(--expo)}
+#top .qv{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;white-space:nowrap}
+#top .qv i{font-style:normal;color:var(--faint);font-size:10.5px}
+#top .clock{display:flex;align-items:center;gap:11px}
+#top .t{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14.5px}
+#top .z{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+#top .rec{display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--red)}
+#top .rec i{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.6s infinite}
+/* ============ LEFT — ACCOUNT ============ */
+#lcol{position:absolute;left:24px;top:110px;width:360px;display:flex;flex-direction:column;gap:10px}
+#lcol .panel{padding:15px 17px}
+#acct .bal{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;margin-top:4px;letter-spacing:.01em}
+#acct .rows{margin-top:10px}
+#acct .row{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid rgba(148,190,220,.08);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500}
+#acct .row b{font-weight:600}
+#acct .row .k{color:var(--muted);letter-spacing:.08em}
+#target .bar{height:10px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:9px}
+#target .fill{height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,rgba(16,212,142,.5),var(--mint));transition:width 1.6s var(--expo)}
+#target .meta{display:flex;justify-content:space-between;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em}
+#dloss .bar{height:10px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:9px}
+#dloss .fill{height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,rgba(239,162,43,.5),var(--amber));transition:width 1.6s var(--expo) .2s}
+#dloss .meta{display:flex;justify-content:space-between;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em}
+#board .row{display:flex;align-items:center;gap:10px;padding:7px 0}
+#board .row+.row{border-top:1px solid rgba(148,190,220,.08)}
+#board .pos{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);width:16px}
+#board .u{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px}
+#board .am{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
+#paid .row{display:flex;justify-content:space-between;align-items:center;padding:6.5px 0;font-family:'IBM Plex Mono',monospace;font-size:11px}
+#paid .row+.row{border-top:1px solid rgba(148,190,220,.08)}
+#paid .row .k{color:var(--muted)}
+#paid .row b{font-weight:600}
+/* ============ CENTER — EQUITY STAGE ============ */
+#stage{position:absolute;left:408px;right:396px;top:110px;height:640px;padding:18px 22px;overflow:hidden;animation-delay:.2s}
+#stage .stats{display:flex;gap:10px}
+#stage .stat{flex:1;padding:10px 14px;border-radius:var(--r-sm);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
+#stage .stat .k{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--faint)}
+#stage .stat .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;margin-top:3px}
+#stage .chart{position:absolute;left:22px;right:22px;top:96px;bottom:18px}
+#stage svg{width:100%;height:100%;overflow:visible}
+#stage .ln{fill:none;stroke:var(--mint);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2400;stroke-dashoffset:2400;animation:draw 2.2s var(--expo) 1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+#stage .glow{fill:url(#agrad);opacity:0;animation:fadein 1.2s ease 2.4s forwards}
+@keyframes fadein{to{opacity:1}}
+#stage .targetline{stroke:var(--amber);stroke-width:1.5;stroke-dasharray:6 7;opacity:.7}
+#stage .gridl{stroke:rgba(148,190,220,.1);stroke-width:1}
+#stage .cap{position:absolute;left:22px;bottom:18px;display:flex;align-items:baseline;gap:14px}
+#stage .cap .a{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px}
+#stage .cap .b{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.18em;color:var(--faint)}
+/* ============ RIGHT — RAIL + LOG ============ */
+#rcol{position:absolute;right:24px;top:110px;width:360px;display:flex;flex-direction:column;gap:10px}
+#rcol .panel{padding:13px 16px}
+#rail .row{display:grid;grid-template-columns:84px 1fr 78px;align-items:center;gap:10px;padding:7.5px 10px;margin:0 -10px;border-radius:8px;transition:background 1.4s ease}
+#rail .row+.row{margin-top:1px}
+#rail .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
+#rail .s em{font-style:normal;font-size:8.5px;color:var(--gold);background:rgba(240,185,11,.12);border-radius:4px;padding:2px 5px;margin-left:5px}
+#rail .p{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;text-align:right}
+#rail .c{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;text-align:right;justify-self:end}
+#rail .row.flash{background:rgba(16,212,142,.08)}
+#rail .row.flash.dn{background:rgba(246,70,93,.08)}
+#tlog .row{display:flex;align-items:center;gap:10px;padding:7px 0}
+#tlog .row+.row{border-top:1px solid rgba(148,190,220,.08)}
+#tlog .tm{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--faint);width:44px}
+#tlog .side{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;padding:3px 8px;border-radius:6px}
+#tlog .side.l{color:#5FE8B4;background:rgba(16,212,142,.12)}
+#tlog .side.s{color:#FFA9BA;background:rgba(246,70,93,.12)}
+#tlog .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11.5px}
+#tlog .r{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
+/* ============ CAM (bottom-left, prop-firm frame) ============ */
+#cam{position:absolute;left:24px;bottom:100px;width:380px;height:214px;border-radius:var(--r);padding:2px;background:linear-gradient(150deg,var(--mint),rgba(16,212,142,.12) 40%,rgba(255,255,255,.04) 60%,rgba(16,212,142,.4));box-shadow:0 24px 60px rgba(0,0,0,.5);animation-delay:.42s}
+#cam .in{position:relative;width:100%;height:100%;border-radius:calc(var(--r) - 2px);background:#0A1622;overflow:hidden}
+#cam .person{position:absolute;left:50%;bottom:-12%;transform:translateX(-50%);width:74%;height:86%;background:
+  radial-gradient(84px 84px at 50% 26%,#1E3448 0 48%,transparent 50%),
+  radial-gradient(150px 110px at 50% 96%,#1A2C40 0 52%,transparent 54%);opacity:.95}
+#cam .wall{position:absolute;inset:0;background:radial-gradient(120% 90% at 25% 15%,rgba(16,212,142,.09),transparent 55%)}
+#cam .chip{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:8px;background:rgba(4,9,15,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px rgba(148,190,220,.18);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.18em}
+#cam .chip i{width:7px;height:7px;border-radius:2px;background:var(--mint);animation:pulse 2s infinite}
+#cam .name{position:absolute;left:11px;right:11px;bottom:11px;padding:9px 13px;border-radius:var(--r-sm);background:rgba(4,9,15,.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(148,190,220,.14)}
+#cam .nrow{display:flex;align-items:center;gap:10px}
+#cam .nrow b{font-size:13.5px;font-weight:700}
+#cam .lvl{display:flex;align-items:flex-end;gap:2.5px;height:13px;margin-left:2px}
+#cam .lvl i{width:3px;border-radius:2px;background:var(--mint);animation:eq 0.9s ease-in-out infinite}
+#cam .lvl i:nth-child(1){height:5px}#cam .lvl i:nth-child(2){height:11px;animation-delay:.12s}#cam .lvl i:nth-child(3){height:8px;animation-delay:.24s}#cam .lvl i:nth-child(4){height:13px;animation-delay:.36s}
+@keyframes eq{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+#cam .tag{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.16em;color:var(--muted)}
+#cam .pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+#cam .pfill{height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,rgba(16,212,142,.5),var(--mint));transition:width 1.6s var(--expo) .6s}
+#cam .plabel{display:flex;justify-content:space-between;margin-top:5px;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
+/* ============ STRAP (sharp lower third) ============ */
+#strap{position:absolute;left:428px;bottom:100px;width:900px;display:none;z-index:5}
+#strap.on{display:block}
+#strap .panel{position:relative;padding:17px 24px;border-radius:var(--r);overflow:hidden;display:flex;align-items:center;gap:22px;border-left:3px solid var(--mint)}
+#strap .txt{flex:1;min-width:0}
+#strap .kick{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.24em;color:var(--mint)}
+#strap .kick .sq{width:8px;height:8px;border-radius:2px;background:var(--mint);flex:none}
+#strap .head{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;margin-top:6px;line-height:1.06;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#strap .sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:7px}
+#strap .bay{flex:none;min-width:100px;text-align:right;border-left:1px solid rgba(148,190,220,.15);padding-left:22px}
+#strap .bay .n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:35px;line-height:1}
+#strap .bay .k{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--faint);margin-top:6px}
+.l{display:block;overflow:hidden}
+.l>span{display:block}
+.play .l.kick>span{animation:rise .65s var(--expo) .08s forwards}
+.play .l.head>span{animation:rise .7s var(--expo) .16s forwards}
+.play .l.sub>span{animation:rise .7s var(--expo) .3s forwards}
+@keyframes rise{from{transform:translateY(115%)}to{transform:translateY(0)}}
+/* ============ ALERTS (payout toasts, top-right over stage) ============ */
+#alerts{position:absolute;right:420px;top:128px;width:340px;display:flex;flex-direction:column;gap:10px;z-index:50;pointer-events:none}
+.toast{padding:13px 15px;border-radius:var(--r);background:rgba(10,22,34,.96);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:var(--sh),inset 0 0 0 1px rgba(16,212,142,.25);display:flex;gap:12px;align-items:center;transform:scale(.7) translateY(20px);opacity:0;animation:pop .8s var(--expo) forwards,popout .5s var(--expo) 6.4s forwards;border-left:3px solid var(--mint)}
+.toast .ic{flex:none;width:42px;height:42px;border-radius:11px;background:rgba(16,212,142,.14);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:inset 0 0 0 1px rgba(16,212,142,.3)}
+.toast .t1{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--mint)}
+.toast .t2{font-size:13.5px;font-weight:700;margin-top:3px}
+.toast .t3{font-size:11.5px;color:var(--muted);margin-top:2px}
+@keyframes pop{to{transform:none;opacity:1}}
+@keyframes popout{to{transform:scale(.7) translateY(20px);opacity:0}}
+/* ============ TICKER — flush strip, sharp ============ */
+#ticker{position:absolute;left:24px;right:24px;bottom:22px;height:64px;border-radius:var(--r);display:flex;align-items:stretch;overflow:hidden;animation-delay:.32s}
+#ticker .cap{flex:none;display:flex;align-items:center;gap:10px;padding:0 22px;background:var(--mint);color:var(--mint-ink)}
+#ticker .cap svg{width:28px;height:28px;flex:none}
+#ticker .cap .a{font-weight:800;font-size:15px;letter-spacing:-.02em}
+#ticker .cap .live{width:8px;height:8px;border-radius:2px;background:var(--mint-ink);animation:pulse 1.7s infinite}
+#ticker .cells{flex:1;display:flex;align-items:stretch;overflow:hidden}
+#ticker .cell{flex:none;display:flex;align-items:center;gap:10px;padding:0 22px;border-right:1px solid rgba(148,190,220,.1);transition:background 1.4s ease}
+#ticker .cell .s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.1em;color:var(--muted)}
+#ticker .cell .v{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px;display:flex;gap:7px;align-items:baseline}
+#ticker .cell .c{font-size:11px;font-weight:600}
+#ticker .cell.flash{background:rgba(16,212,142,.08)}
+#ticker .cell.flash.dn{background:rgba(246,70,93,.08)}
+#ticker .end{flex:none;display:flex;align-items:center;padding:0 20px;background:var(--panel-2)}
+#ticker .end .disc{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.14em;color:var(--faint);max-width:190px;line-height:1.7}
+#ticker .end .disc b{color:var(--muted)}
+#help{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);padding:7px 14px;border-radius:10px;background:rgba(4,9,15,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px rgba(148,190,220,.16);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted);z-index:60}
+#help b{color:var(--mint)}
+#help.off{display:none}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="bg"><div id="candles" style="position:absolute;inset:0"></div></div>
+
+  <div id="top" class="panel enter">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#F0B90B"/><circle cx="32" cy="38" r="6" fill="#141003"/><circle cx="68" cy="38" r="6" fill="#141003"/><path d="M 22 54 A 30 30 0 0 0 78 54" fill="none" stroke="#141003" stroke-width="8" stroke-linecap="round"/></svg></div>
+      <div class="wm">smile<i>.</i><b>FUNDED</b></div>
+    </div>
+    <div class="div"></div>
+    <span class="phase">PHASE 2 · DEMO</span>
+    <div class="quest">
+      <span class="ql">PAYOUT QUEST</span>
+      <div class="track"><div class="fill" id="q-fill"></div></div>
+      <span class="qv num">$1,240<i> / $2,000</i></span>
+    </div>
+    <div class="clock">
+      <span class="t num" id="eat">--:--:--</span><span class="z">EAT</span>
+      <span class="rec"><i></i>REC</span>
+    </div>
+  </div>
+
+  <div id="lcol">
+    <div class="panel enter" style="animation-delay:.16s" id="acct">
+      <div class="h">DEMO ACCOUNT <span style="margin-left:auto;color:var(--faint)">MT5 · SIM</span></div>
+      <div class="bal num">$25,000.00</div>
+      <div class="rows">
+        <div class="row"><span class="k">DAY START</span><b class="num">$24,715.50</b></div>
+        <div class="row"><span class="k">EQUITY</span><b class="num up">$26,284.50</b></div>
+        <div class="row"><span class="k">FREE MARGIN</span><b class="num">$22,104.20</b></div>
+      </div>
+    </div>
+    <div class="panel enter" style="animation-delay:.26s" id="target">
+      <div class="h">PROFIT TARGET · 8%</div>
+      <div class="bar"><div class="fill" id="t-fill"></div></div>
+      <div class="meta"><span class="num">$2,000 / $2,000 = 62%</span><span class="up">ON PACE</span></div>
+    </div>
+    <div class="panel enter" style="animation-delay:.34s" id="dloss">
+      <div class="h">DAILY LOSS LIMIT</div>
+      <div class="bar"><div class="fill" id="d-fill"></div></div>
+      <div class="meta"><span class="num">-$420 / -$1,200</span><span style="color:var(--amber)">35% USED</span></div>
+    </div>
+    <div class="panel enter" style="animation-delay:.4s" id="board">
+      <div class="h" style="margin-bottom:2px">PAYOUT LEADERBOARD · WEEK</div>
+    </div>
+  </div>
+
+  <div id="stage" class="panel enter">
+    <div class="stats">
+      <div class="stat"><div class="k">WIN RATE</div><div class="v num">68%</div></div>
+      <div class="stat"><div class="k">AVG R</div><div class="v num up">+1.4R</div></div>
+      <div class="stat"><div class="k">TRADES TODAY</div><div class="v num">12</div></div>
+      <div class="stat"><div class="k">BEST</div><div class="v num up">+2.8R</div></div>
+    </div>
+    <div class="chart">
+      <svg viewBox="0 0 1040 370" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(16,212,142,.28)"/>
+            <stop offset="100%" stop-color="rgba(16,212,142,0)"/>
+          </linearGradient>
+        </defs>
+        <line class="gridl" x1="0" y1="90" x2="1040" y2="90"/>
+        <line class="gridl" x1="0" y1="180" x2="1040" y2="180"/>
+        <line class="gridl" x1="0" y1="270" x2="1040" y2="270"/>
+        <line class="targetline" x1="0" y1="52" x2="1040" y2="52"/>
+        <path class="glow" d="M0,320 L80,300 L160,310 L240,268 L320,282 L400,240 L480,255 L560,210 L640,225 L720,180 L800,196 L880,140 L960,118 L1040,86 L1040,370 L0,370 Z"/>
+        <path class="ln" d="M0,320 L80,300 L160,310 L240,268 L320,282 L400,240 L480,255 L560,210 L640,225 L720,180 L800,196 L880,140 L960,118 L1040,86"/>
+      </svg>
+      <div class="cap"><span class="a">Equity Curve</span><span class="b">DEMO · SIMULATED DATA · PAYOUT TARGET LINE IN AMBER</span></div>
+    </div>
+  </div>
+
+  <div id="rcol">
+    <div class="panel enter" style="animation-delay:.2s" id="rail">
+      <div class="h" style="margin-bottom:6px">INSTRUMENT RAIL <span style="margin-left:auto;color:var(--faint)">8</span></div>
+    </div>
+    <div class="panel enter" style="animation-delay:.3s" id="tlog">
+      <div class="h" style="margin-bottom:2px">TRADE LOG · TODAY</div>
+    </div>
+    <div class="panel enter" style="animation-delay:.4s" id="paid">
+      <div class="h" style="margin-bottom:2px">PAYOUTS PAID · DEMO</div>
+    </div>
+  </div>
+
+  <div id="alerts"></div>
+
+  <div id="cam" class="enter">
+    <div class="in">
+      <div class="wall"></div><div class="person"></div>
+      <div class="chip"><i></i>CAM · 4K</div>
+      <div class="name">
+        <div class="nrow"><b>Mwangi</b><span class="lvl"><i></i><i></i><i></i><i></i></span><span class="tag">HOST · EAT</span></div>
+        <div class="pbar"><div class="pfill" id="p-fill"></div></div>
+        <div class="plabel"><span>PAYOUT QUEST · 62%</span><span class="num">$1,240 / $2,000</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="strap">
+    <div class="panel">
+      <div class="txt">
+        <div class="l kick"><span><span class="sq"></span><span id="s-kick">TRADE UPDATE · DEMO</span></span></div>
+        <div class="l head"><span id="s-head">Take Profit Hit</span></div>
+        <div class="l sub"><span id="s-sub">EUR/USD long — losses are tuition, we show ours so you pay less of yours</span></div>
+      </div>
+      <div class="bay"><div class="l"><span><div class="n num up" id="s-num">+34</div><div class="k" id="s-bay">PIPS · DEMO</div></span></div></div>
+    </div>
+  </div>
+
+  <div id="ticker" class="panel enter">
+    <div class="cap"><span class="live"></span><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#032015"/><circle cx="32" cy="38" r="6" fill="#10D48E"/><circle cx="68" cy="38" r="6" fill="#10D48E"/><path d="M 22 54 A 30 30 0 0 0 78 54" fill="none" stroke="#10D48E" stroke-width="8" stroke-linecap="round"/></svg><span class="a">smile</span></div>
+    <div class="cells" id="cells"></div>
+    <div class="end"><span class="disc"><b>EDUCATION ONLY</b> · NOT FINANCIAL ADVICE · RISK</span></div>
+  </div>
+
+  <div id="help"><b>1</b> lesson · <b>2</b> TP · <b>3</b> poll · <b>A</b> alert · <b>V</b> backdrop · <b>H</b> hide</div>
+<script>
+/* ============ TRADEIFY demo engine — locked lab spec ============ */
+const GALLERY=new URLSearchParams(location.search).has('g');
+if(GALLERY){document.addEventListener('DOMContentLoaded',()=>{const h=document.querySelector('#help');if(h)h.classList.add('off');});}
+const $=s=>document.querySelector(s);
+const fmt=(n,d)=>n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const UNI=[
+ {s:'EUR/USD',p:1.0854,d:4,ch:0.23},{s:'GBP/USD',p:1.2698,d:4,ch:-0.03},
+ {s:'USD/JPY',p:151.45,d:2,ch:0.32},{s:'XAU/USD',p:2383.9,d:1,ch:0.43},
+ {s:'BTC/USD',p:67227,d:0,ch:-1.22},{s:'ETH/USD',p:3415,d:0,ch:0.93},
+ {s:'USD/KES',p:129.20,d:2,ch:0.05,ref:true},{s:'NSE 20',p:2914.55,d:2,ch:0.18,ref:true}
+];
+UNI.forEach(u=>{const r=document.createElement('div');r.className='row';r.dataset.s=u.s;
+ r.innerHTML=`<span class="s">${u.s}${u.ref?'<em>KE</em>':''}</span><span class="p num">${fmt(u.p,u.d)}</span><span class="c num ${u.ch>=0?'up':'dn'}">${u.ch>=0?'▲ +':'▼ '}${u.ch.toFixed(2)}%</span>`;$('#rail').appendChild(r);});
+[{tm:'10:42',side:'LONG',s:'EUR/USD',r:'+1.2R',up:true},{tm:'11:15',side:'SHORT',s:'GBP/USD',r:'+0.8R',up:true},{tm:'12:03',side:'LONG',s:'BTC/USD',r:'-0.4R',up:false}].forEach(t=>{
+ const row=document.createElement('div');row.className='row';
+ row.innerHTML=`<span class="tm">${t.tm}</span><span class="side ${t.side==='LONG'?'l':'s'}">${t.side}</span><span class="s">${t.s}</span><span class="r num ${t.up?'up':'dn'}">${t.r}</span>`;$('#tlog').appendChild(row);});
+[[1,'@kendex_ke','$1,240'],[2,'@nairobibulls','$980'],[3,'@ateso_j','$760']].forEach(b=>{
+ const r=document.createElement('div');r.className='row';
+ r.innerHTML=`<span class="pos">#${b[0]}</span><span class="u">${b[1]}</span><span class="am num up">${b[2]}</span>`;$('#board').appendChild(r);});
+[['@mwangi_ke','$3,120 · 3 payouts'],['@kendex_ke','$1,240 · 1 payout'],['@tesla_ke','$860 · 1 payout']].forEach(p=>{
+ const r=document.createElement('div');r.className='row';
+ r.innerHTML=`<span class="k">${p[0]}</span><b class="num up">${p[1]}</b>`;$('#paid').appendChild(r);});
+UNI.slice(0,6).forEach(u=>{const c=document.createElement('div');c.className='cell';c.dataset.s=u.s;
+ c.innerHTML=`<span class="s">${u.s}</span><span class="v num"><span class="px">${fmt(u.p,u.d)}</span><span class="c num ${u.ch>=0?'up':'dn'}">${u.ch>=0?'+':''}${u.ch.toFixed(2)}%</span></span>`;$('#cells').appendChild(c);});
+function tick(){const i=Math.floor(Math.random()*6);const u=UNI[i];
+ const dir=Math.random()>0.5?1:-1;const drift=u.d===0?dir*Math.random()*90:dir*Math.random()*0.0012;
+ u.p=Math.max(0.0001,u.p+drift);u.ch=Math.max(-2.5,Math.min(2.5,u.ch+dir*(Math.random()*0.12)));
+ document.querySelectorAll(`[data-s="${u.s}"]`).forEach(el=>{
+  const px=el.querySelector('.px');if(px)px.textContent=fmt(u.p,u.d);
+  const c=el.querySelector('.c');if(c){c.className='c num '+(u.ch>=0?'up':'dn');c.textContent=(u.ch>=0?'+':'')+u.ch.toFixed(2)+'%';}
+  el.classList.remove('flash','up','dn');void el.offsetWidth;el.classList.add('flash',u.ch>=0?'up':'dn');
+  setTimeout(()=>el.classList.remove('flash','up','dn'),1500);});}
+setInterval(tick,2600);
+function updClock(){const now=new Date(Date.now()+(3*60+new Date().getTimezoneOffset())*60000);
+ const h=now.getUTCHours(),m=now.getUTCMinutes(),s=now.getUTCSeconds();
+ $('#eat').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+setInterval(updClock,1000);
+/* payout fills */
+setTimeout(()=>{$('#q-fill').style.width='62%';$('#t-fill').style.width='62%';$('#d-fill').style.width='35%';$('#p-fill').style.width='62%';},700);
+const STATES={
+ lesson:{kick:'CHART SCHOOL · LESSON 04',head:'The Mango Test',sub:'support & resistance, drawn on fruit — one question in, one skill out',num:'L04',bay:'TODAY\u2019S LESSON',cls:''},
+ tp:{kick:'TRADE UPDATE · DEMO',head:'Take Profit Hit',sub:'EUR/USD long — losses are tuition, we show ours so you pay less of yours',num:'+34',bay:'PIPS · DEMO',cls:'up'},
+ poll:{kick:'POLL · ONE QUESTION IN',head:'Will NSE 20 hold 2,900?',sub:'drop YES or NO in chat — the mango test decides Wednesday',num:'2,900',bay:'THE LEVEL',cls:''},
+ sl:{kick:'TRADE UPDATE · DEMO',head:'Stop Loss Respected',sub:'XAU/USD short — tuition is cheaper on demo',num:'-0.8%',bay:'RISK · DEMO',cls:'dn'}
+};
+let si=0,sTimer=null;
+function playStrap(name){const st=STATES[name];const el=$('#strap');el.classList.remove('play','on');void el.offsetWidth;
+ $('#s-kick').textContent=st.kick;$('#s-head').textContent=st.head;$('#s-sub').textContent=st.sub;
+ const nb=$('#s-num');$('#s-bay').textContent=st.bay;
+ nb.className='n num '+st.cls;nb.textContent=st.num;
+ el.classList.add('on','play');}
+function autoStrap(){playStrap(['lesson','tp','poll','sl'][si%4]);si++;}
+sTimer=setInterval(autoStrap,9000);autoStrap();
+const ALERTS=[
+ {i:'🏆',t1:'PAYOUT APPROVED · DEMO',t2:'@kendex_ke · $1,240',t3:'first payouts land in 24h'},
+ {i:'📈',t1:'XAU/USD ON THE MOVE',t2:'+0.8% in 5 minutes',t3:'demo tape — honest data only'},
+ {i:'💬',t1:'CHAT QUESTION',t2:'"Can I start with $50?"',t3:'one question in, one skill out'}];
+let ai=0;
+function fireAlert(){const a=ALERTS[ai%ALERTS.length];ai++;
+ const t=document.createElement('div');t.className='toast';
+ t.innerHTML=`<div class="ic">${a.i}</div><div><div class="t1">${a.t1}</div><div class="t2">${a.t2}</div><div class="t3">${a.t3}</div></div>`;
+ $('#alerts').appendChild(t);setTimeout(()=>t.remove(),7200);}
+if(!GALLERY){setInterval(fireAlert,13000);setTimeout(fireAlert,3500);}
+(function(){const c=$('#candles');let y=560;for(let i=0;i<64;i++){const h=40+Math.random()*130;const x=i*30+((i%3)*4);
+ const w=document.createElement('i');w.className='cndl wick';w.style.cssText=`left:${x+12}px;height:${h*1.35}px;bottom:${y+20}px`;c.appendChild(w);
+ const b=document.createElement('i');b.className='cndl'+(Math.random()>0.55?'':' dn');b.style.cssText=`left:${x}px;height:${h}px;bottom:${y}px`;c.appendChild(b);
+ y=Math.max(120,Math.min(680,y+(Math.random()-0.48)*70));}})();
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+ if(k==='1'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('lesson');}
+ if(k==='2'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('tp');}
+ if(k==='3'){clearInterval(sTimer);sTimer=setInterval(autoStrap,9000);playStrap('poll');}
+ if(k==='a')fireAlert();
+ if(k==='v')$('#bg').classList.toggle('on');
+ if(k==='h')$('#help').classList.toggle('off');});
+function fit(){const s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform=`translate(-50%,-50%) scale(${s})`;}
+addEventListener('resize',fit);fit();updClock();
+</script>
+</div>
+</body>
+</html>
