@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · GUIDE — wiring captures, alerts & sponsors into OBS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(18,22,34,.7); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#96A0B8; --faint:#5A6478;
+  --gold:#FFCE00; --gold-2:#F0B90B; --gold-ink:#1F1702;
+  --up:#10B981; --dn:#F6465D; --blue:#3E6EFF;
+  --expo:cubic-bezier(.16,1,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(120% 900px at 50% -100px,#131726,#0A0C14 60%),var(--bg);color:var(--fg);
+  font-family:Inter,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:120px}
+.wrap{max-width:1060px;margin:0 auto;padding:0 32px}
+header{padding:56px 0 8px;display:flex;align-items:center;gap:18px}
+header img{height:44px}
+header .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--gold)}
+h1{font-family:'Space Grotesk',sans-serif;font-size:40px;letter-spacing:-.02em;margin:10px 0 8px}
+.lead{color:var(--muted);font-size:15.5px;line-height:1.75;max-width:760px}
+.lead b{color:var(--fg)}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 8px}
+nav a{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--muted);
+  text-decoration:none;padding:7px 13px;border-radius:999px;background:rgba(255,255,255,.04);
+  box-shadow:inset 0 0 0 1px var(--line);transition:.25s var(--expo)}
+nav a:hover{color:var(--gold-ink);background:var(--gold)}
+section{margin-top:54px}
+h2{font-family:'Space Grotesk',sans-serif;font-size:23px;letter-spacing:-.01em;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+h2 .n{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--gold-ink);background:var(--gold);
+  border-radius:8px;padding:4px 9px}
+p{color:var(--muted);font-size:14px;line-height:1.8;margin:10px 0}
+p b,li b{color:var(--fg)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:15.5px;margin-bottom:8px;display:flex;align-items:center;gap:9px}
+.card h3 .dot{width:8px;height:8px;border-radius:3px;background:var(--gold)}
+.card p{font-size:13px;margin:6px 0}
+.card .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.16em;color:var(--gold)}
+/* layer diagram */
+.layers{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.lay{display:flex;align-items:center;gap:14px;padding:11px 14px;border-radius:12px;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;font-weight:600;letter-spacing:.08em}
+.lay+.lay{margin-top:8px}
+.lay .z{flex:none;width:34px;text-align:center;padding:4px 0;border-radius:7px;font-size:10px}
+.lay.ov{background:rgba(255,206,0,.1);box-shadow:inset 0 0 0 1px rgba(255,206,0,.4);color:var(--gold)}
+.lay.ov .z{background:var(--gold);color:var(--gold-ink)}
+.lay.cap{background:rgba(62,110,255,.08);box-shadow:inset 0 0 0 1px rgba(62,110,255,.35);color:#9DB4FF}
+.lay.cap .z{background:rgba(62,110,255,.3);color:#DFE8FF}
+.lay .note{margin-left:auto;color:var(--faint);font-size:9px;letter-spacing:.1em}
+/* tables */
+table{width:100%;border-collapse:collapse;margin-top:16px;background:var(--card);border-radius:16px;overflow:hidden}
+th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.18em;color:var(--gold);
+  text-align:left;padding:12px 16px;background:rgba(255,206,0,.07);border-bottom:1px solid rgba(255,206,0,.2)}
+td{padding:10.5px 16px;font-size:12.5px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.05);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{color:var(--fg);font-weight:600}
+td code,.c{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9DB4FF}
+td .gold{color:var(--gold)}
+/* steps */
+.steps{counter-reset:st;margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 18px;align-items:flex-start}
+.step::before{counter-increment:st;content:counter(st);flex:none;width:30px;height:30px;border-radius:10px;background:var(--gold);
+  color:var(--gold-ink);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.step .t{font-size:13.5px;color:var(--muted);line-height:1.65;padding-top:3px}
+.step .t b{color:var(--fg)}
+/* faq */
+.faq{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px}
+.q .qq{font-weight:700;font-size:14px;display:flex;gap:10px;align-items:baseline}
+.q .qq::before{content:"Q";font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold-ink);background:var(--gold);border-radius:6px;padding:2.5px 7px}
+.q .aa{color:var(--muted);font-size:13px;line-height:1.75;margin-top:9px;padding-left:34px}
+.q .aa b{color:var(--fg)}
+.sc-link{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.sc-link a{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.1em;color:var(--fg);
+  text-decoration:none;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line)}
+.sc-link a:hover{box-shadow:inset 0 0 0 1.5px rgba(255,206,0,.5);color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="assets/smile-logo.svg" alt="smile.co.ke">
+    <div><div class="sub">SMILE LAB · BROADCAST KIT</div>
+    <h1>Wiring captures, alerts &amp; sponsors into OBS</h1></div>
+  </header>
+  <p class="lead">Everything in the lab runs on one honest principle: <b>the HTML overlay is chrome, OBS owns the sources.</b>
+  A browser source is a sandboxed web page — it cannot reach into your camera or window captures. So every scene renders
+  <b>card frames with transparent holes</b> at exact, documented coordinates, and your captures sit <b>underneath</b>,
+  showing through. This guide gives you every coordinate, preset and switch. <b>All numbers assume a 1920×1080 base canvas</b>
+  (the scenes letterbox-scale themselves to any other resolution).</p>
+
+  <nav>
+    <a href="#layers">1 · Layer order</a><a href="#quick">2 · Quick start</a><a href="#sheets">3 · Slot sheets</a>
+    <a href="#cams">4 · Multi-cam presets</a><a href="#alerts">5 · Alert engine</a><a href="#sponsor">6 · Sponsors</a>
+    <a href="#keys">7 · Keymaps</a><a href="#faq">8 · FAQ</a>
+  </nav>
+
+  <section id="layers">
+    <h2><span class="n">01</span>The one rule: layer order</h2>
+    <p>Order in an OBS scene = order in the Sources panel. Top of the list renders on top. There is exactly one correct stack:</p>
+    <div class="layers">
+      <div class="lay ov"><span class="z">↑</span>SMILE OVERLAY (browser source · 1920×1080 · URL of the scene)<span class="note">CHROME · HOLES · TICKER · ALERTS</span></div>
+      <div class="lay cap"><span class="z">3</span>CAMERA / WINDOW / DISPLAY CAPTURES — one source per hole<span class="note">SIZED TO THE SLOT COORDS</span></div>
+      <div class="lay cap"><span class="z">2</span>Optional brand backdrop (use the scene's built-in <span class="c">V</span> backdrop instead)<span class="note">OR SCENE BG COLOR</span></div>
+      <div class="lay"><span class="z">1</span>Base color #05060B (or nothing — the overlay has its own)<span class="note">FLOOR</span></div>
+    </div>
+    <p>If a capture sits <b>above</b> the overlay it will cover the frames, chips and ticker — always keep the browser source first in the list.</p>
+  </section>
+
+  <section id="quick">
+    <h2><span class="n">02</span>Quick start (per scene, ~3 minutes)</h2>
+    <div class="steps">
+      <div class="step"><div class="t"><b>Add the browser source</b> with the scene URL (see lab index) · Width <span class="c">1920</span> · Height <span class="c">1080</span> · tick “Shutdown source when not visible” OFF, “Refresh browser when scene becomes active” ON.</div></div>
+      <div class="step"><div class="t"><b>Open <span class="c">?cal=1</span></b> (append to the URL) — the scene draws dashed outlines on every hole and prints a live slot sheet with exact <span class="c">X · Y · W · H</span> values.</div></div>
+      <div class="step"><div class="t"><b>Add your captures below the overlay</b>. For each hole: right-click source → Transform → Edit Transform → set Position X/Y and Size W/H from the slot sheet.</div></div>
+      <div class="step"><div class="t"><b>Ratio mismatch?</b> Hold <span class="c">Alt</span> (Opt on macOS) and drag the red crop handles — crop the capture to the hole's aspect. The hole is transparent, so anything outside the slot never shows.</div></div>
+      <div class="step"><div class="t"><b>Save the scene as a preset</b> (“SMILE · STUDIO 2-CAM”, “SMILE · CINEMA”…). Switching layouts = switching OBS scenes; the overlay needs no touching. Remove <span class="c">?cal=1</span> when done.</div></div>
+    </div>
+  </section>
+
+  <section id="sheets">
+    <h2><span class="n">03</span>Slot sheets (1920×1080)</h2>
+    <p>Live-measured values are always available via <span class="c">?cal=1</span> in each scene. The tables below are the headline constants.</p>
+    <table>
+      <tr><th style="width:130px">ISLAND R3</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CAM hole</td><td>host webcam (portrait card, gold ring)</td><td class="c">320×400 @ 24,560</td></tr>
+      <tr><td class="gold">Island</td><td>— chrome, auto-centered, max 50% width</td><td class="c">≤960×64 @ centered, y22</td></tr>
+      <tr><td class="gold">Ticker</td><td>— chrome pill, centered</td><td class="c">≤1190×56 @ centered, y1000</td></tr>
+      <tr><td class="gold">Alerts</td><td>— engine zone, bottom-right</td><td class="c">380-wide @ right24, bottom96</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:130px">STUDIO</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">STAGE</td><td>display / window capture (16:9 default, <span class="c">R</span> cycles 16:10 · 4:3 · fill)</td><td class="c">1052×592 @ ~362,278</td></tr>
+      <tr><td class="gold">CAM 1..N</td><td>webcams — <span class="c">?cams=N</span> or keys 1–4</td><td class="c">276-wide holes @ x24, y144↓</td></tr>
+      <tr><td class="gold">WINDOW A</td><td>MT5 / TradingView window</td><td class="c">420×266-hole @ 1452,144</td></tr>
+      <tr><td class="gold">WINDOW B</td><td>browser / research window</td><td class="c">420×208-hole @ 1452,450</td></tr>
+      <tr><td class="gold">SPONSOR</td><td>banner / video card</td><td class="c">416-hole @ 1452,698</td></tr>
+      <tr><td class="gold">BAND</td><td>— reserved ticker band · never place captures here</td><td class="c">1920×52 @ 0,1028</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:130px">CINEMA</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CONTENT</td><td>one fullscreen display capture, aspect-locked (<span class="c">R</span>: 16:9 · 1.85 · 2.39)</td><td class="c">1594×896 @ 163,116</td></tr>
+      <tr><td class="gold">CAM LAYER</td><td>optional commentary cam above content (<span class="c">V</span>: off → bottom-right → top-right)</td><td class="c">300×188 @ 1596,748 / 92</td></tr>
+      <tr><td class="gold">BAND</td><td>— permanent Yahoo-style ticker</td><td class="c">1920×52 @ 0,1028</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:130px">MONITOR</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">—</td><td>no captures: pure overlay ambience (chart, depth, heat, watchlist all rendered live)</td><td class="c">drop it in, done</td></tr>
+    </table>
+  </section>
+
+  <section id="cams">
+    <h2><span class="n">04</span>Multi-cam presets</h2>
+    <p>The studio auto-arranges its person deck to the host count — the holes resize so every webcam keeps a sensible framing.
+    Set it once with the URL (<span class="c">studio.html?cams=3</span>) or live with keys <span class="c">1–4</span>.</p>
+    <table>
+      <tr><th>Cams</th><th>Deck layout (left column)</th><th>Typical show</th></tr>
+      <tr><td class="gold"><b>1</b></td><td>one portrait card <span class="c">300×460</span></td><td>solo desk · market open close reads</td></tr>
+      <tr><td class="gold"><b>2</b></td><td>two cards <span class="c">300×420</span> stacked</td><td>host + analyst (default)</td></tr>
+      <tr><td class="gold"><b>3</b></td><td>three cards <span class="c">300×340</span></td><td>panel + chart in stage</td></tr>
+      <tr><td class="gold"><b>4</b></td><td>four cards <span class="c">300×260</span></td><td>full desk · opening-bell battle format</td></tr>
+    </table>
+    <p>Names and roles (HOST · ANALYST · CO-HOST · GUEST) auto-label each card; the cal sheet reprints per count.</p>
+  </section>
+
+  <section id="alerts">
+    <h2><span class="n">05</span>Alert engine — spam-proof by design</h2>
+    <p>Chat and tips arrive from <b>multiple platforms at once</b>, so the shared engine (assets/alert-engine.js) enforces hard limits:</p>
+    <div class="cards">
+      <div class="card"><h3><span class="dot"></span>What it does</h3>
+        <p><b>Max 2 cards on screen</b> (URL-tunable). Everything else waits in a queue of 12.</p>
+        <p><b>Queue full?</b> Low-priority events (follows) are dropped first — tips and raids always survive.</p>
+        <p><b>Same person spams?</b> Their repeats <b>merge into one card</b> with a ×N counter for 9s — no stack, no flood.</p>
+        <p><b>Auto-dismiss</b> with a progress bar; cards exit cleanly and the queue pumps the next one.</p></div>
+      <div class="card"><h3><span class="dot"></span>Tune it with the URL</h3>
+        <p><span class="c">?amax=3</span> — max cards on screen (1–4)</p>
+        <p><span class="c">?adur=9</span> — seconds per card (default 7)</p>
+        <p><span class="c">?aq=16</span> — queue capacity (default 12)</p>
+        <p><span class="c">?ademo=1</span> — demo loop for rehearsals</p>
+        <p style="margin-top:8px">Keys: <span class="c">A</span> one alert · <span class="c">Shift+A</span> spam storm (6 fast — proves the cap) · <span class="c">X</span> clear.</p></div>
+    </div>
+    <p>Platform badges (YouTube · Twitch · TikTok · X · Kick) color-code each event, wired for multiplatform streams.</p>
+  </section>
+
+  <section id="sponsor">
+    <h2><span class="n">06</span>Sponsor &amp; social system</h2>
+    <p>Sponsors appear in three coordinated places — all editable in one array (<span class="c">TK</span>) near the top of each scene's script:</p>
+    <table>
+      <tr><th>Placement</th><th>What it looks like</th><th>How to edit</th></tr>
+      <tr><td class="gold">TICKER · AD chip</td><td>gold pill inside the ticker: “AD · SMILE QUANTUM — INVEST FROM 100 KES”</td><td>rows with <span class="c">type 2</span> in the <span class="c">TK</span> array</td></tr>
+      <tr><td class="gold">TICKER · social</td><td>dynamic hashtags &amp; handles: <span class="c">#TradeSmile</span> · <span class="c">@smile.co.ke</span></td><td>rows with <span class="c">type 3</span> in <span class="c">TK</span></td></tr>
+      <tr><td class="gold">SPONSOR CARD</td><td>dedicated banner/video card (studio right rail; island3 via <span class="c">S</span>) with a transparent hole or MP4</td><td>drop a <span class="c">&lt;video src=…&gt;</span> or banner URL into the card's hole</td></tr>
+    </table>
+    <p>Keep sponsor copy short and caps-light — the gold chip already carries the brand; the ticker keeps it on screen ~every 40s.</p>
+  </section>
+
+  <section id="keys">
+    <h2><span class="n">07</span>Keymaps (per scene, when the browser source has focus)</h2>
+    <table>
+      <tr><th style="width:120px">Scene</th><th>Keys</th></tr>
+      <tr><td class="gold">ISLAND R3</td><td><span class="c">I</span> island size (compact→standard→wide) · <span class="c">L</span> lower third · <span class="c">S</span> sponsor card · <span class="c">P</span> avatar · <span class="c">V</span> backdrop · <span class="c">C</span> calibrate · <span class="c">A/⇧A/X</span> alerts · <span class="c">H</span> hide UI</td></tr>
+      <tr><td class="gold">STUDIO</td><td><span class="c">1–4</span> cam count · <span class="c">R</span> stage aspect · <span class="c">P</span> placeholders · <span class="c">C</span> calibrate · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">CINEMA</td><td><span class="c">N</span> island wide (now-showing) · <span class="c">V</span> cam layer · <span class="c">P</span> avatar · <span class="c">R</span> aspect · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">MONITOR</td><td><span class="c">1–4</span> symbol · <span class="c">T</span> fx ↔ ticker band · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+    </table>
+    <p><span class="c">?g=1</span> on any scene = gallery mode (keys hidden, alerts quiet) for screenshots of the lab index.</p>
+  </section>
+
+  <section id="faq">
+    <h2><span class="n">08</span>FAQ — the honest answers</h2>
+    <div class="faq">
+      <div class="q"><div class="qq">Can one HTML file control my camera and window captures?</div>
+        <div class="aa"><b>No — by design.</b> OBS browser sources are sandboxed web pages; OBS itself composites camera/window/display captures.
+        That's why the kit is built as chrome-with-holes: the overlay draws the brand, you place the captures underneath using the
+        cal sheet. Setup is <b>once per scene preset</b>, then it's just scene switching in OBS.</div></div>
+      <div class="q"><div class="qq">My monitor isn't 1920×1080 — will it look wonky?</div>
+        <div class="aa">No. Every scene renders a 1920×1080 composition and <b>letterbox-scales to the exact browser-source size</b>
+        with proportional fit — 4K, 1440p, 1366×768, anything. Keep the OBS source at 1920×1080 for a 1:1 pixel match, and the
+        stream canvas can be any resolution: the whole composition scales as one unit.</div></div>
+      <div class="q"><div class="qq">What if my webcam is 4:3 but the hole is portrait?</div>
+        <div class="aa">The holes are transparent, so a mismatched capture simply never shows outside the slot. Set the slot size from
+        the cal sheet, then <b>Alt-drag the red handles</b> to crop the capture to the hole's ratio. If you'd rather letterbox than crop,
+        the scene backdrop is brand ink — not raw black — so bars look intentional.</div></div>
+      <div class="q"><div class="qq">Viewers spam alerts across YouTube + Twitch + TikTok — will it block the screen?</div>
+        <div class="aa">Never more than <span class="c">amax</span> cards render, repeats from one person merge into a ×N counter, and the
+        queue drops follows before tips. Run <span class="c">Shift+A</span> (storm test) before you go live to watch it behave.</div></div>
+      <div class="q"><div class="qq">Full-screen segment — I don't want anything on screen.</div>
+        <div class="aa">That's <b>CINEMA</b>: one colossal aspect-locked card, a top-left watermark inside the frame, the permanent bottom
+        ticker and lower-left alerts — nothing else. The island stays centered ≤50% width, expanding only when you press <span class="c">N</span>
+        to name what's showing. Cam stays optional above the content for translators/commentary (<span class="c">V</span>).</div></div>
+    </div>
+    <div class="sc-link">
+      <a href="island3.html">→ ISLAND R3</a><a href="studio.html">→ STUDIO</a><a href="cinema.html">→ CINEMA</a>
+      <a href="monitor.html">→ MONITOR</a><a href="index.html">← LAB INDEX</a>
+    </div>
+  </section>
+</div>
+</body>
+</html>

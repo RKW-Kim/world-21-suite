@@ -14,7 +14,7 @@
   --card-2:rgba(26,31,46,.6);
   --line:rgba(255,255,255,.08);
   --fg:#F2F5FC; --muted:#96A0B8; --faint:#5A6478;
-  --gold:#F0B90B; --gold-ink:#231A02;
+  --gold:#FFCE00; --gold-ink:#231A02;
   --blue:#3E6EFF; --blue-soft:rgba(62,110,255,.14);
   --up:#10B981; --dn:#F6465D;
   --r-xl:30px; --r-lg:22px; --r-md:16px;
@@ -49,7 +49,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #brand .wm i{font-style:normal;color:var(--gold)}
 #brand .sub{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--muted);margin-top:3px}
 #island{position:absolute;left:50%;top:24px;transform:translateX(-50%);display:flex;align-items:center;gap:0;padding:8px;border-radius:999px;animation-delay:.12s}
-#island .live{flex:none;display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:999px;background:var(--gold);color:var(--gold-ink);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.16em;box-shadow:0 6px 18px rgba(240,185,11,.35)}
+#island .live{flex:none;display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:999px;background:var(--gold);color:var(--gold-ink);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.16em;box-shadow:0 6px 18px rgba(255,206,0,.35)}
 #island .live i{width:7px;height:7px;border-radius:50%;background:var(--gold-ink);animation:pulse 1.7s ease-in-out infinite}
 #island .px-zone{display:flex;align-items:center;gap:14px;padding:0 20px 0 16px;overflow:hidden}
 #island .sym{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px;letter-spacing:.04em;color:var(--muted)}
@@ -70,7 +70,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #clock{position:absolute;right:24px;top:24px;display:flex;align-items:center;gap:11px;padding:10px 18px;border-radius:999px;animation-delay:.18s}
 #clock .t{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px}
 #clock .z{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
-#clock .demo{padding:4px 10px;border-radius:999px;background:rgba(240,185,11,.13);box-shadow:inset 0 0 0 1px rgba(240,185,11,.32);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.14em}
+#clock .demo{padding:4px 10px;border-radius:999px;background:rgba(255,206,0,.13);box-shadow:inset 0 0 0 1px rgba(255,206,0,.32);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.14em}
 /* ============ SESSION CHIPS ============ */
 #chips{position:absolute;left:50%;top:100px;transform:translateX(-50%);display:flex;gap:10px;animation-delay:.24s}
 #chips .chip{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
@@ -84,7 +84,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #lwatch .row{display:grid;grid-template-columns:84px 1fr 76px;align-items:center;gap:10px;padding:7.5px 12px;margin:0 -12px;border-radius:11px;transition:background 1.4s ease}
 #lwatch .row+.row{margin-top:1px}
 #lwatch .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
-#lwatch .s em{font-style:normal;font-size:8.5px;font-weight:600;letter-spacing:.1em;color:var(--gold);background:rgba(240,185,11,.12);border-radius:5px;padding:2px 5px;margin-left:5px;vertical-align:1px}
+#lwatch .s em{font-style:normal;font-size:8.5px;font-weight:600;letter-spacing:.1em;color:var(--gold);background:rgba(255,206,0,.12);border-radius:5px;padding:2px 5px;margin-left:5px;vertical-align:1px}
 #lwatch .p{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;text-align:right}
 #lwatch .c{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;text-align:right;justify-self:end}
 #lwatch .row.flash{background:rgba(16,185,129,.08)}
@@ -97,12 +97,12 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #lpos .side.l{color:#6EE7BC;background:rgba(16,185,129,.12)}
 #lpos .side.s{color:#FFA9BA;background:rgba(246,70,93,.12)}
 #lpos .pnl{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px}
-#cam{position:relative;width:340px;height:318px;border-radius:var(--r-xl);padding:2px;background:linear-gradient(140deg,var(--gold),rgba(240,185,11,.14) 45%,rgba(255,255,255,.05) 70%,rgba(240,185,11,.5));box-shadow:0 30px 70px rgba(0,0,0,.55),0 6px 18px rgba(0,0,0,.4);animation-delay:.42s}
+#cam{position:relative;width:340px;height:318px;border-radius:var(--r-xl);padding:2px;background:linear-gradient(140deg,var(--gold),rgba(255,206,0,.14) 45%,rgba(255,255,255,.05) 70%,rgba(255,206,0,.5));box-shadow:0 30px 70px rgba(0,0,0,.55),0 6px 18px rgba(0,0,0,.4);animation-delay:.42s}
 #cam .in{position:relative;width:100%;height:100%;border-radius:calc(var(--r-xl) - 2px);background:#0D1120;overflow:hidden}
 #cam .person{position:absolute;left:50%;bottom:-12%;transform:translateX(-50%);width:82%;height:92%;background:
   radial-gradient(104px 104px at 50% 25%,#28304A 0 48%,transparent 50%),
   radial-gradient(170px 120px at 50% 96%,#232B44 0 52%,transparent 54%);opacity:.9}
-#cam .wall{position:absolute;inset:0;background:radial-gradient(120% 90% at 25% 15%,rgba(240,185,11,.08),transparent 55%),radial-gradient(110% 90% at 85% 85%,rgba(62,110,255,.06),transparent 55%)}
+#cam .wall{position:absolute;inset:0;background:radial-gradient(120% 90% at 25% 15%,rgba(255,206,0,.08),transparent 55%),radial-gradient(110% 90% at 85% 85%,rgba(62,110,255,.06),transparent 55%)}
 #cam .chip{position:absolute;left:13px;top:13px;display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;background:rgba(10,12,20,.75);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.18em}
 #cam .chip i{width:7px;height:7px;border-radius:50%;background:var(--up);animation:pulse 2s infinite}
 #cam .name{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-md);background:rgba(8,10,18,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
@@ -114,7 +114,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 /* ============ RIGHT STACK ============ */
 #rdock{position:absolute;right:24px;top:148px;width:340px;display:flex;flex-direction:column;gap:10px}
 #rdock .card{padding:15px 17px}
-#pnlcard{background:linear-gradient(150deg,rgba(240,185,11,.16),rgba(240,185,11,.04)),var(--card);box-shadow:var(--sh),inset 0 0 0 1px rgba(240,185,11,.24)}
+#pnlcard{background:linear-gradient(150deg,rgba(255,206,0,.16),rgba(255,206,0,.04)),var(--card);box-shadow:var(--sh),inset 0 0 0 1px rgba(255,206,0,.24)}
 #pnlcard .big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:35px;letter-spacing:.01em;margin-top:2px}
 #pnlcard .sub{display:flex;justify-content:space-between;margin-top:7px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.08em}
 #goalcard{display:flex;align-items:center;gap:15px}
@@ -133,8 +133,8 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #movers .p{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px}
 /* ============ ALERTS — dedicated bottom-right zone, never overlaps the rail ============ */
 #alerts{position:absolute;right:24px;bottom:112px;width:340px;display:flex;flex-direction:column-reverse;gap:10px;z-index:50;pointer-events:none}
-.toast{padding:13px 15px;border-radius:var(--r-lg);background:rgba(20,25,40,.94);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),inset 0 0 0 1px rgba(240,185,11,.22);display:flex;gap:12px;align-items:center;transform:scale(.7) translateY(20px);opacity:0;animation:pop .8s var(--expo) forwards,popout .5s var(--expo) 6.4s forwards}
-.toast .ic{flex:none;width:42px;height:42px;border-radius:14px;background:rgba(240,185,11,.15);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:inset 0 0 0 1px rgba(240,185,11,.32)}
+.toast{padding:13px 15px;border-radius:var(--r-lg);background:rgba(20,25,40,.94);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:var(--sh),inset 0 0 0 1px rgba(255,206,0,.22);display:flex;gap:12px;align-items:center;transform:scale(.7) translateY(20px);opacity:0;animation:pop .8s var(--expo) forwards,popout .5s var(--expo) 6.4s forwards}
+.toast .ic{flex:none;width:42px;height:42px;border-radius:14px;background:rgba(255,206,0,.15);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:inset 0 0 0 1px rgba(255,206,0,.32)}
 .toast .t1{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--gold)}
 .toast .t2{font-size:13.5px;font-weight:700;margin-top:3px}
 .toast .t3{font-size:11.5px;color:var(--muted);margin-top:2px}
@@ -144,7 +144,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
 #strap{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);width:730px;display:none;z-index:5}
 #strap.on{display:block}
 #strap .card{position:relative;padding:19px 26px;border-radius:var(--r-xl);overflow:hidden;display:flex;align-items:center;gap:22px}
-#strap .card::before{content:"";position:absolute;inset:0;background:linear-gradient(140deg,rgba(240,185,11,.12),transparent 55%);pointer-events:none}
+#strap .card::before{content:"";position:absolute;inset:0;background:linear-gradient(140deg,rgba(255,206,0,.12),transparent 55%);pointer-events:none}
 #strap .txt{flex:1;min-width:0}
 #strap .kick{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.24em;color:var(--gold)}
 #strap .kick .sq{width:8px;height:8px;border-radius:3px;background:var(--gold);flex:none}
@@ -186,7 +186,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
   <div id="bg"><div id="candles" style="position:absolute;inset:0"></div></div>
 
   <div id="brand" class="card enter">
-    <div class="mark"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#F0B90B"/><circle cx="32" cy="38" r="6" fill="#141003"/><circle cx="68" cy="38" r="6" fill="#141003"/><path d="M 22 54 A 30 30 0 0 0 78 54" fill="none" stroke="#141003" stroke-width="8" stroke-linecap="round"/></svg></div>
+    <div class="mark"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div><div class="wm">smile<i>.</i></div><div class="sub">CHART SCHOOL · NAIROBI</div></div>
   </div>
 
@@ -238,9 +238,9 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
       <div class="ring">
         <svg viewBox="0 0 100 100">
           <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="7"/>
-          <circle id="g-arc" cx="50" cy="50" r="44" fill="none" stroke="#F0B90B" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" style="transition:stroke-dashoffset 1.8s var(--expo)"/>
+          <circle id="g-arc" cx="50" cy="50" r="44" fill="none" stroke="#FFCE00" stroke-width="7" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" style="transition:stroke-dashoffset 1.8s var(--expo)"/>
         </svg>
-        <div class="smile"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#F0B90B"/><circle cx="32" cy="38" r="6" fill="#141003"/><circle cx="68" cy="38" r="6" fill="#141003"/><path d="M 22 54 A 30 30 0 0 0 78 54" fill="none" stroke="#141003" stroke-width="8" stroke-linecap="round"/></svg></div>
+        <div class="smile"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </div>
       <div class="nums">
         <div class="a num" id="g-now">0<i> / 1,000</i></div>
@@ -266,7 +266,7 @@ body{font-family:Inter,-apple-system,sans-serif;color:var(--fg);-webkit-font-smo
   </div>
 
   <div id="ticker" class="card enter">
-    <div class="cap"><span class="live"></span><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#141003"/><circle cx="32" cy="38" r="6" fill="#F0B90B"/><circle cx="68" cy="38" r="6" fill="#F0B90B"/><path d="M 22 54 A 30 30 0 0 0 78 54" fill="none" stroke="#F0B90B" stroke-width="8" stroke-linecap="round"/></svg><span class="a">smile</span></div>
+    <div class="cap"><span class="live"></span><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#1F1702"/><circle cx="31" cy="35" r="5.5" fill="#FFCE00"/><circle cx="69" cy="35" r="5.5" fill="#FFCE00"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#FFCE00" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="a">smile</span></div>
     <div class="cells" id="cells"></div>
     <div class="end"><span class="disc"><b>EDUCATION ONLY</b> · NOT FINANCIAL ADVICE · RISK</span></div>
   </div>
