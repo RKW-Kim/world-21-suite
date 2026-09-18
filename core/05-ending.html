@@ -3,39 +3,40 @@
 <head>
   <meta charset="utf-8">
   <title>SMILE · session closed</title>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="smile.css">
   <style>
-    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center}
-    h1{font-family:var(--font-display);font-weight:800;font-size:146px;letter-spacing:-.03em;line-height:.95}h1 .y{color:var(--yellow)}
-    .discbig{width:150px;height:150px;margin-top:-6px}
-    .sub{font-size:27px;font-weight:500;color:var(--muted);max-width:780px;line-height:1.4}
-    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:25px;margin-top:6px}
-    .cf{position:absolute;top:-40px;width:13px;height:23px;border-radius:4px;animation:fall linear infinite}
-    @keyframes fall{to{transform:translateY(1180px) rotate(560deg)}}
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+    h1{font-family:var(--font-display);font-weight:800;font-size:148px;letter-spacing:-.035em;line-height:.95}
+    h1 .y{color:var(--yellow)}
+    .discbig{width:150px;height:150px;margin:2px 0 4px;filter:drop-shadow(0 20px 50px rgba(255,193,7,.3))}
+    .sub{font-size:26px;font-weight:500;color:#a8a8a8;max-width:760px;line-height:1.45}
+    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:15px;margin-top:6px}
+    .cf{position:absolute;top:-60px;width:12px;height:22px;border-radius:4px;animation:fall linear infinite}
+    @keyframes fall{to{transform:translate(var(--sx,0px),1200px) rotate(560deg)}}
   </style>
 </head>
 <body>
 <div class="stage">
   <div class="bg"></div><div id="confetti"></div>
   <div class="wrap">
-    <span class="chip ghost">✓ MARKET CLOSED</span>
-    <h1>session <span class="y">closed</span>.</h1>
-    <svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r="48" fill="#FFC800"/>
-      <circle cx="31" cy="35" r="5.5" fill="#000000"/>
-      <circle cx="69" cy="35" r="5.5" fill="#000000"/>
-      <path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#000000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <p class="sub">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
-    <div class="socials"><span class="chip dark">▶ YouTube · /smileke</span><span class="chip dark">◉ Twitch · /smileke</span><span class="chip dark">♪ TikTok · @smileke</span></div>
-    <span class="chip solid next">NEXT SESSION · FRIDAY 8PM EAT</span>
+    <span class="chip ghost rise" style="--rd:.05s">✓ MARKET CLOSED</span>
+    <h1 class="rise" style="--rd:.15s">session <span class="y">closed</span>.</h1>
+    <div class="rise" style="--rd:.25s"><svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+      <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+    </svg></div>
+    <p class="sub rise" style="--rd:.35s">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+    <div class="socials rise" style="--rd:.45s"><span class="chip dark">▶ YouTube · /smileke</span><span class="chip dark">◉ Twitch · /smileke</span><span class="chip dark">♪ TikTok · @smileke</span></div>
+    <span class="chip solid next rise" style="--rd:.55s">NEXT SESSION · FRIDAY 8PM EAT</span>
   </div>
 </div>
 <script src="smile-mark.js"></script>
 <script>
   const cols=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'],box=document.getElementById('confetti');
-  for(let i=0;i<36;i++){const s=document.createElement('span');s.className='cf';s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDuration=(3.5+Math.random()*3)+'s';s.style.animationDelay=(Math.random()*4)+'s';s.style.width=(9+Math.random()*9)+'px';box.appendChild(s);}
+  for(let i=0;i<42;i++){const s=document.createElement('span');s.className='cf';s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDuration=(4+Math.random()*3.5)+'s';s.style.animationDelay=(Math.random()*4)+'s';s.style.width=(9+Math.random()*9)+'px';s.style.height=(18+Math.random()*10)+'px';s.style.setProperty('--sx',(Math.random()*160-80)+'px');s.style.opacity=(.55+Math.random()*.45);box.appendChild(s);}
 </script>
 </body>
 </html>

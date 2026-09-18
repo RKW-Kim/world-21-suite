@@ -1,11 +1,11 @@
 (function(){
-  const EYES  = '<circle class="eye-l" cx="31" cy="35" r="5.5"/><circle class="eye-r" cx="69" cy="35" r="5.5"/>';
-  const MOUTH = '<path class="mouth" d="M 20 48 A 30 30 0 0 0 80 48"/>';
-  const INNER = '<circle cx="50" cy="50" r="48" fill="#FFC800"/><g class="eyes">' + EYES + '</g>' + MOUTH;
+  const EYES  = '<ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6"/><ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6"/>';
+  const MOUTH = '<path class="mouth" d="M32 55 C 35 77, 65 77, 68 55"/>';
+  const INNER = '<circle cx="50" cy="50" r="50" fill="#FFC107"/><g class="eyes">' + EYES + '</g>' + MOUTH;
   const FACE  = '<g class="eyes">' + EYES + '</g>' + MOUTH;
   const css = `
-  .smile-anim .eye-l,.smile-anim .eye-r{transform-box:fill-box;transform-origin:center;transition:transform .12s ease;fill:#000000}
-  .smile-anim .mouth{transform-box:fill-box;transform-origin:50% 60%;transition:transform .18s ease;fill:none;stroke:#000000;stroke-width:7.5 !important;stroke-linecap:round;stroke-linejoin:round}
+  .smile-anim .eye-l,.smile-anim .eye-r{transform-box:fill-box;transform-origin:center;transition:transform .12s ease;fill:#0b0b0b}
+  .smile-anim .mouth{transform-box:fill-box;transform-origin:50% 60%;transition:transform .18s ease;fill:none;stroke:#0b0b0b;stroke-width:10.5 !important;stroke-linecap:round;stroke-linejoin:round}
   .face-svg .mouth{transform:none !important}
   .face>svg.face-svg{position:absolute;inset:0;width:100%;height:100%}
   .smile-anim.is-blink .eye-l,.smile-anim.is-blink .eye-r{transform:scaleY(.08)}

@@ -3,20 +3,25 @@
 <head>
   <meta charset="utf-8">
   <title>SMILE · alerts</title>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="smile.css">
   <style>
-    #zone{position:absolute;left:0;right:0;top:120px;display:flex;flex-direction:column;align-items:center;pointer-events:none}
-    .alert{position:relative;display:flex;align-items:center;gap:22px;background:var(--panel);color:#fff;border:2px solid var(--yellow);border-radius:20px;padding:20px 36px 20px 20px;box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0;transform:translateY(-60px) scale(.8)}
-    .alert.show{animation:ain .55s cubic-bezier(.2,1.4,.3,1) forwards}.alert.hide{animation:aout .45s ease forwards}
-    @keyframes ain{to{transform:none;opacity:1}}@keyframes aout{to{transform:translateY(-40px) scale(.9);opacity:0}}
-    .burst{position:absolute;inset:-46px;border-radius:50%;z-index:-1;filter:blur(1px);opacity:0;background:repeating-conic-gradient(rgba(255,193,7,.5) 0 9deg,transparent 9deg 18deg)}
-    .alert.show .burst{animation:burst .8s ease-out forwards}@keyframes burst{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(1.3) rotate(40deg)}}
-    .icon{width:84px;height:84px;border-radius:50%;background:var(--yellow);display:grid;place-items:center;flex-shrink:0}
-    .icon svg{width:44px;height:44px;stroke:#0b0b0b;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-    .k{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
-    .title{font-family:var(--font-display);font-weight:800;font-size:32px;line-height:1.1;margin-top:2px}
-    .sub{font-size:20px;color:var(--muted);margin-top:4px}
+    #zone{position:absolute;left:0;right:0;top:110px;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+    .alert{position:relative;display:flex;align-items:center;gap:26px;background:linear-gradient(180deg,rgba(24,24,24,.98),rgba(16,16,16,.98));color:#fff;border:2px solid var(--yellow);border-radius:22px;padding:26px 48px 26px 26px;box-shadow:0 30px 90px rgba(0,0,0,.6), 0 0 70px rgba(255,193,7,.14), inset 0 1px 0 rgba(255,255,255,.06);opacity:0;transform:translateY(-70px) scale(.82);overflow:hidden}
+    .alert.show{animation:ain .6s var(--ease-spring) forwards}.alert.hide{animation:aout .45s ease forwards}
+    @keyframes ain{0%{transform:translateY(-70px) scale(.82);opacity:0}62%{transform:translateY(6px) scale(1.03);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
+    @keyframes aout{to{transform:translateY(-44px) scale(.9);opacity:0}}
+    .burst{position:absolute;inset:-64px;border-radius:50%;z-index:-1;filter:blur(1px);opacity:0;background:repeating-conic-gradient(rgba(255,193,7,.45) 0 8deg,transparent 8deg 18deg)}
+    .alert.show .burst{animation:burst .9s ease-out forwards}
+    @keyframes burst{0%{opacity:.95;transform:scale(.25) rotate(0deg)}100%{opacity:0;transform:scale(1.35) rotate(46deg)}}
+    .alert::after{content:"";position:absolute;top:0;bottom:0;left:-80px;width:64px;background:linear-gradient(105deg,transparent,rgba(255,255,255,.14),transparent);transform:skewX(-18deg)}
+    .alert.show::after{animation:shine 1.1s ease .35s forwards}
+    @keyframes shine{to{left:calc(100% + 40px)}}
+    .icon{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));display:grid;place-items:center;flex-shrink:0;box-shadow:0 10px 34px rgba(255,193,7,.4), inset 0 -4px 10px rgba(0,0,0,.12)}
+    .icon svg{width:52px;height:52px;stroke:#0b0b0b;fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+    .k{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow)}
+    .title{font-family:var(--font-display);font-weight:800;font-size:42px;line-height:1.08;margin-top:4px;letter-spacing:-.01em}
+    .sub{font-size:23px;color:#a8a8a8;margin-top:6px;font-weight:500}
   </style>
 </head>
 <body>
@@ -42,7 +47,7 @@
       document.getElementById('alertCategory').textContent = cat || 'MARKET ALERT';
       document.getElementById('alertTitle').textContent = title || 'Alert Triggered';
       document.getElementById('alertSub').textContent = sub || '';
-      box.classList.remove('hide');
+      box.classList.remove('show','hide');void box.offsetWidth;
       box.classList.add('show');
       if (window.smileMood) window.smileMood('bounce', 1200);
       setTimeout(() => {

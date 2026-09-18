@@ -12,6 +12,8 @@
   --sky: #3FB6FF;
   --font-display: 'Manrope', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -20,6 +22,7 @@ body {
   font-family: var(--font-body);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 .stage {
   position: relative;
@@ -30,42 +33,175 @@ body {
 .bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 40%, rgba(20,20,20,0.8) 0%, var(--ink) 100%);
+  background:
+    radial-gradient(1100px 640px at 74% 18%, rgba(255, 193, 7, 0.05), transparent 62%),
+    radial-gradient(900px 560px at 12% 88%, rgba(14, 203, 129, 0.04), transparent 60%),
+    radial-gradient(circle at 50% 38%, #171717 0%, var(--ink) 78%);
   z-index: -2;
 }
+.bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 96px 96px;
+  -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 78%);
+}
+
+/* ---------- chips ---------- */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 18px;
+  padding: 9px 20px;
   border-radius: 999px;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 14px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
-.chip.dark { background: var(--panel); border: 1px solid var(--line); color: var(--paper); }
-.chip.ghost { background: rgba(255,193,7,0.1); border: 1px solid var(--yellow); color: var(--yellow); }
-.chip.solid { background: var(--yellow); color: var(--ink); }
+.chip.dark {
+  background: rgba(20, 20, 20, 0.86);
+  border: 1px solid var(--line);
+  color: var(--paper);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+.chip.ghost {
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.55);
+  color: var(--yellow);
+}
+.chip.solid {
+  background: linear-gradient(135deg, var(--yellow), var(--yellow-hot));
+  color: var(--ink);
+  box-shadow: 0 8px 28px rgba(255, 193, 7, 0.28);
+}
+
+/* ---------- brand ---------- */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   font-family: var(--font-display);
   font-weight: 800;
 }
 .brand .dw { width: 48px; height: 48px; display: inline-block; }
+.brand b { letter-spacing: -0.02em; }
+
+/* ---------- smile face (upgraded by smile-mark.js) ---------- */
+.face {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #FFD54F, var(--yellow) 68%);
+  box-shadow: 0 18px 60px rgba(255, 193, 7, 0.22), inset 0 -6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- floating sparks ---------- */
 .spark {
   position: absolute;
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--yellow);
-  box-shadow: 0 0 12px var(--yellow);
-  animation: floatSpark 4s infinite ease-in-out var(--d, 0s);
+  box-shadow: 0 0 14px rgba(255, 193, 7, 0.9), 0 0 4px rgba(255, 193, 7, 1);
+  opacity: 0;
+  animation: floatSpark 6s infinite ease-in-out var(--d, 0s);
 }
 @keyframes floatSpark {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
-  50% { transform: translateY(-30px) scale(1.5); opacity: 0.8; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0; }
+  12% { opacity: 0.85; }
+  50% { transform: translate(18px, -36px) scale(1.45); opacity: 0.55; }
+  88% { opacity: 0.7; }
+}
+
+/* ---------- candle skyline ---------- */
+#skyline { position: absolute; left: 0; right: 0; bottom: 0; height: 330px; z-index: 1; opacity: 0.55; -webkit-mask-image: linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,.72) 55%, #000), linear-gradient(180deg, transparent, #000 34%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,.72) 55%, #000), linear-gradient(180deg, transparent, #000 34%); mask-composite: intersect; }
+.cndl {
+  position: absolute;
+  bottom: 0;
+  border-radius: 4px;
+  opacity: 0;
+  transform-origin: 50% 100%;
+  animation: cndlRise 0.9s var(--ease-out) forwards var(--d, 0s),
+             cndlSway 4.2s ease-in-out infinite calc(var(--d, 0s) + 0.9s);
+}
+.cndl::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -16%;
+  bottom: -9%;
+  width: 4px;
+  transform: translateX(-50%);
+  background: inherit;
+  filter: brightness(0.5);
+  border-radius: 2px;
+}
+@keyframes cndlRise {
+  from { opacity: 0; transform: scaleY(0.2); }
+  to { opacity: 0.62; transform: scaleY(1); }
+}
+@keyframes cndlSway {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.045); }
+}
+
+/* ---------- marketing marquee (sits above the shared market ticker) ---------- */
+.ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 88px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 4;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(90deg, rgba(10, 10, 10, 0.72), rgba(10, 10, 10, 0.5));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 90px, #000 calc(100% - 90px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 90px, #000 calc(100% - 90px), transparent);
+}
+.tk {
+  flex: none;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: tkMarch var(--tk-speed, 42s) linear infinite;
+  will-change: transform;
+}
+.tk span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 30px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tk span:first-child { color: var(--yellow); font-weight: 800; }
+.tk span + span { border-left: 1px solid rgba(255, 255, 255, 0.08); }
+@keyframes tkMarch {
+  to { transform: translateX(-100%); }
+}
+
+/* ---------- shared entrance ---------- */
+.rise {
+  opacity: 0;
+  animation: riseIn 0.9s var(--ease-out) forwards;
+  animation-delay: var(--rd, 0s);
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(26px); }
+  to { opacity: 1; transform: translateY(0); }
 }

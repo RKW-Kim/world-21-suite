@@ -6,19 +6,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="smile.css">
   <style>
-    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-    .ring{position:relative;width:560px;height:560px}.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
-    .ring circle{fill:none;stroke-width:14;stroke-linecap:round}.ring .tr{stroke:var(--panel-2)}
+    .topbar{position:absolute;top:88px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+    .topbar .brand{font-size:34px}.topbar .brand .dw{width:42px;height:42px}
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:40px}
+    .halo{position:absolute;left:50%;top:46%;width:760px;height:760px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.07) 0%,transparent 62%);pointer-events:none}
+    .ring{position:relative;width:560px;height:560px;filter:drop-shadow(0 0 34px rgba(255,193,7,.18))}
+    .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ring circle{fill:none;stroke-width:13;stroke-linecap:round}
+    .ring .tr{stroke:rgba(255,255,255,.07)}
     .ring .pr{stroke:var(--yellow);stroke-dasharray:1609;transition:stroke-dashoffset 1s linear}
-    .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:290px}
-    .num.pop{animation:pop .9s ease}
-    @keyframes pop{0%{transform:scale(1.28);opacity:.15;color:var(--yellow)}60%{transform:scale(.96)}100%{transform:scale(1)}}
-    .label{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:.4em;text-transform:uppercase;color:var(--muted);margin-top:30px}
-    .flash{position:absolute;inset:0;background:var(--yellow);opacity:0;pointer-events:none}.flash.go{animation:fl .9s ease forwards}
-    @keyframes fl{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
-    .endlogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0}.endlogo.go{animation:endp 1s ease forwards}
-    .endlogo .brand{font-size:200px;background:var(--panel);padding:.18em .34em;border-radius:.18em;border:2px solid var(--line)}
-    @keyframes endp{0%{opacity:0;transform:scale(.7)}35%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+    .tickrow{position:absolute;inset:14px;border-radius:50%;pointer-events:none}
+    .tickrow i{position:absolute;left:50%;top:0;width:2px;height:10px;margin-left:-1px;background:rgba(255,255,255,.14);transform-origin:50% 266px}
+    .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:292px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+    .num.pop{animation:pop .9s var(--ease-spring)}
+    @keyframes pop{0%{transform:scale(1.26);opacity:.12;color:var(--yellow)}60%{transform:scale(.97)}100%{transform:scale(1)}}
+    .label{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:.42em;margin-right:-.42em;text-transform:uppercase;color:var(--muted);margin-top:36px}
+    .flash{position:absolute;inset:0;background:var(--yellow);opacity:0;pointer-events:none}.flash.go{animation:fl 1s ease forwards}
+    @keyframes fl{0%{opacity:0}16%{opacity:1}100%{opacity:0}}
+    .endlogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0}.endlogo.go{animation:endp 1s var(--ease-spring) forwards}
+    .endlogo .brand{font-size:190px;background:rgba(20,20,20,.9);padding:.16em .32em;border-radius:.16em;border:1px solid var(--line);box-shadow:0 40px 120px rgba(0,0,0,.6)}
+    .endlogo .brand .dw{width:150px;height:150px}
+    @keyframes endp{0%{opacity:0;transform:scale(.72)}35%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
   </style>
 </head>
 <body>
@@ -27,9 +35,16 @@
   <span class="spark" style="left:14%;top:18%;--d:.3s"></span>
   <span class="spark" style="left:82%;top:24%;--d:1.6s;background:var(--up)"></span>
   <span class="spark" style="left:76%;top:80%;--d:2.8s"></span>
+  <span class="spark" style="left:22%;top:74%;--d:3.7s;background:var(--sky)"></span>
+  <div class="topbar">
+    <span class="brand"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark">● OPENING BELL</div>
+  </div>
+  <div class="halo"></div>
   <div class="wrap">
     <div class="ring">
       <svg viewBox="0 0 560 560"><circle class="tr" cx="280" cy="280" r="256"/><circle class="pr" id="pr" cx="280" cy="280" r="256"/></svg>
+      <div class="tickrow" id="ticks"></div>
       <div class="num" id="num">10</div>
     </div>
     <div class="label">opening bell in</div>
@@ -38,10 +53,10 @@
     <span class="brand" data-mood="bounce">
       <span class="dw">
         <svg class="disc" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="48" fill="#FFC800"/>
-          <circle cx="31" cy="35" r="5.5" fill="#000000"/>
-          <circle cx="69" cy="35" r="5.5" fill="#000000"/>
-          <path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#000000" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
         </svg>
       </span><b>smile</b>
     </span>
@@ -52,6 +67,7 @@
 <script>
   const q=new URLSearchParams(location.search);const total=+(q.get('from')||10);let n=total,AC;
   const num=document.getElementById('num'),pr=document.getElementById('pr'),C=1609;
+  (function(){const row=document.getElementById('ticks');for(let i=0;i<60;i++){const t=document.createElement('i');t.style.transform=`rotate(${i*6}deg)`;if(i%5===0)t.style.height='16px';row.appendChild(t);}})();
   function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.18);o.start();o.stop(AC.currentTime+.2);}catch(e){}}
   (function tick(){if(n>0){num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');pr.style.strokeDashoffset=C*(1-n/total);beep(n<=3?988:660);n--;setTimeout(tick,1000);}else{beep(1319);document.getElementById('flash').classList.add('go');document.getElementById('end').classList.add('go');}})();
 </script>

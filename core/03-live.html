@@ -4,25 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, height=1080">
 <title>Live Overlay</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:1920px;height:1080px;overflow:hidden;background:transparent;font-family:'Chakra Petch','Segoe UI',system-ui,sans-serif}
-.frame{position:absolute;border:2px solid rgba(255,255,255,.14);border-radius:6px;pointer-events:none;transition:all .35s ease}
-.frame.on{border-color:rgba(61,220,132,.75);box-shadow:0 0 16px rgba(61,220,132,.28)}
-.frame .label{position:absolute;bottom:10px;left:12px;font-size:15px;font-weight:700;letter-spacing:.08em;color:#fff;background:rgba(6,10,8,.72);padding:4px 12px;border-radius:3px;opacity:0;transition:opacity .3s;text-transform:uppercase}
-.frame.on .label{opacity:1}
-.frame .tag{position:absolute;top:10px;left:12px;font-size:10px;font-weight:700;letter-spacing:.24em;color:#3ddc84;opacity:0;transition:opacity .3s}
-.frame.on .tag{opacity:1;animation:blink 1.4s infinite}
-@keyframes blink{50%{opacity:.35}}
-#alertbox{position:absolute;top:60px;left:50%;transform:translateX(-50%) translateY(-30px);min-width:420px;text-align:center;background:rgba(8,12,10,.9);border:1px solid #3ddc84;border-left:5px solid #3ddc84;border-radius:4px;padding:16px 30px;opacity:0;transition:all .4s cubic-bezier(.2,.9,.3,1.3);pointer-events:none}
-#alertbox.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#alertbox .k{font-size:11px;font-weight:700;letter-spacing:.3em;color:#3ddc84;text-transform:uppercase}
-#alertbox .t{font-size:24px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:.04em}
+html,body{width:1920px;height:1080px;overflow:hidden;background:transparent;font-family:var(--font-body)}
+.frame{position:absolute;border:1.5px solid rgba(255,255,255,.13);border-radius:12px;pointer-events:none;transition:border-color .4s ease, box-shadow .4s ease}
+.frame.on{border-color:rgba(14,203,129,.85);box-shadow:0 0 0 1px rgba(14,203,129,.25), 0 0 30px rgba(14,203,129,.22), inset 0 0 30px rgba(14,203,129,.05)}
+.frame .label{position:absolute;bottom:22px;left:22px;display:inline-flex;align-items:center;gap:12px;font-family:var(--font-display);font-size:23px;font-weight:800;letter-spacing:.03em;color:#fff;background:rgba(10,10,10,.88);border:1px solid rgba(255,255,255,.09);border-left:5px solid var(--yellow);padding:11px 26px 11px 18px;border-radius:9px;opacity:0;transform:translateY(14px);transition:opacity .35s var(--ease-out), transform .35s var(--ease-out);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.frame.on .label{opacity:1;transform:translateY(0)}
+.frame .tag{position:absolute;top:20px;left:22px;display:inline-flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:12px;font-weight:800;letter-spacing:.26em;color:var(--down);background:rgba(246,70,93,.13);border:1px solid rgba(246,70,93,.42);padding:7px 14px;border-radius:999px;opacity:0;transition:opacity .3s;text-transform:uppercase}
+.frame .tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--down);box-shadow:0 0 10px var(--down);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.frame.on .tag{opacity:1;animation:none}
+#alertbox{position:absolute;top:56px;left:50%;transform:translateX(-50%) translateY(-34px) scale(.96);min-width:460px;text-align:left;display:flex;align-items:center;gap:16px;background:rgba(12,12,12,.94);border:1px solid rgba(255,193,7,.5);border-left:6px solid var(--yellow);border-radius:12px;padding:18px 34px 18px 22px;opacity:0;transition:all .45s var(--ease-spring);pointer-events:none;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+#alertbox.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+#alertbox .dot{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));display:grid;place-items:center;flex-shrink:0}
+#alertbox .dot svg{width:24px;height:24px;stroke:#0b0b0b;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#alertbox .k{font-family:var(--font-display);font-size:12px;font-weight:800;letter-spacing:.3em;color:var(--yellow);text-transform:uppercase}
+#alertbox .t{font-family:var(--font-display);font-size:26px;font-weight:800;color:#fff;margin-top:3px;letter-spacing:.01em}
+.wm{position:absolute;right:26px;bottom:96px;display:inline-flex;align-items:center;gap:10px;opacity:.5;z-index:3;pointer-events:none}
+.wm .dw{width:30px;height:30px}
+.wm b{font-family:var(--font-display);font-weight:800;font-size:19px;color:#fff;letter-spacing:-.01em}
 </style>
 </head>
 <body>
 <div id="overlay"></div>
-<div id="alertbox"><div class="k" id="ak"></div><div class="t" id="at"></div></div>
+<span class="brand wm"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+<div id="alertbox"><div class="dot"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div><div><div class="k" id="ak"></div><div class="t" id="at"></div></div></div>
+<script src="smile-mark.js"></script>
 <script>
 (function(){
   var overlay=document.getElementById('overlay');
@@ -51,7 +61,9 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:transparent;font
   function showAlert(kind,text){
     document.getElementById('ak').textContent=kind;
     document.getElementById('at').textContent=text||kind;
+    ab.classList.remove('show');void ab.offsetWidth;
     ab.classList.add('show');
+    if(window.smileMood)window.smileMood('celebrate',1200);
     clearTimeout(ab._t);ab._t=setTimeout(function(){ab.classList.remove('show')},4000);
   }
   function connect(){

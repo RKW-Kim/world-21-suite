@@ -3,34 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <title>Market Ticker</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile.css">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { width:1920px; height:76px; overflow:hidden; background:transparent;
+  html, body { width:1920px; height:76px; overflow:hidden; background:transparent; position:relative;
     font-family:'Inter','Segoe UI',system-ui,sans-serif; }
   .bar { position:absolute; inset:0; display:flex; align-items:stretch;
-    background:linear-gradient(90deg, rgba(10,14,18,0.94), rgba(10,14,18,0.86));
-    border-top:1px solid rgba(99,220,150,0.35); }
+    background:linear-gradient(90deg, rgba(10,10,10,0.96), rgba(10,10,10,0.88));
+    border-top:1px solid rgba(255,193,7,0.4); }
   .clock { flex:0 0 auto; display:flex; flex-direction:column; justify-content:center;
-    padding:0 26px; border-right:1px solid rgba(255,255,255,0.12);
-    background:rgba(99,220,150,0.08); }
-  .clock .time { font-size:26px; font-weight:700; color:#fff; letter-spacing:1px;
-    font-variant-numeric:tabular-nums; line-height:1.1; }
-  .clock .date { font-size:11px; color:rgba(255,255,255,0.55); letter-spacing:1.5px;
-    text-transform:uppercase; }
+    padding:0 30px; border-right:1px solid rgba(255,255,255,0.09);
+    background:rgba(255,193,7,0.06); position:relative; }
+  .clock::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--yellow, #FFC107), rgba(255,193,7,0.25)); }
+  .clock .time { font-family:'Manrope',sans-serif; font-size:25px; font-weight:800; color:#fff;
+    letter-spacing:.5px; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .clock .date { font-size:11px; font-weight:600; color:rgba(255,255,255,0.5); letter-spacing:2px;
+    text-transform:uppercase; margin-top:1px; }
   .marquee { flex:1 1 auto; overflow:hidden; position:relative; display:flex;
     align-items:center;
-    -webkit-mask-image:linear-gradient(90deg, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+    mask-image:linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
   .track { display:flex; align-items:center; white-space:nowrap;
-    animation:scroll 45s linear infinite; will-change:transform; }
+    animation:scroll 55s linear infinite; will-change:transform; }
   @keyframes scroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
-  .item { display:inline-flex; align-items:baseline; gap:10px; padding:0 26px; }
-  .item .sym { font-size:15px; font-weight:700; color:rgba(255,255,255,0.92); letter-spacing:0.5px; }
+  .item { display:inline-flex; align-items:baseline; gap:10px; padding:0 28px; }
+  .item .sym { font-family:'Manrope',sans-serif; font-size:15px; font-weight:800; color:rgba(255,255,255,0.95); letter-spacing:.4px; }
   .item .px  { font-size:15px; font-weight:600; color:#fff; font-variant-numeric:tabular-nums; }
   .item .chg { font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
-  .up .chg { color:#3ddc84; } .down .chg { color:#ff5c5c; }
-  .up .px::after { content:" \25B2"; color:#3ddc84; font-size:10px; }
-  .down .px::after { content:" \25BC"; color:#ff5c5c; font-size:10px; }
-  .sep { color:rgba(255,255,255,0.22); font-size:12px; }
+  .up .chg { color:#0ECB81; } .down .chg { color:#F6465D; }
+  .up .px::after { content:" \25B2"; color:#0ECB81; font-size:10px; }
+  .down .px::after { content:" \25BC"; color:#F6465D; font-size:10px; }
+  .sep { color:rgba(255,255,255,0.18); font-size:12px; }
 </style>
 </head>
 <body>
@@ -52,17 +57,48 @@
   tickClock(); setInterval(tickClock, 1000);
 
   var track = document.getElementById('track');
+  var rows = {};          /* symbol -> {item, px, chg, root} */
+  var order = [];
   function fmtPx(v){ return v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function build(symbols){
+    track.innerHTML = ''; rows = {}; order = symbols.slice();
+    symbols.forEach(function(sym){
+      var el = document.createElement('span');
+      el.className = 'item';
+      el.innerHTML = '<span class="sym">'+sym+'</span><span class="px">—</span><span class="chg"></span>';
+      var sep = document.createElement('span'); sep.className='sep'; sep.innerHTML='&bull;';
+      track.appendChild(el); track.appendChild(sep);
+      rows[sym] = { root: el, px: el.querySelector('.px'), chg: el.querySelector('.chg') };
+    });
+    /* duplicate the set once for the seamless -50% loop */
+    var clone = track.innerHTML;
+    track.innerHTML = clone + clone;
+    /* re-query refs (they were re-created by innerHTML) */
+    var items = track.querySelectorAll('.item');
+    var half = items.length / 2;
+    rows = {};
+    for (var i = 0; i < half; i++){
+      var it = items[i];
+      rows[it.querySelector('.sym').textContent] = {
+        root: it, px: it.querySelector('.px'), chg: it.querySelector('.chg'), twin: items[i+half]
+      };
+    }
+  }
+
   function render(data){
     if(!data || !data.length) return;
-    var html = data.map(function(t){
+    var syms = data.map(function(t){ return t.symbol; });
+    if (track.childElementCount === 0 || syms.join('|') !== order.join('|')) build(syms);
+    data.forEach(function(t){
+      var r = rows[t.symbol]; if(!r) return;
       var cls = t.direction === 'up' ? 'up' : 'down';
       var sign = t.change_pct >= 0 ? '+' : '';
-      return '<span class="item '+cls+'"><span class="sym">'+t.symbol+'</span>'+
-        '<span class="px">'+fmtPx(t.price)+'</span>'+
-        '<span class="chg">'+sign+t.change_pct.toFixed(2)+'%</span></span><span class="sep">&bull;</span>';
-    }).join('');
-    track.innerHTML = html + html;
+      var px = fmtPx(t.price), chg = sign + t.change_pct.toFixed(2) + '%';
+      if (r.px.textContent !== px) r.px.textContent = px;
+      if (r.chg.textContent !== chg) r.chg.textContent = chg;
+      if (r.root.className !== 'item '+cls){ r.root.className = 'item '+cls; r.twin.className = 'item '+cls; }
+    });
   }
 
   function connect(){
