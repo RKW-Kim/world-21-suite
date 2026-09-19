@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · DESK — chart school lesson mode · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(18,22,34,.74); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#9AA4BC; --faint:#5A6478;
+  --gold:#FFCE00; --gold-ink:#1F1702; --up:#10B981; --dn:#F6465D; --blue:#6E9BFF;
+  --r-xl:26px; --r-lg:18px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --sh:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.32),0 3px 8px rgba(0,0,0,.24),0 22px 54px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.num{font-variant-numeric:tabular-nums}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center}
+@keyframes enter{to{opacity:1;transform:none}}
+.enter{opacity:0;transform:translateY(16px) scale(.985);animation:enter .85s var(--expo) forwards}
+.up{color:var(--up)} .dn{color:var(--dn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.card{background:var(--card);-webkit-backdrop-filter:blur(20px) saturate(1.3);backdrop-filter:blur(20px) saturate(1.3);
+  border-radius:var(--r-lg);box-shadow:var(--sh);border:1px solid var(--line)}
+.h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+.dot{width:6px;height:6px;border-radius:50%}
+
+/* chart (hero) */
+#chartCard{position:absolute;left:24px;top:112px;width:1160px;height:874px;padding:18px 20px 14px;z-index:10;
+  border-radius:var(--r-xl);background:rgba(12,15,23,.84);box-shadow:var(--sh),0 0 0 1.5px rgba(255,206,0,.22)}
+#chartCard .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#chartCard .sym{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:27px;letter-spacing:-.01em}
+#chartCard .big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:33px;margin-left:14px}
+#chartCard .chg{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13.5px;padding:4px 12px;border-radius:999px}
+#chartCard .chg.up{background:rgba(16,185,129,.13);box-shadow:inset 0 0 0 1px rgba(16,185,129,.32)}
+#chartCard .chg.dn{background:rgba(246,70,93,.13);box-shadow:inset 0 0 0 1px rgba(246,70,93,.32)}
+#chartCard .lessonTag{margin-left:auto;display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+  background:rgba(255,206,0,.1);box-shadow:inset 0 0 0 1px rgba(255,206,0,.3);
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--gold)}
+#chartCard .lessonTag i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.7s infinite}
+#cv{display:block;width:1120px;height:780px;border-radius:12px}
+#chartCard .draw{display:flex;gap:10px;margin-top:8px;padding:0 4px}
+#chartCard .draw .chip{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.12em;
+  color:var(--muted);background:rgba(255,255,255,.045);border-radius:999px;padding:6px 13px;box-shadow:inset 0 0 0 1px var(--line)}
+#chartCard .draw .chip.on{color:var(--gold);background:rgba(255,206,0,.1);box-shadow:inset 0 0 0 1px rgba(255,206,0,.3)}
+
+/* lesson rail */
+#chapters{position:absolute;left:1208px;top:112px;width:688px;height:412px;padding:16px 18px 12px;z-index:10}
+#chapters .row{display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px}
+#chapters .row+.row{border-top:1px solid rgba(255,255,255,.045)}
+#chapters .row .no{flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--faint);width:26px}
+#chapters .row .t{font-weight:600;font-size:14.5px;letter-spacing:-.01em;color:#D6DEEE}
+#chapters .row .sub{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.12em;color:var(--faint);margin-top:2px}
+#chapters .row .st{margin-left:auto;flex:none;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;
+  letter-spacing:.14em;padding:4px 10px;border-radius:999px;color:var(--faint);box-shadow:inset 0 0 0 1px var(--line)}
+#chapters .row.done .st{color:var(--up);box-shadow:inset 0 0 0 1px rgba(16,185,129,.35)}
+#chapters .row.act{background:rgba(255,206,0,.07);box-shadow:inset 0 0 0 1px rgba(255,206,0,.3)}
+#chapters .row.act .no{color:var(--gold)}
+#chapters .row.act .st{color:var(--gold);background:rgba(255,206,0,.12);box-shadow:none}
+#chapters .prog{margin:10px 8px 4px;height:6px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+#chapters .prog i{display:block;height:100%;width:0;border-radius:3px;background:var(--gold);transition:width .8s var(--expo)}
+#chapters .pl{display:flex;justify-content:space-between;padding:6px 8px 2px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+
+/* next lesson card */
+#next{position:absolute;left:1208px;top:540px;width:688px;height:150px;padding:16px 20px;z-index:10;
+  display:flex;align-items:center;gap:18px}
+#next .ring{flex:none;width:86px;height:86px}
+#next .ring .txt{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:21px;fill:var(--fg)}
+#next .ring .lab{font-family:'IBM Plex Mono',monospace;font-size:7.5px;font-weight:600;letter-spacing:.2em;fill:var(--muted)}
+#next .bd{display:flex;flex-direction:column;gap:5px;min-width:0}
+#next .k{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--gold)}
+#next .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.01em;white-space:nowrap}
+#next .m{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--muted)}
+
+/* cam pill card */
+#camCard{position:absolute;left:1208px;top:706px;width:688px;height:280px;border-radius:var(--r-xl);overflow:hidden;z-index:10;
+  background:#0D1019;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1.5px rgba(255,206,0,.34)}
+#camCard .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:11px;
+  background:radial-gradient(120% 100% at 50% 0%,#141827,#0B0E17 70%)}
+#camCard.showph .ph{display:flex}
+#camCard .ph img{width:72px;height:72px;filter:drop-shadow(0 10px 26px rgba(255,206,0,.22));animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
+#camCard .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+#camCard .lab{position:absolute;left:10px;top:10px;z-index:6;display:flex;align-items:center;gap:7px;padding:5.5px 12px;
+  border-radius:999px;background:rgba(9,11,18,.88);font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  font-weight:600;letter-spacing:.16em;color:var(--gold);box-shadow:0 0 0 1px rgba(255,206,0,.3)}
+#camCard .lab i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite}
+#camCard .idc{position:absolute;left:12px;bottom:12px;z-index:6;padding:8px 14px;border-radius:13px;
+  background:rgba(10,12,20,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+#camCard .idc .nm{font-weight:700;font-size:13px}
+#camCard .idc .rl{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.15em;color:var(--gold);margin-top:1px}
+
+/* alerts */
+#alerts{position:absolute;bottom:92px;z-index:45;--al-w:420px}
+
+/* calibration */
+#cal{position:absolute;inset:0;display:none;z-index:90;font-family:'IBM Plex Mono',monospace}
+#cal.on{display:block}
+#cal .sl{position:absolute;border:1.5px dashed rgba(255,206,0,.85);border-radius:12px;box-shadow:0 0 0 3000px rgba(0,0,0,.14)}
+#cal .sl .tag{position:absolute;top:-11px;left:12px;background:#FFCE00;color:#1F1702;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;padding:3px 9px;border-radius:6px;white-space:nowrap}
+#cal .sheet{position:absolute;left:452px;top:130px;width:360px;background:rgba(8,10,16,.95);
+  border:1px solid rgba(255,206,0,.4);border-radius:14px;padding:16px;font-size:10.5px;line-height:1.8;color:#C9D2E4}
+#cal .sheet .t{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-bottom:8px}
+#cal .sheet .rw{display:flex;justify-content:space-between;gap:10px}
+#cal .sheet .rw span:last-child{color:var(--fg);white-space:nowrap}
+/* keybar */
+#helpWrap{position:absolute;left:0;right:0;bottom:92px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:12px;padding:7px 20px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:rgba(12,15,23,.85);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+#help b{color:var(--gold)} #help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="chartCard" class="enter">
+    <div class="top">
+      <span class="h"><span class="dot" style="background:var(--up)"></span>LIVE CHART</span>
+      <span class="sym" id="cSym">SCOM</span>
+      <span class="big num" id="cPx">28.75</span>
+      <span class="chg up" id="cChg">+4.20%</span>
+      <span class="lessonTag"><i></i>LESSON 03 · ORDER FLOW BASICS</span>
+    </div>
+    <canvas id="cv" width="1120" height="780"></canvas>
+    <div class="draw" id="chips"></div>
+  </div>
+
+  <div id="chapters" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--gold)"></span>CHART SCHOOL · SEASON 3 · TODAY'S PATH</div>
+    <div id="chRows"></div>
+    <div class="prog"><i id="chProg"></i></div>
+    <div class="pl"><span id="chPctL">0% COMPLETE</span><span>5 CHAPTERS · 47 MIN</span></div>
+  </div>
+
+  <div id="next" class="card enter">
+    <svg class="ring" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="7"/>
+      <circle id="ringArc" cx="50" cy="50" r="44" fill="none" stroke="#FFCE00" stroke-width="7" stroke-linecap="round"
+        stroke-dasharray="276.5" stroke-dashoffset="69" transform="rotate(-90 50 50)"/>
+      <text class="txt num" x="50" y="52" text-anchor="middle" id="ringT">1:12</text>
+      <text class="lab" x="50" y="66" text-anchor="middle">TO GO · EAT</text>
+    </svg>
+    <div class="bd">
+      <span class="k">UP NEXT · 2:00 PM</span>
+      <span class="v">ORDER FLOW · LIVE WORKSHOP</span>
+      <span class="m">WITH DAVID OTIENO CFA · QUESTIONS FROM THE DESK CHAT</span>
+    </div>
+  </div>
+
+  <div id="camCard" class="enter">
+    <div class="ph"><img src="assets/smile-face.svg" alt=""><div class="t" id="camPhT">PLACE CAMERA · HOST</div></div>
+    <div class="lab"><i></i>CAM · INSTRUCTOR</div>
+    <div class="idc"><div class="nm">WANJIKU M.</div><div class="rl" id="camRl">INSTRUCTOR · CHART SCHOOL</div></div>
+  </div>
+
+  <div id="alerts"></div>
+  <div id="helpWrap"><div id="help" class="enter">
+    <span><b>N</b> next chapter</span><i>·</i><span><b>P</b> avatar</span><i>·</i><span><b>Z</b> alert zone</span><i>·</i>
+    <span><b>K</b> off-air ticker</span><i>·</i><span><b>A</b> alert</span><i>·</i><span><b>⇧A</b> stress</span><i>·</i>
+    <span><b>X</b> clear</span><i>·</i><span><b>C</b> calibrate</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+  <div id="cal"><div class="sheet" id="calSheet"></div></div>
+</div>
+<script src="assets/chrome.js"></script>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')';fit.s=s}
+addEventListener('resize',fit);fit();
+
+SmileChrome.mount({});
+SmileChrome.tickerCSS();
+/* ticker pill */
+(function(){var w=document.createElement('div');w.className='tkWrap';
+  w.innerHTML='<div class="tkPill enter"><div class="cap"><i></i><span class="t" id="tkCap">SMILE MARKETS</span></div>'+
+    '<div class="clip"><div class="tk" id="tk"></div></div></div>';
+  $('#fit').appendChild(w);
+  var offair=false;
+  function fill(){var h=SmileChrome.tickerItems(offair?'offair':'market');$('#tk').innerHTML=h+h}
+  fill();
+  window._tkOffair=function(){offair=!offair;$('#tkCap').textContent=offair?'SMILE · OFF-AIR':'SMILE MARKETS';fill()};
+})();
+
+/* ---------- chart ---------- */
+function mkSeries(name,start,volat,drift,dec,seedVol){var o=[],c=start,v=[];
+  for(var i=0;i<110;i++){var op=c,cl;cl=op*(1+(Math.random()-.5+drift)*volat);
+    o.push([op,Math.max(op,cl)*(1+Math.random()*volat*.5),Math.min(op,cl)*(1-Math.random()*volat*.5),cl]);c=cl;v.push(seedVol*(.4+Math.random()))}
+  return {name:name,d:o,v:v,dec:dec,volat:volat,drift:drift,base:seedVol}}
+var SERIES=[mkSeries('SCOM',27.6,.003,.0008,2,18),mkSeries('NSE 20',82.0,.0022,.0004,2,24),
+            mkSeries('USD/KES',129.1,.0012,-.0002,2,14),mkSeries('BTC',98000,.006,-.001,0,30)];
+var sIx=0;
+var CHIPS=['SCOM · SAFARICOM','NSE 20','USD/KES','BTC'];
+$('#chips').innerHTML=CHIPS.map(function(c,i){return '<span class="chip'+(i===0?' on':'')+'" data-i="'+i+'">'+c+'</span>'}).join('');
+document.querySelectorAll('#chips .chip').forEach(function(ch){ch.style.cursor='pointer';
+  ch.addEventListener('click',function(){setSym(parseInt(ch.dataset.i,10))})});
+function setSym(i){sIx=i;document.querySelectorAll('#chips .chip').forEach(function(c,k){c.classList.toggle('on',k===i)});
+  $('#cSym').textContent=SERIES[i].name;draw()}
+function fmt(n,dec){return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+var cv=$('#cv'),ctx=cv.getContext('2d');
+cv.width=1120*2;cv.height=780*2;cv.style.width='1120px';cv.style.height='780px';ctx.scale(2,2);
+function draw(){
+  var s=SERIES[sIx],d=s.d,W=1120,H=780,PL=14,PR=84,PT=18,PB=44,vh=H*.15,CHh=H-PT-PB-vh;
+  var view=d.slice(-70),lo=1e9,hi=-1e9;
+  view.forEach(function(c){lo=Math.min(lo,c[2]);hi=Math.max(hi,c[1])});
+  var pad=(hi-lo)*.08;lo-=pad;hi+=pad;
+  var y=function(p){return PT+(1-(p-lo)/(hi-lo))*CHh};
+  var bw=(W-PL-PR)/view.length;
+  ctx.clearRect(0,0,W,H);
+  ctx.font='12px "IBM Plex Mono",monospace';ctx.textBaseline='middle';
+  for(var g=0;g<=5;g++){var gy=PT+g*CHh/5,gp=hi-(hi-lo)*g/5;
+    ctx.strokeStyle='rgba(255,255,255,.055)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,gy+.5);ctx.lineTo(W-PR,gy+.5);ctx.stroke();
+    ctx.fillStyle='rgba(166,176,198,.85)';ctx.fillText(fmt(gp,s.dec),W-PR+12,gy)}
+  var vmax=Math.max.apply(null,s.v.slice(-70));
+  view.forEach(function(c,i){var vv=s.v[d.length-70+i];
+    ctx.fillStyle=c[3]>=c[0]?'rgba(16,185,129,.28)':'rgba(246,70,93,.26)';
+    var hgt=vv/vmax*vh;ctx.fillRect(PL+i*bw+bw*.16,H-PB-hgt,bw*.68,hgt)});
+  view.forEach(function(c,i){var x=PL+i*bw+bw/2,up=c[3]>=c[0];
+    ctx.strokeStyle=up?'rgba(16,185,129,.92)':'rgba(246,70,93,.92)';
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,y(c[1]));ctx.lineTo(x,y(c[2]));ctx.stroke();
+    ctx.fillStyle=up?'#10B981':'#F6465D';
+    var t=y(Math.max(c[0],c[3])),b=y(Math.min(c[0],c[3]));
+    ctx.fillRect(x-bw*.32,t,bw*.64,Math.max(1.8,b-t))});
+  var last=view[view.length-1],lp=last[3],ly=y(lp),up=last[3]>=last[0];
+  ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle=up?'rgba(16,185,129,.6)':'rgba(246,70,93,.6)';
+  ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(PL,ly);ctx.lineTo(W-PR,ly);ctx.stroke();ctx.restore();
+  ctx.save();ctx.shadowColor=up?'rgba(16,185,129,.8)':'rgba(246,70,93,.8)';ctx.shadowBlur=10;
+  ctx.fillStyle=up?'#10B981':'#F6465D';
+  ctx.fillRect(W-PR+4,ly-12,PR-12,24);ctx.restore();
+  ctx.fillStyle='#08130D';ctx.font='700 12.5px "IBM Plex Mono",monospace';
+  ctx.fillText(fmt(lp,s.dec),W-PR+12,ly);
+  ctx.strokeStyle='rgba(255,206,0,.05)';ctx.lineWidth=28;ctx.lineCap='round';
+  ctx.beginPath();ctx.arc(W/2,H*.44,170,Math.PI*.15,Math.PI*.85);ctx.stroke();
+  var i=d.length-1;
+  $('#cPx').textContent=fmt(d[i][3],s.dec);
+  var chg=(d[i][3]/d[0][0]-1)*100,upc=chg>=0;
+  var e=$('#cChg');e.textContent=(upc?'+':'')+chg.toFixed(2)+'%';e.className='chg '+(upc?'up':'dn');
+}
+function tick(){var s=SERIES[sIx],last=s.d[s.d.length-1];
+  var nc=last[3]*(1+(Math.random()-.5+s.drift)*s.volat);
+  last[3]=nc;last[1]=Math.max(last[1],nc);last[2]=Math.min(last[2],nc);
+  if(Math.random()<.06){s.d.shift();s.v.shift();
+    var p=s.d[s.d.length-1][3];s.d.push([p,p*(1+.0006),p*(1-.0006),p]);s.v.push(s.base*(.4+Math.random()))}
+  draw()}
+setInterval(tick,900);draw();
+
+/* ---------- chapters ---------- */
+var CH=[
+  ['01','Reading Candles','12 MIN','done'],
+  ['02','Support & Resistance','10 MIN','done'],
+  ['03','Order Flow Basics','9 MIN','act'],
+  ['04','Risk & Position Sizing','8 MIN','todo'],
+  ['05','Journaling The Desk','8 MIN','todo']];
+var chIx=2;
+function paintCh(){
+  $('#chRows').innerHTML=CH.map(function(c,i){return '<div class="row '+c[3]+'"><span class="no">'+c[0]+'</span>'+
+    '<span><span class="t">'+c[1]+'</span><div class="sub">CHAPTER '+c[0]+' · '+c[2]+'</div></span>'+
+    '<span class="st">'+(c[3]==='done'?'DONE':(c[3]==='act'?'LIVE NOW':'QUEUED'))+'</span></div>'}).join('');
+  var pct=Math.round(CH.filter(function(c){return c[3]==='done'}).length/CH.length*100);
+  $('#chProg').style.width=(pct+12)+'%';
+  $('#chPctL').textContent=pct+'% COMPLETE';
+}
+paintCh();
+
+/* ---------- ring countdown ---------- */
+var remain=72; /* minutes to next lesson */
+setInterval(function(){remain=Math.max(0,remain-1/60);
+  var hh=Math.floor(remain/60),mm=Math.floor(remain%60);
+  $('#ringT').textContent=hh+':'+String(mm).padStart(2,'0');
+  $('#ringArc').style.strokeDashoffset=276.5*(1-remain/120)},60000);
+
+/* ---------- alerts (engine v2) — DESK defaults to CENTER above the ticker ---------- */
+var alerts=SmileAlerts.mount('#alerts');
+var ZONES=['left','center','right'];
+var zIx=ZONES.indexOf(G.get('apos'));if(zIx<0)zIx=1; /* center by default in DESK */
+function applyZone(){alerts.setZone(ZONES[zIx]);
+  $('#alerts').style.left=ZONES[zIx]==='left'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.right=ZONES[zIx]==='right'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.marginLeft=ZONES[zIx]==='center'?'auto':'0';
+  $('#alerts').style.marginRight=ZONES[zIx]==='center'?'auto':'0';}
+applyZone();
+
+/* ---------- calibration ---------- */
+function calOn(on){
+  var cal=$('#cal');cal.classList.toggle('on',on);if(!on)return;
+  cal.querySelectorAll('.sl').forEach(function(e){e.remove()});
+  var s=fit.s||1,rows=[],defs=[['CHART CARD','#chartCard'],['CHAPTERS','#chapters'],['UP NEXT','#next'],
+    ['CAM HOLE','#camCard'],['ALERT ZONE','#alerts']];
+  defs.forEach(function(d){var el=$(d[1]),r=el.getBoundingClientRect();
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s),w=Math.round(r.width/s),h=Math.round(r.height/s);
+    if(r.width<8&&r.height<8){if(d[1]==='#alerts'){x=750;y=830;w=420;h=160}else return}
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">'+d[0]+' — '+w+'×'+h+' @ '+x+','+y+'</span>';cal.appendChild(sl);
+    rows.push([d[0],w+'×'+h+' @ '+x+','+y])});
+  $('#calSheet').innerHTML='<div class="t">OBS SLOT SHEET · BASE 1920×1080 · DESK</div>'+
+    rows.map(function(r){return '<div class="rw"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('')+ 
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);color:#9AA4BC;font-size:9.5px;line-height:1.7">Captures UNDER the overlay at these values · full guide: <b style="color:#FFCE00">guide.html</b></div>';
+}
+
+/* ---------- keys ---------- */
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='n'){CH[chIx][3]=chIx===2?'done':CH[chIx][3];chIx=(chIx+1)%CH.length;CH[chIx][3]='act';paintCh()}
+  else if(k==='p'){var on=$('#camCard').classList.toggle('showph');
+    $('#camRl').textContent=on?'AVATAR ACTIVE · CAM HIDDEN':'INSTRUCTOR · CHART SCHOOL'}
+  else if(k==='z'){zIx=(zIx+1)%ZONES.length;applyZone()}
+  else if(k==='k'){window._tkOffair()}
+  else if(k==='c'){calOn(!$('#cal').classList.contains('on'))}
+  else if(k==='h')document.body.classList.toggle('g');
+});
+if(G.get('g')==='1')document.body.classList.add('g');
+/* the "next lesson" alert fires once so you can judge center vs left placement */
+setTimeout(function(){alerts.push({user:'smile.co.ke',type:'lesson',msg:'CHART SCHOOL 07 — Reading Order Flow · 2:00 PM EAT',platform:'youtube'})},3800);
+</script>
+</body>
+</html>

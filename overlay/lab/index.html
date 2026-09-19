@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>SMILE LAB — Overlay Tournament · Round 3</title>
+<title>SMILE LAB — Overlay Tournament · Round 4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -54,20 +54,33 @@ h1 span{color:var(--gold)}
 .picks h2{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px}
 .picks p{font-size:13.5px;color:var(--muted);line-height:1.7;margin-top:10px}
 .picks p b{color:var(--gold);font-weight:600}
+.picks .face{float:right;width:74px;height:74px;margin:0 0 12px 22px;filter:drop-shadow(0 8px 22px rgba(255,206,0,.2))}
 footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 3 — THE BUILD SET</div>
-  <h1>The exact logo is in.<br>The island is perfectly centered. <span>And captures finally fit.</span></h1>
-  <p class="lede">Round 3 turns the winners into a working broadcast kit: the island is centered by its wrapper (it can never drift again), capped at <b>50% screen width</b> with the 25% side margins you specified; the <b>exact uploaded smile.co.ke SVGs</b> ship in every scene — no more mangling; alerts get a <b>spam-proof queue engine</b> for multiplatform chat; and the capture problem gets an honest system: <b>transparent slots + calibration mode</b> that prints exact OBS transform values. Brand gold is now the logo's own <b>#FFCE00</b>.</p>
+  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 4 — CHROME, TOASTS &amp; SHAPE LANGUAGE</div>
+  <h1>The chrome you described, the toasts you meant,<br>and the answer on shapes. <span>All six scenes rebuilt.</span></h1>
+  <p class="lede">Round 4 implements your list literally: the top bar is now just the <b>smile face in its own pill</b> (the logo, verbatim, no writing), the <b>full logo pill sits left</b>, and the <b>right pill rotates your socials</b> — Instagram, Facebook, X, TikTok, YouTube, WhatsApp, #TradeSmile — one at a time, with the <b>EAT clock</b> under it. Alerts are <b>normal toasts now</b>: no more ×N counters, a hard max-height, oldest drops first, and the pill design was redone. The ticker is <b>market-only while trading</b> — sponsors only in off-air mode. Everything is sized to stay legible when viewers watch on <b>tiny screens</b>. And yes — the <b>shape question finally answered</b>, below.</p>
   <div class="spec">
-    <h2>LOCKED SPEC — IDENTICAL IN EVERY SCENE</h2>
-    <p><b>Canvas:</b> 1920×1080 browser source, letterbox-scales to any window so it can't go wonky · <b>Logos:</b> exact uploaded SVG assets (assets/smile-logo.svg + smile-mark.svg) · <b>Alerts:</b> shared queue engine — max 2 on screen, ×N merge on spam, platform badges · <b>Slots:</b> transparent holes at documented coords, <b>?cal=1</b> prints the OBS sheet · <b>Keys:</b> per-scene, always <b>A</b> alert · <b>⇧A</b> spam test · <b>H</b> hide UI · <b>Start here:</b> the GUIDE card — it wires everything together.</p>
+    <h2>SHAPE LANGUAGE — THE ANSWER YOU NEVER GOT</h2>
+    <p><b>Verdict: the pill (stadium) is the right container — but the real soulmate is the arc.</b> Your logo is two shapes: a circle and a smile-arc. Shapes complement it when they keep its <b>continuous curvature</b>: ① <b>Pills</b> for all chrome (ticker, alerts, chips, cams' name tags) — a pill is a stretched circle, so it echoes the face without competing with it; ② <b>Squircles</b> (22–30px continuous radii) for content cards — soft enough to belong, rigid enough to hold captures; ③ <b>The arc itself</b> as a motif — progress rings, underlines, the ghost smile watermark on charts (DESK's countdown ring is a literal smile-arc); ④ <b>Circles</b> for status dots and avatars. Avoid triangles and hexagons entirely — sharp corners fight the face. So: pill for chrome, squircle for cards, arc for accents — that's the whole system, and it's why Island R4 feels "right" to you.</p>
   </div>
 
-  <div class="rlabel"><span class="t">ROUND 3 — THE BUILD SET</span><span class="ln"></span></div>
+  <div class="rlabel"><span class="t">ROUND 4 — THE CHROME SET</span><span class="ln"></span></div>
+  <div class="grid" id="grid4"></div>
+
+  <div class="picks">
+    <h2>Round 4 — what changed, point by point</h2>
+    <p><b>Alerts:</b> toast stack like everywhere else on the internet — newest at the bottom (above the ticker), zone capped at 42% of screen height, oldest leaves first, repeat messages from the same person within 9s are silently dropped (moderation, not ×N). New types: <b>NEXT LESSON</b>, <b>CLOSE TRADE</b> (green/red by side), <b>MARKET FLASH</b>. Compare placements: STUDIO R4 starts <b>left</b>, DESK starts <b>centre</b> — press <b>Z</b> anywhere to cycle left → centre → right and keep what reads best.<br><br>
+    <b>Ticker confusion, solved:</b> market data only while trading. Press <b>K</b> in any scene to flip to OFF-AIR — that's the only moment sponsors (#TradeSmile, @smile.co.ke, AD slots) appear. Sponsors otherwise live in their own card (STUDIO's AD slot).<br><br>
+    <b>Tiny screens:</b> the 1080p canvas letterbox-scales to any window, and this round we raised every minimum — no text below 12px, prices ≥ 14px semibold, stronger contrast on data, so phone viewers keep the numbers.<br><br>
+    <b>The bezel idea — kept, with an exit:</b> CINEMA R4 has both worlds. <b>PURE</b> (default): one colossal aspect-locked card, the <b>logo-with-writing pill as the only watermark</b>, nothing else — alerts disabled until you press <b>A</b>. <b>BEZEL</b> (<b>F</b>): the old-Mac frame — chrome pills + ticker live inside a rounded device bezel, content stays aspect-locked inside, claustrophobia managed by keeping the bezel thin and dark. Press <b>F</b> and judge.<br><br>
+    <b>Still unanswered?</b> The face-only crop ships as <b>assets/smile-face.svg</b> — cut from your original file with zero redraws, so it can never be "mangled" again.</p>
+  </div>
+
+  <div class="rlabel"><span class="t">ROUND 3 — BUILD SET (SUPERSEDED, STILL LIVE)</span><span class="ln"></span></div>
   <div class="grid" id="grid3"></div>
 
   <div class="rlabel"><span class="t">ROUND 2 — VERDICTS</span><span class="ln"></span></div>
@@ -76,90 +89,90 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
   <div class="rlabel"><span class="t">ROUND 1 — VERDICTS</span><span class="ln"></span></div>
   <div class="grid" id="grid1"></div>
 
-  <div class="picks">
-    <h2>How to judge Round 3</h2>
-    <p>Open <b>GUIDE</b> first — it explains the capture workflow in plain steps. Then press <b>?cal=1</b> on any scene to see the slot outlines + OBS coordinates. In STUDIO hit <b>1–4</b> to feel the cam presets, in ISLAND R3 hit <b>I</b> to feel the island grow to its 50% cap, in CINEMA hit <b>N</b> and <b>V</b>, in MONITOR hit <b>T</b>. Stress-test alerts anywhere with <b>⇧A</b> — the stack can't overflow. Tell me what to merge into the final build.</p>
-  </div>
-
   <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
 </div>
 <script>
-const R3=[
- {id:'island3',no:'R3 · 01 · THE ISLAND, PERFECTED',name:'ISLAND R3',badge:['loved','♥ THE DIRECTION — NOW BULLETPROOF'],
-  from:'Your favourite, fixed properly. The island is centered by its <b>wrapper</b> — the old off-centre bug came from entrance animations clobbering its transform, which is now structurally impossible. It grows adaptively (<span>I</span>) but is hard-capped at <b>960px = exactly 50% width</b>, so the 25% left and right stay clean. Ships the <b>exact uploaded logo</b> and the logo-yellow #FFCE00.',
-  kv:[['Webcam','320×400 portrait, gold ring — <b>P</b> flips it to the <b>smile avatar placeholder</b> for shy-camera days'],
-      ['Adaptive','Island modes compact → standard → wide, always centered; lower thirds expand it live'],
-      ['Ticker','Centered pill, sponsor AD chips + #TradeSmile + @smile.co.ke rotation'],
-      ['Slots','CAM hole 320×400 @ 24,560 · <b>?cal=1</b> prints the full OBS sheet'],
-      ['Feels like','The Island you loved — centered, adaptive, un-mangled']]},
- {id:'studio',no:'R3 · 02 · THE SLOT SYSTEM',name:'STUDIO',badge:['liked','→ YOUR “CARDS” IDEA, ENGINEERED'],
-  from:'The Vault idea made real: every capture gets <b>its own card with a transparent hole</b> — stage for the display capture, a person deck that auto-arranges for <b>1–4 webcams</b> (keys 1–4 / ?cams=N), windows A+B, sponsor card, community Q&amp;A. Nothing ever enters the reserved bottom ticker band.',
-  kv:[['Auto-fit','Person deck recomputes per cam count — holes keep sane framing, names auto-label'],
-      ['Calibration','<b>?cal=1</b> draws dashed slot outlines and prints exact X·Y·W·H per hole'],
-      ['Aspect','Stage hole cycles 16:9 → 16:10 → 4:3 → fill (<b>R</b>)'],
-      ['Masthead','Segment-first show banner + session chips + day badge — learned from Tradeify TV'],
-      ['Feels like','A real broadcast control room — your window-capture worry, solved by design']]},
- {id:'cinema',no:'R3 · 03 · FULLSCREEN, DONE RIGHT',name:'CINEMA',badge:null,
-  from:'The fullscreen mode: a <b>colossal card taking maximum space with its aspect locked</b> (16:9 / 1.85 / 2.39 via <b>R</b>). On screen: top-left watermark inside the frame, the permanent Yahoo-style bottom ticker, lower-left alerts — nothing else. The centered island stays compact and only expands to name what’s showing (<b>N</b>).',
-  kv:[['Cam layer','<b>V</b> floats a commentary/translator cam above the content — bottom-right or top-right, or off'],
-      ['Avatar','<b>P</b> swaps to the smile avatar when the speaker hides'],
-      ['Chrome','Watermark + ticker + alerts only — your fullscreen rule, enforced by layout'],
-      ['Slots','Content hole 1594×896 @ 163,116 · cam 300×188 · <b>?cal=1</b>'],
-      ['Feels like','A premium market premiere — maximum content, minimum chrome']]},
- {id:'monitor',no:'R3 · 04 · MARKET AMBIENCE',name:'MONITOR',badge:null,
-  from:'The no-interaction monitoring mode — a high-quality cockpit instead of bland MT5 on stream: <b>live animated candlestick chart</b> (canvas, 4 switchable symbols), order-book depth ladder, NSE + global heatmap, watchlist, FX band. Gold hairline frames, session ribbon, zero clutter.',
-  kv:[['Chart','Live random-walk candles with volume, last-price tag, ghost smile watermark'],
-      ['Panels','Depth ladder animates · heatmap pulses on leaders · watchlist bars'],
-      ['Band','FX strip ↔ full ticker via <b>T</b>'],
-      ['Alerts','Lower-third over the chart, same spam-proof engine'],
-      ['Feels like','Bloomberg-meets-Binance ambience for pre-open and chart-watch segments']]},
- {id:'guide',no:'R3 · 05 · THE OWNER\u2019S MANUAL',name:'GUIDE',badge:['liked','READ ME FIRST'],
-  from:'The honest wiring manual: layer order, the 3-minute quick start, <b>slot sheets for every scene</b>, multi-cam presets, alert-engine tuning, sponsor editing — and a straight FAQ about what one HTML overlay can and can’t control in OBS.',
-  kv:[['Workflow','Captures UNDER overlay → cal sheet coords → Alt-crop to hole → save preset scene'],
-      ['Truth','Browser sources are sandboxed — slots + presets are the reliable way, no magic'],
-      ['Multiplatform','Alert caps + merge keep 3-platform spam off the screen'],
+const R4=[
+ {id:'studio4',no:'R4 · 01 · THE STUDIO, AS DESCRIBED',name:'STUDIO R4',badge:['loved','♥ YOUR LITERAL SPEC'],
+  from:'Top bar gone — replaced by <b>three pills</b>: face-only logo centre, full logo left, rotating socials + EAT clock right. The side rail holds exactly <b>3 things — Camera, AD, Chat</b> — the capture stage takes everything else. <b>S</b> swaps sides.',
+  kv:[['Rail','CAM fixed 16:9 (no phone-strip cams) · AD keeps <b>its own aspect</b> — D cycles 16:9 / 3:1 banner / 1:1 / 9:16 and chat re-flows around it'],
+      ['Priority','Camera and chat are protected; the AD is the flexible one, exactly as you asked'],
+      ['Ticker','Pill, market-only · <b>K</b> = off-air sponsors'],
+      ['Alerts','Toasts · starts LEFT above the ticker · <b>Z</b> to compare with centre'],
+      ['Keys','D ad · S swap · R stage · P avatar · Z zone · K off-air · ?cal=1 sheet']]},
+ {id:'cinema4',no:'R4 · 02 · PURE ↔ BEZEL',name:'CINEMA R4',badge:null,
+  from:'Two fullscreen worlds. <b>PURE</b>: the colossal aspect-locked card with only the <b>logo pill watermark</b> top-left — alerts exist but stay off until <b>A</b>. <b>BEZEL</b>: the old-Mac frame where chrome + ticker live inside a rounded bezel.',
+  kv:[['Pure','Watermark + nothing. Cam layer optional (<b>V</b>), avatar for shy speakers (<b>P</b>)'],
+      ['Bezel','Tri-pill chrome + ticker inside the frame · content never fights the ticker for space'],
+      ['Aspect','16:9 / 1.85 / 2.39 via <b>R</b> — always max space, always centred'],
+      ['','']]},
+ {id:'monitor4',no:'R4 · 03 · MONITOR, POLISHED',name:'MONITOR R4',badge:null,
+  from:'The one you called nearly perfect — tightened. <b>Bigger type everywhere</b> (nothing under 12px — tiny-screen rule), gradient area under the close, glowing last-price tag, candle countdown, price flashes, watchlist sparklines, face-pill in the ribbon.',
+  kv:[['Chart','Live candles + volume + area glow + countdown'],
+      ['Band','<b>T</b> cycles FX ↔ markets ↔ off-air in the pill ticker'],
+      ['Panels','Depth ladder, heatmap pulse, sparkline watchlist'],
+      ['','']]},
+ {id:'island4',no:'R4 · 04 · ISLAND, REBUILT ON V2',name:'ISLAND R4',badge:['loved','♥ SAME ISLAND · NEW ENGINE'],
+  from:'Your favourite, now on the toast engine: no ×N, max-height stack, cleaner pill cards. Ticker market-only (<b>K</b> for off-air), sponsor stays its own card (<b>S</b>), island still wrapper-centred at the 50% cap.',
+  kv:[['Island','I cycles compact → standard → wide · always centred'],
+      ['Alerts','Toasts right by default · <b>Z</b> cycles'],
+      ['Face crop','Avatar + watermark now use the exact face crop, assets/smile-face.svg'],
+      ['','']]},
+ {id:'desk',no:'R4 · 05 · NEW · LESSON MODE',name:'DESK',badge:['liked','NEW POSSIBILITY'],
+  from:'Chart School in scene form: hero chart with a lesson tag, <b>chapter rail with live progress</b>, a countdown ring to the next lesson (that’s the arc motif working), instructor cam, and <b>NEXT LESSON alerts firing centre-stage</b> — the A/B test against STUDIO’s left.',
+  kv:[['Chapters','<b>N</b> advances, progress bar follows'],
+      ['Alerts','Centre above the ticker by default · <b>Z</b> to compare'],
+      ['','']]},
+ {id:'panel',no:'R4 · 06 · NEW · MULTI-GUEST',name:'PANEL',badge:null,
+  from:'The other answer to “3–4 people + a capture”: guests as 16:9 cards across the top with an auto-rotating <b>gold spotlight</b> + ON THE DESK banner, display capture and chat below. <b>2–5</b> guests on keys, <b>S</b> swaps chat/stage.',
+  kv:[['Guests','2–5 · every hole stays a sane 16:9, never a phone strip'],
+      ['Spotlight','Auto every 6s · <b>E</b> manual · avatar on the spotlit guest with <b>P</b>'],
       ['','']]}
 ];
+const R3=[
+ {id:'island3',no:'R3 · 01',name:'ISLAND R3',badge:['liked','SUPERSEDED BY ISLAND R4'],
+  from:'The centered-wrapper island, exact logos, alert queue v1. R4 keeps everything and swaps the engine for toasts.',
+  kv:[['Status','Live → superseded by ISLAND R4']]},
+ {id:'studio',no:'R3 · 02',name:'STUDIO (R3)',badge:['liked','SUPERSEDED BY STUDIO R4'],
+  from:'The slot system with the full masthead. R4 removes the masthead you found empty and rebuilds the layout around your 3-module rail.',
+  kv:[['Status','Live → superseded by STUDIO R4']]},
+ {id:'cinema',no:'R3 · 03',name:'CINEMA (R3)',badge:['liked','SUPERSEDED BY CINEMA R4'],
+  from:'Colossal card + permanent band. R4 adds PURE mode (watermark only) and the BEZEL world.',
+  kv:[['Status','Live → superseded by CINEMA R4']]},
+ {id:'monitor',no:'R3 · 04',name:'MONITOR (R3)',badge:null,
+  from:'The original cockpit. R4 is the legibility pass.',
+  kv:[['Status','Live → superseded by MONITOR R4']]},
+ {id:'guide',no:'R3 · 05',name:'GUIDE',badge:['liked','OWNER’S MANUAL'],
+  from:'Wiring manual: layer order, quick start, slot sheets, alert tuning, sponsor editing, honest OBS FAQ.',
+  kv:[['Status','Updated for Round 4']]}
+];
 const R2=[
- {id:'island2',no:'R2 · 01',name:'ISLAND R2',badge:['liked','LIKED → SUPERSEDED BY ISLAND R3'],
-  from:'The de-wonk attempt with the left continuous dock and portrait cam. <b>Your gripe stood:</b> the top island drifted off-centre — entrance animations overwrote its positioning transform. R3 fixes it structurally.',
-  kv:[['Status','Superseded by ISLAND R3 (same DNA, centered wrapper, exact logo).']]},
- {id:'vault',no:'R2 · 02',name:'VAULT',badge:['liked','LIKED → EVOLVED INTO STUDIO'],
-  from:'Your words: “the vault is kind of what I mean by cards.” R3 turns it into the STUDIO slot system with OBS-addressable holes.',
-  kv:[['Status','Evolved. See STUDIO in Round 3.']]},
- {id:'halo',no:'R2 · 03',name:'HALO',badge:['bench','CAM IDEA LIKED · LOOK TOO OLD-FASHIONED'],
-  from:'You liked what the cam was <b>for</b> — the avatar placeholder idea — but the ring read retro. That idea now lives in ISLAND R3 / CINEMA as modern rounded cards with the smile avatar.',
-  kv:[['Status','Benched; avatar idea absorbed into the Round 3 kit.']]},
- {id:'notch',no:'R2 · 04',name:'NOTCH',badge:['bench','ON THE BENCH'],
-  from:'The one-bar layout. Quiet, clean, no verdict yet — it stays in the parts bin.',
-  kv:[['Status','Benched.']]},
- {id:'tradeify',no:'R2 · 05',name:'TRADEIFY',badge:['out','“NOT BAD, BORED” → LEARNED FROM, RETIRED'],
-  from:'The prop-firm desk. Kept as reference: segment-first masthead + day badge moved into STUDIO, payout-toast idea remains in the notes.',
-  kv:[['Status','Retired with thanks — its patterns were harvested.']]}
+ {id:'island2',no:'R2 · 01',name:'ISLAND R2',badge:['liked','SUPERSEDED'],from:'First de-wonk attempt.',kv:[['Status','Superseded.']]},
+ {id:'vault',no:'R2 · 02',name:'VAULT',badge:['liked','EVOLVED INTO STUDIO'],from:'Your “cards” idea.',kv:[['Status','Evolved.']]},
+ {id:'halo',no:'R2 · 03',name:'HALO',badge:['bench','CAM IDEA LIKED'],from:'The avatar-placeholder idea now ships everywhere in R4 via the exact face crop.',kv:[['Status','Benched; idea absorbed.']]},
+ {id:'notch',no:'R2 · 04',name:'NOTCH',badge:['bench','BENCH'],from:'One-bar layout.',kv:[['Status','Benched.']]},
+ {id:'tradeify',no:'R2 · 05',name:'TRADEIFY',badge:['out','RETIRED'],from:'Prop-firm desk; patterns harvested.',kv:[['Status','Retired with thanks.']]}
 ];
 const R1=[
- {id:'pulse',no:'R1 · 01',name:'PULSE',badge:['liked','LIKED — KEEP AS PARTS BIN'],
-  from:'Gold-glass islands on obsidian — the flagship modern blend. Right data rail, floating ticker, cam bottom-left with gold ring.',
-  kv:[['Status','Liked. Its floating-island ticker and goal-island live on inside the Round 2 DNA.']]},
- {id:'island',no:'R1 · 04',name:'ISLAND (V1)',badge:['loved','LOVED → SUPERSEDED BY ISLAND R2'],
-  from:'The original consumer-fintech island — electric blue, oversized radii, pill ticker. Now refined into ISLAND R2 above.',
-  kv:[['Status','Superseded. Keep for comparison; R2 fixes the wonk with the true smile brand.']]}
+ {id:'pulse',no:'R1 · 01',name:'PULSE',badge:['liked','PARTS BIN'],from:'Gold-glass islands on obsidian.',kv:[['Status','Liked; DNA lives on.']]},
+ {id:'island',no:'R1 · 04',name:'ISLAND (V1)',badge:['loved','SUPERSEDED'],from:'The original island.',kv:[['Status','Superseded.']]}
 ];
 function card(v,grid){
   const el=document.createElement('div');el.className='v';
   const badge=v.badge?`<div class="verdict ${v.badge[0]}">${v.badge[1]}</div>`:'';
   el.innerHTML=`
-  <div class="shot"><span class="tag">LIVE PREVIEW · LOOPING DEMO</span><div class="frame"><iframe src="${v.id}.html?g=1" loading="lazy" title="${v.name}"></iframe></div></div>
+  <div class="shot"><span class="tag">LIVE PREVIEW</span><div class="frame"><iframe src="${v.id}.html?g=1" loading="lazy" title="${v.name}"></iframe></div></div>
   <div class="info">
     <div class="no">${v.no}</div>
     <h3>${v.name}</h3>
     <div class="from">${v.from}</div>
-    <div class="kv">${v.kv.map(r=>`<div class="row"><span class="k">${r[0].toUpperCase()}</span><span class="val">${r[1]}</span></div>`).join('')}</div>
+    <div class="kv">${v.kv.filter(r=>r[0]).map(r=>`<div class="row"><span class="k">${r[0].toUpperCase()}</span><span class="val">${r[1]}</span></div>`).join('')}</div>
     ${badge}
     <a class="open" href="${v.id}.html?v=1" target="_blank">OPEN FULL SCREEN ↗</a>
   </div>`;
   grid.appendChild(el);
 }
+R4.forEach(v=>card(v,document.getElementById('grid4')));
 R3.forEach(v=>card(v,document.getElementById('grid3')));
 R2.forEach(v=>card(v,document.getElementById('grid2')));
 R1.forEach(v=>card(v,document.getElementById('grid1')));

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · MONITOR R4 — market ambience cockpit · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(14,17,26,.84); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#A6B0C6; --faint:#626C82;
+  --gold:#FFCE00; --gold-2:#F0B90B; --gold-ink:#1F1702;
+  --up:#10B981; --dn:#F6465D; --r-xl:24px; --r-lg:18px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --sh:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.22),0 20px 50px rgba(0,0,0,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.num{font-variant-numeric:tabular-nums}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center}
+@keyframes enter{to{opacity:1;transform:none}}
+.enter{opacity:0;transform:translateY(16px) scale(.985);animation:enter .85s var(--expo) forwards}
+.up{color:var(--up)} .dn{color:var(--dn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* tiny-screen legibility rule: nothing on the 1080p canvas below 12px */
+#ribbon{position:absolute;left:0;right:0;top:0;height:60px;display:flex;align-items:center;gap:16px;padding:0 24px;
+  z-index:20;background:rgba(9,11,18,.86);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.06)}
+#ribbon .logo{height:28px}
+#ribbon .facepill{position:absolute;left:0;right:0;margin:auto;width:fit-content;display:flex;align-items:center;gap:10px;
+  padding:7px 16px;border-radius:999px;background:rgba(14,17,26,.9);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),0 0 0 1.5px rgba(255,206,0,.2)}
+#ribbon .facepill img{height:26px}
+#ribbon .facepill .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.22em;color:var(--gold)}
+#ribbon .mode{display:flex;align-items:center;gap:9px;padding:6px 14px;border-radius:999px;background:rgba(255,206,0,.1);
+  box-shadow:inset 0 0 0 1px rgba(255,206,0,.32);font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;
+  letter-spacing:.2em;color:var(--gold)}
+#ribbon .mode i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.7s infinite}
+#ribbon .sp{flex:1}
+#ribbon .sess{display:flex;gap:8px}
+#ribbon .sc{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.04);
+  box-shadow:inset 0 0 0 1px var(--line);font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
+#ribbon .sc i{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+#ribbon .sc.on{color:var(--fg)} #ribbon .sc.on i{background:var(--up);animation:pulse 1.7s infinite}
+#ribbon .day{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--gold);
+  border:1px solid rgba(255,206,0,.35);border-radius:999px;padding:5px 12px}
+#ribbon .clk{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:15px}
+.card{position:absolute;background:var(--card);border-radius:var(--r-xl);box-shadow:var(--sh),0 0 0 1.5px rgba(255,206,0,.16)}
+.h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+.h .dot{width:6px;height:6px;border-radius:50%}
+/* chart — hero panel */
+#chartCard{left:24px;top:84px;width:1170px;height:920px;padding:18px 20px 14px}
+#chartCard .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#chartCard .sym{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:27px;letter-spacing:-.01em}
+#chartCard .big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;margin-left:14px;transition:color .3s}
+#chartCard .big.flashU{color:var(--up)} #chartCard .big.flashD{color:var(--dn)}
+#chartCard .chg{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;padding:4px 12px;border-radius:999px}
+#chartCard .chg.up{background:rgba(16,185,129,.13);box-shadow:inset 0 0 0 1px rgba(16,185,129,.32)}
+#chartCard .chg.dn{background:rgba(246,70,93,.13);box-shadow:inset 0 0 0 1px rgba(246,70,93,.32)}
+#chartCard .chips{margin-left:auto;display:flex;gap:6px}
+#chartCard .chip{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.08em;color:var(--muted);
+  padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer}
+#chartCard .chip.on{color:var(--gold-ink);background:var(--gold);box-shadow:none}
+#chartCard .cnt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--faint);margin-left:12px}
+#cv{display:block;width:1130px;height:790px;border-radius:12px}
+#chartCard .legend{display:flex;align-items:center;gap:16px;margin-top:8px;padding:0 4px;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--faint)}
+#chartCard .legend .k{display:inline-flex;align-items:center;gap:6px}
+#chartCard .legend .k i{width:10px;height:3px;border-radius:2px;background:var(--up);display:inline-block}
+#chartCard .legend .k i.d{background:var(--dn)} #chartCard .legend .k i.g{background:var(--gold);height:2px}
+/* depth */
+#depth{left:1218px;top:84px;width:678px;height:344px;padding:16px 18px}
+#depth .cols{display:flex;gap:16px;margin-top:12px}
+#depth .col{flex:1}
+#depth .ch{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.18em;color:var(--faint);margin-bottom:8px}
+#depth .row{position:relative;display:flex;justify-content:space-between;align-items:center;height:27px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;margin-bottom:2.5px}
+#depth .row .bv{position:absolute;right:0;top:2px;bottom:2px;border-radius:4px;background:rgba(16,185,129,.14)}
+#depth .row .sv{position:absolute;left:0;top:2px;bottom:2px;border-radius:4px;background:rgba(246,70,93,.14)}
+#depth .row span{position:relative;z-index:2}
+#depth .spread{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding:10px;
+  border-radius:12px;background:rgba(255,206,0,.07);box-shadow:inset 0 0 0 1px rgba(255,206,0,.22);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--gold)}
+/* heatmap */
+#heat{left:1218px;top:452px;width:678px;height:288px;padding:16px 18px}
+#heat .grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+#heat .tl{border-radius:11px;padding:10px 12px;background:rgba(16,185,129,.13);box-shadow:inset 0 0 0 1px rgba(16,185,129,.28);
+  animation:enter .8s var(--expo) both}
+#heat .tl.dn{background:rgba(246,70,93,.13);box-shadow:inset 0 0 0 1px rgba(246,70,93,.28)}
+#heat .tl .s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:var(--muted)}
+#heat .tl .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;margin-top:3px}
+#heat .tl.big .v{font-size:23px}
+@keyframes hpulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,206,0,0)}50%{box-shadow:inset 0 0 0 1.5px rgba(255,206,0,.6)}}
+#heat .tl.hi{animation:hpulse 2.4s ease-in-out infinite}
+/* watchlist with sparklines */
+#watch{left:1218px;top:764px;width:678px;height:240px;padding:15px 18px 8px}
+#watch .row{display:flex;align-items:center;gap:12px;padding:4.5px 2px}
+#watch .row+.row{border-top:1px solid rgba(255,255,255,.045)}
+#watch .s{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;width:64px}
+#watch .spark{flex:none;width:150px;height:22px}
+#watch .bar{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+#watch .bar i{display:block;height:100%;border-radius:3px}
+#watch .p{width:76px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600}
+#watch .c{width:64px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700}
+@keyframes flashU{0%{background:rgba(16,185,129,.22)}100%{background:transparent}}
+@keyframes flashD{0%{background:rgba(246,70,93,.22)}100%{background:transparent}}
+#watch .c.fu{animation:flashU .8s ease-out}#watch .c.fd{animation:flashD .8s ease-out;border-radius:6px}
+/* alerts + keybar */
+#alerts{position:absolute;left:24px;bottom:92px;z-index:40;--al-w:380px}
+#helpWrap{position:absolute;left:0;right:0;bottom:92px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:12px;padding:7px 20px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:rgba(12,15,23,.85);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+#help b{color:var(--gold)} #help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="ribbon" class="enter">
+    <img class="logo" src="assets/smile-logo.svg" alt="smile.co.ke">
+    <span class="mode"><i></i>MARKET MONITOR</span>
+    <div class="facepill"><img src="assets/smile-face.svg" alt=""><span class="t">SMILE.CO.KE</span></div>
+    <span class="sp"></span>
+    <div class="sess" id="sess"></div>
+    <span class="day" id="day">— · — —</span>
+    <span class="clk num" id="clk">--:--:--</span>
+  </div>
+
+  <div id="helpWrap"><div id="help" class="enter">
+    <span><b>1–4</b> symbol</span><i>·</i><span><b>T</b> band: fx / markets / off-air</span><i>·</i>
+    <span><b>Z</b> alert zone</span><i>·</i><span><b>A</b> alert</span><i>·</i><span><b>X</b> clear</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+
+  <div id="chartCard" class="card enter">
+    <div class="top">
+      <span class="h"><span class="dot" style="background:var(--up)"></span>LIVE</span>
+      <span class="sym" id="cSym">NSE 20</span>
+      <span class="big num" id="cPx">82.41</span>
+      <span class="chg up" id="cChg">+0.90%</span>
+      <span class="cnt" id="cnt">next candle 0:09</span>
+      <div class="chips" id="chips"></div>
+    </div>
+    <canvas id="cv" width="1130" height="790"></canvas>
+    <div class="legend">
+      <span class="k"><i></i>UP CANDLE</span><span class="k"><i class="d"></i>DOWN CANDLE</span>
+      <span class="k"><i class="g"></i>LAST PRICE</span><span class="k" style="margin-left:auto">GHOST SMILE · BRAND WATERMARK</span>
+    </div>
+  </div>
+
+  <div id="depth" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--gold)"></span>ORDER BOOK DEPTH · USD/KES</div>
+    <div class="cols">
+      <div class="col"><div class="ch">BIDS</div><div id="bids"></div></div>
+      <div class="col"><div class="ch" style="text-align:right">ASKS</div><div id="asks"></div></div>
+    </div>
+    <div class="spread">SPREAD <span class="num" id="spread">0.04 (0.03%)</span> · MID <span class="num" id="mid">129.42</span></div>
+  </div>
+
+  <div id="heat" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--up)"></span>MARKET HEAT · NSE + GLOBAL</div>
+    <div class="grid" id="hgrid"></div>
+  </div>
+
+  <div id="watch" class="card enter">
+    <div class="h"><span class="dot" style="background:var(--gold)"></span>WATCHLIST · SESSION FOCUS</div>
+    <div id="wrows"></div>
+  </div>
+
+  <div id="alerts"></div>
+</div>
+<script src="assets/chrome.js"></script>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')'}
+addEventListener('resize',fit);fit();
+
+/* ---------- clock · sessions · day (EAT — stream truth) ---------- */
+function eatParts(){var f=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',hour12:false,hourCycle:'h23',hour:'2-digit',minute:'2-digit',second:'2-digit'}),p={};
+  f.formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});return p}
+var DOWS=['SUN','MON','TUE','WED','THU','FRI','SAT'],MOS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+var SESSIONS=[['ASIA',3,9],['NAIROBI',9,15],['LONDON',10,19],['NEW YORK',16.5,23]];
+function head(){var p=eatParts();
+  $('#clk').textContent=p.hour+':'+p.minute+':'+p.second+' EAT';
+  var d=new Date();
+  $('#day').textContent=DOWS[d.getDay()]+' · '+MOS[d.getMonth()]+' '+d.getDate();
+  var h=parseInt(p.hour,10)+parseInt(p.minute,10)/60;
+  $('#sess').innerHTML=SESSIONS.map(function(s){var on=h>=s[1]&&h<s[2];
+    return '<span class="sc'+(on?' on':'')+'"><i></i>'+s[0]+'</span>'}).join('')}
+setInterval(head,1000);head();
+
+/* ============================================================
+   CANVAS CHART — live candles + gradient area + last-price glow
+   ============================================================ */
+function mkSeries(name,start,volat,drift,dec,seedVol){var o=[],c=start,v=[];
+  for(var i=0;i<110;i++){var op=c,hh,ll,cl;cl=op*(1+(Math.random()-.5+drift)*volat);hh=Math.max(op,cl)*(1+Math.random()*volat*.5);ll=Math.min(op,cl)*(1-Math.random()*volat*.5);
+    o.push([op,hh,ll,cl]);c=cl;v.push(seedVol*(.4+Math.random()))}
+  return {name:name,d:o,v:v,dec:dec,volat:volat,drift:drift,base:seedVol}}
+var SERIES=[mkSeries('NSE 20',82.0,.0022,.0004,2,24),mkSeries('SCOM',27.6,.003,.0008,2,18),
+            mkSeries('USD/KES',129.1,.0012,-.0002,2,14),mkSeries('BTC',98000,.006,-.001,0,30)];
+var sIx=0,tSec=9;
+var CHIPS=['NSE 20','SCOM','USD/KES','BTC'];
+$('#chips').innerHTML=CHIPS.map(function(c,i){return '<span class="chip'+(i===0?' on':'')+'" data-i="'+i+'">'+c+'</span>'}).join('');
+document.querySelectorAll('#chips .chip').forEach(function(ch){ch.addEventListener('click',function(){setSym(parseInt(ch.dataset.i,10))})});
+function setSym(i){sIx=i;document.querySelectorAll('#chips .chip').forEach(function(c,k){c.classList.toggle('on',k===i)});
+  $('#cSym').textContent=SERIES[i].name;draw()}
+function fmt(n,dec){return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+
+var cv=$('#cv'),ctx=cv.getContext('2d');
+cv.width=1130*2;cv.height=790*2;cv.style.width='1130px';cv.style.height='790px';ctx.scale(2,2);
+var CW=1130,CH=790;
+function draw(){
+  var s=SERIES[sIx],d=s.d,W=CW,H=CH,PL=14,PR=84,PT=18,PB=46,vh=H*.16,CHh=H-PT-PB-vh;
+  var view=d.slice(-72),lo=1e9,hi=-1e9;
+  view.forEach(function(c){lo=Math.min(lo,c[2]);hi=Math.max(hi,c[1])});
+  var pad=(hi-lo)*.08;lo-=pad;hi+=pad;
+  var y=function(p){return PT+(1-(p-lo)/(hi-lo))*CHh};
+  var bw=(W-PL-PR)/view.length;
+  ctx.clearRect(0,0,W,H);
+  /* grid + labels — 12px min for tiny screens */
+  ctx.font='12px "IBM Plex Mono",monospace';ctx.textBaseline='middle';
+  for(var g=0;g<=5;g++){var gy=PT+g*CHh/5,gp=hi-(hi-lo)*g/5;
+    ctx.strokeStyle='rgba(255,255,255,.055)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PL,gy+.5);ctx.lineTo(W-PR,gy+.5);ctx.stroke();
+    ctx.fillStyle='rgba(166,176,198,.85)';ctx.fillText(fmt(gp,s.dec),W-PR+12,gy)}
+  /* volume */
+  var vmax=Math.max.apply(null,s.v.slice(-72));
+  view.forEach(function(c,i){var vv=s.v[d.length-72+i];
+    ctx.fillStyle=c[3]>=c[0]?'rgba(16,185,129,.28)':'rgba(246,70,93,.26)';
+    var hgt=vv/vmax*vh;ctx.fillRect(PL+i*bw+bw*.16,H-PB-hgt,bw*.68,hgt)});
+  /* candles */
+  view.forEach(function(c,i){var x=PL+i*bw+bw/2,up=c[3]>=c[0];
+    ctx.strokeStyle=up?'rgba(16,185,129,.92)':'rgba(246,70,93,.92)';
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,y(c[1]));ctx.lineTo(x,y(c[2]));ctx.stroke();
+    ctx.fillStyle=up?'#10B981':'#F6465D';
+    var t=y(Math.max(c[0],c[3])),b=y(Math.min(c[0],c[3]));
+    ctx.fillRect(x-bw*.32,t,bw*.64,Math.max(1.8,b-t))});
+  /* gradient area under closes */
+  ctx.beginPath();
+  view.forEach(function(c,i){var x=PL+i*bw+bw/2,cl=y(c[3]);i===0?ctx.moveTo(x,cl):ctx.lineTo(x,cl)});
+  var lastX=PL+(view.length-1)*bw+bw/2;
+  ctx.lineTo(lastX,H-PB-vh);ctx.lineTo(PL,H-PB-vh);ctx.closePath();
+  var upLast=view[view.length-1][3]>=view[view.length-1][0];
+  var gr=ctx.createLinearGradient(0,PT,0,H-PB-vh);
+  gr.addColorStop(0,upLast?'rgba(16,185,129,.16)':'rgba(246,70,93,.16)');gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gr;ctx.fill();
+  /* last price line + tag with glow */
+  var last=view[view.length-1],lp=last[3],ly=y(lp),up=last[3]>=last[0];
+  ctx.save();ctx.setLineDash([5,5]);ctx.strokeStyle=up?'rgba(16,185,129,.6)':'rgba(246,70,93,.6)';
+  ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(PL,ly);ctx.lineTo(W-PR,ly);ctx.stroke();ctx.restore();
+  ctx.save();ctx.shadowColor=up?'rgba(16,185,129,.8)':'rgba(246,70,93,.8)';ctx.shadowBlur=10;
+  ctx.fillStyle=up?'#10B981':'#F6465D';
+  ctx.fillRect(W-PR+4,ly-12,PR-12,24);ctx.restore();
+  ctx.fillStyle='#08130D';ctx.font='700 12.5px "IBM Plex Mono",monospace';
+  ctx.fillText(fmt(lp,s.dec),W-PR+12,ly);
+  /* ghost smile watermark: brand arc */
+  ctx.strokeStyle='rgba(255,206,0,.05)';ctx.lineWidth=28;ctx.lineCap='round';
+  ctx.beginPath();ctx.arc(W/2,H*.44,175,Math.PI*.15,Math.PI*.85);ctx.stroke();
+  /* footer */
+  var i=d.length-1;
+  $('#cPx').textContent=fmt(d[i][3],s.dec);
+  var chg=(d[i][3]/d[0][0]-1)*100,upc=chg>=0;
+  var e=$('#cChg');e.textContent=(upc?'+':'')+chg.toFixed(2)+'%';e.className='chg '+(upc?'up':'dn');
+}
+function tick(){var s=SERIES[sIx],last=s.d[s.d.length-1];
+  var nc=last[3]*(1+(Math.random()-.5+s.drift)*s.volat);
+  last[3]=nc;last[1]=Math.max(last[1],nc);last[2]=Math.min(last[2],nc);
+  s.v[s.v.length-1]*= .98+Math.random()*.08;
+  if(Math.random()<.06){s.d.shift();s.v.shift();
+    var p=s.d[s.d.length-1][3];s.d.push([p,p*(1+.0006),p*(1-.0006),p]);s.v.push(s.base*(.4+Math.random()))}
+  draw()}
+setInterval(tick,900);draw();
+/* candle countdown */
+setInterval(function(){$('#cnt').textContent='next candle 0:'+String(tSec).padStart(2,'0');tSec=tSec>0?tSec-1:9},1000);
+/* price flash on the big number */
+var prevPx=null;
+setInterval(function(){var v=parseFloat($('#cPx').textContent.replace(/,/g,''));
+  if(prevPx!==null&&v!==prevPx){var el=$('#cPx');el.classList.remove('flashU','flashD');void el.offsetWidth;
+    el.classList.add(v>prevPx?'flashU':'flashD')}prevPx=v},950);
+
+/* ---------- depth ladder ---------- */
+var mid=129.42;
+function depthRow(side,i){var p=mid+(side==='b'?-1:1)*(i*.02),amt=(Math.random()*90+8).toFixed(1);
+  return '<div class="row"><span class="'+(side==='b'?'bv':'sv')+'" style="width:'+((Math.random()*72+18))+'%"></span>'+
+    '<span style="position:relative;z-index:2">'+fmt(p,2)+'</span><span style="position:relative;z-index:2;'+
+    (side==='b'?'':'text-align:right;margin-left:auto')+'">'+amt+'</span></div>'}
+function depth(){var b='',a='';
+  for(var i=0;i<8;i++){b+=depthRow('b',i);a+=depthRow('a',i)}
+  $('#bids').innerHTML=b;$('#asks').innerHTML=a;
+  $('#mid').textContent=fmt(mid,2);
+  $('#spread').textContent='0.0'+(2+Math.floor(Math.random()*3))+' (0.0'+(2+Math.floor(Math.random()*3))+'%)'}
+setInterval(depth,1700);depth();
+
+/* ---------- heatmap ---------- */
+var HEAT=[['SCOM','+4.2%','up big hi',26],['EQTY','+2.8%','up',18],['KCB','+2.1%','up',18],
+  ['EABL','-1.4%','dn',16],['BAT','-2.6%','dn',15],['COOP','+0.8%','up',14],['ABSA','+1.1%','up',14],
+  ['USD/KES','+0.31%','up',17],['EUR/KES','-0.18%','dn',15],['BTC','-1.2%','dn',17],
+  ['XAU','+0.6%','up hi',15],['NSE 20','+0.9%','up hi',20]];
+$('#hgrid').innerHTML=HEAT.map(function(t){return '<div class="tl '+(t[2].indexOf('dn')>=0?'dn':'')+' '+t[2].replace(/up|dn|nt/g,'').trim()+'" style="flex:0 0 calc('+t[3]+'% - 7px)">'+
+  '<div class="s">'+t[0]+'</div><div class="v num '+(t[1][0]==='+'?'up':'dn')+'">'+t[1]+'</div></div>'}).join('');
+
+/* ---------- watchlist with sparklines ---------- */
+function sparkPath(seed,up){var pts=[],v=13+((seed*37)%7);
+  for(var i=0;i<12;i++){v+=(Math.sin(seed*3.1+i*1.7)+(up?-.42:.5))*2.4;pts.push(60+v*1.4)}
+  var min=Math.min.apply(null,pts),max=Math.max.apply(null,pts);
+  var norm=pts.map(function(p,i){return [(i/(pts.length-1))*148,24-((p-min)/(max-min||1))*22]});
+  return norm.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')}
+var W=[['SCOM',78,'28.75','+4.2%','up',3],['EQTY',52,'52.10','+2.8%','up',5],['KCB',40,'44.60','+2.1%','up',8],
+  ['EABL',30,'224.0','-1.4%','dn',2],['BAT',22,'210.5','-2.6%','dn',6]];
+$('#wrows').innerHTML=W.map(function(r,ix){return '<div class="row"><span class="s">'+r[0]+'</span>'+
+  '<svg class="spark" viewBox="0 0 148 26"><polyline points="'+sparkPath(r[5],r[4]==='up')+'" fill="none" '+
+  'stroke="'+(r[4]==='up'?'#10B981':'#F6465D')+'" stroke-width="1.6" stroke-linecap="round" opacity=".85"/></svg>'+
+  '<span class="bar"><i style="width:'+r[1]+'%;background:var(--'+r[4]+')"></i></span>'+
+  '<span class="p num">'+r[2]+'</span><span class="c num '+(r[4]==='up'?'up':'dn')+'">'+r[3]+'</span></div>'}).join('');
+/* row flashes */
+setInterval(function(){var rows=document.querySelectorAll('#watch .c');var r=rows[Math.floor(Math.random()*rows.length)];
+  if(!r)return;var u=r.classList.contains('up');r.classList.remove('fu','fd');void r.offsetWidth;
+  r.classList.add(u?'fu':'fd')},1400);
+
+/* ---------- band state: fx ↔ markets ↔ off-air (T cycles) ---------- */
+var FX=[['USD/KES','129.42','+0.31%'],['EUR/KES','140.85','-0.18%'],['GBP/KES','164.22','+0.12%'],
+  ['JPY/KES','0.864','-0.31%'],['KES/UGX','34.12','+0.05%'],['KES/TZS','19.55','-0.02%']];
+var bandIx=0,BANDS=['FX','MKT','OFF'];
+function buildBand(){
+  var cap='',inner='';
+  if(BANDS[bandIx]==='FX'){cap='FX · KES';
+    inner='<div class="fx" style="flex:1;display:flex;align-items:center;justify-content:space-evenly;padding:0 34px">'+
+      FX.map(function(f){return '<span class="fxi" style="display:flex;align-items:baseline;gap:9px;font-family:\'IBM Plex Mono\',monospace">'+
+        '<span class="k" style="font-size:10.5px;font-weight:600;letter-spacing:.1em;color:var(--faint)">'+f[0]+'</span>'+
+        '<span class="v num" style="font-size:15px;font-weight:600">'+f[1]+'</span>'+
+        '<span class="c num '+(f[2][0]==='+'?'up':'dn')+'" style="font-size:11.5px;font-weight:600">'+f[2]+'</span></span>'}).join('')+'</div>'}
+  else{cap=BANDS[bandIx]==='MKT'?'SMILE MARKETS':'SMILE · OFF-AIR';
+    var items=SmileChrome.tickerItems(BANDS[bandIx]==='MKT'?'market':'offair');
+    inner='<div class="tk" style="display:flex;align-items:center;gap:34px;padding:0 17px;white-space:nowrap;animation:sp-tk 40s linear infinite">'+items+items+'</div>'}
+  $('#bandCap').textContent=cap;$('#bandClip').innerHTML=inner;
+}
+/* ---------- alerts + keys ---------- */
+var alerts=SmileAlerts.mount('#alerts');
+var ZONES=['left','center','right'],zIx=0;
+function applyZone(){alerts.setZone(ZONES[zIx]);
+  $('#alerts').style.left=ZONES[zIx]==='left'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.right=ZONES[zIx]==='right'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.marginLeft=ZONES[zIx]==='center'?'auto':'0';
+  $('#alerts').style.marginRight=ZONES[zIx]==='center'?'auto':'0';}
+applyZone();
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k==='t'){bandIx=(bandIx+1)%3;buildBand()}
+  else if(k>='1'&&k<='4')setSym(parseInt(k,10)-1);
+  else if(k==='z'){zIx=(zIx+1)%ZONES.length;applyZone()}
+  else if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='h')document.body.classList.toggle('g');
+});
+if(G.get('g')==='1')document.body.classList.add('g');
+</script>
+
+<!-- band pill (shared chrome look) -->
+<script>
+/* build the ticker pill AFTER chrome css exists */
+(function(){
+  SmileChrome.tickerCSS();
+  var w=document.createElement('div');w.className='tkWrap';w.style.zIndex=25;
+  w.innerHTML='<div class="tkPill" style="width:1560px;max-width:1720px"><div class="cap"><i></i><span class="t" id="bandCap">FX · KES</span></div>'+
+    '<div class="clip" id="bandClip" style="flex:1;display:flex;align-items:center;overflow:hidden;position:relative"></div></div>';
+  document.querySelector('#fit').appendChild(w);
+  buildBand();
+})();
+</script>
+</body>
+</html>

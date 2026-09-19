@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · STUDIO R4 — 3-module rail + capture stage · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(18,22,34,.74); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#9AA4BC; --faint:#5A6478;
+  --gold:#FFCE00; --gold-ink:#1F1702; --up:#10B981; --dn:#F6465D; --blue:#6E9BFF;
+  --r-xl:24px; --r-lg:18px;
+  --expo:cubic-bezier(.16,1,.3,1); --blur:blur(20px) saturate(1.3);
+  --sh:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.32),0 3px 8px rgba(0,0,0,.24),0 22px 54px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.num{font-variant-numeric:tabular-nums}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center}
+@keyframes enter{to{opacity:1;transform:none}}
+.enter{opacity:0;transform:translateY(16px) scale(.985);animation:enter .85s var(--expo) forwards}
+.up{color:var(--up)} .dn{color:var(--dn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hide{display:none!important}
+
+/* ---------- capture card = FRAME with a TRANSPARENT HOLE ---------- */
+.mod{position:absolute;border-radius:var(--r-lg);z-index:10;overflow:hidden;
+  box-shadow:0 0 0 1.5px rgba(255,206,0,.34),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 44px rgba(0,0,0,.45)}
+.mod .lab{position:absolute;left:10px;top:10px;z-index:6;display:flex;align-items:center;gap:7px;padding:5.5px 12px;
+  border-radius:999px;background:rgba(9,11,18,.88);font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  font-weight:600;letter-spacing:.16em;color:var(--gold);box-shadow:0 0 0 1px rgba(255,206,0,.3)}
+.mod .lab i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite}
+.mod .tag2{position:absolute;right:10px;top:10px;z-index:6;padding:5.5px 11px;border-radius:999px;background:rgba(9,11,18,.88);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.12em;color:var(--muted);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.mod .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%)}
+.mod.showph .ph{display:flex}
+.mod .ph img{width:54px;height:54px;filter:drop-shadow(0 8px 18px rgba(255,206,0,.2))}
+.mod .ph .t{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+/* ghost gutters for letterboxed ads */
+.mod .gut{position:absolute;top:0;bottom:0;display:none;align-items:center;justify-content:center;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.028) 0 8px,transparent 8px 16px)}
+.mod.letterbox .gut{display:flex}
+.mod .gut.l{left:0;right:calc(100% - var(--gx));display:flex}
+.mod .gut.r{right:0;left:calc(100% - var(--gx));display:flex}
+
+/* cam nameplate + level */
+#camMod .idc{position:absolute;left:12px;bottom:12px;z-index:6;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 10px;
+  border-radius:13px;background:rgba(10,12,20,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+#camMod .idc .nm{font-weight:700;font-size:13px;letter-spacing:-.01em}
+#camMod .idc .rl{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.15em;color:var(--gold);margin-top:1px}
+#camMod .lvl{position:absolute;right:12px;bottom:16px;z-index:6;display:flex;align-items:flex-end;gap:2.5px;height:20px}
+#camMod .lvl i{width:3px;border-radius:2px;background:var(--gold);animation:eq 0.9s ease-in-out infinite}
+@keyframes eq{0%,100%{height:30%}50%{height:95%}}
+#camMod .lvl i:nth-child(2){animation-delay:.15s}#camMod .lvl i:nth-child(3){animation-delay:.3s}
+#camMod .lvl i:nth-child(4){animation-delay:.45s}#camMod .lvl i:nth-child(5){animation-delay:.6s}
+#camMod .camlive{position:absolute;right:12px;top:12px;z-index:6;display:flex;align-items:center;gap:6px;padding:5px 11px;
+  border-radius:999px;background:rgba(10,12,20,.82);font-family:'IBM Plex Mono',monospace;font-size:8px;
+  font-weight:600;letter-spacing:.16em;color:var(--muted)}
+#camMod .camlive i{width:6px;height:6px;border-radius:50%;background:var(--up);animation:pulse 1.7s infinite}
+
+/* AD module */
+#adMod .hole{position:absolute;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 50% 0%,#12151F,#0A0C13);border-radius:12px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);overflow:hidden}
+#adMod .hole .play{width:38px;height:38px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(255,206,0,.3)}
+#adMod .hole .play::after{content:"";width:0;height:0;border-left:11px solid var(--gold-ink);border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:2px}
+#adMod .hole .msg{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'IBM Plex Mono',monospace;
+  font-size:8px;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+
+/* CHAT module */
+.textmod{position:absolute;border-radius:var(--r-lg);background:var(--card);-webkit-backdrop-filter:var(--blur);
+  backdrop-filter:var(--blur);box-shadow:var(--sh);border:1px solid var(--line);z-index:10;overflow:hidden}
+.textmod .h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  font-weight:600;letter-spacing:.18em;color:var(--muted);padding:13px 16px 9px}
+.textmod .h .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.textmod .h .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--faint)}
+#chatMod .lines{position:absolute;left:16px;right:16px;top:44px;bottom:12px;display:flex;flex-direction:column;
+  justify-content:flex-end;gap:7px;overflow:hidden}
+#chatMod .line{display:flex;gap:8px;align-items:flex-start;animation:enter .5s var(--expo) both;flex:none}
+#chatMod .line .av{flex:none;width:22px;height:22px;border-radius:50%;background:rgba(255,206,0,.14);display:flex;
+  align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--gold);margin-top:1px}
+#chatMod .line .tx{font-size:12px;line-height:1.4;color:#C9D2E4;min-width:0}
+#chatMod .line .tx b{color:var(--fg)}
+#chatMod .line .tx .pf{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:5px;vertical-align:0}
+#chatMod .cta{position:absolute;left:16px;right:16px;bottom:12px;display:none;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;
+  background:rgba(255,206,0,.08);box-shadow:inset 0 0 0 1px rgba(255,206,0,.25);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.13em;color:var(--gold)}
+
+/* STAGE */
+#stage{position:absolute;border-radius:var(--r-xl);background:rgba(12,15,23,.82);box-shadow:var(--sh),0 0 0 1.5px rgba(255,206,0,.22);z-index:10}
+#stage .head{display:flex;align-items:center;gap:12px;padding:12px 18px 8px}
+#stage .head .h{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+#stage .head .asp{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;
+  letter-spacing:.12em;color:var(--gold);background:rgba(255,206,0,.1);border-radius:999px;padding:4px 10px;
+  box-shadow:inset 0 0 0 1px rgba(255,206,0,.3)}
+#stage .holeW{position:relative;margin:0 14px;border-radius:14px;overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+#stage .holeW .wm{position:absolute;right:12px;bottom:10px;width:40px;opacity:.1;pointer-events:none}
+#stage .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:11px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%);border-radius:14px}
+#stage.showph .ph{display:flex}
+#stage .ph img{width:80px;height:80px;filter:drop-shadow(0 8px 18px rgba(255,206,0,.18))}
+#stage .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+#stage .foot{display:flex;align-items:center;gap:10px;padding:9px 18px 12px}
+#stage .foot .chip{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.12em;
+  color:var(--muted);background:rgba(255,255,255,.045);border-radius:8px;padding:5px 10px}
+#stage .foot .ghost{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--faint);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em}
+#stage .foot .ghost img{width:18px;height:18px;opacity:.5}
+
+/* alerts */
+#alerts{position:absolute;bottom:92px;z-index:45;--al-w:380px}
+
+/* calibration */
+#cal{position:absolute;inset:0;display:none;z-index:90;font-family:'IBM Plex Mono',monospace}
+#cal.on{display:block}
+#cal .sl{position:absolute;border:1.5px dashed rgba(255,206,0,.85);border-radius:12px;box-shadow:0 0 0 3000px rgba(0,0,0,.14)}
+#cal .sl .tag{position:absolute;top:-11px;left:12px;background:#FFCE00;color:#1F1702;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;padding:3px 9px;border-radius:6px;white-space:nowrap}
+#cal .sheet{position:absolute;left:452px;top:120px;width:370px;max-height:840px;overflow:hidden;background:rgba(8,10,16,.95);
+  border:1px solid rgba(255,206,0,.4);border-radius:14px;padding:16px;font-size:10.5px;line-height:1.8;color:#C9D2E4}
+#cal .sheet .t{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-bottom:8px}
+#cal .sheet .rw{display:flex;justify-content:space-between;gap:10px}
+#cal .sheet .rw span:last-child{color:var(--fg);white-space:nowrap}
+#cal .sheet .note{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);color:#9AA4BC;font-size:9.5px;line-height:1.7}
+#cal .sheet .note b{color:var(--gold)}
+
+/* keybar */
+#helpWrap{position:absolute;left:0;right:0;bottom:92px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:12px;padding:7px 20px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.07em;color:var(--muted);
+  background:rgba(12,15,23,.85);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+#help b{color:var(--gold)} #help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <!-- 3-module rail (CAM / AD / CHAT) -->
+  <div id="camMod" class="mod enter">
+    <div class="ph"><img src="assets/smile-face.svg" alt=""><div class="t" id="camPhT">PLACE CAMERA · 16:9 HOLE</div></div>
+    <div class="lab"><i></i><span id="camLab">CAM · HOST</span></div>
+    <span class="tag2" id="camTag2">HOLE</span>
+    <span class="camlive"><i></i>CAM</span>
+    <div class="idc"><div><div class="nm" id="camNm">WANJIKU M.</div><div class="rl" id="camRl">HOST · NAIROBI DESK</div></div></div>
+    <div class="lvl"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <div id="adMod" class="mod enter">
+    <div class="gut l"></div><div class="gut r"></div>
+    <div class="hole" id="adHole">
+      <div class="play"></div>
+      <div class="msg" id="adMsg">AD SLOT · VIDEO OR BANNER · KEEPS ITS OWN ASPECT</div>
+    </div>
+    <div class="lab"><i></i>AD · SPONSOR</div>
+    <span class="tag2" id="adTag2">16:9</span>
+  </div>
+
+  <div id="chatMod" class="textmod enter">
+    <div class="h"><span class="dot"></span>DESK CHAT · MULTIPLATFORM<span class="n" id="chatN">— watching</span></div>
+    <div class="lines" id="chatLines"></div>
+  </div>
+
+  <!-- STAGE -->
+  <div id="stage" class="enter">
+    <div class="head">
+      <div class="h">DISPLAY · WINDOW CAPTURE SLOT</div>
+      <span class="asp" id="aspTag">16:9</span>
+    </div>
+    <div class="holeW" id="stageHole">
+      <div class="ph"><img src="assets/smile-face.svg" alt=""><div class="t">PLACE DISPLAY / WINDOW CAPTURE</div></div>
+      <img class="wm" src="assets/smile-face.svg" alt="">
+    </div>
+    <div class="foot">
+      <span class="chip" id="stageRes">1920 × 1080 IN</span>
+      <span class="chip">SCREENSHARE · MT5 · TRADINGVIEW · BROWSER</span>
+      <span class="ghost"><img src="assets/smile-face.svg" alt="">SMILE DESK</span>
+    </div>
+  </div>
+
+  <div id="alerts"></div>
+  <div id="helpWrap"><div id="help" class="enter">
+    <span><b>D</b> ad aspect</span><i>·</i><span><b>S</b> swap sides</span><i>·</i><span><b>R</b> stage aspect</span><i>·</i>
+    <span><b>P</b> avatar</span><i>·</i><span><b>Z</b> alert zone</span><i>·</i><span><b>K</b> off-air ticker</span><i>·</i>
+    <span><b>A</b> alert</span><i>·</i><span><b>⇧A</b> stress</span><i>·</i><span><b>X</b> clear</span><i>·</i>
+    <span><b>C</b> calibrate</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+
+  <div class="tkWrap"><div class="tkPill enter" id="tkPill">
+    <div class="cap"><i></i><span class="t" id="tkCap">SMILE MARKETS</span></div>
+    <div class="clip"><div class="tk" id="tk"></div></div>
+  </div></div>
+
+  <div id="cal"><div class="sheet" id="calSheet"></div></div>
+</div>
+<script src="assets/chrome.js"></script>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')';fit.s=s}
+addEventListener('resize',function(){fit();if($('#cal').classList.contains('on'))calOn(true)});fit();
+
+/* shared chrome: logo pill L · face pill C · socials+clock pill R */
+SmileChrome.mount({});
+SmileChrome.tickerCSS();
+
+/* ---------- ticker: market-only while trading (K = off-air adds sponsors) ---------- */
+var offair=false;
+function fillTicker(){
+  $('#tkCap').textContent=offair?'SMILE · OFF-AIR':'SMILE MARKETS';
+  var h=SmileChrome.tickerItems(offair?'offair':'market');
+  $('#tk').innerHTML=h+h;
+}
+fillTicker();
+
+/* ============================================================
+   LAYOUT — 3-module rail vs capture stage (S swaps sides)
+   canvas 1920×1080 · chrome top ends y=100 · ticker top y=1002
+   content zone y 112..986 · rail w=400 · stage gets the rest
+   ============================================================ */
+var Y0=112,Y1=986,GAP=14,W=1920,PAD=24,RAILW=400;
+var AD_ASPECTS=[['16:9',16/9],['3:1',3],['1:1',1],['9:16',9/16]],adIx=0;
+var ST_ASPECTS=[['16:9',16/9],['16:10',1.6],['FILL',0]],stIx=0;
+var swapped=false,cams=parseInt(G.get('cams'),10)||1;if(cams!==2)cams=1;
+
+function layout(){
+  var railX = swapped ? W-PAD-RAILW : PAD;
+  var stX   = swapped ? PAD : PAD+RAILW+GAP+16;
+  var stW   = swapped ? W-PAD-(PAD+RAILW+GAP+16)-GAP : W-PAD-stX;
+  if(swapped){stX=PAD;stW=W-2*PAD-RAILW-GAP-16;}
+  else{stX=PAD+RAILW+GAP+16;stW=W-PAD-stX;}
+
+  /* CAM module — fixed, prioritised: full 16:9 of the rail width */
+  var camH=cams===2?RAILW*9/16*2/2*2:RAILW*9/16; /* 1 cam: 225 · 2 cams: two stacked holes */
+  if(cams===2)camH=RAILW*9/16; /* module stays 16:9 tall; two holes split it */
+  place('camMod',railX,Y0,RAILW,Math.round(camH));
+  if(cams===2){
+    $('#camPhT').textContent='PLACE CAM 1 + CAM 2 · SPLIT HOLES';
+  }
+
+  /* AD module — height driven by the AD's own aspect (adaptable) */
+  var a=AD_ASPECTS[adIx],adW=RAILW,adH=Math.round(RAILW/a[1]);
+  var holeW=adW,holeH=adH,letterbox=false,gx=0;
+  if(adH>240){ /* cap tall ads; hole shrinks to keep aspect, gutters appear */
+    holeH=240;holeW=Math.round(240*a[1]);letterbox=true;gx=(RAILW-holeW)/2;
+    if(gx<0){gx=0;holeW=RAILW}
+    adH=240;
+  }
+  var adY=Y0+Math.round(camH)+GAP;
+  place('adMod',railX,adY,RAILW,adH);
+  var hole=$('#adHole');
+  hole.style.cssText='position:absolute;width:'+holeW+'px;height:'+holeH+'px;left:'+Math.round((RAILW-holeW)/2)+'px;top:'+Math.round((adH-holeH)/2)+'px';
+  $('#adMod').classList.toggle('letterbox',letterbox);
+  if(letterbox){$('#adMod').style.setProperty('--gx',Math.round(gx)+'px')}
+  $('#adTag2').textContent=a[0]+(letterbox?' · FIT':'');
+
+  /* CHAT module — absorbs everything left (priority: cam + chat) */
+  var chatY=adY+adH+GAP;
+  place('chatMod',railX,chatY,RAILW,Y1-chatY);
+
+  /* STAGE — remaining space, aspect-locked hole */
+  place('stage',stX,Y0,stW,Y1-Y0);
+  applyStage();
+}
+function place(id,x,y,w,h){var e=$('#'+id);e.style.left=x+'px';e.style.top=y+'px';e.style.width=w+'px';e.style.height=h+'px'}
+function applyStage(){
+  var st=$('#stage'),sw=st.clientWidth-28,headH=40,footH=36,availH=(Y1-Y0)-headH-footH-24;
+  var a=ST_ASPECTS[stIx],w=sw,h=a[1]?Math.round(sw/a[1]):availH;
+  if(h>availH){h=availH;if(a[1])w=Math.round(h*a[1])}
+  var hole=$('#stageHole');hole.style.width=w+'px';hole.style.height=h+'px';hole.style.margin='0 auto';
+  $('#aspTag').textContent=a[0];
+  $('#stageRes').textContent=a[1]?'PLACE '+a[0]+' SOURCE · FIT-TO-FRAME':'SOURCE FILLS HOLE · CROP TO TASTE';
+}
+
+/* ---------- chat feed ---------- */
+var CHAT=[
+  ['njeri.w','is the bond auctionyield still up?','youtube','#FF4E45'],
+  ['ke_trader','SCOM looking strong into close','twitch','#9146FF'],
+  ['mumbi','explain the spread again please','tiktok','#3AE4E7'],
+  ['otienoJ','joined from Kisumu — karibu everybody','youtube','#FF4E45'],
+  ['githinji','USD/KES at 129.4, watching 130','x','#E7E9EA'],
+  ['awuor.d','mt5 screenshot please','kick','#53FC18'],
+  ['kamau254','chat is fast today!','youtube','#FF4E45'],
+  ['wanjiru','sasa from Nakuru desk','tiktok','#3AE4E7'],
+  ['bonifacem','what leverage for gold?','twitch','#9146FF'],
+  ['shakirah','loving the chart school','x','#E7E9EA']
+];
+var cIx=0;
+function chatTick(){
+  var c=CHAT[cIx%CHAT.length];cIx++;
+  var L=$('#chatLines'),line=document.createElement('div');line.className='line';
+  line.innerHTML='<span class="av">'+c[0][0].toUpperCase()+'</span><span class="tx"><b>'+c[0]+'</b> '+c[1]+
+    '<span class="pf" style="background:'+c[3]+'"></span></span>';
+  L.appendChild(line);
+  while(L.children.length>14)L.removeChild(L.firstChild);
+}
+for(var i=0;i<7;i++)chatTick();
+setInterval(chatTick,2300);
+
+/* ---------- alerts ---------- */
+var alerts=SmileAlerts.mount('#alerts');
+var ZONES=['left','center','right'];
+var zIx=ZONES.indexOf(G.get('apos'));if(zIx<0)zIx=0; /* studio default: LEFT above ticker */
+function applyZone(){alerts.setZone(ZONES[zIx]);
+  $('#alerts').style.left=ZONES[zIx]==='left'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.right=ZONES[zIx]==='right'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.marginLeft=ZONES[zIx]==='center'?'auto':'0';
+  $('#alerts').style.marginRight=ZONES[zIx]==='center'?'auto':'0';}
+applyZone();
+
+/* ---------- keys ---------- */
+var ph=G.get('ph')==='1';
+function applyPh(){document.querySelectorAll('.mod, #stage').forEach(function(e){e.classList.toggle('showph',ph)})}
+var avatar=false;
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='d'){adIx=(adIx+1)%AD_ASPECTS.length;layout();if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='s'){swapped=!swapped;layout();if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='r'){stIx=(stIx+1)%ST_ASPECTS.length;applyStage();if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='z'){zIx=(zIx+1)%ZONES.length;applyZone()}
+  else if(k==='k'){offair=!offair;fillTicker()}
+  else if(k==='p'){avatar=!avatar;
+    $('#camMod').classList.toggle('showph',avatar||ph);
+    $('#camPhT').textContent=avatar?'CAM OFF · SMILE AVATAR':'PLACE CAMERA · 16:9 HOLE';
+    $('#camRl').textContent=avatar?'AVATAR ACTIVE · CAM HIDDEN':'HOST · NAIROBI DESK'}
+  else if(k==='o'){ph=!ph;applyPh()}
+  else if(k==='c'){document.body.classList.add('calm');calOn(!$('#cal').classList.contains('on'))}
+  else if(k==='h')document.body.classList.toggle('g');
+});
+applyPh();
+
+/* ---------- calibration ---------- */
+function calOn(on){
+  var cal=$('#cal');cal.classList.toggle('on',on);if(!on)return;
+  cal.querySelectorAll('.sl').forEach(function(e){e.remove()});
+  var s=fit.s||1,rows=[];
+  var defs=[['CAM HOLE','#camMod'],['AD HOLE','#adHole'],['CHAT CARD','#chatMod'],
+    ['STAGE HOLE','#stageHole'],['TICKER PILL','#tkPill'],['ALERT ZONE','#alerts']];
+  defs.forEach(function(d){var el=$(d[1]);if(!el)return;var r=el.getBoundingClientRect();
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s),w=Math.round(r.width/s),h=Math.round(r.height/s);
+    if(r.width<8&&r.height<8){ if(d[1]==='#alerts'){x=1516;y=834;w=380;h=150} else return; }
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">'+d[0]+' — '+w+'×'+h+' @ '+x+','+y+'</span>';cal.appendChild(sl);
+    rows.push([d[0],w+'×'+h+' @ '+x+','+y]);});
+  $('#calSheet').innerHTML='<div class="t">OBS SLOT SHEET · BASE 1920×1080 · RAIL '+(swapped?'RIGHT':'LEFT')+' · AD '+AD_ASPECTS[adIx][0]+'</div>'+
+    rows.map(function(r){return '<div class="rw"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('')+
+    '<div class="note"><b>Workflow:</b> captures go UNDER this browser source at the values above · Alt-drag red handles to crop into each hole · '+
+    '<b>S</b> swaps the rail to the other side · <b>D</b> re-shapes the AD hole (chat re-flows) · never place captures below y=1002 (ticker). Full guide: <b>guide.html</b></div>';
+}
+
+layout();
+if(G.get('cal')==='1'){document.body.classList.add('calm');ph=true;applyPh();calOn(true)}
+if(G.get('g')==='1')document.body.classList.add('g');
+if(G.get('ademo')!=='1'&&!G.get('cal'))setTimeout(function(){alerts.push({user:'njeri.w',type:'tip',amount:'500 KES',msg:'ndio hii chai — leak the NSE watchlist!',platform:'youtube'})},4200);
+</script>
+</body>
+</html>
