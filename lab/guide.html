@@ -88,20 +88,36 @@ td .gold{color:var(--gold)}
 <div class="wrap">
   <header>
     <img src="assets/smile-logo.svg" alt="smile.co.ke">
-    <div><div class="sub">SMILE LAB · BROADCAST KIT</div>
+    <div><div class="sub">SMILE LAB · BROADCAST KIT · ROUND 4</div>
     <h1>Wiring captures, alerts &amp; sponsors into OBS</h1></div>
   </header>
   <p class="lead">Everything in the lab runs on one honest principle: <b>the HTML overlay is chrome, OBS owns the sources.</b>
   A browser source is a sandboxed web page — it cannot reach into your camera or window captures. So every scene renders
   <b>card frames with transparent holes</b> at exact, documented coordinates, and your captures sit <b>underneath</b>,
   showing through. This guide gives you every coordinate, preset and switch. <b>All numbers assume a 1920×1080 base canvas</b>
-  (the scenes letterbox-scale themselves to any other resolution).</p>
+  (the scenes letterbox-scale themselves to any other resolution — and every type size is tuned so the stream stays legible
+  even when viewers watch on tiny phone screens).</p>
 
   <nav>
-    <a href="#layers">1 · Layer order</a><a href="#quick">2 · Quick start</a><a href="#sheets">3 · Slot sheets</a>
-    <a href="#cams">4 · Multi-cam presets</a><a href="#alerts">5 · Alert engine</a><a href="#sponsor">6 · Sponsors</a>
-    <a href="#keys">7 · Keymaps</a><a href="#faq">8 · FAQ</a>
+    <a href="#chrome">0 · R4 chrome</a><a href="#layers">1 · Layer order</a><a href="#quick">2 · Quick start</a><a href="#sheets">3 · Slot sheets</a>
+    <a href="#cams">4 · Cams &amp; guests</a><a href="#alerts">5 · Alert engine v2</a><a href="#sponsor">6 · Sponsors</a>
+    <a href="#keys">7 · Keymaps</a><a href="#shapes">8 · Shape language</a><a href="#faq">9 · FAQ</a>
   </nav>
+
+  <section id="chrome">
+    <h2><span class="n">00</span>The Round-4 chrome (shared by STUDIO R4 · CINEMA R4 · DESK · PANEL)</h2>
+    <p>The old masthead is gone. In its place, three pills — exactly as specified:</p>
+    <div class="cards">
+      <div class="card"><h3><span class="dot"></span>TOP-CENTRE · the face</h3>
+        <p>The smile logo <b>without the writing</b>, alone in its own pill. It ships as <span class="c">assets/smile-face.svg</span> — a verbatim crop of your original file (same paths, same fills, zero redraws), so it can never be mangled again.</p></div>
+      <div class="card"><h3><span class="dot"></span>TOP-LEFT · the full logo</h3>
+        <p>The complete logo <b>with the writing</b> plus the gold LIVE chip. In CINEMA's PURE mode this same pill becomes the <b>only</b> watermark on screen, docked top-left over the content.</p></div>
+      <div class="card"><h3><span class="dot"></span>TOP-RIGHT · socials + time</h3>
+        <p>Slightly taller pill. Rotates your handles one platform at a time — Instagram, Facebook, X, TikTok, YouTube, WhatsApp, <span class="c">#TradeSmile</span> — then shows the <b>EAT clock and live session</b> underneath.</p></div>
+      <div class="card"><h3><span class="dot"></span>BOTTOM · the ticker pill</h3>
+        <p>Fixed but pill-shaped (Island-R3 look, floating with margins). <b>Market data only while trading.</b> Sponsors and social handles appear exclusively in OFF-AIR mode (<span class="c">K</span>) — viewers never confuse an ad with a quote.</p></div>
+    </div>
+  </section>
 
   <section id="layers">
     <h2><span class="n">01</span>The one rule: layer order</h2>
@@ -122,124 +138,139 @@ td .gold{color:var(--gold)}
       <div class="step"><div class="t"><b>Open <span class="c">?cal=1</span></b> (append to the URL) — the scene draws dashed outlines on every hole and prints a live slot sheet with exact <span class="c">X · Y · W · H</span> values.</div></div>
       <div class="step"><div class="t"><b>Add your captures below the overlay</b>. For each hole: right-click source → Transform → Edit Transform → set Position X/Y and Size W/H from the slot sheet.</div></div>
       <div class="step"><div class="t"><b>Ratio mismatch?</b> Hold <span class="c">Alt</span> (Opt on macOS) and drag the red crop handles — crop the capture to the hole's aspect. The hole is transparent, so anything outside the slot never shows.</div></div>
-      <div class="step"><div class="t"><b>Save the scene as a preset</b> (“SMILE · STUDIO 2-CAM”, “SMILE · CINEMA”…). Switching layouts = switching OBS scenes; the overlay needs no touching. Remove <span class="c">?cal=1</span> when done.</div></div>
+      <div class="step"><div class="t"><b>Save the scene as a preset</b> (“SMILE · STUDIO 2-CAM”, “SMILE · CINEMA PURE”…). Switching layouts = switching OBS scenes; the overlay needs no touching. Remove <span class="c">?cal=1</span> when done.</div></div>
     </div>
   </section>
 
   <section id="sheets">
-    <h2><span class="n">03</span>Slot sheets (1920×1080)</h2>
+    <h2><span class="n">03</span>Slot sheets (1920×1080) — Round 4</h2>
     <p>Live-measured values are always available via <span class="c">?cal=1</span> in each scene. The tables below are the headline constants.</p>
     <table>
-      <tr><th style="width:130px">ISLAND R3</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
-      <tr><td class="gold">CAM hole</td><td>host webcam (portrait card, gold ring)</td><td class="c">320×400 @ 24,560</td></tr>
-      <tr><td class="gold">Island</td><td>— chrome, auto-centered, max 50% width</td><td class="c">≤960×64 @ centered, y22</td></tr>
-      <tr><td class="gold">Ticker</td><td>— chrome pill, centered</td><td class="c">≤1190×56 @ centered, y1000</td></tr>
-      <tr><td class="gold">Alerts</td><td>— engine zone, bottom-right</td><td class="c">380-wide @ right24, bottom96</td></tr>
+      <tr><th style="width:130px">STUDIO R4</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CAM</td><td>host webcam — fixed 16:9 of the rail (never a phone-strip)</td><td class="c">400×225-hole @ 24,112</td></tr>
+      <tr><td class="gold">AD</td><td>sponsor video/banner — keeps its own aspect (<span class="c">D</span> cycles 16:9 · 3:1 · 1:1 · 9:16)</td><td class="c">400-wide @ 24,351 — height by aspect</td></tr>
+      <tr><td class="gold">CHAT</td><td>— rendered module (no capture), absorbs all leftover rail space</td><td class="c">400-wide @ 24, ~590→986</td></tr>
+      <tr><td class="gold">STAGE</td><td>display / window capture (<span class="c">R</span>: 16:9 · 16:10 · fill)</td><td class="c">≈1424×774-hole @ 444,112</td></tr>
+      <tr><td class="gold">SWAP</td><td><span class="c">S</span> mirrors the whole layout (rail right, stage left)</td><td class="c">same values, mirrored</td></tr>
+      <tr><td class="gold">TICKER</td><td>— chrome pill, centered, market-only</td><td class="c">≤1420×54 @ centered, y1002</td></tr>
     </table>
     <table>
-      <tr><th style="width:130px">STUDIO</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
-      <tr><td class="gold">STAGE</td><td>display / window capture (16:9 default, <span class="c">R</span> cycles 16:10 · 4:3 · fill)</td><td class="c">1052×592 @ ~362,278</td></tr>
-      <tr><td class="gold">CAM 1..N</td><td>webcams — <span class="c">?cams=N</span> or keys 1–4</td><td class="c">276-wide holes @ x24, y144↓</td></tr>
-      <tr><td class="gold">WINDOW A</td><td>MT5 / TradingView window</td><td class="c">420×266-hole @ 1452,144</td></tr>
-      <tr><td class="gold">WINDOW B</td><td>browser / research window</td><td class="c">420×208-hole @ 1452,450</td></tr>
-      <tr><td class="gold">SPONSOR</td><td>banner / video card</td><td class="c">416-hole @ 1452,698</td></tr>
-      <tr><td class="gold">BAND</td><td>— reserved ticker band · never place captures here</td><td class="c">1920×52 @ 0,1028</td></tr>
+      <tr><th style="width:130px">CINEMA R4</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CONTENT (PURE)</td><td>one fullscreen display capture, aspect-locked (<span class="c">R</span>: 16:9 · 1.85 · 2.39) — watermark pill is the only chrome</td><td class="c">1892×1052-hole max @ 14,14 (16:9 → 1870×1052 centered)</td></tr>
+      <tr><td class="gold">CONTENT (BEZEL)</td><td>same card, living inside the bezel with chrome pills + ticker</td><td class="c">16:9 → ≈1596×898-hole centered in y112–986</td></tr>
+      <tr><td class="gold">CAM LAYER</td><td>optional commentary/translator cam above content (<span class="c">V</span>: off → bottom-right → top-right)</td><td class="c">300×188 @ 1596,748 / 100</td></tr>
     </table>
     <table>
-      <tr><th style="width:130px">CINEMA</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
-      <tr><td class="gold">CONTENT</td><td>one fullscreen display capture, aspect-locked (<span class="c">R</span>: 16:9 · 1.85 · 2.39)</td><td class="c">1594×896 @ 163,116</td></tr>
-      <tr><td class="gold">CAM LAYER</td><td>optional commentary cam above content (<span class="c">V</span>: off → bottom-right → top-right)</td><td class="c">300×188 @ 1596,748 / 92</td></tr>
-      <tr><td class="gold">BAND</td><td>— permanent Yahoo-style ticker</td><td class="c">1920×52 @ 0,1028</td></tr>
+      <tr><th style="width:130px">DESK</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CAM</td><td>instructor webcam</td><td class="c">688×280-hole @ 1208,706</td></tr>
+      <tr><td class="gold">—</td><td>chart, chapters, next-lesson ring are rendered (no captures)</td><td class="c">alerts fire CENTRE above the ticker here</td></tr>
     </table>
     <table>
-      <tr><th style="width:130px">MONITOR</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
-      <tr><td class="gold">—</td><td>no captures: pure overlay ambience (chart, depth, heat, watchlist all rendered live)</td><td class="c">drop it in, done</td></tr>
+      <tr><th style="width:130px">PANEL</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">CAM 1..N</td><td>guest webcams, 16:9 holes across the top (<span class="c">?g=2..5</span> or keys 2–5)</td><td class="c">4 guests → 453×255-holes @ y112, x24↓</td></tr>
+      <tr><td class="gold">STAGE</td><td>display / window capture under the guest row (<span class="c">S</span> swaps with chat)</td><td class="c">≈1152×503-hole @ 38,398</td></tr>
+    </table>
+    <table>
+      <tr><th style="width:130px">MONITOR R4 / ISLAND R4</th><th>Capture slot</th><th style="width:230px">Position &amp; size</th></tr>
+      <tr><td class="gold">MONITOR</td><td>no captures: pure overlay ambience (chart, depth, heat, watchlist all rendered live)</td><td class="c">drop it in, done</td></tr>
+      <tr><td class="gold">ISLAND R4 CAM</td><td>host webcam, portrait card with gold ring (<span class="c">P</span> = smile avatar)</td><td class="c">320×400-hole @ 24,560</td></tr>
     </table>
   </section>
 
   <section id="cams">
-    <h2><span class="n">04</span>Multi-cam presets</h2>
-    <p>The studio auto-arranges its person deck to the host count — the holes resize so every webcam keeps a sensible framing.
-    Set it once with the URL (<span class="c">studio.html?cams=3</span>) or live with keys <span class="c">1–4</span>.</p>
-    <table>
-      <tr><th>Cams</th><th>Deck layout (left column)</th><th>Typical show</th></tr>
-      <tr><td class="gold"><b>1</b></td><td>one portrait card <span class="c">300×460</span></td><td>solo desk · market open close reads</td></tr>
-      <tr><td class="gold"><b>2</b></td><td>two cards <span class="c">300×420</span> stacked</td><td>host + analyst (default)</td></tr>
-      <tr><td class="gold"><b>3</b></td><td>three cards <span class="c">300×340</span></td><td>panel + chart in stage</td></tr>
-      <tr><td class="gold"><b>4</b></td><td>four cards <span class="c">300×260</span></td><td>full desk · opening-bell battle format</td></tr>
-    </table>
-    <p>Names and roles (HOST · ANALYST · CO-HOST · GUEST) auto-label each card; the cal sheet reprints per count.</p>
+    <h2><span class="n">04</span>Cams &amp; guests — no more phone-strip webcams</h2>
+    <p>R3's tall person-deck made a lone 16:9 webcam read like a phone video. Round 4 fixes it two ways:</p>
+    <div class="cards">
+      <div class="card"><h3><span class="dot"></span>STUDIO R4 — the 3-module rail</h3>
+        <p>One side column holds <b>exactly three things: Camera · AD · Chat</b>. The camera is a full 16:9 of the rail (400×225) with its nameplate; the AD keeps whatever aspect its video actually is (16:9, 3:1 banner, 1:1, 9:16 — cycle with <span class="c">D</span>) and <b>chat absorbs the rest</b>. Priority is protected: cam and chat never shrink for the ad. <span class="c">S</span> swaps the rail to the other side.</p></div>
+      <div class="card"><h3><span class="dot"></span>PANEL — round-table format</h3>
+        <p>For 3–5 people: guests as <b>16:9 cards across the top</b> (2–5 via keys or <span class="c">?g=N</span>), display capture + chat below. An auto-rotating <b>gold spotlight</b> marks the active speaker with an “ON THE DESK” banner (<span class="c">E</span> to force). Nobody's cam is ever a weird ratio.</p></div>
+    </div>
   </section>
 
   <section id="alerts">
-    <h2><span class="n">05</span>Alert engine — spam-proof by design</h2>
-    <p>Chat and tips arrive from <b>multiple platforms at once</b>, so the shared engine (assets/alert-engine.js) enforces hard limits:</p>
+    <h2><span class="n">05</span>Alert engine v2 — normal toasts, honest limits</h2>
+    <p>Built on your feedback: no more ×N merge counters — <b>the same person repeating inside 9 seconds is silently dropped</b>, like a moderation rule. What renders is a plain toast stack:</p>
     <div class="cards">
-      <div class="card"><h3><span class="dot"></span>What it does</h3>
-        <p><b>Max 2 cards on screen</b> (URL-tunable). Everything else waits in a queue of 12.</p>
-        <p><b>Queue full?</b> Low-priority events (follows) are dropped first — tips and raids always survive.</p>
-        <p><b>Same person spams?</b> Their repeats <b>merge into one card</b> with a ×N counter for 9s — no stack, no flood.</p>
-        <p><b>Auto-dismiss</b> with a progress bar; cards exit cleanly and the queue pumps the next one.</p></div>
-      <div class="card"><h3><span class="dot"></span>Tune it with the URL</h3>
-        <p><span class="c">?amax=3</span> — max cards on screen (1–4)</p>
-        <p><span class="c">?adur=9</span> — seconds per card (default 7)</p>
-        <p><span class="c">?aq=16</span> — queue capacity (default 12)</p>
-        <p><span class="c">?ademo=1</span> — demo loop for rehearsals</p>
-        <p style="margin-top:8px">Keys: <span class="c">A</span> one alert · <span class="c">Shift+A</span> spam storm (6 fast — proves the cap) · <span class="c">X</span> clear.</p></div>
+      <div class="card"><h3><span class="dot"></span>What it does now</h3>
+        <p><b>Toasts stack like normal toasts</b> — newest enters at the bottom (closest to the ticker), older ones sit above.</p>
+        <p><b>The zone has a max height</b> (42% of the screen, URL-tunable). When the stack grows past it, the <b>oldest toast leaves first</b> — the content can never be buried.</p>
+        <p><b>Max 3 live</b> by default (<span class="c">?amax</span>), queue capped at 10; follows drop before tips; trades/lessons/news jump the queue.</p>
+        <p><b>Restyled pill cards:</b> quiet dark glass, rounded 20, gold type chip, hairline progress — no loud colour bars.</p></div>
+      <div class="card"><h3><span class="dot"></span>Placement A/B + types</h3>
+        <p><span class="c">Z</span> cycles the zone <b>left → centre → right</b>, always just above the ticker. STUDIO R4 defaults LEFT, DESK defaults CENTRE — run both and keep the winner.</p>
+        <p>New event types: <span class="c">NEXT LESSON</span> · <span class="c">CLOSE TRADE</span> (green/red by side) · <span class="c">MARKET FLASH</span> alongside tips, subs, follows, raids, questions — each with its multiplatform badge.</p>
+        <p style="margin-top:8px">Tune: <span class="c">?amax=3 ?adur=8 ?amaxh=42 ?ademo=1</span> · Keys: <span class="c">A</span> one · <span class="c">⇧A</span> stress (6 distinct users) · <span class="c">X</span> clear.</p></div>
     </div>
-    <p>Platform badges (YouTube · Twitch · TikTok · X · Kick) color-code each event, wired for multiplatform streams.</p>
   </section>
 
   <section id="sponsor">
-    <h2><span class="n">06</span>Sponsor &amp; social system</h2>
-    <p>Sponsors appear in three coordinated places — all editable in one array (<span class="c">TK</span>) near the top of each scene's script:</p>
+    <h2><span class="n">06</span>Sponsors &amp; socials — visible, but never confusing</h2>
+    <p>The rule you set: <b>while trading, the ticker carries market data only.</b> Sponsor content appears in exactly three places:</p>
     <table>
-      <tr><th>Placement</th><th>What it looks like</th><th>How to edit</th></tr>
-      <tr><td class="gold">TICKER · AD chip</td><td>gold pill inside the ticker: “AD · SMILE QUANTUM — INVEST FROM 100 KES”</td><td>rows with <span class="c">type 2</span> in the <span class="c">TK</span> array</td></tr>
-      <tr><td class="gold">TICKER · social</td><td>dynamic hashtags &amp; handles: <span class="c">#TradeSmile</span> · <span class="c">@smile.co.ke</span></td><td>rows with <span class="c">type 3</span> in <span class="c">TK</span></td></tr>
-      <tr><td class="gold">SPONSOR CARD</td><td>dedicated banner/video card (studio right rail; island3 via <span class="c">S</span>) with a transparent hole or MP4</td><td>drop a <span class="c">&lt;video src=…&gt;</span> or banner URL into the card's hole</td></tr>
+      <tr><th>Placement</th><th>What it looks like</th><th>When</th></tr>
+      <tr><td class="gold">OFF-AIR ticker</td><td>gold AD chips + <span class="c">#TradeSmile</span> / <span class="c">@smile.co.ke</span> — press <span class="c">K</span> in any scene to preview</td><td>only when you're not trading</td></tr>
+      <tr><td class="gold">AD card (STUDIO rail)</td><td>its own capture hole — banner or video, any aspect, letterboxed with brand gutters</td><td>whenever a sponsor is booked</td></tr>
+      <tr><td class="gold">Social pill (top-right)</td><td>rotating platform logo + handle, one at a time, always elegant</td><td>always — it's identity, not an ad</td></tr>
     </table>
-    <p>Keep sponsor copy short and caps-light — the gold chip already carries the brand; the ticker keeps it on screen ~every 40s.</p>
+    <p>All handles live in one array (<span class="c">SOCIALS</span> in <span class="c">assets/chrome.js</span>) and all off-air ticker copy in <span class="c">OFFAIR</span> — edit once, every scene updates.</p>
   </section>
 
   <section id="keys">
     <h2><span class="n">07</span>Keymaps (per scene, when the browser source has focus)</h2>
     <table>
       <tr><th style="width:120px">Scene</th><th>Keys</th></tr>
-      <tr><td class="gold">ISLAND R3</td><td><span class="c">I</span> island size (compact→standard→wide) · <span class="c">L</span> lower third · <span class="c">S</span> sponsor card · <span class="c">P</span> avatar · <span class="c">V</span> backdrop · <span class="c">C</span> calibrate · <span class="c">A/⇧A/X</span> alerts · <span class="c">H</span> hide UI</td></tr>
-      <tr><td class="gold">STUDIO</td><td><span class="c">1–4</span> cam count · <span class="c">R</span> stage aspect · <span class="c">P</span> placeholders · <span class="c">C</span> calibrate · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
-      <tr><td class="gold">CINEMA</td><td><span class="c">N</span> island wide (now-showing) · <span class="c">V</span> cam layer · <span class="c">P</span> avatar · <span class="c">R</span> aspect · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
-      <tr><td class="gold">MONITOR</td><td><span class="c">1–4</span> symbol · <span class="c">T</span> fx ↔ ticker band · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">STUDIO R4</td><td><span class="c">D</span> ad aspect · <span class="c">S</span> swap sides · <span class="c">R</span> stage aspect · <span class="c">P</span> avatar · <span class="c">O</span> placeholders · <span class="c">Z</span> alert zone · <span class="c">K</span> off-air · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">CINEMA R4</td><td><span class="c">F</span> pure ↔ bezel · <span class="c">V</span> cam layer · <span class="c">P</span> avatar · <span class="c">A</span> alerts on/off · <span class="c">R</span> aspect · <span class="c">Z</span> · <span class="c">C</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">ISLAND R4</td><td><span class="c">I</span> island size · <span class="c">L</span> lower third · <span class="c">S</span> sponsor card · <span class="c">P</span> avatar · <span class="c">Z</span> · <span class="c">K</span> · <span class="c">V</span> backdrop · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">MONITOR R4</td><td><span class="c">1–4</span> symbol · <span class="c">T</span> band fx ↔ markets ↔ off-air · <span class="c">Z</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">DESK</td><td><span class="c">N</span> next chapter · <span class="c">P</span> avatar · <span class="c">Z</span> · <span class="c">K</span> · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
+      <tr><td class="gold">PANEL</td><td><span class="c">2–5</span> guests · <span class="c">E</span> spotlight · <span class="c">S</span> swap chat/stage · <span class="c">R</span> stage aspect · <span class="c">P/O</span> avatar/placeholders · <span class="c">Z</span> · <span class="c">C</span> · <span class="c">A/⇧A/X</span> · <span class="c">H</span></td></tr>
     </table>
-    <p><span class="c">?g=1</span> on any scene = gallery mode (keys hidden, alerts quiet) for screenshots of the lab index.</p>
+    <p><span class="c">?g=1</span> on any scene = gallery mode (keys hidden, alerts quiet). <span class="c">?apos=left|center|right</span> sets the alert zone on load.</p>
+  </section>
+
+  <section id="shapes">
+    <h2><span class="n">08</span>Shape language — the system around the smile</h2>
+    <p>The logo is a <b>circle and an arc</b>. Everything in the kit inherits from those two:</p>
+    <div class="cards">
+      <div class="card"><h3><span class="dot"></span>1 · Pill — chrome</h3>
+        <p>Ticker, alerts, chips, name tags, the top pills. A pill is a stretched circle: it echoes the face, reads friendly, and never competes with it. <b>Yes — pill is the best container.</b></p></div>
+      <div class="card"><h3><span class="dot"></span>2 · Squircle — cards</h3>
+        <p>Content cards use 18–30px continuous radii: soft enough to belong to a circle-first brand, rigid enough to frame captures honestly.</p></div>
+      <div class="card"><h3><span class="dot"></span>3 · Arc — accents</h3>
+        <p>The smile's curve reused as progress rings (DESK's lesson countdown), underlines, and the ghost watermark on charts. The most literal tie-back we have.</p></div>
+      <div class="card"><h3><span class="dot"></span>4 · Circle — status</h3>
+        <p>Dots, avatars, LIVE beads. Never triangles or hexagons anywhere — sharp corners fight the face.</p></div>
+    </div>
   </section>
 
   <section id="faq">
-    <h2><span class="n">08</span>FAQ — the honest answers</h2>
+    <h2><span class="n">09</span>FAQ — the honest answers</h2>
     <div class="faq">
       <div class="q"><div class="qq">Can one HTML file control my camera and window captures?</div>
         <div class="aa"><b>No — by design.</b> OBS browser sources are sandboxed web pages; OBS itself composites camera/window/display captures.
         That's why the kit is built as chrome-with-holes: the overlay draws the brand, you place the captures underneath using the
         cal sheet. Setup is <b>once per scene preset</b>, then it's just scene switching in OBS.</div></div>
-      <div class="q"><div class="qq">My monitor isn't 1920×1080 — will it look wonky?</div>
-        <div class="aa">No. Every scene renders a 1920×1080 composition and <b>letterbox-scales to the exact browser-source size</b>
-        with proportional fit — 4K, 1440p, 1366×768, anything. Keep the OBS source at 1920×1080 for a 1:1 pixel match, and the
-        stream canvas can be any resolution: the whole composition scales as one unit.</div></div>
-      <div class="q"><div class="qq">What if my webcam is 4:3 but the hole is portrait?</div>
-        <div class="aa">The holes are transparent, so a mismatched capture simply never shows outside the slot. Set the slot size from
-        the cal sheet, then <b>Alt-drag the red handles</b> to crop the capture to the hole's ratio. If you'd rather letterbox than crop,
-        the scene backdrop is brand ink — not raw black — so bars look intentional.</div></div>
+      <div class="q"><div class="qq">Will people on phones actually be able to read this?</div>
+        <div class="aa">The 1080p canvas letterbox-scales to any window, and since Round 4 there's a hard <b>legibility floor</b>: nothing
+        below 12px, prices ≥ 14px semibold, contrast lifted on all data text. The design is TV-first on purpose — when a phone viewer
+        sees the stream, the numbers survive the downscale.</div></div>
       <div class="q"><div class="qq">Viewers spam alerts across YouTube + Twitch + TikTok — will it block the screen?</div>
-        <div class="aa">Never more than <span class="c">amax</span> cards render, repeats from one person merge into a ×N counter, and the
-        queue drops follows before tips. Run <span class="c">Shift+A</span> (storm test) before you go live to watch it behave.</div></div>
+        <div class="aa">The stack is capped: max 3 toasts, a 42%-height ceiling with the oldest leaving first, and same-person repeats
+        inside 9s are dropped outright. Run <span class="c">⇧A</span> (stress test) before going live to watch it behave.</div></div>
       <div class="q"><div class="qq">Full-screen segment — I don't want anything on screen.</div>
-        <div class="aa">That's <b>CINEMA</b>: one colossal aspect-locked card, a top-left watermark inside the frame, the permanent bottom
-        ticker and lower-left alerts — nothing else. The island stays centered ≤50% width, expanding only when you press <span class="c">N</span>
-        to name what's showing. Cam stays optional above the content for translators/commentary (<span class="c">V</span>).</div></div>
+        <div class="aa">CINEMA R4 · <b>PURE</b>: one colossal aspect-locked card, the logo-with-writing pill as the sole watermark top-left,
+        everything else off — alerts included until you press <span class="c">A</span>. If you want chrome back without losing the cinematic
+        feel, <span class="c">F</span> flips to BEZEL: pills + ticker inside a rounded device frame, content untouched.</div></div>
+      <div class="q"><div class="qq">Why pills everywhere — is that really the right shape?</div>
+        <div class="aa">Yes — for containers. Your logo is a circle + arc; the pill is the circle's natural extrusion, so chrome built from
+        pills always matches. Cards use gentler squircles so captures have room, and the arc itself returns as progress rings and the
+        chart watermark. Sharp shapes never enter the kit. Full rationale on the lab index.</div></div>
     </div>
     <div class="sc-link">
-      <a href="island3.html">→ ISLAND R3</a><a href="studio.html">→ STUDIO</a><a href="cinema.html">→ CINEMA</a>
-      <a href="monitor.html">→ MONITOR</a><a href="index.html">← LAB INDEX</a>
+      <a href="studio4.html">→ STUDIO R4</a><a href="cinema4.html">→ CINEMA R4</a><a href="monitor4.html">→ MONITOR R4</a>
+      <a href="island4.html">→ ISLAND R4</a><a href="desk.html">→ DESK</a><a href="panel.html">→ PANEL</a><a href="index.html">← LAB INDEX</a>
     </div>
   </section>
 </div>
