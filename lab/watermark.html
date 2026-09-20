@@ -290,7 +290,7 @@ body.calm .prog{display:none}
       <li><b>Sizing law:</b> the face mark carries recognition — size the <b>mark</b>, not the text. Desktop audience → <b>L</b>. Phone-heavy audience → <b>XL</b>. Never below <b>M</b>. The phone frames in the panel are the judge.</li>
       <li><b>Location law:</b> <b>top-left</b> is the default — first thing the eye lands on, zero collisions (cams and alert toasts live bottom-right, clock chips top-right, lower-thirds own bottom-left). Switch to <b>top-right</b> only when a webcam runs bottom-right fullscreen. Bottom-right is the stinger's home — if the watermark ever sits there, the stinger politely stacks above it.</li>
       <li><b>Shape law:</b> pill — per the Round-4 verdict, the stadium is the circle's natural extrusion. V4 (bare) and V7 (outline) exist so you can see the pill earn its keep against bright and busy content.</li>
-      <li><b>The recommendation:</b> V2 morph, top-left, size L + V6 stingers, bottom-right, regular + your merged ticker pill when overlays come back from pause. That's all three jobs, composed.</li>
+      <li><b>The recommendation — now your verdict:</b> <b>V4 BARE, top-left, size L (72px)</b> — quiet identity that never annoys — + stingers bottom-right for the asks, + your merged ticker pill when overlays come back from pause. That's all three jobs, composed.</li>
       <li><b>Cinema:</b> scrapped, as ordered — delisted from the tournament. Its only survivor is this lab: the watermark it carried, now designed properly on its own.</li>
     </ul>
   </div>
@@ -309,9 +309,9 @@ function rand(a,b){return a+Math.random()*(b-a)}
 /* ---------- state ---------- */
 var POS=['tl','tr','br','bl'],SIZES=['s','m','l','xl'],SZPX={s:48,m:60,l:72,xl:88};
 var S={
-  v:clamp(parseInt(G.get('v')||'2',10)||2,1,7),
+  v:clamp(parseInt(G.get('v')||'4',10)||4,1,7),
   pos:POS.indexOf(G.get('pos'))>-1?G.get('pos'):'tl',
-  size:SIZES.indexOf(G.get('size'))>-1?G.get('size'):'m',
+  size:SIZES.indexOf(G.get('size'))>-1?G.get('size'):'l',
   op:clamp(parseInt(G.get('op')||'95',10)||95,50,100),
   anim:['none','breathe','sheen'].indexOf(G.get('anim'))>-1?G.get('anim'):'breathe',
   speed:clamp(parseFloat(G.get('speed')||'5')||5,3,9),

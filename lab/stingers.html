@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE LAB — THE STINGERS · LIQUID GLASS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0A0C14; --panel:#10131D; --line:rgba(255,255,255,.08); --muted:rgba(255,255,255,.55);
+    --gold:#FFCE00; --ink:#1F1702; --up:#0ECB81; --down:#F6465D; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:#fff; font-family:'Inter',-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased; letter-spacing:-.015em; overflow-x:hidden; }
+  .wrap { max-width:1240px; margin:0 auto; padding:46px 32px 80px; }
+  .kick { font:600 11px 'IBM Plex Mono',monospace; letter-spacing:.28em; color:var(--gold); margin-bottom:18px; }
+  h1 { font-size:clamp(30px,4.4vw,46px); font-weight:800; letter-spacing:-.03em; line-height:1.06; }
+  h1 span { color:var(--gold); }
+  .lede { margin:18px 0 0; max-width:900px; font-size:15px; line-height:1.65; color:var(--muted); }
+  .lede b { color:#fff; font-weight:600; }
+  .recap { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .recap i { font:600 11px 'IBM Plex Mono',monospace; letter-spacing:.08em; font-style:normal;
+    padding:7px 12px; border-radius:9px; background:rgba(255,206,0,.1);
+    box-shadow:inset 0 0 0 1px rgba(255,206,0,.3); color:var(--gold); }
+  .recap i.ghost { background:rgba(255,255,255,.04); box-shadow:inset 0 0 0 1px var(--line); color:var(--muted); }
+
+  .rlabel { display:flex; align-items:center; gap:16px; margin:44px 0 18px; }
+  .rlabel .t { font:600 11px 'IBM Plex Mono',monospace; letter-spacing:.24em; color:#fff; white-space:nowrap; }
+  .rlabel .ln { height:1px; background:var(--line); flex:1; }
+
+  /* direction blocks */
+  .dir { background:var(--panel); border-radius:22px; box-shadow:inset 0 0 0 1px var(--line);
+    overflow:hidden; margin-bottom:26px; }
+  .dirhead { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; padding:20px 24px 14px; }
+  .dirhead .no { font:600 10px 'IBM Plex Mono',monospace; letter-spacing:.2em; color:var(--gold); }
+  .dirhead h3 { font-size:19px; font-weight:800; letter-spacing:-.02em; }
+  .dirhead .taste { font-size:12.5px; color:var(--muted); flex-basis:100%; line-height:1.5; }
+  .frame { position:relative; width:100%; aspect-ratio:16/9; background:#070A12; cursor:pointer; }
+  .frame iframe { position:absolute; top:0; left:0; width:1920px; height:1080px;
+    border:0; transform-origin:top left; }
+  .frametip { position:absolute; right:12px; bottom:10px; font:600 10px 'IBM Plex Mono',monospace;
+    letter-spacing:.14em; color:rgba(255,255,255,.75); background:rgba(8,10,16,.72);
+    padding:6px 10px; border-radius:8px; pointer-events:none; backdrop-filter:blur(6px); }
+  .links { display:flex; gap:8px; flex-wrap:wrap; padding:14px 24px 20px; }
+  .links a { font:600 10.5px 'IBM Plex Mono',monospace; letter-spacing:.1em; text-decoration:none;
+    color:var(--muted); padding:8px 12px; border-radius:9px; background:rgba(255,255,255,.04);
+    box-shadow:inset 0 0 0 1px var(--line); transition:.18s; }
+  .links a:hover { color:var(--gold); box-shadow:inset 0 0 0 1px rgba(255,206,0,.4); }
+  .links a.hot { color:var(--gold); box-shadow:inset 0 0 0 1px rgba(255,206,0,.4); }
+
+  /* guide */
+  .guide { background:var(--panel); border-radius:22px; box-shadow:inset 0 0 0 1px var(--line);
+    padding:26px 28px; margin-top:44px; }
+  .guide h2 { font-size:17px; font-weight:800; letter-spacing:-.02em; margin-bottom:14px; }
+  .guide p { font-size:13.5px; line-height:1.7; color:var(--muted); margin-bottom:12px; }
+  .guide p b { color:#fff; font-weight:600; }
+  .guide .gold { color:var(--gold); font-weight:600; }
+  table { width:100%; border-collapse:collapse; margin-top:6px; }
+  td,th { text-align:left; padding:9px 12px; font-size:12.5px; border-bottom:1px solid var(--line); }
+  th { font:600 10px 'IBM Plex Mono',monospace; letter-spacing:.18em; color:var(--gold); }
+  td:first-child { font:600 11px 'IBM Plex Mono',monospace; color:#fff; white-space:nowrap; }
+  td { color:var(--muted); }
+  .credit { margin-top:14px; font-size:12px; line-height:1.7; color:var(--muted); }
+  .credit a { color:var(--gold); text-decoration:none; }
+  footer { margin-top:40px; text-align:center; font:600 10px 'IBM Plex Mono',monospace;
+    letter-spacing:.22em; color:rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">SMILE LAB · THE STINGERS · APPLE LIQUID GLASS ROUND</div>
+  <h1>The stingers, rebuilt in <span>liquid glass.</span><br>Three directions. One material truth.</h1>
+  <p class="lede">Your verdict is banked: <b>watermark = BARE + Large 72px</b> — the lab now opens that way. This round is the <b>stingers alone</b>, rebuilt as Apple's Liquid Glass: real refraction (SVG displacement maps ported from open source), specular rims, obsidian dark mode, and premium 3D money moments — <b>Super Thanks, M-PESA tips, Cheers</b>. Three agents built three directions; every card then went through a harsh critique round (contrast, spacing, material, motion) and was refined to zero rough edges.</p>
+  <div class="recap">
+    <i>WATERMARK → BARE · L · TOP-LEFT (YOUR CALL)</i>
+    <i class="ghost">TECHNIQUE: NIKDELVIN/LIQUID-GLASS PORT · NOT AI SLOP</i>
+    <i class="ghost">CLICK ANY PREVIEW TO FIRE A STINGER</i>
+  </div>
+
+  <div class="rlabel"><span class="t">THREE DIRECTIONS — JUDGE THE MATERIAL, THEN THE MOTION</span><span class="ln"></span></div>
+
+  <div class="dir">
+    <div class="dirhead">
+      <span class="no">SG · D1</span><h3>CLEAR — the elegant one</h3>
+      <span class="taste">White frosted glass, ink text, gold verbs. Apple-light: App Store cards, visionOS panels. SUBSCRIBE · FOLLOW · SMASH LIKE · #TradeSmile. The proven shapes, wearing the real material.</span>
+    </div>
+    <div class="frame" data-src="stingers-clear.html?g=1"><iframe loading="lazy" title="clear direction"></iframe><span class="frametip">LIVE PREVIEW · CLICK TO FIRE</span></div>
+    <div class="links">
+      <a class="hot" href="stingers-clear.html" target="_blank">OPEN FULL 1920×1080</a>
+      <a href="stingers-clear.html?obs=1&type=subscribe" target="_blank">OBS · SUBSCRIBE</a>
+      <a href="stingers-clear.html?obs=1&type=follow" target="_blank">OBS · FOLLOW</a>
+      <a href="stingers-clear.html?obs=1&type=like" target="_blank">OBS · LIKE</a>
+      <a href="stingers-clear.html?obs=1&type=tag" target="_blank">OBS · #TRADESMILE</a>
+      <a href="stingers-clear.html?bg=bright" target="_blank">BRIGHT STAGE TEST</a>
+    </div>
+  </div>
+
+  <div class="dir">
+    <div class="dirhead">
+      <span class="no">SG · D2</span><h3>OBSIDIAN — the cinematic one</h3>
+      <span class="taste">Black volcanic glass, crisp specular rims, one platform accent per card — YouTube red, Twitch purple, smile gold. SUBSCRIBE · FOLLOW · TIP THE DESK · SUPER THANKS · #TradeSmile. Night-mode Apple keynote.</span>
+    </div>
+    <div class="frame" data-src="stingers-obsidian.html?g=1"><iframe loading="lazy" title="obsidian direction"></iframe><span class="frametip">LIVE PREVIEW · CLICK TO FIRE</span></div>
+    <div class="links">
+      <a class="hot" href="stingers-obsidian.html" target="_blank">OPEN FULL 1920×1080</a>
+      <a href="stingers-obsidian.html?obs=1&type=subscribe" target="_blank">OBS · SUBSCRIBE</a>
+      <a href="stingers-obsidian.html?obs=1&type=tip" target="_blank">OBS · TIP THE DESK</a>
+      <a href="stingers-obsidian.html?obs=1&type=super" target="_blank">OBS · SUPER THANKS</a>
+      <a href="stingers-obsidian.html?obs=1&type=tag" target="_blank">OBS · #TRADESMILE</a>
+      <a href="stingers-obsidian.html?bg=bright" target="_blank">BRIGHT STAGE TEST</a>
+    </div>
+  </div>
+
+  <div class="dir">
+    <div class="dirhead">
+      <span class="no">SG · D3</span><h3>SPECTACLE — the money moments</h3>
+      <span class="taste">Reserved for PAID events: a 3D gold coin engraved with the smile face flipping in for Super Thanks, an M-PESA app tile for Kenyan tips (KSh count-up), a recut jewel for Cheers, a swinging bell for subscribes. Both materials: ?theme=clear | obsidian.</span>
+    </div>
+    <div class="frame" data-src="stingers-spectacle.html?g=1"><iframe loading="lazy" title="spectacle direction"></iframe><span class="frametip">LIVE PREVIEW · CLICK TO FIRE</span></div>
+    <div class="links">
+      <a class="hot" href="stingers-spectacle.html" target="_blank">OPEN FULL 1920×1080</a>
+      <a href="stingers-spectacle.html?obs=1&type=super" target="_blank">OBS · SUPER THANKS</a>
+      <a href="stingers-spectacle.html?obs=1&type=tip" target="_blank">OBS · M-PESA TIP</a>
+      <a href="stingers-spectacle.html?obs=1&type=cheer" target="_blank">OBS · CHEER</a>
+      <a href="stingers-spectacle.html?obs=1&type=sub" target="_blank">OBS · SUBSCRIBE</a>
+      <a href="stingers-spectacle.html?theme=obsidian" target="_blank">OBSIDIAN THEME</a>
+    </div>
+  </div>
+
+  <div class="guide">
+    <h2>How to choose — innovation vs proven, mapped</h2>
+    <p><b>The proven spine:</b> a glass card that says SUBSCRIBE or FOLLOW is the industry-standard pattern — every big stream runs some version of it. What changed here is the <span class="gold">material truth</span>: real edge refraction and specular rims ported from the best open-source iOS 26 recreations, not a blurred rectangle pretending to be glass. That alone separates you from the parody tier.</p>
+    <p><b>The innovation layer:</b> D3's money moments — a coin engraved with <span class="gold">your own smile face</span>, an M-PESA tile that Kenyan viewers instantly recognise, amount count-ups with tabular numerals. These are rare, physical and local: exactly the traits that make a "super thanks" feel like an event instead of a nag. Rarity is the point — if spectacle fires every five minutes it becomes noise; keep it for <b>paid interactions only</b>.</p>
+    <p><b>The recommendation:</b> D1 <b>CLEAR</b> as the daily driver (it is the same personality as your bare watermark — light, quiet, elegant), <b>OBSIDIAN</b> when the content runs dark, D3 <b>SPECTACLE</b> exclusively when money lands. If you want one answer to paste into OBS today: <span class="gold">stingers-clear.html?obs=1&amp;type=subscribe</span> as a browser source, bottom-right, above your capture.</p>
+    <table>
+      <tr><th>PARAM</th><th>VALUES</th><th>WHAT IT DOES</th></tr>
+      <tr><td>?obs=1</td><td>—</td><td>transparent 1920×1080 page, stinger only — browser-source it above any capture</td></tr>
+      <tr><td>?type=</td><td>per direction (see links)</td><td>isolates one stinger and loops it every 7–8s for framing tests</td></tr>
+      <tr><td>?theme=</td><td>clear | obsidian</td><td>D3's material (D1 is always clear, D2 always obsidian)</td></tr>
+      <tr><td>?bg=</td><td>chart | bright | dark | grad</td><td>judge the glass over your worst-case content</td></tr>
+      <tr><td>keys</td><td>1–4 / 1–5 · B · click</td><td>fire each stinger · cycle backgrounds · refire on click</td></tr>
+    </table>
+    <p class="credit">Material technique adapted 1:1 from open source: <a href="https://github.com/nikdelvin/liquid-glass" target="_blank" rel="noopener">nikdelvin/liquid-glass</a> (iOS 26 displacement-map recreation), <a href="https://github.com/Mael-667/Liquid-Glass-CSS" target="_blank" rel="noopener">Mael-667/Liquid-Glass-CSS</a>, <a href="https://github.com/Rethink-JS/rt-liquid-glass" target="_blank" rel="noopener">rt-liquid-glass</a>, and the layered method from CSS-Tricks' "Getting Clarity on Apple's Liquid Glass", following the <a href="https://developer.apple.com/videos/play/wwdc2025/219/" target="_blank" rel="noopener">WWDC25 "Meet Liquid Glass"</a> language. Built by three parallel agents, then every card survived a harsh critique round: gold-contrast rescue on bright stages, de-muddying clear-over-dark, gem → M-PESA tile, emoji hunting, margin audits. Shared core: <b>assets/liquid-glass.css · liquid-glass.js</b> — the watermark and the merged ticker can wear the same material next round.</p>
+  </div>
+
+  <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
+</div>
+<script>
+/* scale 1920×1080 iframes into their 16:9 frames */
+function fit() {
+  document.querySelectorAll('.frame').forEach(function (f) {
+    var ifr = f.querySelector('iframe');
+    if (!ifr) return;
+    if (!ifr.src) ifr.src = f.getAttribute('data-src');
+    var s = f.clientWidth / 1920;
+    ifr.style.transform = 'scale(' + s + ')';
+  });
+}
+addEventListener('resize', fit);
+fit();
+setTimeout(fit, 300);
+</script>
+</body>
+</html>

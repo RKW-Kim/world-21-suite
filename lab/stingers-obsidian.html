@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STINGERS — OBSIDIAN (smile.co.ke)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/liquid-glass.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0A0C14; }
+
+  /* ?obs=1 — truly transparent capture: html AND body, demo backdrop gone */
+  html.obs, body.obs { background:transparent !important; }
+  body.obs #chart, body.obs #bgLayer { display:none !important; }
+  body.obs #help, body.g #help { display:none !important; }
+
+  #stage { position:absolute; inset:0; }
+  #bgLayer { position:absolute; inset:0; display:none; }
+  #bgLayer.bright { display:block; background:linear-gradient(135deg,#F7F3EA,#E8DFC9 45%,#D9CBA6); }
+  #bgLayer.dark { display:block; background:linear-gradient(160deg,#0E1118,#131720 50%,#0B0D12); }
+  #bgLayer.grad { display:block; background:
+    radial-gradient(60% 90% at 20% 15%, rgba(255,206,0,.30), transparent 60%),
+    radial-gradient(55% 80% at 82% 80%, rgba(64,120,255,.22), transparent 60%),
+    linear-gradient(140deg,#151226,#1B1440 55%,#0D0B1A); }
+  #chart { position:absolute; inset:0; }
+
+  #dock { position:absolute; right:44px; bottom:44px; display:grid; }
+  /* all five wrappers share one cell — every stinger fires from the SAME anchor */
+  .stgw { grid-area:1 / 1; justify-self:end; position:relative; }
+
+  #help { position:absolute; left:20px; top:18px; font:600 12px/1.4 "Inter",system-ui,sans-serif;
+    letter-spacing:-.01em; color:rgba(255,255,255,.55); background:rgba(10,12,18,.55);
+    padding:9px 13px; border-radius:10px; backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); z-index:9; }
+
+  /* ================= OBSIDIAN MATERIAL (page-tuned; core files untouched) ================= */
+  .lg--obsidian { background:rgba(6,7,10,.62); }
+  .lg--obsidian .lg-tint {
+    background:
+      radial-gradient(42% 30% at 50% -6%, rgba(255,255,255,.11), transparent 70%),
+      radial-gradient(135% 110% at 50% -28%, rgba(255,255,255,.085), transparent 52%),
+      linear-gradient(180deg, rgba(20,22,28,.30) 0%, rgba(6,7,10,.34) 46%, rgba(2,3,5,.56) 100%);
+  }
+  .lg--obsidian .lg-rim {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.32),
+      inset 0 2px 5px -2px rgba(0,0,0,.60),   /* dark seam: glass thickness under the top light */
+      inset 0 -10px 16px -10px rgba(255,255,255,.05), /* faint bounce light off the surface below */
+      inset 0 -1px 0 rgba(255,255,255,.06),
+      inset 0 0 6px rgba(255,255,255,.06);
+  }
+  /* crisp 1px specular hairline — light source above, faint pickup at the very bottom */
+  .lg--obsidian .lg-rim::before {
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.52) 0%, rgba(255,255,255,.20) 28%,
+      rgba(255,255,255,.08) 56%, rgba(255,255,255,.13) 80%, rgba(255,255,255,.22) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite:exclude;
+  }
+  /* ONE accent per card: platform color tinted into the BOTTOM rim only */
+  .lg--obsidian .lg-rim::after {
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(0deg, var(--acc, transparent) 0%, transparent 45%);
+    opacity:var(--acc-o, 0);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite:exclude;
+  }
+
+  /* ================= CARDS ================= */
+  .stg { display:flex; align-items:center; gap:15px; padding:15px 30px 15px 15px;
+    cursor:pointer; opacity:0; visibility:hidden; pointer-events:none;
+    --acc:transparent; --acc-o:0; --glow:0 0 0 0 rgba(0,0,0,0);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; }
+  .stg.in, .stg.out { visibility:visible; pointer-events:auto; }
+  /* LG.glass lifts .ic/.tx into .lg-content — keep the icon+text row intact in there */
+  .stg .lg-content { display:flex; align-items:center; gap:15px; }
+  .stg.lg { box-shadow:
+    0 26px 68px rgba(0,0,0,.60),
+    0 4px 14px rgba(0,0,0,.45),
+    0 2px 7px rgba(0,0,0,.50),
+    var(--glow); }
+  /* obsidian over a light stage needs a heavier, warmer shadow to stay planted */
+  body.bg-bright .stg.lg { box-shadow:
+    0 34px 84px rgba(12,9,0,.55),
+    0 8px 22px rgba(12,9,0,.42),
+    0 3px 9px rgba(12,9,0,.45),
+    var(--glow); }
+
+  .stg[data-type="tip"]       { --acc:rgba(145,70,255,.95); --acc-o:.80; --glow:0 0 38px -6px rgba(145,70,255,.42); }
+  .stg[data-type="super"]     { --acc:rgba(255,206,0,.90);  --acc-o:.75; --glow:0 0 34px -8px rgba(255,206,0,.30); }
+  .stg[data-type="tag"]       { --acc:rgba(255,206,0,.90);  --acc-o:.70; }
+  .stg[data-type="subscribe"] { --glow:0 0 30px -10px rgba(255,0,51,.20); }
+
+  /* platform icons: dark inset circle (iOS-app-icon-on-glass), color lives in the glyph */
+  .stg .ic { width:50px; height:50px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:
+      radial-gradient(135% 135% at 30% 16%, rgba(255,255,255,.14), rgba(255,255,255,.03) 50%, rgba(0,0,0,.30) 100%),
+      rgba(8,10,14,.55);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.24),
+      inset 0 -1px 1px rgba(0,0,0,.60),
+      inset 0 0 0 1px rgba(255,255,255,.08),
+      0 2px 9px rgba(0,0,0,.40); }
+  .stg .ic svg { width:27px; height:27px; display:block;
+    filter:drop-shadow(0 0 8px var(--ig, rgba(0,0,0,0))); }
+  .stg[data-type="subscribe"] .ic svg { width:30px; height:30px; }
+
+  .stg .tx { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .stg .tx b { font-size:19.5px; font-weight:700; line-height:1.08; letter-spacing:-.028em;
+    color:#fff; text-shadow:0 1px 10px rgba(0,0,0,.35); white-space:nowrap; }
+  .stg .tx span { font-size:12.5px; font-weight:500; line-height:1.25; letter-spacing:-.006em;
+    color:rgba(255,255,255,.65); white-space:nowrap; }
+  .stg[data-type="tag"] .tx b em { font-style:normal; color:var(--lg-gold); }
+
+  /* sparks (restyle of core .lg-spark — round only) */
+  .lg-spark { z-index:6; }
+  .lg-spark.sp-purple { background:radial-gradient(circle at 35% 30%, #F0E4FF, #9146FF 55%, #3D1B78);
+    box-shadow:0 0 10px rgba(145,70,255,.60); }
+
+  /* subscribe: one thin red light-line sweeps under the card */
+  .pline { position:absolute; left:9%; right:9%; bottom:-5px; height:1.5px; border-radius:2px;
+    background:linear-gradient(90deg, rgba(255,0,51,0), rgba(255,0,51,.85) 24%, rgba(255,64,92,.9) 76%, rgba(255,0,51,0));
+    box-shadow:0 0 5px rgba(255,0,51,.35);
+    opacity:0; transform:scaleX(.02); transform-origin:left center; pointer-events:none; z-index:6; }
+  .stgw.run .pline { animation:plineRun 2.4s cubic-bezier(.25,.6,.2,1) .4s both; }
+  @keyframes plineRun {
+    0%   { opacity:0; transform:scaleX(.02); }
+    14%  { opacity:.9; }
+    76%  { opacity:.9; transform:scaleX(1); }
+    100% { opacity:0; transform:scaleX(1); }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="chart" width="1920" height="1080"></canvas>
+  <div id="bgLayer"></div>
+  <div id="help">1 SUBSCRIBE &middot; 2 FOLLOW &middot; 3 TIP &middot; 4 SUPER &middot; 5 #TradeSmile &middot; B background &middot; click card refires</div>
+  <div id="dock"></div>
+</div>
+
+<script src="assets/liquid-glass.js"></script>
+<script>
+var Q = new URLSearchParams(location.search);
+var OBS = Q.get('obs') === '1', G = Q.get('g') === '1';
+document.body.classList.toggle('obs', OBS);
+document.documentElement.classList.toggle('obs', OBS);
+if (G) document.body.classList.add('g');
+
+/* ---------- demo backdrop: random-walk chart so the glass has something to refract ---------- */
+var C = document.getElementById('chart'), X = C.getContext('2d');
+(function () {
+  var D = [], p = 640, D2 = [], q = 520, i;
+  for (i = 0; i < 130; i++) { D.push(p); p += (Math.random() - .47) * 9; D2.push(q); q += (Math.random() - .5) * 6.5; }
+  var lo = Math.min.apply(null, D), hi = Math.max.apply(null, D);
+  var lo2 = Math.min.apply(null, D2), hi2 = Math.max.apply(null, D2);
+  X.fillStyle = '#0A0C14'; X.fillRect(0, 0, 1920, 1080);
+  X.strokeStyle = 'rgba(255,255,255,.045)';
+  for (i = 0; i < 1920; i += 110) { X.beginPath(); X.moveTo(i, 0); X.lineTo(i, 1080); X.stroke(); }
+  for (i = 0; i < 1080; i += 85) { X.beginPath(); X.moveTo(0, i); X.lineTo(1920, i); X.stroke(); }
+  X.beginPath();
+  D2.forEach(function (v, ix) { var px = ix * 15, py = 960 - (v - lo2) / (hi2 - lo2) * 620; ix ? X.lineTo(px, py) : X.moveTo(px, py); });
+  X.strokeStyle = 'rgba(255,255,255,.14)'; X.lineWidth = 1.5; X.stroke();
+  X.beginPath();
+  D.forEach(function (v, ix) { var px = ix * 15, py = 950 - (v - lo) / (hi - lo) * 760; ix ? X.lineTo(px, py) : X.moveTo(px, py); });
+  X.strokeStyle = 'rgba(255,206,0,.85)'; X.lineWidth = 2.5; X.stroke();
+  X.lineTo(129 * 15, 1080); X.lineTo(0, 1080); X.closePath();
+  X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
+  var g = X.createRadialGradient(960, 540, 380, 960, 540, 1250);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.42)');
+  X.fillStyle = g; X.fillRect(0, 0, 1920, 1080);
+})();
+
+function bg(name) {
+  var b = document.getElementById('bgLayer');
+  var real = (name === 'bright' || name === 'dark' || name === 'grad');
+  b.className = real ? name : '';
+  C.style.display = real ? 'none' : 'block';
+  document.body.classList.toggle('bg-bright', name === 'bright');
+}
+var BGS = ['chart', 'bright', 'dark', 'grad'], curBg = 0;
+bg(BGS.indexOf(Q.get('bg')) > -1 ? Q.get('bg') : 'chart');
+
+/* ---------- icons (inline SVG, platform color as the glyph's own fill/glow) ---------- */
+var ICONS = {
+  youtube: '<svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><g transform="translate(.45 0)"><path fill="#FFFFFF" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z"/></g></svg>',
+  twitch: '<svg viewBox="0 0 24 24"><g transform="translate(0 1.4)"><path fill="#9146FF" d="M11.571 4.714h1.715v5.143h-1.715zm4.715 0H18v5.143h-1.714zM6 0 1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></g></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none"><g transform="translate(2.3 -1) scale(.666)"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FFCE00"/></g><circle cx="15" cy="15.4" r="5" fill="#0B0D12"/><circle cx="15" cy="15.4" r="4" fill="#FFCE00"/><circle cx="15" cy="15.4" r="2.3" fill="none" stroke="#1F1702" stroke-width="1.3"/></svg>',
+  tag: '<svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="11" rx="9.7" ry="8" fill="#FFCE00"/><path d="M6.5 17.6 4.6 21.4l5-1.6z" fill="#FFCE00"/><g transform="translate(.4 0)"><path d="M10.45 7.7 9.15 15.7M14.85 7.7l-1.3 8M7.7 10.2h8.9M7.4 13.2h8.9" stroke="#1F1702" stroke-width="1.5" stroke-linecap="round"/></g></svg>'
+};
+
+/* ---------- the five stingers: copy, accent, spark color, per-card glass tuning ---------- */
+var CARDS = {
+  subscribe: { label: 'SUBSCRIBE', sub: 'youtube.com/@smile.co.ke', icon: ICONS.youtube,
+    ig: 'rgba(255,0,51,.45)', spark: 'gold', line: true,
+    glass: { theme: 'obsidian', depth: 14, strength: 84, ca: 1.8, blur: 2.2, saturate: 1.35, brightness: .97 } },
+  follow: { label: 'FOLLOW', sub: '@smile.co.ke &middot; everywhere', icon: ICONS.x,
+    ig: 'rgba(255,255,255,.35)', spark: null,
+    glass: { theme: 'obsidian', depth: 14, strength: 80, ca: 1.5, blur: 2.0, saturate: 1.20, brightness: .95 } },
+  tip: { label: 'TIP THE DESK', sub: 'twitch.tv/smilecoke', icon: ICONS.twitch,
+    ig: 'rgba(145,70,255,.55)', spark: 'purple',
+    glass: { theme: 'obsidian', depth: 15, strength: 90, ca: 2.0, blur: 2.4, saturate: 1.50, brightness: .96 } },
+  super: { label: 'SUPER THANKS', sub: 'support the desk', icon: ICONS.heart,
+    ig: 'rgba(255,206,0,.50)', spark: 'gold',
+    glass: { theme: 'obsidian', depth: 14, strength: 84, ca: 1.8, blur: 2.2, saturate: 1.40, brightness: 1.0 } },
+  tag: { label: '<em>#</em>TradeSmile', sub: 'tag your setups', icon: ICONS.tag,
+    ig: 'rgba(255,206,0,.45)', spark: null,
+    glass: { theme: 'obsidian', depth: 14, strength: 82, ca: 1.7, blur: 2.2, saturate: 1.35, brightness: .98 } }
+};
+var ORDER = ['subscribe', 'follow', 'tip', 'super', 'tag'];
+
+var dock = document.getElementById('dock'), wraps = {};
+ORDER.forEach(function (t) {
+  var d = CARDS[t];
+  var wrap = document.createElement('div'); wrap.className = 'stgw';
+  var el = document.createElement('div'); el.className = 'stg'; el.dataset.type = t;
+  el.innerHTML = '<span class="ic">' + d.icon + '</span><span class="tx"><b>' + d.label + '</b><span>' + d.sub + '</span></span>';
+  wrap.appendChild(el);
+  if (d.line) { var l = document.createElement('i'); l.className = 'pline'; wrap.appendChild(l); }
+  dock.appendChild(wrap);
+  LG.glass(el, d.glass);
+  el.addEventListener('click', function () { userFire(t); });
+  wraps[t] = wrap;
+});
+
+/* ---------- THE PATTERN: restart animations, sheen, sparks, hold 4600ms, .out ---------- */
+var active = null, timers = [];
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+function dismiss(el) {
+  el.classList.remove('in', 'sheen');
+  el.classList.add('out');
+  timers.push(setTimeout(function () { el.classList.remove('out'); }, 520));
+}
+
+function fire(type) {
+  var wrap = wraps[type], el = wrap.querySelector('.stg');
+  clearTimers();
+  if (active && active !== el) dismiss(active);
+  active = el;
+  document.querySelectorAll('.stgw.run').forEach(function (w) { if (w !== wrap) w.classList.remove('run'); });
+
+  el.classList.remove('in', 'out', 'sheen');
+  void el.offsetWidth;                          /* restart animations */
+  el.classList.add('in', 'sheen');
+
+  if (CARDS[type].line) { wrap.classList.remove('run'); void wrap.offsetWidth; wrap.classList.add('run'); }
+
+  var sp = CARDS[type].spark;
+  if (sp) {
+    var w = el.offsetWidth || 320;
+    for (var i = 0; i < 6; i++) {
+      (function (i) {
+        timers.push(setTimeout(function () {
+          var s = LG.spark(el, 18 + Math.random() * (w - 36), 4 + Math.random() * 10, 4.5 + Math.random() * 4.5, 850 + Math.random() * 450);
+          if (sp === 'purple') s.classList.add('sp-purple');
+        }, 60 + i * 90));
+      })(i);
+    }
+  }
+
+  timers.push(setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); }, 4600));
+  timers.push(setTimeout(function () { el.classList.remove('out'); if (active === el) active = null; }, 5150));
+}
+
+var demoTimer = null, demoIdx = 0;
+function stopDemo() { if (demoTimer) { clearInterval(demoTimer); demoTimer = null; } }
+function startDemo() {
+  fire(ORDER[demoIdx++ % ORDER.length]);
+  demoTimer = setInterval(function () { fire(ORDER[demoIdx++ % ORDER.length]); }, 6300);
+}
+function userFire(type) { stopDemo(); fire(type); }
+
+addEventListener('keydown', function (e) {
+  var map = { '1': 'subscribe', '2': 'follow', '3': 'tip', '4': 'super', '5': 'tag' };
+  if (map[e.key]) userFire(map[e.key]);
+  else if (e.key.toLowerCase() === 'b') { curBg = (curBg + 1) % BGS.length; bg(BGS[curBg]); }
+});
+
+/* ---------- boot: ?type= isolates one stinger on a 7s loop, otherwise auto-cycle demo ---------- */
+var TYPE = Q.get('type');
+if (TYPE && CARDS[TYPE]) {
+  fire(TYPE);
+  setInterval(function () { fire(TYPE); }, 7000);
+} else {
+  setTimeout(startDemo, 350);
+}
+</script>
+</body>
+</html>

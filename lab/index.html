@@ -60,13 +60,16 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
 </head>
 <body>
 <div class="wrap">
-  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 5 — THE WATERMARK, ALONE</div>
-  <h1>Overlays paused. One element this round:<br>the fullscreen watermark, perfected by itself. <span>Seven structures.</span></h1>
-  <p class="lede">As ordered: <b>CINEMA is scrapped</b> (delisted below), overlays are paused, and the watermark gets its own lab — <b>pill or no pill</b> (V1/V7 vs V4), <b>four corners</b>, <b>four sizes</b>, your <b>word-morph idea built</b> (the writing swaps for subscribe / follow / #TradeSmile / your handles), and the <b>separate bottom-right stinger</b> (like / subscribe pop-ups) as its own toggleable system. Judge everything over a live chart, bright or dark content, then at <b>phone size</b> in three live frames. The guide inside answers the big question — handles in the watermark vs the separate animation — with a division of labour instead of a guess. Your Studio ticker note is locked in: next overlay round, the bottom ticker becomes <b>one full-width pill [smile logo | prices | social handles]</b>, Tradify-grade but smile-redesigned, no clock.</p>
+  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 6 — THE STINGERS · APPLE LIQUID GLASS</div>
+  <h1>Watermark verdict banked. This round:<br>the stingers, rebuilt in liquid glass. <span>Three directions.</span></h1>
+  <p class="lede">Locked from your verdict: the watermark lab now opens on <b>V4 BARE, top-left, size L (72px)</b> — quiet identity that never annoys. This round the <b>stingers</b> got their own lab: real Apple Liquid Glass (SVG displacement refraction ported from open source, not a blur-rectangle), a dark <b>obsidian</b> material, and premium 3D money moments — <b>Super Thanks with a smile-face coin, M-PESA tips with KSh count-ups, Twitch cheers</b>. Three agents built CLEAR / OBSIDIAN / SPECTACLE, every card went through a harsh critique round, and the arena page shows all three live with OBS-ready links. The merged ticker directive still stands for the next overlay round.</p>
   <div class="spec">
     <h2>THE WATERMARK LAB — HOW TO JUDGE IT</h2>
     <p><b>Open it, leave it running, and just watch a full morph cycle over the chart.</b> Then press through the panel: ① variant, ② corner, ③ size — with the phone frames as the judge (if the face reads in the TINY frame it survives a Razer Phone), ④ the stinger on FIRE ONE NOW. The <b>COPY OBS LINK</b> button emits a <b>transparent 1920×1080 page</b> with only your chosen watermark — drop it as a browser source above any fullscreen capture, no re-framing, no aspect-ratio tax. The verdict you're looking for: quiet enough to forget, present enough to answer "whose stream is this?" at a glance.</p>
   </div>
+
+  <div class="rlabel"><span class="t">ROUND 6 — THE STINGERS · LIQUID GLASS</span><span class="ln"></span></div>
+  <div class="grid" id="grid6"></div>
 
   <div class="rlabel"><span class="t">ROUND 5 — THE WATERMARK SET</span><span class="ln"></span></div>
   <div class="grid" id="grid5"></div>
@@ -95,14 +98,23 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
   <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
 </div>
 <script>
+const R6=[
+ {id:'stingers',no:'R6 · 01 · THE STINGERS · LIQUID GLASS',name:'STINGERS ARENA',badge:['loved','♥ THE ONLY TASK THIS ROUND'],
+  from:'One arena, three live directions: <b>CLEAR</b> (white frost, gold verbs — SUBSCRIBE / FOLLOW / LIKE / #TradeSmile), <b>OBSIDIAN</b> (black glass, platform accents — adds TIP THE DESK), <b>SPECTACLE</b> (3D money: smile-face Super-Thanks coin, M-PESA tile with KSh count-up, recut cheer jewel, swinging bell). Material ported from open-source iOS 26 recreations; every card critiqued and refined twice.',
+  kv:[['Material','Real refraction (displacement maps) + specular rims — clear & obsidian tokens, shared core assets/liquid-glass.*'],
+      ['Judge','Click any preview to fire · B cycles chart/bright/dark stages · keys 1–4/1–5 fire each type'],
+      ['Ship it','?obs=1 = transparent 1920×1080 browser source · ?type= isolates one stinger · links for every card inside'],
+      ['Innovation vs proven','Cards saying SUBSCRIBE = proven spine · smile-coin + M-PESA + count-ups = the innovation layer, kept rare for paid events only']],
+  openq:''},
+];
 const R5=[
- {id:'watermark',no:'R5 · 01 · THE WATERMARK, ALONE',name:'WATERMARK LAB',badge:['loved','♥ THE ONLY TASK THIS ROUND'],
+ {id:'watermark',no:'R5 · 01 · THE WATERMARK, ALONE',name:'WATERMARK LAB',badge:['loved','♥ YOUR VERDICT: BARE + LARGE 72PX'],
   from:'Seven structures: <b>QUIET PILL</b> (logo-with-writing baseline) · <b>MORPH ★</b> (your idea — the writing swaps for subscribe / follow / #TradeSmile / handles, gold asks, mark never moves) · <b>SOCIAL ROTOR</b> · <b>BARE</b> (no pill) · <b>STACK</b> · <b>+ STINGER</b> (the separate like-&-subscribe animation) · <b>OUTLINE</b>.',
   kv:[['Controls','4 corners · 4 sizes (48–88px) · opacity · breathe/sheen · morph content editor + speed · stinger schedule'],
       ['Judge over','live chart · bright · dark · element-only checker + 3 live phone frames (6.7″ / 5.2″ / 4.7″)'],
       ['Ship it','COPY OBS LINK → a transparent 1920×1080 page with only the watermark — browser-source it above any capture'],
       ['The answer','handles vs separate animation: both, different jobs — the guide inside (press ?)']],
-  openq:'?v=2'},
+  openq:'?v=4&size=l'},
 ];
 const R4=[
  {id:'studio4',no:'R4 · 01 · THE STUDIO, AS DESCRIBED',name:'STUDIO R4',badge:['loved','♥ YOUR LITERAL SPEC'],
@@ -178,6 +190,7 @@ function card(v,grid){
   </div>`;
   grid.appendChild(el);
 }
+R6.forEach(v=>card(v,document.getElementById('grid6')));
 R5.forEach(v=>card(v,document.getElementById('grid5')));
 R4.forEach(v=>card(v,document.getElementById('grid4')));
 R3.forEach(v=>card(v,document.getElementById('grid3')));
