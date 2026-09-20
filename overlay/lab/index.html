@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>SMILE LAB — Overlay Tournament · Round 4</title>
+<title>SMILE LAB — Overlay Tournament · Round 5 · The Watermark</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -60,13 +60,16 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
 </head>
 <body>
 <div class="wrap">
-  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 4 — CHROME, TOASTS &amp; SHAPE LANGUAGE</div>
-  <h1>The chrome you described, the toasts you meant,<br>and the answer on shapes. <span>All six scenes rebuilt.</span></h1>
-  <p class="lede">Round 4 implements your list literally: the top bar is now just the <b>smile face in its own pill</b> (the logo, verbatim, no writing), the <b>full logo pill sits left</b>, and the <b>right pill rotates your socials</b> — Instagram, Facebook, X, TikTok, YouTube, WhatsApp, #TradeSmile — one at a time, with the <b>EAT clock</b> under it. Alerts are <b>normal toasts now</b>: no more ×N counters, a hard max-height, oldest drops first, and the pill design was redone. The ticker is <b>market-only while trading</b> — sponsors only in off-air mode. Everything is sized to stay legible when viewers watch on <b>tiny screens</b>. And yes — the <b>shape question finally answered</b>, below.</p>
+  <div class="kick">SMILE LAB · OVERLAY TOURNAMENT · ROUND 5 — THE WATERMARK, ALONE</div>
+  <h1>Overlays paused. One element this round:<br>the fullscreen watermark, perfected by itself. <span>Seven structures.</span></h1>
+  <p class="lede">As ordered: <b>CINEMA is scrapped</b> (delisted below), overlays are paused, and the watermark gets its own lab — <b>pill or no pill</b> (V1/V7 vs V4), <b>four corners</b>, <b>four sizes</b>, your <b>word-morph idea built</b> (the writing swaps for subscribe / follow / #TradeSmile / your handles), and the <b>separate bottom-right stinger</b> (like / subscribe pop-ups) as its own toggleable system. Judge everything over a live chart, bright or dark content, then at <b>phone size</b> in three live frames. The guide inside answers the big question — handles in the watermark vs the separate animation — with a division of labour instead of a guess. Your Studio ticker note is locked in: next overlay round, the bottom ticker becomes <b>one full-width pill [smile logo | prices | social handles]</b>, Tradify-grade but smile-redesigned, no clock.</p>
   <div class="spec">
-    <h2>SHAPE LANGUAGE — THE ANSWER YOU NEVER GOT</h2>
-    <p><b>Verdict: the pill (stadium) is the right container — but the real soulmate is the arc.</b> Your logo is two shapes: a circle and a smile-arc. Shapes complement it when they keep its <b>continuous curvature</b>: ① <b>Pills</b> for all chrome (ticker, alerts, chips, cams' name tags) — a pill is a stretched circle, so it echoes the face without competing with it; ② <b>Squircles</b> (22–30px continuous radii) for content cards — soft enough to belong, rigid enough to hold captures; ③ <b>The arc itself</b> as a motif — progress rings, underlines, the ghost smile watermark on charts (DESK's countdown ring is a literal smile-arc); ④ <b>Circles</b> for status dots and avatars. Avoid triangles and hexagons entirely — sharp corners fight the face. So: pill for chrome, squircle for cards, arc for accents — that's the whole system, and it's why Island R4 feels "right" to you.</p>
+    <h2>THE WATERMARK LAB — HOW TO JUDGE IT</h2>
+    <p><b>Open it, leave it running, and just watch a full morph cycle over the chart.</b> Then press through the panel: ① variant, ② corner, ③ size — with the phone frames as the judge (if the face reads in the TINY frame it survives a Razer Phone), ④ the stinger on FIRE ONE NOW. The <b>COPY OBS LINK</b> button emits a <b>transparent 1920×1080 page</b> with only your chosen watermark — drop it as a browser source above any fullscreen capture, no re-framing, no aspect-ratio tax. The verdict you're looking for: quiet enough to forget, present enough to answer "whose stream is this?" at a glance.</p>
   </div>
+
+  <div class="rlabel"><span class="t">ROUND 5 — THE WATERMARK SET</span><span class="ln"></span></div>
+  <div class="grid" id="grid5"></div>
 
   <div class="rlabel"><span class="t">ROUND 4 — THE CHROME SET</span><span class="ln"></span></div>
   <div class="grid" id="grid4"></div>
@@ -92,6 +95,15 @@ footer{margin-top:44px;font-family:'IBM Plex Mono',monospace;font-size:10px;font
   <footer>SMILE TV · CHART SCHOOL · NAIROBI — LAB BUILD, PROTOTYPE BRANCH</footer>
 </div>
 <script>
+const R5=[
+ {id:'watermark',no:'R5 · 01 · THE WATERMARK, ALONE',name:'WATERMARK LAB',badge:['loved','♥ THE ONLY TASK THIS ROUND'],
+  from:'Seven structures: <b>QUIET PILL</b> (logo-with-writing baseline) · <b>MORPH ★</b> (your idea — the writing swaps for subscribe / follow / #TradeSmile / handles, gold asks, mark never moves) · <b>SOCIAL ROTOR</b> · <b>BARE</b> (no pill) · <b>STACK</b> · <b>+ STINGER</b> (the separate like-&-subscribe animation) · <b>OUTLINE</b>.',
+  kv:[['Controls','4 corners · 4 sizes (48–88px) · opacity · breathe/sheen · morph content editor + speed · stinger schedule'],
+      ['Judge over','live chart · bright · dark · element-only checker + 3 live phone frames (6.7″ / 5.2″ / 4.7″)'],
+      ['Ship it','COPY OBS LINK → a transparent 1920×1080 page with only the watermark — browser-source it above any capture'],
+      ['The answer','handles vs separate animation: both, different jobs — the guide inside (press ?)']],
+  openq:'?v=2'},
+];
 const R4=[
  {id:'studio4',no:'R4 · 01 · THE STUDIO, AS DESCRIBED',name:'STUDIO R4',badge:['loved','♥ YOUR LITERAL SPEC'],
   from:'Top bar gone — replaced by <b>three pills</b>: face-only logo centre, full logo left, rotating socials + EAT clock right. The side rail holds exactly <b>3 things — Camera, AD, Chat</b> — the capture stage takes everything else. <b>S</b> swaps sides.',
@@ -100,30 +112,24 @@ const R4=[
       ['Ticker','Pill, market-only · <b>K</b> = off-air sponsors'],
       ['Alerts','Toasts · starts LEFT above the ticker · <b>Z</b> to compare with centre'],
       ['Keys','D ad · S swap · R stage · P avatar · Z zone · K off-air · ?cal=1 sheet']]},
- {id:'cinema4',no:'R4 · 02 · PURE ↔ BEZEL',name:'CINEMA R4',badge:null,
-  from:'Two fullscreen worlds. <b>PURE</b>: the colossal aspect-locked card with only the <b>logo pill watermark</b> top-left — alerts exist but stay off until <b>A</b>. <b>BEZEL</b>: the old-Mac frame where chrome + ticker live inside a rounded bezel.',
-  kv:[['Pure','Watermark + nothing. Cam layer optional (<b>V</b>), avatar for shy speakers (<b>P</b>)'],
-      ['Bezel','Tri-pill chrome + ticker inside the frame · content never fights the ticker for space'],
-      ['Aspect','16:9 / 1.85 / 2.39 via <b>R</b> — always max space, always centred'],
-      ['','']]},
- {id:'monitor4',no:'R4 · 03 · MONITOR, POLISHED',name:'MONITOR R4',badge:null,
+ {id:'monitor4',no:'R4 · 02 · MONITOR, POLISHED',name:'MONITOR R4',badge:null,
   from:'The one you called nearly perfect — tightened. <b>Bigger type everywhere</b> (nothing under 12px — tiny-screen rule), gradient area under the close, glowing last-price tag, candle countdown, price flashes, watchlist sparklines, face-pill in the ribbon.',
   kv:[['Chart','Live candles + volume + area glow + countdown'],
       ['Band','<b>T</b> cycles FX ↔ markets ↔ off-air in the pill ticker'],
       ['Panels','Depth ladder, heatmap pulse, sparkline watchlist'],
       ['','']]},
- {id:'island4',no:'R4 · 04 · ISLAND, REBUILT ON V2',name:'ISLAND R4',badge:['loved','♥ SAME ISLAND · NEW ENGINE'],
+ {id:'island4',no:'R4 · 03 · ISLAND, REBUILT ON V2',name:'ISLAND R4',badge:['loved','♥ SAME ISLAND · NEW ENGINE'],
   from:'Your favourite, now on the toast engine: no ×N, max-height stack, cleaner pill cards. Ticker market-only (<b>K</b> for off-air), sponsor stays its own card (<b>S</b>), island still wrapper-centred at the 50% cap.',
   kv:[['Island','I cycles compact → standard → wide · always centred'],
       ['Alerts','Toasts right by default · <b>Z</b> cycles'],
       ['Face crop','Avatar + watermark now use the exact face crop, assets/smile-face.svg'],
       ['','']]},
- {id:'desk',no:'R4 · 05 · NEW · LESSON MODE',name:'DESK',badge:['liked','NEW POSSIBILITY'],
+ {id:'desk',no:'R4 · 04 · NEW · LESSON MODE',name:'DESK',badge:['liked','NEW POSSIBILITY'],
   from:'Chart School in scene form: hero chart with a lesson tag, <b>chapter rail with live progress</b>, a countdown ring to the next lesson (that’s the arc motif working), instructor cam, and <b>NEXT LESSON alerts firing centre-stage</b> — the A/B test against STUDIO’s left.',
   kv:[['Chapters','<b>N</b> advances, progress bar follows'],
       ['Alerts','Centre above the ticker by default · <b>Z</b> to compare'],
       ['','']]},
- {id:'panel',no:'R4 · 06 · NEW · MULTI-GUEST',name:'PANEL',badge:null,
+ {id:'panel',no:'R4 · 05 · NEW · MULTI-GUEST',name:'PANEL',badge:null,
   from:'The other answer to “3–4 people + a capture”: guests as 16:9 cards across the top with an auto-rotating <b>gold spotlight</b> + ON THE DESK banner, display capture and chat below. <b>2–5</b> guests on keys, <b>S</b> swaps chat/stage.',
   kv:[['Guests','2–5 · every hole stays a sane 16:9, never a phone strip'],
       ['Spotlight','Auto every 6s · <b>E</b> manual · avatar on the spotlit guest with <b>P</b>'],
@@ -136,9 +142,9 @@ const R3=[
  {id:'studio',no:'R3 · 02',name:'STUDIO (R3)',badge:['liked','SUPERSEDED BY STUDIO R4'],
   from:'The slot system with the full masthead. R4 removes the masthead you found empty and rebuilds the layout around your 3-module rail.',
   kv:[['Status','Live → superseded by STUDIO R4']]},
- {id:'cinema',no:'R3 · 03',name:'CINEMA (R3)',badge:['liked','SUPERSEDED BY CINEMA R4'],
-  from:'Colossal card + permanent band. R4 adds PURE mode (watermark only) and the BEZEL world.',
-  kv:[['Status','Live → superseded by CINEMA R4']]},
+ {id:'cinema',no:'R3 · 03',name:'CINEMA (R3)',badge:['out','SCRAPPED BY YOU — R5 CARRIES THE WATERMARK ON'],
+  from:'Colossal card + permanent band. The watermark idea survived as the Round-5 WATERMARK LAB; the rest is retired.',
+  kv:[['Status','SCRAPPED']]},
  {id:'monitor',no:'R3 · 04',name:'MONITOR (R3)',badge:null,
   from:'The original cockpit. R4 is the legibility pass.',
   kv:[['Status','Live → superseded by MONITOR R4']]},
@@ -168,10 +174,11 @@ function card(v,grid){
     <div class="from">${v.from}</div>
     <div class="kv">${v.kv.filter(r=>r[0]).map(r=>`<div class="row"><span class="k">${r[0].toUpperCase()}</span><span class="val">${r[1]}</span></div>`).join('')}</div>
     ${badge}
-    <a class="open" href="${v.id}.html?v=1" target="_blank">OPEN FULL SCREEN ↗</a>
+    <a class="open" href="${v.id}.html${v.openq||'?v=1'}" target="_blank">OPEN FULL SCREEN ↗</a>
   </div>`;
   grid.appendChild(el);
 }
+R5.forEach(v=>card(v,document.getElementById('grid5')));
 R4.forEach(v=>card(v,document.getElementById('grid4')));
 R3.forEach(v=>card(v,document.getElementById('grid3')));
 R2.forEach(v=>card(v,document.getElementById('grid2')));
