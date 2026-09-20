@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LIQUID GLASS · CLEAR — smile.co.ke stingers (SG-D1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/liquid-glass.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0A0C14; }
+  html.obs, html.obs body { background:transparent !important; }
+
+  #stage { position:absolute; inset:0; }
+  #bgLayer { position:absolute; inset:0; display:none; }
+  #bgLayer.bright { display:block; background:linear-gradient(135deg,#F7F3EA,#E8DFC9 45%,#D9CBA6); }
+  #bgLayer.dark { display:block; background:linear-gradient(160deg,#0E1118,#131720 50%,#0B0D12); }
+  #bgLayer.grad { display:block; background:
+    radial-gradient(60% 90% at 20% 15%, rgba(255,206,0,.32), transparent 60%),
+    radial-gradient(55% 80% at 82% 80%, rgba(64,120,255,.25), transparent 60%),
+    linear-gradient(140deg,#151226,#1B1440 55%,#0D0B1A); }
+  #chart { position:absolute; inset:0; }
+  /* ?obs=1 -> transparent capture: only the dock (live stingers) remains */
+  html.obs #chart, html.obs #bgLayer, html.obs #help { display:none !important; }
+
+  /* fire target: bottom-right — the stinger dock (stacks gracefully,
+     lowest card keeps >=48px clearance to the viewport bottom edge) */
+  #dock { position:absolute; right:36px; bottom:48px; display:flex; flex-direction:column; align-items:flex-end; gap:14px; }
+
+  /* ---------- CLEAR stinger pill — Apple button proportions ---------- */
+  .stg { padding:13px 26px 13px 13px; cursor:pointer; }
+  /* LG.glass lifts the pill's children into .lg-content — the row must live THERE */
+  .stg .lg-content { display:flex; align-items:center; gap:15px; }
+  .stg .ic { width:50px; height:50px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:linear-gradient(150deg, rgba(255,255,255,.66), rgba(255,255,255,.24) 58%, rgba(255,255,255,.40));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.92),
+      inset 0 0 0 1px rgba(255,255,255,.45),
+      inset 0 -1px 1px rgba(31,23,2,.06),
+      0 1px 3px rgba(31,23,2,.10); }
+  .stg .ic svg { display:block; }
+  /* optical centering: wide-flat badge sits a hair low in the circle */
+  .stg--subscribe .ic svg { transform:translateY(.5px); }
+  .stg .tx { display:flex; flex-direction:column; gap:3px; }
+  .stg .tx b { font-size:20px; font-weight:700; letter-spacing:-.025em; line-height:1.06;
+    color:#14161C; white-space:nowrap; }
+  .stg .tx .sub { font-size:13px; font-weight:500; letter-spacing:-.005em; line-height:1.25;
+    color:rgba(20,22,28,.72); white-space:nowrap; }
+  .lg-content { font-family:"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; }
+
+  /* gold verbs — liquid-gold gradient, #FFCE00 at its core.
+     Stops are anchored to CAP HEIGHT (dark stop lands on the baseline,
+     not the box bottom) so the deep foot is actually visible inside glyphs.
+     Hairline ink edge via drop-shadow (NOT text-shadow: it respects the
+     clipped transparent fill — no interior wash). */
+  .vg { background:linear-gradient(180deg,#FFDF3F, #FFCE00 40%, #B8860B 82%);
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:#FFCE00;
+    filter:drop-shadow(0 1px 0 rgba(31,23,2,.22)); }
+  /* bright stage: deepen the whole pour (cream kills yellow) + a 0.5px
+     amber-ink text-stroke so letterform edges stay crisp on cream.
+     background-image longhand — the background SHORTHAND would reset
+     background-clip to border-box and paint a solid gold BAR instead of text.
+     Toggled by bg(); OBS operators can pass ?bg=bright too. */
+  body.bg-bright .vg { background-image:linear-gradient(180deg,#FFCE00, #DFA600 30%, #8F640A 80%);
+    -webkit-text-stroke:0.5px rgba(122,86,8,.45);
+    filter:drop-shadow(0 1px 0 rgba(31,23,2,.26)); }
+
+  /* ---------- entry motion: icon pops, text rides the core stagger ---------- */
+  .lg.in .lg-content > *:nth-child(1) { animation: icPop .8s var(--lg-spring) .18s both; }
+  @keyframes icPop { 0% { opacity:0; transform:scale(.5); } 100% { opacity:1; transform:scale(1); } }
+  /* SMASH LIKE — the playful one: hand raises and fills gold */
+  .lg.in.stg--like .lg-content > *:nth-child(1) { animation: likePop .85s var(--lg-ease) .18s both; }
+  @keyframes likePop {
+    0%   { opacity:0; transform:scale(.5) rotate(-16deg); }
+    62%  { opacity:1; transform:scale(1.06) rotate(4deg); }
+    100% { opacity:1; transform:scale(1) rotate(0deg); } }
+  .stg--like .lf { fill:#FFCE00; }
+  .lg.in.stg--like .lf { animation: likeFill .55s var(--lg-ease) .42s both; }
+  @keyframes likeFill { from { fill:rgba(255,206,0,0); } to { fill:#FFCE00; } }
+
+  /* clear material refinement (page-scoped — core file untouched):
+     lift the white body so the pill reads as WHITE frost over the dark chart too,
+     and crisp the specular rim so the edge catches light */
+  .stg.lg--clear .lg-tint {
+    background:
+      radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.46), transparent 60%),
+      rgba(255,255,255,.30);
+  }
+  /* over the bright stage the glass must keep its edge: faint ink contour +
+     contact shadow (core drop shadow re-stated so it is not lost) */
+  .stg.lg--clear {
+    box-shadow:
+      0 0 0 1px rgba(31,23,2,.07),
+      inset 0 -2px 4px rgba(31,23,2,.06),
+      0 2px 8px rgba(20,22,28,.22),
+      0 18px 50px rgba(20,22,28,.32);
+  }
+  .stg.lg--clear .lg-rim {
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,.95),
+      inset 0 0 8px rgba(255,255,255,.50),
+      inset 0 -1px 0 rgba(255,255,255,.30),
+      inset 0 0 0 1px rgba(255,255,255,.30);
+  }
+
+  #help { position:absolute; left:20px; top:18px;
+    font:600 12px "Inter", system-ui, sans-serif; letter-spacing:.01em;
+    color:rgba(255,255,255,.58); background:rgba(10,12,18,.55); padding:8px 12px; border-radius:10px;
+    backdrop-filter:blur(8px); z-index:9; }
+  body.obs #help, body.g #help { display:none !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="chart" width="1920" height="1080"></canvas>
+  <div id="bgLayer"></div>
+  <div id="help">1 subscribe &middot; 2 follow &middot; 3 smash like &middot; 4 #TradeSmile &middot; B background &middot; click refires</div>
+  <div id="dock"></div>
+</div>
+
+<script src="assets/liquid-glass.js"></script>
+<script>
+var Q = new URLSearchParams(location.search);
+/* URL contract: ?obs=1 ?theme= ?g=1 ?type=subscribe|follow|like|tag ?bg=chart|bright|dark|grad
+   ?theme= is accepted for parity, but this page is ALWAYS clear material. */
+if (Q.get('obs') === '1') {
+  document.documentElement.classList.add('obs');
+  document.body.classList.add('obs');
+}
+if (Q.get('g') === '1') document.body.classList.add('g');
+
+/* chart backdrop — shared lab pattern */
+var C = document.getElementById('chart'), X = C.getContext('2d'), D = [];
+(function () {
+  var p = 600;
+  for (var i = 0; i < 120; i++) { D.push(p); p += (Math.random() - .47) * 9; }
+  var lo = Math.min.apply(null, D), hi = Math.max.apply(null, D);
+  X.fillStyle = '#0A0C14'; X.fillRect(0, 0, 1920, 1080);
+  X.strokeStyle = 'rgba(255,255,255,.045)';
+  for (var gx = 0; gx < 1920; gx += 110) { X.beginPath(); X.moveTo(gx, 0); X.lineTo(gx, 1080); X.stroke(); }
+  for (var gy = 0; gy < 1080; gy += 85) { X.beginPath(); X.moveTo(0, gy); X.lineTo(1920, gy); X.stroke(); }
+  X.beginPath();
+  D.forEach(function (v, i) { var px = i * 16, py = 950 - (v - lo) / (hi - lo) * 760; i ? X.lineTo(px, py) : X.moveTo(px, py); });
+  X.strokeStyle = 'rgba(255,206,0,.85)'; X.lineWidth = 2.5; X.stroke();
+  X.lineTo(120 * 16, 1080); X.lineTo(0, 1080); X.closePath();
+  X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
+})();
+
+var BGS = ['chart', 'bright', 'dark', 'grad'], curBg = 0;
+function bg(name) {
+  var i = BGS.indexOf(name); if (i > -1) curBg = i;
+  var b = document.getElementById('bgLayer');
+  b.className = ''; C.style.display = 'block';
+  if (name === 'bright' || name === 'dark' || name === 'grad') { b.className = name; C.style.display = 'none'; }
+  document.body.classList.toggle('bg-bright', name === 'bright');   /* deepens gold verbs */
+}
+bg(Q.get('bg') || 'chart');
+
+/* ---------- inline icons ---------- */
+var ICONS = {
+  /* YouTube: rounded-rect play badge, brand red */
+  play: '<svg width="26" height="19" viewBox="0 0 28 20" fill="none" style="filter:drop-shadow(0 1px 2px rgba(255,0,51,.28))">' +
+        '<rect width="28" height="20" rx="5.6" fill="#FF0033"/>' +
+        '<path d="M11.3 5.7v8.6L18.9 10z" fill="#fff"/></svg>',
+  /* Instagram: camera glyph, ink outline */
+  insta: '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#14161C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="2.8" y="2.8" width="18.4" height="18.4" rx="5.4"/>' +
+        '<circle cx="12" cy="12" r="4.5"/>' +
+        '<circle cx="17.4" cy="6.6" r="1.2" fill="#14161C" stroke="none"/></svg>',
+  /* thumbs-up: ink outline, gold fill sweeps in on entry (.lf) */
+  thumb: '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#14161C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="2.2" y="10.9" width="4.3" height="9.4" rx="1.3"/>' +
+        '<path class="lf" d="M6.5 20.3v-9.4L10 3.5c1.4 0 2.7 1.1 2.7 2.8 0 1.6-1 3.6-1 3.6h5.2c1.1 0 2 1 1.8 2.1l-1.1 6.2c-.2 1.2-1.2 2.1-2.3 2.1z"/></svg>',
+  /* chat bubble + hash: ink bubble, gold hash */
+  tag: '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M12 3.4c-4.9 0-8.9 3.5-8.9 7.9 0 2.2 1 4.1 2.6 5.5l-1.1 3.7 4-1.5c1 .3 2.2.5 3.4.5 4.9 0 8.9-3.5 8.9-7.9S16.9 3.4 12 3.4z" stroke="#14161C" stroke-width="1.9"/>' +
+        '<path d="M8.8 9.7h6.4M8.8 13.3h6.4M10.8 8.1l-.7 7M14.1 8.1l-.7 7" stroke="#FFCE00" stroke-width="2.1"/></svg>'
+};
+
+/* ---------- build the four stingers ---------- */
+var dock = document.getElementById('dock');
+function makeStinger(key, icon, title, sub, gold) {
+  var el = document.createElement('div');
+  el.className = 'stg stg--' + key;
+  el.innerHTML =
+    '<span class="ic">' + icon + '</span>' +
+    '<span class="tx"><b' + (gold ? ' class="vg"' : '') + '>' + title + '</b>' +
+    '<span class="sub">' + sub + '</span></span>';
+  el.style.display = 'none';                    /* hidden until fired */
+  el.addEventListener('click', function () { stopDemo(); fireCard(key); });
+  dock.appendChild(el);
+  return el;
+}
+
+var CARDS = {
+  subscribe: makeStinger('subscribe', ICONS.play,  'SUBSCRIBE',   'youtube.com/@smile.co.ke', true),
+  follow:    makeStinger('follow',    ICONS.insta, 'FOLLOW',      '@smile.co.ke',             true),
+  like:      makeStinger('like',      ICONS.thumb, 'SMASH LIKE',  'if this helped',           false),
+  tag:       makeStinger('tag',       ICONS.tag,   '#TradeSmile', 'tag your setups',          true)
+};
+
+/* per-card clear-glass tuning (strength / ca / blur + saturate & brightness lift) */
+var HANDLES = {
+  subscribe: LG.glass(CARDS.subscribe, { theme: 'clear', strength: 80, ca: 2.0, blur: 2.2, saturate: 1.80, brightness: 1.18 }),
+  follow:    LG.glass(CARDS.follow,    { theme: 'clear', strength: 72, ca: 1.7, blur: 2.0, saturate: 1.75, brightness: 1.20 }),
+  like:      LG.glass(CARDS.like,      { theme: 'clear', strength: 68, ca: 1.5, blur: 1.9, saturate: 1.70, brightness: 1.22 }),
+  tag:       LG.glass(CARDS.tag,       { theme: 'clear', strength: 76, ca: 1.8, blur: 2.1, saturate: 1.75, brightness: 1.18 })
+};
+
+/* round gold sparks — SUBSCRIBE and LIKE only.
+   3 short waves, sizes 7-11, staggered so the burst peaks during the pop */
+function sparks(key, el) {
+  (el._sp || []).forEach(clearTimeout);
+  el._sp = [];
+  var wave = (key === 'subscribe')
+    ? [[20, 2, 9, 0], [44, -4, 11, 0], [62, 10, 7, 0], [32, -6, 8, 170], [52, 2, 9, 170], [70, 4, 7, 340]]
+    : [[18, 0, 9, 0], [42, -6, 10, 0], [58, 8, 7, 0], [30, -2, 8, 170], [48, 4, 8, 340]];
+  wave.forEach(function (p) {
+    var go = function () { LG.spark(el, p[0], p[1], p[2], 1050); };
+    p[3] ? el._sp.push(setTimeout(go, p[3])) : go();
+  });
+}
+
+/* THE PATTERN: reveal, then .in + .sheen; hold 4600ms; .out; tuck away.
+   rAF keeps the first measurement transform-free so the refraction map is exact. */
+function fireCard(key) {
+  var el = CARDS[key]; if (!el) return;
+  clearTimeout(el._t1); clearTimeout(el._t2);
+  (el._sp || []).forEach(clearTimeout);
+  el.classList.remove('in', 'out', 'sheen');
+  el.style.visibility = 'hidden';
+  if (!el.style.display || el.style.display === 'none') el.style.display = '';
+  void el.offsetWidth;                        /* restart animations */
+  requestAnimationFrame(function () {
+    el.style.visibility = '';
+    el.classList.add('in', 'sheen');
+    if (key === 'subscribe' || key === 'like') sparks(key, el);
+    setTimeout(function () { HANDLES[key].refresh(); }, 950);   /* settle -> exact map */
+  });
+  el._t1 = setTimeout(function () { el.classList.remove('in', 'sheen'); el.classList.add('out'); }, 4600);
+  el._t2 = setTimeout(function () { el.classList.remove('out'); el.style.display = 'none'; }, 5150);
+}
+
+/* auto-cycle demo + isolation (?type= fires immediately, loops every 7s) */
+var ORDER = ['subscribe', 'follow', 'like', 'tag'], di = 0, demo = null;
+function stopDemo() { if (demo) { clearInterval(demo); demo = null; } }
+function startDemo() {
+  fireCard(ORDER[di++ % ORDER.length]);
+  demo = setInterval(function () { fireCard(ORDER[di++ % ORDER.length]); }, 5600);
+}
+var TYPE = (Q.get('type') || '').toLowerCase();
+if (CARDS[TYPE]) {
+  fireCard(TYPE);
+  setInterval(function () { fireCard(TYPE); }, 7000);
+} else {
+  startDemo();
+}
+
+/* keys: 1-4 fire, B cycles background */
+addEventListener('keydown', function (e) {
+  var k = e.key.toLowerCase();
+  var map = { '1': 'subscribe', '2': 'follow', '3': 'like', '4': 'tag' };
+  if (map[k]) {
+    if (TYPE && map[k] !== TYPE) return;      /* ?type= isolates */
+    stopDemo(); fireCard(map[k]);
+  } else if (k === 'b') {
+    bg(BGS[(curBg + 1) % BGS.length]);
+  }
+});
+</script>
+</body>
+</html>
