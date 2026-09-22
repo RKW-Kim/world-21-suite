@@ -25,139 +25,176 @@
   body.obs #chart, body.obs #bgLayer { display:none !important; }
 
   /* fire target: bottom-right — one shared anchor cell */
-  #dock { position:absolute; right:36px; bottom:36px; display:grid; }
+  #dock { position:absolute; right:36px; bottom:48px; display:grid; }
 
-  /* ============ SPECTACLE CARD ============ */
-  .stg { display:none; grid-area:1/1; justify-self:end; align-items:center; gap:16px;
-    padding:14px 30px 14px 14px; border-radius:32px; cursor:pointer; opacity:0; }
+  /* ============ SPECTACLE CARD — matte family, core speaks ============ */
+  .stg { display:none; grid-area:1/1; justify-self:end; align-items:center;
+    padding:13px 26px 13px 13px; border-radius:30px; cursor:pointer; opacity:0; }
   .stg.on { display:flex; }
+  .stg .lg-content { display:flex; align-items:center; gap:17px; }
 
-  /* per-event accent hairline in the bottom rim */
-  .stg .lg-rim::after { content:""; position:absolute; inset:0; border-radius:inherit;
-    box-shadow: inset 0 -1.5px 0 var(--acc, transparent); opacity: var(--acc-o, 0); pointer-events:none; }
-  .stg--super { --acc: rgba(255,206,0,.95); }
-  .stg--tip   { --acc: rgba(67,176,42,.95); }
-  .stg--cheer { --acc: rgba(145,70,255,.95); }
-  .stg--sub   { --acc: rgba(255,206,0,.95); }
-  .stg--obsidian { --acc-o:.5; }
-  .stg--clear { --acc-o:.26; }
+  /* one accent per card — muted platform color, bottom rim only (core rule) */
+  .stg--super, .stg--sub { --acc: rgba(217,172,43,.9); }
+  .stg--tip              { --acc: rgba(76,168,58,.9); }
+  .stg--cheer            { --acc: rgba(126,79,209,.9); }
+  .stg--obsidian  { --acc-o:.55; }
+  .stg--frost     { --acc-o:.34; }
+  .stg--chameleon { --acc-o:.48; }
 
-  /* text */
-  .tx { display:flex; flex-direction:column; gap:4px; }
-  .row1 { display:flex; align-items:center; gap:12px; }
-  .ttl { font-size:20px; font-weight:800; letter-spacing:-.02em; line-height:1.1; white-space:nowrap; }
-  .stg--clear .ttl { color:#1F1702; }
-  .stg--obsidian .ttl { color:#fff; }
-  .ttl--gold { background:linear-gradient(180deg,#FFDF3F,#FFCE00 46%,#C88F00);
-    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#FFCE00; }
-  .sub { font-size:12.5px; font-weight:500; letter-spacing:-.008em; white-space:nowrap; }
-  .stg--clear .sub { color:rgba(31,23,2,.62); }
-  .stg--obsidian .sub { color:rgba(255,255,255,.66); }
+  /* text — quiet: verb, hairline, then amount + context */
+  /* text block: optically centered against the hero's mass */
+  .tx { display:flex; flex-direction:column; min-width:0; margin-top:-2px; }
+  .ttl { font-size:18px; font-weight:700; letter-spacing:-.02em; line-height:1.12; white-space:nowrap; }
+  .stg--frost .ttl { color:#26200F; }
+  .stg--obsidian .ttl, .stg--chameleon .ttl { color:#fff; }
+  .ttl--gold { background-image:linear-gradient(180deg,#F6CF3A,#E9B400 46%,#B8860B 82%,#9A6E08);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:#E9B400; }
+  /* frost carries a deeper pour + ink hairline — pale gold dies on matte white */
+  .stg--frost .ttl--gold { background-image:linear-gradient(180deg,#E4AF00,#C79100 48%,#8F640A 86%);
+    filter:drop-shadow(0 1px 0 rgba(31,23,2,.14)); }
+  .subrow { display:flex; align-items:baseline; gap:10px; margin-top:8px; padding-top:7px;
+    border-top:1px solid rgba(255,255,255,.11); }
+  .stg--frost .subrow { border-top-color:rgba(31,23,2,.20); }
+  .sub { font-size:12px; font-weight:500; letter-spacing:-.006em; white-space:nowrap; }
+  .stg--frost .sub { color:rgba(38,33,18,.66); }
+  .stg--obsidian .sub, .stg--chameleon .sub { color:rgba(255,255,255,.62); }
   .mp { font-weight:800; letter-spacing:.04em; color:#2E801D; }
-  .stg--obsidian .mp { color:#5BCB3F; }
+  .stg--obsidian .mp, .stg--chameleon .mp { color:#55BE3A; }
 
-  /* amount chip — tabular numerals, locked min-width (zero reflow during count-up) */
-  .chip { font-size:15px; font-weight:800; letter-spacing:-.01em; font-variant-numeric:tabular-nums;
-    color:#1F1702; background:linear-gradient(180deg,#FFE566,#FFCE00 52%,#E8B400);
-    padding:5px 12px; border-radius:999px; text-align:center; white-space:nowrap;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(146,104,0,.32), 0 2px 8px rgba(120,84,0,.28); }
-  .chip--usd  { min-width:72px; }
-  .chip--kes  { min-width:96px; }
-  .chip--bits { min-width:106px; }
-  .amt { display:inline-block; }
+  /* amount — no chip box: the money is the loudest figure in the room */
+  .amt { display:inline-block; font-size:17px; font-weight:700; letter-spacing:-.026em;
+    font-variant-numeric:tabular-nums; white-space:nowrap; text-align:left; color:#26200F; }
+  .stg--obsidian .amt, .stg--chameleon .amt { color:#fff; }
+  .amt--usd  { min-width:56px; }
+  .amt--kes  { min-width:72px; }
+  .amt--bits { min-width:82px; }
 
   /* YouTube-red micro-accent (super thanks only) */
   .yt { display:inline-block; width:17px; height:12px; border-radius:3px; background:#FF0033;
-    margin-right:7px; vertical-align:-1px; position:relative; }
+    margin-right:7px; vertical-align:-1px; position:relative;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 2px rgba(122,0,12,.45); }
   .yt::after { content:""; position:absolute; left:6.5px; top:3px;
     border-left:5px solid #fff; border-top:3px solid transparent; border-bottom:3px solid transparent; }
 
-  /* ============ 3D HERO OBJECTS ============ */
-  /* fixed stage — space reserved, animations are transform-only (no layout shift) */
-  .obj-stage { position:relative; width:80px; height:80px; flex:none;
-    display:grid; place-items:center; }
-  .oshadow { position:absolute; left:50%; bottom:0; width:58px; height:11px;
-    transform:translateX(-50%); border-radius:50%;
-    background:radial-gradient(50% 50% at 50% 50%, rgba(12,8,0,.35), transparent 70%); }
+  /* contact shadow lift (page-scoped): the card must TOUCH its ground,
+     not float on one soft gaussian — core remains untouched */
+  .stg.lg--obsidian, .stg.lg--chameleon {
+    box-shadow: 0 24px 64px rgba(0,0,0,.58), 0 3px 12px rgba(0,0,0,.42), 0 1px 2px rgba(0,0,0,.5); }
+  .stg.lg--frost {
+    box-shadow: 0 18px 50px rgba(0,0,0,.34), 0 2px 8px rgba(0,0,0,.22), 0 1px 2px rgba(0,0,0,.32); }
 
-  .pop { transform-style:preserve-3d; animation: coinPop .85s var(--lg-spring) both; }
-  @keyframes coinPop {
-    0%   { transform: scale(.35); opacity: 0; }
-    55%  { transform: scale(1.09); opacity: 1; }
-    100% { transform: scale(1); }
-  }
+  /* ============ 3D HERO OBJECTS — physical truth ============ */
+  /* fixed stage — space reserved, animations are transform-only (no layout shift) */
+  .obj-stage { position:relative; width:78px; height:78px; flex:none;
+    display:grid; place-items:center; }
+  .oshadow { position:absolute; left:50%; bottom:0; width:54px; height:10px;
+    transform:translateX(-50%); border-radius:50%; opacity:.42;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(10,7,0,.45), transparent 68%); }
+
+  .pop { transform-style:preserve-3d; }
   .tok { position:relative; transform-style:preserve-3d; }
   .tok-edge { position:absolute; inset:0; }
   .tok-face { position:absolute; inset:0; backface-visibility:hidden; }
   .tok-face svg { width:100%; height:100%; display:block; }
-  .tok-face .gemback { position:absolute; inset:0; }
 
-  .coin { animation: lgCoinFlip .78s var(--lg-ease) both, lgFloat 3.4s ease-in-out 1s infinite; }
-  .gem  { animation: lgCoinFlip .72s var(--lg-ease) both, lgFloat 3.1s ease-in-out 1.1s infinite; }
+  /* COIN: enters with flip + rise, LANDS (squash + 2px drop), then rests
+     on a barely-there idle float. One animation each on pop (weight) and tok (spin).
+     Per-segment timing functions ARE the physics: decel up, gravity down, impulse squash. */
+  .pop--coin { animation: coinLand 1.05s both; }
+  @keyframes coinLand {
+    0%   { transform: translateY(14px) scale(.72); opacity: 0;
+           animation-timing-function: cubic-bezier(.30,.66,.38,1); }  /* rise, decelerating */
+    30%  { transform: translateY(-8px) scale(1.012); opacity: 1;
+           animation-timing-function: cubic-bezier(.50,0,.74,.42); }  /* apex — gravity owns it now */
+    55%  { transform: translateY(1.6px) scale(1.008,.990);
+           animation-timing-function: cubic-bezier(.32,.5,.40,1); }   /* first contact */
+    63%  { transform: translateY(2px) scale(1.015,.981); }             /* max squash ≈1.9% */
+    78%  { transform: translateY(-.6px) scale(.995,1.004);
+           animation-timing-function: ease-out; }                     /* weight rebounds */
+    100% { transform: translateY(0) scale(1); }
+  }
+  .coin { animation: lgCoinFlip .58s cubic-bezier(.3,.62,.3,1) both,
+    idleFloat 4.6s ease-in-out 1.35s infinite; }
+  @keyframes idleFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  /* shadow follows the weight: widens/lightens at apex, tightens + darkens at contact */
+  .oshadow--coin { animation: shadowLand 1.05s linear both, shadowIdle 4.6s ease-in-out 1.35s infinite; }
+  @keyframes shadowLand {
+    0%   { transform: translateX(-50%) scale(.55); opacity: 0; }
+    30%  { transform: translateX(-50%) scale(.92); opacity: .30; }
+    55%  { transform: translateX(-50%) scale(.80); opacity: .40; }
+    63%  { transform: translateX(-50%) scale(.70); opacity: .55; }
+    78%  { transform: translateX(-50%) scale(.80); opacity: .44; }
+    100% { transform: translateX(-50%) scale(.78); opacity: .48; }
+  }
+  @keyframes shadowIdle {
+    0%,100% { transform: translateX(-50%) scale(.78); opacity: .48; }
+    50%     { transform: translateX(-50%) scale(.71); opacity: .38; }
+  }
 
-  /* M-PESA tip hero: brand-true squircle app tile (gem emoji killed) */
-  .pop--tile { animation: tileIn .72s var(--lg-ease) both; }
-  @keyframes tileIn {
-    0%   { transform: rotateY(-28deg) scale(.6); opacity: 0; }
-    60%  { transform: rotateY(7deg) scale(1.05); opacity: 1; }
+  /* GEM: one refractive tick + settle (never perpetual), single glint sweep */
+  .pop--gem { animation: gemTick .95s both; }
+  @keyframes gemTick {
+    0%   { transform: rotateY(30deg) scale(.72); opacity: 0;
+           animation-timing-function: cubic-bezier(.25,.8,.3,1); }
+    42%  { transform: rotateY(-9deg) scale(1.03); opacity: 1; }
+    64%  { transform: rotateY(4deg) scale(.99); }
+    84%  { transform: rotateY(-1.5deg) scale(1.003); }
     100% { transform: rotateY(0deg) scale(1); }
   }
+  .gem { animation: idleFloat 4.6s ease-in-out 1.4s infinite; }
+  .glint { position:absolute; inset:0; pointer-events:none;
+    clip-path:polygon(25% 1.4%, 75% 1.4%, 98.7% 33.3%, 50% 98.6%, 1.3% 33.3%);
+    background:linear-gradient(115deg, transparent 44%, rgba(255,255,255,.5) 50%, transparent 56%) no-repeat;
+    background-size:38% 100%; background-position:-45% 0;
+    animation: glintSweep 1.1s cubic-bezier(.32,.72,0,1) .24s 1 both; }
+  @keyframes glintSweep { from { background-position:-45% 0; } to { background-position:145% 0; } }
+
+  /* M-PESA tip hero: matte ceramic squircle app tile */
+  .pop--tile { animation: tileIn .95s both; }
+  @keyframes tileIn {
+    0%   { transform: rotateY(-22deg) scale(.72); opacity: 0;
+           animation-timing-function: cubic-bezier(.25,.8,.3,1); }
+    46%  { transform: rotateY(5deg) scale(1.035); opacity: 1; }
+    68%  { transform: rotateY(-2deg) scale(.996); }
+    100% { transform: rotateY(0deg) scale(1); }
+  }
+  /* matte ceramic M-PESA tile: convex volume, micro-bevel, coin-weight shadow */
   .tile { width:76px; height:76px; border-radius:24px; position:relative; display:grid; place-items:center;
-    background:linear-gradient(160deg,#5BCB3F,#43B02A 55%,#2E801D);
-    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.42), inset 0 -3px 8px rgba(10,40,5,.38),
-      inset 0 0 0 1px rgba(255,255,255,.12), 0 6px 14px rgba(16,52,8,.38);
-    animation: lgFloat 3.2s ease-in-out 1s infinite; }
-  .tile svg { width:76px; height:76px; display:block; }
+    background:linear-gradient(165deg,#4EB23C,#41A32C 58%,#2E7F1F);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -3px 8px rgba(10,40,5,.32),
+      inset 0 0 0 1px rgba(255,255,255,.09), inset 0 -1px 0 rgba(255,255,255,.07),
+      0 0 0 1px rgba(18,54,8,.32), 0 8px 18px rgba(16,52,8,.30);
+    animation: idleFloat 4.4s ease-in-out 1.3s infinite; }
+  .tile::before { content:""; position:absolute; inset:0; border-radius:inherit;
+    background:radial-gradient(125% 125% at 32% 20%,
+      rgba(255,255,255,.16), rgba(255,255,255,0) 48%, rgba(8,40,4,.20) 100%); }
+  .tile svg { width:76px; height:76px; display:block; position:relative; }
 
   /* the object IS its own entrance — never double-animate the stage */
   .lg.in .lg-content > .obj-stage { animation:none; opacity:1; }
 
-  /* SUBSCRIBE bell: one spring swing + halo ring pulses */
-  .bell { width:58px; height:58px; transform-origin:50% 9%;
-    animation: bellSwing 1.5s cubic-bezier(.45,.05,.35,1.18) .32s both; }
-  .bell svg { width:100%; height:100%; display:block; filter:drop-shadow(0 5px 8px rgba(120,84,0,.35)); }
-  @keyframes bellSwing {
+  /* SUBSCRIBE bell: one decisive ring, decay to stillness, ONE halo ring */
+  .bell { width:60px; height:60px; transform-origin:50% 9%;
+    animation: bellRing 1.7s cubic-bezier(.45,.05,.35,1) .3s both; }
+  .bell svg { width:100%; height:100%; display:block; filter:drop-shadow(0 4px 7px rgba(120,84,0,.22)); }
+  @keyframes bellRing {
     0%   { transform: rotate(0deg); }
-    18%  { transform: rotate(-13deg); }
-    40%  { transform: rotate(10deg); }
-    60%  { transform: rotate(-5deg); }
-    78%  { transform: rotate(2deg); }
+    14%  { transform: rotate(-12deg); }
+    36%  { transform: rotate(9deg); }
+    56%  { transform: rotate(-4deg); }
+    74%  { transform: rotate(1.6deg); }
+    88%  { transform: rotate(-.5deg); }
     100% { transform: rotate(0deg); }
   }
-  .halo { position:absolute; left:50%; top:50%; width:66px; height:66px; margin:-33px 0 0 -33px;
-    border-radius:50%; border:3px solid rgba(255,206,0,.92); opacity:0;
-    box-shadow: 0 0 14px rgba(255,206,0,.5), inset 0 0 10px rgba(255,206,0,.35);
-    animation: haloPulse 1.25s cubic-bezier(.22,.61,.36,1) both; }
-  .halo.h2 { animation-delay:.9s; }
-  .halo.h3 { animation-delay:1.55s; }
+  .halo { position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px;
+    border-radius:50%; border:2px solid rgba(217,172,43,.62); opacity:0;
+    box-shadow: 0 0 12px rgba(217,172,43,.28), inset 0 0 9px rgba(217,172,43,.18);
+    animation: haloPulse 1.15s cubic-bezier(.22,.61,.36,1) .42s both; }
   @keyframes haloPulse {
-    0%   { transform: scale(.5); opacity: 0; }
-    22%  { opacity: .8; }
-    100% { transform: scale(1.55); opacity: 0; }
+    0%   { transform: scale(.55); opacity: 0; }
+    25%  { opacity: .62; }
+    100% { transform: scale(1.5); opacity: 0; }
   }
-
-  /* ============ PAGE MATERIAL LIFT (core untouched) ============ */
-  /* clear: white frost that reads WHITE over dark stages (lifted per D3-R2) */
-  .lg--clear { background: rgba(255,255,255,.33);
-    box-shadow: 0 18px 50px rgba(28,22,2,.36), 0 2px 8px rgba(28,22,2,.18), 0 0 0 1px rgba(31,23,2,.15); }
-  .lg--clear .lg-tint { background:
-    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.52), transparent 55%), rgba(255,255,255,.13); }
-  .lg--clear .lg-rim { box-shadow:
-    inset 0 0 6px rgba(255,255,255,.65), inset 0 1.5px 0 rgba(255,255,255,.95),
-    inset 0 -1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(255,255,255,.40); }
-  /* obsidian: deep dark glass, bottom-loaded */
-  .lg--obsidian { background: rgba(6,7,10,.62);
-    box-shadow: 0 24px 64px rgba(0,0,0,.62), 0 3px 12px rgba(0,0,0,.45); }
-  .lg--obsidian .lg-tint { background:
-    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.12), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,.02), rgba(2,3,5,.55)); }
-  .lg--obsidian .lg-rim { box-shadow:
-    inset 0 0 6px rgba(255,255,255,.20), inset 0 1px 0 rgba(255,255,255,.42),
-    inset 0 -1px 0 rgba(255,255,255,.10), inset 0 0 0 1px rgba(255,255,255,.14); }
-  /* bright stage: hold the frost back so light glass never blows out */
-  body.bg-bright .lg--clear { background: rgba(255,255,255,.20); }
-  body.bg-bright .lg--clear .lg-tint { background:
-    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.30), transparent 55%), rgba(255,255,255,.04); }
 
   #help { position:absolute; left:20px; top:18px; font:600 12px "Inter",system-ui,sans-serif;
     color:rgba(255,255,255,.55); background:rgba(10,12,18,.5); padding:8px 12px; border-radius:10px;
@@ -169,21 +206,24 @@
 <div id="stage">
   <canvas id="chart" width="1920" height="1080"></canvas>
   <div id="bgLayer"></div>
-  <div id="help">1 SUPER THANKS · 2 TIP · 3 CHEER · 4 SUBSCRIBE · B background · click card refires</div>
+  <div id="help">1 SUPER · 2 TIP · 3 CHEER · 4 SUBSCRIBE · B background (chart · bright · dark · grad · wash) · click refires · ?theme=obsidian (default) | frost | chameleon | clear=frost</div>
   <div id="dock"></div>
 </div>
 
 <script src="assets/liquid-glass.js"></script>
 <script>
 var Q = new URLSearchParams(location.search);
-var THEME = Q.get('theme') === 'obsidian' ? 'obsidian' : 'clear';
+/* matte migration: clear is accepted but mapped to frost (matte white) */
+var qt = Q.get('theme');
+var THEME = qt === 'frost' ? 'frost' : qt === 'chameleon' ? 'chameleon' :
+  (qt === 'clear' ? 'frost' : 'obsidian');
 if (Q.get('obs') === '1') {
   document.body.classList.add('obs');
   document.documentElement.classList.add('obs');
 }
 if (Q.get('g') === '1') document.body.classList.add('g');
 
-/* ---- chart backdrop (reference pattern) ---- */
+/* ---- chart backdrop (static) + wash mode (animated hue tour, feeds chameleon) ---- */
 var C = document.getElementById('chart'), X = C.getContext('2d'), D = [];
 (function () {
   var p = 600;
@@ -199,18 +239,35 @@ var C = document.getElementById('chart'), X = C.getContext('2d'), D = [];
   X.lineTo(120 * 16, 1080); X.lineTo(0, 1080); X.closePath();
   X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
 })();
+function drawWash(t) {
+  var hue = (t * 9) % 360;
+  var g2 = X.createLinearGradient(0, 0, 1920, 1080);
+  g2.addColorStop(0, 'hsl(' + hue + ' 42% 12%)');
+  g2.addColorStop(.5, 'hsl(' + ((hue + 40) % 360) + ' 34% 17%)');
+  g2.addColorStop(1, 'hsl(' + ((hue + 90) % 360) + ' 40% 10%)');
+  X.fillStyle = g2; X.fillRect(0, 0, 1920, 1080);
+  var w1 = X.createRadialGradient(480 + Math.sin(t * .5) * 220, 380, 60, 480 + Math.sin(t * .5) * 220, 380, 620);
+  w1.addColorStop(0, 'hsl(' + ((hue + 180) % 360) + ' 60% 52% / .30)'); w1.addColorStop(1, 'transparent');
+  X.fillStyle = w1; X.fillRect(0, 0, 1920, 1080);
+  var w2 = X.createRadialGradient(1450 + Math.cos(t * .38) * 200, 760, 60, 1450 + Math.cos(t * .38) * 200, 760, 560);
+  w2.addColorStop(0, 'hsl(' + ((hue + 60) % 360) + ' 55% 55% / .26)'); w2.addColorStop(1, 'transparent');
+  X.fillStyle = w2; X.fillRect(0, 0, 1920, 1080);
+}
+(function washLoop(ts) { if (bgMode === 'wash') drawWash((ts || 0) / 1000); requestAnimationFrame(washLoop); })();
 
+var BGS = ['chart', 'bright', 'dark', 'grad', 'wash'], curBg = 0, bgMode = 'chart';
 function bg(name) {
   var b = document.getElementById('bgLayer');
   b.className = ''; C.style.display = 'block';
   document.body.classList.remove('bg-bright');
+  bgMode = 'chart';
   if (name === 'bright' || name === 'dark' || name === 'grad') {
     b.className = name; C.style.display = 'none';
     if (name === 'bright') document.body.classList.add('bg-bright');
-  }
+  } else if (name === 'wash') { bgMode = 'wash'; }
   rematerial();
+  chamSync();
 }
-var BGS = ['chart', 'bright', 'dark', 'grad'], curBg = 0;
 if (BGS.indexOf(Q.get('bg')) > -1) { bg(Q.get('bg')); curBg = BGS.indexOf(Q.get('bg')); }
 
 /* ---- expo-out cubic-bezier(.16,1,.3,1) solver + count-up ---- */
@@ -230,46 +287,56 @@ function bez(x1, y1, x2, y2) {
 var EASE = bez(.16, 1, .3, 1);
 function countUp(el, target, fmt, dur) {
   if (!el) return;
+  if (el._craf) cancelAnimationFrame(el._craf);   /* refire: one solver, never two */
+  el.textContent = fmt(target);                   /* lock width to the FINAL figure —
+                                                     zero layout shift while counting */
+  el.style.minWidth = Math.ceil(el.getBoundingClientRect().width + 1) + 'px';
   var t0 = performance.now();
   var fr = function (t) {
     var p = Math.min(1, (t - t0) / dur), v = EASE(p);
     el.textContent = fmt(target * v);
-    if (p < 1) requestAnimationFrame(fr);
+    if (p < 1) el._craf = requestAnimationFrame(fr);
   };
-  fr(t0);
-  requestAnimationFrame(fr);
+  el._craf = requestAnimationFrame(fr);
 }
 
-/* ---- spark fountain: round sparks, true up-then-fall arc ---- */
+/* ---- spark burst: few, muted, one decisive wave, slow decay ---- */
 function fountain(host, o) {
-  var n = o.count || 12;
-  for (var i = 0; i < n; i++) {
+  for (var i = 0; i < o.count; i++) {
     (function (i) {
       setTimeout(function () {
+        /* bokeh-soft particle: soft edge, varied peak opacity + depth-of-field
+           blur on the big ones — round sparks (core contract), but never flat dots */
         var size = o.sMin + Math.random() * (o.sMax - o.sMin);
-        var life = 700 + Math.random() * 400;                 /* 700-1100ms */
+        var life = o.lifeMin + Math.random() * (o.lifeMax - o.lifeMin);
+        var c = o.colors[(Math.random() * o.colors.length) | 0];
+        var pk = .58 + Math.random() * .34;
         var s = LG.spark(host,
           o.x + (Math.random() - .5) * o.spread,
-          o.y + (Math.random() - .5) * 12,
-          size, life, { color: o.colors[(Math.random() * o.colors.length) | 0], z: 7 });
+          o.y + (Math.random() - .5) * 26,
+          size, life, { z: 7 });
+        if (size > (o.sMin + o.sMax) / 2 + 1.5) s.style.filter = 'blur(.6px)';
+        s.style.background = 'radial-gradient(circle at 42% 36%, rgba(255,252,244,.92), ' +
+          c + ' 48%, ' + c + '00 82%)';
+        s.style.boxShadow = '0 0 ' + (4 + size) + 'px ' + c + '3d';
         var old = s.getAnimations()[0]; if (old) old.cancel();
         var dx = (Math.random() - .5) * o.burst;
         var up = o.upMin + Math.random() * (o.upMax - o.upMin);
         var an = s.animate([
-          { transform: 'translate(0,0) scale(.45)', opacity: 0 },
-          { transform: 'translate(' + (dx * .38).toFixed(1) + 'px,' + (-up * .62).toFixed(1) + 'px) scale(1)', opacity: 1, offset: .34, easing: 'cubic-bezier(.17,.67,.35,1)' },
-          { transform: 'translate(' + (dx * .72).toFixed(1) + 'px,' + (-up * .8).toFixed(1) + 'px) scale(.8)', opacity: .95, offset: .6, easing: 'cubic-bezier(.5,.05,.85,.4)' },
-          { transform: 'translate(' + dx.toFixed(1) + 'px,' + (-up * .32 + 30).toFixed(1) + 'px) scale(.25)', opacity: 0 }
+          { transform: 'translate(0,0) scale(.4)', opacity: 0, easing: 'cubic-bezier(.2,.7,.3,1)' },
+          { transform: 'translate(' + (dx * .45).toFixed(1) + 'px,' + (-up * .66).toFixed(1) + 'px) scale(1)', opacity: pk, offset: .32, easing: 'cubic-bezier(.33,0,.67,1)' },
+          { transform: 'translate(' + (dx * .8).toFixed(1) + 'px,' + (-up).toFixed(1) + 'px) scale(.85)', opacity: pk * .72, offset: .58, easing: 'cubic-bezier(.45,.05,.7,.5)' },
+          { transform: 'translate(' + dx.toFixed(1) + 'px,' + (-up * .45 + 14).toFixed(1) + 'px) scale(.4)', opacity: 0 }
         ], { duration: life, fill: 'both' });
         an.onfinish = function () { s.remove(); };
-      }, i * o.stagger + Math.random() * 110);
+      }, i * o.stagger + Math.random() * o.jitter);
     })(i);
   }
 }
 
 /* ---- 3D token builder: N edge layers + front/back faces ---- */
 function makeToken(stage, o) {
-  var pop = document.createElement('div'); pop.className = 'pop';
+  var pop = document.createElement('div'); pop.className = 'pop' + (o.popCls ? ' ' + o.popCls : '');
   var tok = document.createElement('div'); tok.className = 'tok ' + (o.cls || '');
   tok.style.width = o.w + 'px'; tok.style.height = o.h + 'px';
   var n = o.layers || 9;
@@ -281,7 +348,7 @@ function makeToken(stage, o) {
     if (o.clip) e.style.clipPath = o.clip;
     tok.appendChild(e);
   }
-  var f = document.createElement('div'); f.className = 'tok-face';
+  var f = document.createElement('div'); f.className = 'tok-face tok-face--front';
   f.style.transform = 'translateZ(' + (o.thick / 2 + .5) + 'px)'; f.innerHTML = o.front;
   var b = document.createElement('div'); b.className = 'tok-face';
   b.style.transform = 'rotateY(180deg) translateZ(' + (o.thick / 2 + .5) + 'px)'; b.innerHTML = o.back;
@@ -296,37 +363,72 @@ function feat(fill) {
     '<path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="' + fill + '"/>' +
     '<path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="' + fill + '"/>';
 }
+/* brushed gold — real-gold tones, anisotropic brushing, true engraving:
+   dark cut above the glyphs, light catch below, low-contrast radial body.
+   MATTE metal: broad diffuse light, machined edge ring, visible grain. */
 function coinFront() {
   return '<svg viewBox="0 0 78 78" xmlns="http://www.w3.org/2000/svg">' +
-    '<defs><radialGradient id="cgF" cx="36%" cy="30%" r="85%">' +
-    '<stop offset="0" stop-color="#FFE86B"/><stop offset=".52" stop-color="#FFCE00"/><stop offset="1" stop-color="#E3A800"/>' +
+    '<defs><radialGradient id="cgF" cx="38%" cy="32%" r="88%">' +
+    '<stop offset="0" stop-color="#E0BA4B"/><stop offset=".5" stop-color="#CFA12B"/><stop offset=".86" stop-color="#B98D1D"/><stop offset="1" stop-color="#8F6A19"/>' +
     '</radialGradient></defs>' +
     '<circle cx="39" cy="39" r="38" fill="url(#cgF)"/>' +
-    '<circle cx="39" cy="39" r="36.4" fill="none" stroke="rgba(255,240,170,.8)" stroke-width="1.1"/>' +
-    '<circle cx="39" cy="39" r="34.4" fill="none" stroke="rgba(146,104,0,.42)" stroke-width="2.6" stroke-dasharray="2.4 2.4"/>' +
-    '<circle cx="39" cy="39" r="31.5" fill="none" stroke="rgba(146,104,0,.55)" stroke-width="1.4"/>' +
-    '<path d="M16 25 A29 29 0 0 1 38 10.5" stroke="rgba(255,249,205,.7)" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+    '<g fill="none">' +
+    '<circle cx="39" cy="39" r="35.6" stroke="rgba(122,88,0,.11)" stroke-width="1.1"/>' +
+    '<circle cx="39" cy="39" r="34.2" stroke="rgba(255,238,180,.10)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="32.9" stroke="rgba(122,88,0,.12)" stroke-width="1.3"/>' +
+    '<circle cx="39" cy="39" r="30.4" stroke="rgba(122,88,0,.10)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="27.6" stroke="rgba(255,238,180,.11)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="24.8" stroke="rgba(122,88,0,.10)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="21.9" stroke="rgba(255,238,180,.10)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="18.7" stroke="rgba(122,88,0,.11)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="15.4" stroke="rgba(255,238,180,.10)" stroke-width="1"/>' +
+    '</g>' +
+    /* machined edge: light catch outside, cut shadow inside */
+    '<circle cx="39" cy="39" r="37.2" fill="none" stroke="rgba(255,244,200,.34)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="35.9" fill="none" stroke="rgba(90,62,0,.30)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="34.4" fill="none" stroke="rgba(112,80,0,.38)" stroke-width="2.4" stroke-dasharray="2.2 2.2"/>' +
+    '<circle cx="39" cy="39" r="31.5" fill="none" stroke="rgba(112,80,0,.42)" stroke-width="1.1"/>' +
+    '<circle cx="39" cy="39" r="27.5" fill="rgba(70,48,0,.055)" stroke="rgba(112,80,0,.16)" stroke-width=".8"/>' +
+    '<path d="M19 27 A27 27 0 0 1 36 13" stroke="rgba(255,240,190,.32)" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
     '<g transform="translate(39,39.5) scale(1.8) translate(-16.9,-22.6)">' +
-    '<g transform="translate(0,1.15)">' + feat('rgba(255,242,180,.9)') + '</g>' + feat('#8F6400') +
+    '<g transform="translate(0,-0.5)">' + feat('rgba(90,62,0,.45)') + '</g>' +
+    '<g transform="translate(0,1.15)">' + feat('rgba(255,240,185,.5)') + '</g>' + feat('#7E5A00') +
     '</g></svg>';
 }
 function coinBack() {
   return '<svg viewBox="0 0 78 78" xmlns="http://www.w3.org/2000/svg">' +
-    '<defs><radialGradient id="cgB" cx="36%" cy="30%" r="85%">' +
-    '<stop offset="0" stop-color="#F5C93E"/><stop offset=".55" stop-color="#E8B400"/><stop offset="1" stop-color="#C89200"/>' +
+    '<defs><radialGradient id="cgB" cx="38%" cy="32%" r="88%">' +
+    '<stop offset="0" stop-color="#D2A62F"/><stop offset=".55" stop-color="#C09324"/><stop offset="1" stop-color="#8F6A19"/>' +
     '</radialGradient></defs>' +
     '<circle cx="39" cy="39" r="38" fill="url(#cgB)"/>' +
-    '<circle cx="39" cy="39" r="36.4" fill="none" stroke="rgba(255,240,170,.7)" stroke-width="1.1"/>' +
-    '<circle cx="39" cy="39" r="33" fill="none" stroke="rgba(130,92,0,.55)" stroke-width="1.4"/>' +
-    '<g transform="translate(39,37.5) scale(1.05) translate(-16.9,-22.6)">' + feat('rgba(122,86,0,.8)') + '</g>' +
-    '<text x="39" y="57.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" letter-spacing="1.5" fill="rgba(122,86,0,.8)">SMILE.CO.KE</text>' +
+    '<circle cx="39" cy="39" r="33" stroke="rgba(122,88,0,.10)" stroke-width="6" fill="none"/>' +
+    '<circle cx="39" cy="39" r="24" stroke="rgba(255,238,180,.09)" stroke-width="5" fill="none"/>' +
+    '<circle cx="39" cy="39" r="37.2" fill="none" stroke="rgba(255,244,200,.30)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="33" fill="none" stroke="rgba(104,74,0,.4)" stroke-width="1.2"/>' +
+    '<g transform="translate(39,37.5) scale(1.05) translate(-16.9,-22.6)">' +
+    '<g transform="translate(0,-0.5)">' + feat('rgba(84,58,0,.4)') + '</g>' + feat('rgba(104,74,0,.75)') + '</g>' +
+    '<text x="39" y="57.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" letter-spacing="1.5" fill="rgba(104,74,0,.75)">SMILE.CO.KE</text>' +
     '</svg>';
 }
 function gemSVG(p) {
-  /* recut: asymmetric facets + inner reflection planes + strong specular (D3-R2) */
+  /* cut stone: soft facet transitions (micro-blur), internal refraction wash,
+     girdle AO — sparkle kept, bloom reduced */
   return '<svg viewBox="0 0 76 72" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+    '<filter id="gsoft" x="-6%" y="-6%" width="112%" height="112%"><feGaussianBlur stdDeviation=".45"/></filter>' +
+    '<radialGradient id="ssr" cx="36%" cy="28%" r="78%">' +
+    '<stop offset="0" stop-color="rgba(255,255,255,.15)"/>' +
+    '<stop offset=".55" stop-color="rgba(255,255,255,.03)"/>' +
+    '<stop offset="1" stop-color="rgba(28,7,58,.22)"/>' +
+    '</radialGradient>' +
+    '<radialGradient id="sss" cx="42%" cy="34%" r="62%">' +
+    '<stop offset="0" stop-color="rgba(255,255,255,.16)"/>' +
+    '<stop offset=".55" stop-color="rgba(170,116,255,.12)"/>' +
+    '<stop offset="1" stop-color="rgba(170,116,255,0)"/>' +
+    '</radialGradient></defs>' +
     '<polygon points="21,3.5 59,3.5 76.5,26.5 39.5,73.5 2.5,26.5" fill="rgba(14,5,26,.35)"/>' +
     '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="' + p.base + '"/>' +
+    '<g filter="url(#gsoft)">' +
     '<polygon points="19,1 1,24 15,25" fill="' + p.light + '"/>' +
     '<polygon points="19,1 15,25 27,9" fill="' + p.light2 + '"/>' +
     '<polygon points="19,1 27,9 45,7" fill="' + p.hi + '"/>' +
@@ -338,12 +440,15 @@ function gemSVG(p) {
     '<polygon points="15,25 20,24 38,71" fill="' + p.base + '"/>' +
     '<polygon points="20,24 58,22 38,71" fill="' + p.deep + '"/>' +
     '<polygon points="58,22 75,24 38,71" fill="' + p.deep2 + '"/>' +
-    '<polygon points="23,26 34,27 29,49 21,36" fill="rgba(255,255,255,.30)"/>' +
-    '<polygon points="46,28 54,27 45,56 39,45" fill="rgba(255,255,255,.22)"/>' +
-    '<path d="M15 25 L20 24" stroke="rgba(255,255,255,.55)" stroke-width="1"/>' +
-    '<polygon points="28,10.5 38,11.5 33,20.5 25.5,18" fill="rgba(255,255,255,.92)"/>' +
-    '<circle cx="31.5" cy="15" r="1.7" fill="#FFFFFF"/>' +
-    '<path d="M48 11.5 h7 M51.5 8 v7" stroke="rgba(255,255,255,.8)" stroke-width="1.1" stroke-linecap="round"/>' +
+    '</g>' +
+    '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="url(#ssr)"/>' +
+    '<circle cx="38" cy="29" r="17" fill="url(#sss)"/>' +
+    '<polygon points="23,26 34,27 29,49 21,36" fill="rgba(255,255,255,.26)"/>' +
+    '<polygon points="46,28 54,27 45,56 39,45" fill="rgba(255,255,255,.17)"/>' +
+    '<path d="M15 25 L20 24" stroke="rgba(255,255,255,.38)" stroke-width="1"/>' +
+    '<polygon points="28,10.5 38,11.5 33,20.5 25.5,18" fill="rgba(255,255,255,.78)"/>' +
+    '<circle cx="31.5" cy="15" r="1.7" fill="rgba(255,255,255,.85)"/>' +
+    '<path d="M48 11.5 h7 M51.5 8 v7" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linecap="round"/>' +
     '<polygon points="20,24 58,22 44,26 30,27" fill="rgba(20,4,40,.28)"/>' +
     '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="none" stroke="' + p.dark + '" stroke-width="1.6" stroke-linejoin="round"/>' +
     '</svg>';
@@ -356,7 +461,7 @@ function tileSVG() {
 }
 function gemBack(p) {
   return '<svg viewBox="0 0 76 72" xmlns="http://www.w3.org/2000/svg">' +
-    '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="' + p.deep + '"/>' +
+    '<polygon points="19,1 57,1 75,24 38,71" fill="' + p.deep + '"/>' +
     '<polygon points="27,24 49,24 38,56" fill="' + p.dark + '"/>' +
     '<path d="M16 24 L60 24" stroke="rgba(255,255,255,.18)" stroke-width="1"/>' +
     '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="none" stroke="' + p.dark + '" stroke-width="1.6" stroke-linejoin="round"/>' +
@@ -364,43 +469,51 @@ function gemBack(p) {
 }
 var GEM_CLIP = 'polygon(25% 1.4%, 75% 1.4%, 98.7% 33.3%, 50% 98.6%, 1.3% 33.3%)';
 function bellSVG() {
+  /* matte bell gold — dome catches light on the curve, lower body carries weight */
   return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
     '<defs><linearGradient id="bgld" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="#FFE566"/><stop offset=".55" stop-color="#FFCE00"/><stop offset="1" stop-color="#DFA900"/>' +
+    '<stop offset="0" stop-color="#F2D35C"/><stop offset=".55" stop-color="#E2B822"/><stop offset="1" stop-color="#B8890F"/>' +
     '</linearGradient></defs>' +
-    '<path d="M32 5.5c1.6 0 2.9 1.3 2.9 2.9 0 1.1-.6 2-1.4 2.5v2.3h-3v-2.3c-.8-.5-1.4-1.4-1.4-2.5 0-1.6 1.3-2.9 2.9-2.9z" fill="url(#bgld)" stroke="#B8860B" stroke-width="1"/>' +
-    '<path d="M32 13.5c-9.6 0-14.6 7-14.6 15.4 0 8.8-2.4 13.2-5.3 16.1-.9.9-.3 2.6 1.1 2.6h37.6c1.4 0 2-1.7 1.1-2.6-2.9-2.9-5.3-7.3-5.3-16.1 0-8.4-5-15.4-14.6-15.4z" fill="url(#bgld)" stroke="#8F6400" stroke-width="1.4" stroke-linejoin="round"/>' +
-    '<path d="M24.5 18.5c-3.2 1.7-5.2 4.6-5.9 8.6" stroke="rgba(255,249,215,.95)" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+    '<path d="M32 5.5c1.6 0 2.9 1.3 2.9 2.9 0 1.1-.6 2-1.4 2.5v2.3h-3v-2.3c-.8-.5-1.4-1.4-1.4-2.5 0-1.6 1.3-2.9 2.9-2.9z" fill="url(#bgld)" stroke="#9A7409" stroke-width="1"/>' +
+    '<path d="M32 13.5c-9.6 0-14.6 7-14.6 15.4 0 8.8-2.4 13.2-5.3 16.1-.9.9-.3 2.6 1.1 2.6h37.6c1.4 0 2-1.7 1.1-2.6-2.9-2.9-5.3-7.3-5.3-16.1 0-8.4-5-15.4-14.6-15.4z" fill="url(#bgld)" stroke="#8F6400" stroke-width="1.3" stroke-linejoin="round"/>' +
+    '<ellipse cx="25.5" cy="23.5" rx="5.5" ry="8.5" fill="rgba(255,248,214,.28)" transform="rotate(-14 25.5 23.5)"/>' +
+    '<path d="M14.2 45.6q17.8 4.6 35.6 0" stroke="rgba(255,244,200,.32)" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+    '<path d="M24.5 18.5c-3.2 1.7-5.2 4.6-5.9 8.6" stroke="rgba(255,246,200,.5)" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
     '<path d="M22 44.5h20" stroke="rgba(143,100,0,.5)" stroke-width="1.4" stroke-linecap="round"/>' +
-    '<circle cx="32" cy="51.5" r="4.2" fill="#C88F00" stroke="#8F6400" stroke-width="1"/>' +
+    '<circle cx="32" cy="51.5" r="4.2" fill="#B8860B" stroke="#8F6400" stroke-width="1"/>' +
     '</svg>';
 }
 
 /* ---- card factory ---- */
 var dock = document.getElementById('dock');
 var ORDER = ['super', 'tip', 'cheer', 'sub'];
+/* matte tuning: lower CA, calmer refraction, saturation boosts well under the
+   old glossy values, brightness held near 1 — the material must sit, not shout */
 var TUNE = {
-  super: { s: 84, ca: 2.0, blur: 2.2 },
-  tip:   { s: 88, ca: 2.1, blur: 2.3 },
-  cheer: { s: 80, ca: 1.9, blur: 2.1 },
-  sub:   { s: 82, ca: 2.0, blur: 2.2 }
+  super: { s: 78, ca: 1.5, blur: 2.4 },
+  tip:   { s: 82, ca: 1.6, blur: 2.5 },
+  cheer: { s: 76, ca: 1.4, blur: 2.3 },
+  sub:   { s: 78, ca: 1.5, blur: 2.4 }
 };
 var MAT = {
-  clear:       { sat: 1.85, bri: 1.24 },   /* lifted: reads white glass over dark stages */
-  clearBright: { sat: 1.70, bri: 1.08 },   /* held back on the ivory stage — no blowout */
-  obsidian:    { sat: 1.42, bri: .99 }
+  obsidian:   { sat: 1.38, bri: .99 },
+  chameleon:  { sat: 1.30, bri: 1.00 },
+  frost:      { sat: 1.22, bri: 1.05 },
+  frostBright:{ sat: 1.10, bri: .98 }
 };
 function brightNow() { return document.body.classList.contains('bg-bright'); }
 function glassOpts(id) {
-  var t = TUNE[id];
-  var m = THEME === 'clear' ? (brightNow() ? MAT.clearBright : MAT.clear) : MAT.obsidian;
+  var t = TUNE[id], m;
+  if (THEME === 'obsidian') m = MAT.obsidian;
+  else if (THEME === 'chameleon') m = MAT.chameleon;
+  else m = brightNow() ? MAT.frostBright : MAT.frost;
   return { theme: THEME, depth: 14, strength: t.s, ca: t.ca, blur: t.blur, saturate: m.sat, brightness: m.bri };
 }
 function rematerial() {
-  if (THEME !== 'clear' || !CARDS) return;
+  if (THEME !== 'frost' || !CARDS) return;
   ORDER.forEach(function (id) {
     var el = CARDS[id]; if (!el) return;
-    ['lg-backdrop', 'lg-tint', 'lg-rim', 'lg-spec'].forEach(function (c) {
+    ['lg-backdrop', 'lg-tint', 'lg-rim', 'lg-spec', 'lg-grain'].forEach(function (c) {
       Array.prototype.forEach.call(el.querySelectorAll(':scope > ' + c), function (n) { n.remove(); });
     });
     el._opts = glassOpts(id);
@@ -409,41 +522,49 @@ function rematerial() {
 }
 
 var INNER = {
-  super: '<div class="obj-stage lg-scene"><i class="oshadow"></i></div>' +
-    '<div class="tx"><div class="row1"><b class="ttl">SUPER THANKS</b><span class="chip chip--usd"><span class="amt">$0.00</span></span></div>' +
-    '<span class="sub"><i class="yt"></i>from @viewerriver · thank you</span></div>',
+  super: '<div class="obj-stage lg-scene"><i class="oshadow oshadow--coin"></i></div>' +
+    '<div class="tx"><b class="ttl">SUPER THANKS</b>' +
+    '<span class="subrow"><b class="amt amt--usd">$0.00</b>' +
+    '<span class="sub"><i class="yt"></i>from @viewerriver · thank you</span></span></div>',
   tip: '<div class="obj-stage lg-scene"><i class="oshadow"></i></div>' +
-    '<div class="tx"><div class="row1"><b class="ttl">TIP RECEIVED</b><span class="chip chip--kes"><span class="amt">KSh 0</span></span></div>' +
-    '<span class="sub"><b class="mp">M-PESA</b> · asante sana</span></div>',
+    '<div class="tx"><b class="ttl">TIP RECEIVED</b>' +
+    '<span class="subrow"><b class="amt amt--kes">KSh 0</b>' +
+    '<span class="sub"><b class="mp">M-PESA</b> · asante sana</span></span></div>',
   cheer: '<div class="obj-stage lg-scene"><i class="oshadow"></i></div>' +
-    '<div class="tx"><div class="row1"><b class="ttl">CHEER</b><span class="chip chip--bits"><span class="amt">0 BITS</span></span></div>' +
-    '<span class="sub">twitch.tv/smilecoke</span></div>',
+    '<div class="tx"><b class="ttl">CHEER</b>' +
+    '<span class="subrow"><b class="amt amt--bits">0 BITS</b>' +
+    '<span class="sub">twitch.tv/smilecoke</span></span></div>',
   sub: '<div class="obj-stage lg-scene"><i class="oshadow"></i></div>' +
-    '<div class="tx"><div class="row1"><b class="ttl ttl--gold">SUBSCRIBE</b></div>' +
-    '<span class="sub">welcome to the desk, @newviewerriver</span></div>'
+    '<div class="tx"><b class="ttl ttl--gold">SUBSCRIBE</b>' +
+    '<span class="subrow"><span class="sub">welcome to the desk, @newviewerriver</span></span></div>'
 };
 
+/* fx fire at the physical moment: coin contact / tile settle / gem tick / bell strike */
+var GOLD_M = ['#D9AC2B', '#C79A1F', '#EFD98A'];
+var GREEN_M = ['#4CA83A', '#63B84F', '#8CCB79'];
+var PURPLE_M = ['#7E4FD1', '#9268DE', '#B79AEB'];
 var FX = {
   super: function (el) {
-    fountain(el, { x: 54, y: 90, count: 13, colors: ['#FFCE00', '#FFDF3F', '#FFF3B0', '#FFB300'],
-      burst: 130, upMin: 48, upMax: 108, spread: 58, sMin: 4, sMax: 12, stagger: 36 });
-    countUp(el.querySelector('.amt'), 5, function (v) { return '$' + v.toFixed(2); }, 840);
+    fountain(el, { x: 54, y: 82, count: 7, colors: GOLD_M, burst: 96, upMin: 42, upMax: 76,
+      spread: 38, sMin: 2.5, sMax: 9.5, stagger: 12, jitter: 70, lifeMin: 1050, lifeMax: 1400 });
+    countUp(el.querySelector('.amt'), 5, function (v) { return '$' + v.toFixed(2); }, 860);
   },
   tip: function (el) {
-    fountain(el, { x: 54, y: 90, count: 11, colors: ['#43B02A', '#7ED957', '#C9F2A6', '#2E801D'],
-      burst: 120, upMin: 44, upMax: 100, spread: 56, sMin: 4, sMax: 11, stagger: 40 });
-    countUp(el.querySelector('.amt'), 250, function (v) { return 'KSh ' + Math.round(v); }, 820);
+    fountain(el, { x: 52, y: 82, count: 6, colors: GREEN_M, burst: 88, upMin: 36, upMax: 66,
+      spread: 34, sMin: 2.5, sMax: 8.5, stagger: 15, jitter: 80, lifeMin: 1000, lifeMax: 1350 });
+    countUp(el.querySelector('.amt'), 250, function (v) { return 'KSh ' + Math.round(v); }, 840);
   },
   cheer: function (el) {
-    fountain(el, { x: 54, y: 88, count: 11, colors: ['#9146FF', '#B98FFF', '#E2D0FF'],
-      burst: 120, upMin: 44, upMax: 102, spread: 56, sMin: 4, sMax: 11, stagger: 40 });
-    countUp(el.querySelector('.amt'), 100, function (v) { return Math.round(v) + ' BITS'; }, 820);
+    fountain(el, { x: 52, y: 80, count: 6, colors: PURPLE_M, burst: 88, upMin: 36, upMax: 68,
+      spread: 34, sMin: 2.5, sMax: 8.5, stagger: 15, jitter: 80, lifeMin: 1000, lifeMax: 1350 });
+    countUp(el.querySelector('.amt'), 100, function (v) { return Math.round(v) + ' BITS'; }, 840);
   },
   sub: function (el) {
-    fountain(el, { x: 54, y: 70, count: 12, colors: ['#FFCE00', '#FFDF3F', '#FFF3B0'],
-      burst: 150, upMin: 40, upMax: 96, spread: 60, sMin: 4, sMax: 11, stagger: 34 });
+    fountain(el, { x: 52, y: 66, count: 5, colors: GOLD_M, burst: 92, upMin: 34, upMax: 62,
+      spread: 36, sMin: 2.5, sMax: 8.5, stagger: 18, jitter: 90, lifeMin: 950, lifeMax: 1300 });
   }
 };
+var FXD = { super: 660, tip: 640, cheer: 560, sub: 560 };
 
 function buildCard(id, setup) {
   var el = document.createElement('div');
@@ -453,21 +574,25 @@ function buildCard(id, setup) {
   if (setup) setup(el);
   el._opts = glassOpts(id);
   el._ref = LG.glass(el, el._opts);
-  el._id = id; el._fx = FX[id];
+  el._id = id; el._fx = FX[id]; el._fxd = FXD[id];
   el.addEventListener('click', function () { if (!TYPE) stopCycle(); fire(el); });
   return el;
 }
 
 function setupSuper(el) {
   makeToken(el.querySelector('.obj-stage'), { w: 78, h: 78, thick: 9, round: '50%',
-    edgeA: '#D9A400', edgeB: '#B8860B', layers: 11, front: coinFront(), back: coinBack(), cls: 'coin' });
+    edgeA: '#CE9E20', edgeB: '#A87E15', layers: 11, front: coinFront(), back: coinBack(),
+    cls: 'coin', popCls: 'pop--coin' });
 }
 var PURPLE = { hi: '#F2E7FF', light: '#C9A4FF', light2: '#A878FF', base: '#9146FF',
   deep: '#5E2799', deep2: '#4A1878', dark: '#331263' };
 function setupGem(pal) {
   return function (el) {
-    makeToken(el.querySelector('.obj-stage'), { w: 76, h: 72, thick: 11, clip: GEM_CLIP,
-      edgeA: pal.deep, edgeB: pal.dark, layers: 9, front: gemSVG(pal), back: gemBack(pal), cls: 'gem' });
+    var tok = makeToken(el.querySelector('.obj-stage'), { w: 76, h: 72, thick: 11, clip: GEM_CLIP,
+      edgeA: pal.deep, edgeB: pal.dark, layers: 9, front: gemSVG(pal), back: gemBack(pal),
+      cls: 'gem', popCls: 'pop--gem' });
+    var g = document.createElement('i'); g.className = 'glint';
+    tok.querySelector('.tok-face--front').appendChild(g);
   };
 }
 function setupTip(el) {
@@ -479,7 +604,7 @@ function setupTip(el) {
 }
 function setupSub(el) {
   el.querySelector('.obj-stage').insertAdjacentHTML('beforeend',
-    '<i class="halo"></i><i class="halo h2"></i><i class="halo h3"></i><div class="bell">' + bellSVG() + '</div>');
+    '<i class="halo"></i><div class="bell">' + bellSVG() + '</div>');
 }
 
 var CARDS = {
@@ -489,6 +614,34 @@ var CARDS = {
   sub: buildCard('sub', setupSub)
 };
 
+/* ---- chameleon wiring: cards sample the bg canvas (chart / wash) ---- */
+var CHAM = null;
+function chamStart() {
+  if (THEME !== 'chameleon' || CHAM || !CARDS) return;
+  var stageEl = document.getElementById('stage');
+  CHAM = ORDER.map(function (id) {
+    return LG.chameleon(CARDS[id], { source: C, stage: stageEl, interval: 420, hue: 224, sat: 22 });
+  });
+}
+function chamStop() { if (CHAM) { CHAM.forEach(function (c) { c.stop(); }); CHAM = null; } }
+var CHAM_PRESET = { bright: { h: 46, s: 34, e: .05 }, dark: { h: 222, s: 12, e: 0 }, grad: { h: 258, s: 36, e: .04 } };
+function chamSync() {
+  if (THEME !== 'chameleon' || !CARDS) return;
+  if (bgMode === 'chart' || bgMode === 'wash') { chamStop(); chamStart(); }
+  else {
+    chamStop();
+    var p = CHAM_PRESET[bgMode];
+    ORDER.forEach(function (id) {
+      var el = CARDS[id]; if (!el || !p) return;
+      el.style.setProperty('--ch-h', p.h);
+      el.style.setProperty('--ch-s', p.s);
+      el.style.setProperty('--ch-e', p.e);
+    });
+  }
+}
+rematerial();
+chamSync();
+
 /* ---- fire / kill / cycle ---- */
 var active = null, cycling = true, cycleTimer = null, idx = 0;
 function kill(el) {
@@ -497,15 +650,19 @@ function kill(el) {
   el.classList.remove('in', 'out', 'sheen', 'on');
 }
 function fire(el) {
+  var wasOn = active === el;
   kill(active); active = el;
-  el.classList.add('on');                       /* opacity stays 0 until .in lands */
+  el.classList.remove('on');
+  if (wasOn) void el.offsetWidth;   /* true unrender: cancels running hero animations */
+  el.classList.add('on');
+  if (wasOn) void el.offsetWidth;   /* re-render: coin/tile/gem/bell restart from zero */
   requestAnimationFrame(function () { requestAnimationFrame(function () {
     if (el._ref) el._ref.refresh();             /* displacement map at true size */
     el.classList.remove('in', 'out', 'sheen');
     void el.offsetWidth;                        /* restart animations */
     el.classList.add('in', 'sheen');
   }); });
-  el._t1 = setTimeout(function () { el._fx(el); }, 300);
+  el._t1 = setTimeout(function () { el._fx(el); }, el._fxd || 300);
   el._t2 = setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); }, 5200);
   el._t3 = setTimeout(function () { el.classList.remove('out'); el.classList.remove('on'); }, 5740);
 }
@@ -530,7 +687,7 @@ addEventListener('keydown', function (e) {
   var k = e.key.toLowerCase();
   var MAP = { '1': 'super', '2': 'tip', '3': 'cheer', '4': 'sub' };
   if (MAP[k]) { if (TYPE) return; stopCycle(); fireId(MAP[k]); }
-  if (k === 'b') { curBg = (curBg + 1) % 4; bg(BGS[curBg]); }
+  if (k === 'b') { curBg = (curBg + 1) % BGS.length; bg(BGS[curBg]); }
 });
 </script>
 </body>

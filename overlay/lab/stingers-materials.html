@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MATERIALS — frost · obsidian · chameleon (smile.co.ke)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/liquid-glass.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0A0C14; }
+  html.obs, body.obs { background:transparent !important; }
+  body.obs #stage-bg, body.obs #help, body.g #help, body.obs #readout { display:none !important; }
+
+  #stage { position:absolute; inset:0; }
+  #stage-bg { position:absolute; inset:0; }
+
+  #help { position:absolute; left:20px; top:18px; font:600 12px/1.5 "Inter",system-ui,sans-serif;
+    letter-spacing:-.01em; color:rgba(255,255,255,.60); background:rgba(10,12,18,.55);
+    padding:9px 13px; border-radius:10px; backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); z-index:9; }
+  #readout { position:absolute; left:20px; bottom:18px; font:600 11px/1.5 ui-monospace,"SF Mono",monospace;
+    color:rgba(255,255,255,.55); background:rgba(10,12,18,.55); padding:8px 12px; border-radius:10px;
+    backdrop-filter:blur(10px); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); z-index:9; }
+  #readout b { color:#FFCE00; font-weight:600; }
+
+  /* the three judge cards share one row, one geometry — only the material differs */
+  #row { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    display:flex; gap:34px; align-items:center; }
+  .cell { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .cell .tag { font:600 10px "IBM Plex Mono",ui-monospace,monospace; letter-spacing:.24em;
+    color:rgba(255,255,255,.5); transition:color .4s; }
+  body.light-stage .cell .tag { color:rgba(40,34,16,.55); }
+  .stg { display:flex; align-items:center; gap:14px; padding:14px 26px 14px 14px; cursor:pointer;
+    opacity:0; visibility:hidden; pointer-events:none;
+    --acc:transparent; --acc-o:0;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; }
+  .stg.in, .stg.out { visibility:visible; pointer-events:auto; }
+  .stg .lg-content { display:flex; align-items:center; gap:14px; }
+
+  .stg .ic { width:48px; height:48px; border-radius:50%; flex:none; display:grid; place-items:center;
+    background:
+      radial-gradient(135% 135% at 30% 16%, rgba(255,255,255,.14), rgba(255,255,255,.03) 50%, rgba(0,0,0,.28) 100%),
+      rgba(8,10,14,.50);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.22),
+      inset 0 -1px 1px rgba(0,0,0,.55),
+      inset 0 0 0 1px rgba(255,255,255,.08),
+      0 2px 9px rgba(0,0,0,.35); }
+  body.light-stage .stg .ic {
+    background:
+      radial-gradient(135% 135% at 30% 16%, rgba(255,255,255,.65), rgba(255,255,255,.28) 50%, rgba(30,26,12,.22) 100%),
+      rgba(250,249,246,.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.8),
+      inset 0 -1px 2px rgba(60,50,10,.14),
+      inset 0 0 0 1px rgba(120,105,40,.10),
+      0 2px 9px rgba(60,50,20,.25); }
+  .stg .ic svg { width:26px; height:26px; display:block; }
+
+  .stg .tx { display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .stg .tx b { font-size:18.5px; font-weight:700; line-height:1.08; letter-spacing:-.026em;
+    color:#fff; white-space:nowrap; }
+  .stg .tx span { font-size:12px; font-weight:500; line-height:1.25; letter-spacing:-.004em;
+    color:rgba(255,255,255,.62); white-space:nowrap; }
+  .stg[data-mat="frost"] .tx b { color:#17140A; }
+  .stg[data-mat="frost"] .tx span { color:rgba(38,33,18,.62); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="stage-bg" width="1920" height="1080"></canvas>
+  <div id="help">B background &middot; 1/2/3 refire frost / obsidian / chameleon &middot; click a card too</div>
+  <div id="readout">CHAMELEON · H <b id="rh">—</b> · S <b id="rs">—</b> · ENERGY <b id="re">—</b></div>
+  <div id="row"></div>
+</div>
+
+<script src="assets/liquid-glass.js"></script>
+<script>
+var Q = new URLSearchParams(location.search);
+var OBS = Q.get('obs') === '1', G = Q.get('g') === '1';
+document.body.classList.toggle('obs', OBS);
+document.documentElement.classList.toggle('obs', OBS);
+if (G) document.body.classList.add('g');
+
+/* ---------- animated demo backdrop: drift washes + scrolling chart ---------- */
+var C = document.getElementById('stage-bg'), X = C.getContext('2d');
+var BGS = ['wash', 'chart', 'bright', 'dark'];
+var bgMode = BGS.indexOf(Q.get('bg')) > -1 ? Q.get('bg') : 'wash';
+
+/* chart history buffers */
+var N = 160, D = [], q = 520, p = 640, i;
+for (i = 0; i < N; i++) { p += (Math.random() - .47) * 9; D.push(p); }
+var washT = 0, pulse = 0;
+
+function drawBg(ts) {
+  var t = ts / 1000;
+  X.clearRect(0, 0, 1920, 1080);
+  if (bgMode === 'bright') {
+    var g0 = X.createLinearGradient(0, 0, 1920, 1080);
+    g0.addColorStop(0, '#F7F3EA'); g0.addColorStop(.45, '#EDE4CC'); g0.addColorStop(1, '#D9CBA6');
+    X.fillStyle = g0; X.fillRect(0, 0, 1920, 1080);
+    document.body.classList.add('light-stage');
+  } else if (bgMode === 'dark') {
+    var g1 = X.createLinearGradient(0, 0, 1920, 1080);
+    g1.addColorStop(0, '#0E1118'); g1.addColorStop(.5, '#131720'); g1.addColorStop(1, '#0B0D12');
+    X.fillStyle = g1; X.fillRect(0, 0, 1920, 1080);
+    document.body.classList.remove('light-stage');
+  } else if (bgMode === 'chart') {
+    X.fillStyle = '#0A0C14'; X.fillRect(0, 0, 1920, 1080);
+    document.body.classList.remove('light-stage');
+    X.strokeStyle = 'rgba(255,255,255,.045)';
+    for (i = 0; i < 1920; i += 110) { X.beginPath(); X.moveTo(i, 0); X.lineTo(i, 1080); X.stroke(); }
+    for (i = 0; i < 1080; i += 85) { X.beginPath(); X.moveTo(0, i); X.lineTo(1920, i); X.stroke(); }
+    if (!drawBg.last || ts - drawBg.last > 66) {              /* 15fps data push = motion energy */
+      drawBg.last = ts;
+      D.push(D[D.length - 1] + (Math.random() - .47) * 14); D.shift();
+    }
+    var lo = Math.min.apply(null, D), hi = Math.max.apply(null, D), span = Math.max(hi - lo, 40);
+    X.beginPath();
+    D.forEach(function (v, ix) { var px2 = ix * 12.5, py = 950 - (v - lo) / span * 700; ix ? X.lineTo(px2, py) : X.moveTo(px2, py); });
+    X.strokeStyle = 'rgba(255,206,0,.85)'; X.lineWidth = 2.5; X.stroke();
+    X.lineTo((N - 1) * 12.5, 1080); X.lineTo(0, 1080); X.closePath();
+    X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
+  } else {                                                    /* wash — hue slowly tours the wheel */
+    washT = t * 9;                                            /* deg/sec — full tour ~40s */
+    var hue = (washT % 360);
+    var g2 = X.createLinearGradient(0, 0, 1920, 1080);
+    g2.addColorStop(0, 'hsl(' + hue + ' 42% 12%)');
+    g2.addColorStop(.5, 'hsl(' + ((hue + 40) % 360) + ' 34% 17%)');
+    g2.addColorStop(1, 'hsl(' + ((hue + 90) % 360) + ' 40% 10%)');
+    X.fillStyle = g2; X.fillRect(0, 0, 1920, 1080);
+    var w1 = X.createRadialGradient(480 + Math.sin(t * .5) * 220, 380, 60, 480 + Math.sin(t * .5) * 220, 380, 620);
+    w1.addColorStop(0, 'hsl(' + ((hue + 180) % 360) + ' 60% 52% / .34)'); w1.addColorStop(1, 'transparent');
+    X.fillStyle = w1; X.fillRect(0, 0, 1920, 1080);
+    var w2 = X.createRadialGradient(1450 + Math.cos(t * .38) * 200, 760, 60, 1450 + Math.cos(t * .38) * 200, 760, 560);
+    w2.addColorStop(0, 'hsl(' + ((hue + 60) % 360) + ' 55% 55% / .30)'); w2.addColorStop(1, 'transparent');
+    X.fillStyle = w2; X.fillRect(0, 0, 1920, 1080);
+    document.body.classList.remove('light-stage');
+    /* a pulse band sweeps every 6s — feeds the chameleon's energy score */
+    var ph = (t % 6) / 6;
+    if (ph < .28) {
+      var bx = -300 + ph / .28 * 2520;
+      var bp = X.createLinearGradient(bx - 260, 0, bx + 260, 0);
+      bp.addColorStop(0, 'transparent');
+      bp.addColorStop(.5, 'hsl(' + ((hue + 200) % 360) + ' 80% 62% / .18)');
+      bp.addColorStop(1, 'transparent');
+      X.fillStyle = bp; X.fillRect(0, 0, 1920, 1080);
+    }
+  }
+  requestAnimationFrame(drawBg);
+}
+requestAnimationFrame(drawBg);
+
+function cycleBg() { bgMode = BGS[(BGS.indexOf(bgMode) + 1) % BGS.length]; }
+
+/* ---------- the three judge cards ---------- */
+var YT = '<svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg>';
+var MATS = [
+  { m: 'frost',     tag: 'FROST — MATTE WHITE', acc: 'rgba(255,0,51,.75)', acco: .55 },
+  { m: 'obsidian',  tag: 'OBSIDIAN — MATTE BLACK', acc: 'rgba(255,0,51,.75)', acco: .70 },
+  { m: 'chameleon', tag: 'CHAMELEON — ADAPTIVE', acc: null, acco: 0 }
+];
+var row = document.getElementById('row'), cards = {};
+MATS.forEach(function (d) {
+  var cell = document.createElement('div'); cell.className = 'cell';
+  var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = d.tag;
+  var el = document.createElement('div'); el.className = 'stg'; el.dataset.mat = d.m;
+  el.innerHTML = '<span class="ic">' + YT + '</span><span class="tx"><b>SUBSCRIBE</b><span>youtube.com/@smile.co.ke</span></span>';
+  cell.appendChild(tag); cell.appendChild(el); row.appendChild(cell);
+  var glassOpts = {
+    theme: d.m, depth: 14, strength: 84, ca: 1.8, blur: 2.2,
+    saturate: d.m === 'frost' ? 1.25 : 1.35,
+    brightness: d.m === 'frost' ? 1.06 : .98
+  };
+  LG.glass(el, glassOpts);
+  if (d.acc) { el.style.setProperty('--acc', d.acc); el.style.setProperty('--acc-o', d.acco); }
+  cards[d.m] = el;
+  el.addEventListener('click', function () { refire(d.m); });
+});
+
+/* wire the chameleon's eyes to the animated stage */
+var stage = document.getElementById('stage');
+var cham = LG.chameleon(cards.chameleon, { source: C, stage: stage, interval: 380, hue: 224, sat: 22 });
+
+setInterval(function () {
+  var cs = getComputedStyle(cards.chameleon);
+  document.getElementById('rh').textContent = parseFloat(cs.getPropertyValue('--ch-h')).toFixed(0);
+  document.getElementById('rs').textContent = parseFloat(cs.getPropertyValue('--ch-s')).toFixed(0) + '%';
+  document.getElementById('re').textContent = parseFloat(cs.getPropertyValue('--ch-e')).toFixed(2);
+}, 200);
+
+/* ---------- all three stay visible — this page judges materials, so cards persist ---------- */
+var timers = [];
+function refire(m) {                 /* replay the entry animation + sheen on one card */
+  var el = cards[m]; if (!el) return;
+  el.classList.remove('in', 'out', 'sheen');
+  void el.offsetWidth;
+  el.classList.add('in', 'sheen');
+}
+
+addEventListener('keydown', function (e) {
+  if (e.key === '1') refire('frost');
+  else if (e.key === '2') refire('obsidian');
+  else if (e.key === '3') refire('chameleon');
+  else if (e.key.toLowerCase() === 'b') cycleBg();
+});
+
+/* boot: everything visible at once — that is the point of the page */
+setTimeout(function () { refire('frost'); refire('obsidian'); refire('chameleon'); }, 350);
+</script>
+</body>
+</html>
