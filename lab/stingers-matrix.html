@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STINGERS — MATRIX · every platform interaction · smile.co.ke</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/liquid-glass.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0A0C14;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; }
+
+  /* ?obs=1 — truly transparent capture: html AND body, chrome gone */
+  html.obs, body.obs { background:transparent !important; }
+  body.obs #chart, body.obs #bgLayer, body.obs #help, body.obs #tabs { display:none !important; }
+
+  #stage { position:absolute; inset:0; }
+  #chart { position:absolute; inset:0; }
+  #bgLayer { position:absolute; inset:0; display:none; }
+  #bgLayer.bright { display:block; background:linear-gradient(135deg,#F7F3EA,#E8DFC9 45%,#D9CBA6); }
+  #bgLayer.dark   { display:block; background:linear-gradient(160deg,#0E1118,#131720 50%,#0B0D12); }
+
+  /* ================= platform tabs (top center) ================= */
+  #tabs { position:absolute; top:16px; left:50%; transform:translateX(-50%);
+    display:flex; gap:6px; z-index:9; }
+  .tab { font:600 10px "IBM Plex Mono",ui-monospace,monospace; letter-spacing:.16em;
+    color:rgba(255,255,255,.50); background:rgba(10,12,18,.55); border:0; cursor:pointer;
+    padding:8px 13px 8px 11px; border-radius:999px; backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px); box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);
+    transition:color .25s, background .25s, box-shadow .25s; }
+  .tab i { display:inline-block; width:6px; height:6px; border-radius:50%;
+    background:var(--pa,#FFCE00); margin-right:7px; vertical-align:1px; opacity:.75; transition:opacity .25s; }
+  .tab:hover { color:rgba(255,255,255,.85); }
+  .tab.on { color:#fff; background:rgba(32,36,46,.74); box-shadow:inset 0 0 0 1px rgba(255,255,255,.17); }
+  .tab.on i { opacity:1; }
+
+  /* ================= help (bottom left) ================= */
+  #help { position:absolute; left:20px; bottom:20px; z-index:9; max-width:560px;
+    font:600 10px/1.7 "IBM Plex Mono",ui-monospace,monospace; letter-spacing:.05em;
+    color:rgba(255,255,255,.55); background:rgba(10,12,18,.55); padding:9px 13px; border-radius:12px;
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+  #help .k { color:#FFCE00; font-weight:600; }
+  #help .sep { font-style:normal; color:rgba(255,255,255,.28); margin:0 6px; }
+  #help .hint { display:block; margin-top:2px; color:rgba(255,255,255,.38); }
+
+  /* ================= dock (bottom right, one shared anchor) ================= */
+  #dock { position:absolute; right:44px; bottom:48px; display:grid; }
+  .stgw { grid-area:1 / 1; justify-self:end; position:relative; }
+
+  /* ================= THE CARD ================= */
+  .stg { display:none; align-items:center; cursor:pointer; opacity:0;
+    padding:14px 26px 14px 14px; border-radius:999px;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; }
+  .stg.on { display:flex; }
+  .stg.in, .stg.out { opacity:1; }
+  /* LG.glass lifts children into .lg-content — keep the row intact in there */
+  .stg .lg-content { display:flex; align-items:center; gap:16px; }
+  /* money heroes animate themselves — suppress the core rise on their stage */
+  .lg.in .lg-content > .obj-stage { animation:none; opacity:1; }
+
+  /* ONE accent per card — platform color in the BOTTOM rim only (core rule) */
+  body[data-theme="obsidian"]  .stg { --acc-o:.60; }
+  body[data-theme="chameleon"] .stg { --acc-o:.48; }
+  body[data-theme="frost"]     .stg { --acc-o:.34; }
+
+  /* heavier shadow when planted over the bright stage */
+  body.bg-bright .stg.lg { box-shadow:
+    0 30px 74px rgba(12,9,0,.44), 0 8px 20px rgba(12,9,0,.34), 0 2px 8px rgba(12,9,0,.30); }
+
+  /* icon circle — dark inset on dark glass, lifted light disc on frost */
+  .stg .ic { width:48px; height:48px; border-radius:50%; flex:none; display:grid; place-items:center;
+    position:relative;
+    background:
+      radial-gradient(135% 135% at 30% 16%, rgba(255,255,255,.14), rgba(255,255,255,.03) 50%, rgba(0,0,0,.28) 100%),
+      rgba(8,10,14,.50);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.22),
+      inset 0 -1px 1px rgba(0,0,0,.55),
+      inset 0 0 0 1px rgba(255,255,255,.08),
+      0 2px 9px rgba(0,0,0,.35); }
+  body[data-theme="frost"] .stg .ic {
+    background:
+      radial-gradient(135% 135% at 30% 16%, rgba(255,255,255,.65), rgba(255,255,255,.28) 50%, rgba(30,26,12,.22) 100%),
+      rgba(250,249,246,.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.8),
+      inset 0 -1px 2px rgba(60,50,10,.14),
+      inset 0 0 0 1px rgba(120,105,40,.10),
+      0 2px 9px rgba(60,50,20,.25); }
+  .stg .ic > svg { width:26px; height:26px; display:block; filter:drop-shadow(0 1px 3px rgba(0,0,0,.22)); }
+  body[data-theme="frost"] .stg .ic > svg { filter:drop-shadow(0 1px 2px rgba(60,48,10,.18)); }
+
+  /* text */
+  .stg .tx { display:flex; flex-direction:column; min-width:0; margin-top:-2px; }
+  .ttl { font-size:18.5px; font-weight:700; line-height:1.1; letter-spacing:-.026em; white-space:nowrap; }
+  body[data-theme="obsidian"] .ttl, body[data-theme="chameleon"] .ttl { color:#fff; text-shadow:0 1px 10px rgba(0,0,0,.35); }
+  body[data-theme="frost"] .ttl { color:#17140A; }
+  .sub { font-size:12.5px; font-weight:500; line-height:1.25; letter-spacing:-.006em; white-space:nowrap; margin-top:4px; }
+  body[data-theme="obsidian"] .sub, body[data-theme="chameleon"] .sub { color:rgba(255,255,255,.62); }
+  body[data-theme="frost"] .sub { color:rgba(38,33,18,.62); }
+  .sub b { font-weight:800; }
+
+  /* money spine — hero cards: hairline, amount, context */
+  .subrow { display:flex; align-items:baseline; gap:10px; margin-top:8px; padding-top:7px;
+    border-top:1px solid rgba(255,255,255,.12); }
+  body[data-theme="frost"] .subrow { border-top-color:rgba(31,23,2,.16); }
+  .subrow .sub { margin-top:0; }
+  .mp { font-weight:800; letter-spacing:.04em; }
+  body[data-theme="obsidian"] .mp, body[data-theme="chameleon"] .mp { color:#5BCB3F; }
+  body[data-theme="frost"] .mp { color:#2E801D; }
+
+  /* amount — tabular figures, locked width (zero reflow during count) */
+  .amt { display:inline-block; font-size:15.5px; font-weight:700; letter-spacing:-.026em;
+    font-variant-numeric:tabular-nums; white-space:nowrap; text-align:left; }
+  body[data-theme="obsidian"] .amt, body[data-theme="chameleon"] .amt { color:#fff; }
+  body[data-theme="frost"] .amt { color:#17140A; }
+  .amt--usd   { min-width:56px; }
+  .amt--kes   { min-width:64px; }
+  .amt--bits  { min-width:78px; }
+  .amt--coins { min-width:80px; }
+  .amt--stars { min-width:80px; }
+  .amt--view  { min-width:34px; }
+
+  /* YouTube-red micro-chip (super thanks sub-line) */
+  .yt { display:inline-block; width:17px; height:12px; border-radius:3px; background:#FF0033;
+    margin-right:7px; vertical-align:-1px; position:relative; }
+  .yt::after { content:""; position:absolute; left:6.5px; top:3px;
+    border-left:5px solid #fff; border-top:3px solid transparent; border-bottom:3px solid transparent; }
+
+  /* hype meter — segments light sequentially to level 3 */
+  .meter { display:inline-flex; gap:4px; align-self:center; transform:translateY(-1px); }
+  .meter i { width:20px; height:9px; border-radius:3px; background:var(--acc,#FFCE00);
+    opacity:.13; box-shadow:0 0 7px rgba(0,0,0,.0); }
+  .stg.in .meter i:nth-child(-n+3) { animation:segOn .32s var(--lg-ease) both; }
+  .stg.in .meter i:nth-child(1) { animation-delay:.55s; }
+  .stg.in .meter i:nth-child(2) { animation-delay:.87s; }
+  .stg.in .meter i:nth-child(3) { animation-delay:1.19s; }
+  @keyframes segOn { from { opacity:.13; } to { opacity:1; } }
+
+  /* ================= icon motion — the gesture IS the event ================= */
+  [data-mo="pop"]   .ic > svg { animation:icPop .68s var(--lg-spring) .14s both; }
+  [data-mo="press"] .ic > svg { animation:pressPop .66s var(--lg-spring) .16s both; transform-origin:50% 60%; }
+  [data-mo="pulse"] .ic > svg { animation:heartBeat 1.5s cubic-bezier(.36,.07,.19,.97) .3s 1;
+    transform-origin:50% 55%; }
+  [data-mo="ring"]  .ic > svg { animation:bellRing 1.7s cubic-bezier(.45,.05,.35,1) .3s both;
+    transform-origin:50% 12%; }
+  [data-mo="snip"]  .ic > svg { animation:snipCut .95s cubic-bezier(.45,.05,.35,1) .3s both;
+    transform-origin:50% 50%; }
+  [data-mo="chug"]  .ic > svg { animation:icPop .68s var(--lg-spring) .14s both,
+    trainWiggle .5s ease-in-out 1.1s 3; transform-origin:50% 50%; }
+  .stg.in .halo { animation:haloPulse 1.15s cubic-bezier(.22,.61,.36,1) .5s both; }
+  @keyframes icPop {
+    0% { transform:scale(.35); opacity:0; } 62% { transform:scale(1.14); opacity:1; } 100% { transform:scale(1); } }
+
+  /* ============ the smile — brand guest (round 7 logo verdicts: A draw, D glowline) ============ */
+  .face { display:block; }
+  .face svg { width:100%; height:100%; display:block; }
+  .face .f-eye, .face .f-mouth { transform-box:fill-box; transform-origin:center; }
+  [data-mo="face"] .ic > svg { animation:none; }   /* the face has its own choreography */
+  .ic .face { width:36px; height:36px; }
+  /* THE DRAW — eyes fade in 60ms ahead of the mouth wipe (verbatim smile-face paths) */
+  .f-draw .f-eye { opacity:0; }
+  .f-draw.eyes-in .f-eye { animation:fEyeIn 260ms var(--lg-ease) both; }
+  .f-draw:not(.f-glow) .f-mouth { clip-path:inset(-8% 100% -8% -2%); }
+  .f-draw.mouth-draw .f-mouth { animation:fMouthDraw 480ms var(--lg-ease) both; }
+  @keyframes fEyeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes fMouthDraw {
+    from { clip-path:inset(-8% 100% -8% -2%); }
+    to   { clip-path:inset(-8% -2% -8% -2%); } }
+  /* THE GLOWLINE — ink groove carved, gold traces the verbatim mouth, fill pours, gold melts.
+     Lives at the card's right end (money cards whose hero carries no face). Matte glow only. */
+  .face--end { position:absolute; right:19px; top:50%; width:34px; height:34px; margin-top:-17px;
+    opacity:0; z-index:4; pointer-events:none; }
+  .face--end.eyes-in { opacity:1; }
+  .stg.has-face-end { padding-right:64px; }   /* reserved zone — text never reaches the face */
+  .f-glow .f-groove { fill:none; stroke:rgba(10,9,0,.88); stroke-width:2.4;
+    stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:var(--ml, 0); stroke-dashoffset:var(--ml, 0); }
+  .f-glow .f-mouth { fill-opacity:0; stroke:#FFCE00; stroke-width:1.2;
+    stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:var(--ml, 0); stroke-dashoffset:var(--ml, 0);
+    filter:drop-shadow(0 0 2.2px rgba(255,206,0,.55)); }
+  .f-glow.resolve .f-groove { animation:fGrooveResolve 1100ms var(--lg-ease) forwards; }
+  .f-glow.resolve .f-mouth  { animation:fGlowResolve 1100ms var(--lg-ease) forwards; }
+  @keyframes fGrooveResolve {
+    0%   { stroke-dashoffset:var(--ml, 0); stroke-opacity:1; }
+    58%  { stroke-dashoffset:0;            stroke-opacity:1; }
+    82%  { stroke-opacity:0; }
+    100% { stroke-dashoffset:0;            stroke-opacity:0; } }
+  @keyframes fGlowResolve {
+    0%   { stroke-dashoffset:var(--ml, 0); fill-opacity:0; stroke-opacity:1; }
+    58%  { stroke-dashoffset:0;            fill-opacity:0; stroke-opacity:1; }
+    82%  { fill-opacity:.86; stroke-opacity:.5; }
+    100% { fill-opacity:1; stroke-opacity:0; filter:drop-shadow(0 0 0 rgba(255,206,0,0)); } }
+  @keyframes pressPop {
+    0% { transform:translateY(2px) scale(.72) rotate(-10deg); opacity:0; }
+    55% { transform:translateY(-2px) scale(1.16) rotate(4deg); opacity:1; }
+    78% { transform:translateY(0) scale(.97) rotate(-2deg); }
+    100% { transform:none; } }
+  @keyframes heartBeat {
+    0% { transform:scale(1); } 14% { transform:scale(1.28); } 28% { transform:scale(1); }
+    42% { transform:scale(1.18); } 60% { transform:scale(1); } 100% { transform:scale(1); } }
+  @keyframes snipCut {
+    0% { transform:rotate(-24deg); } 30% { transform:rotate(15deg); }
+    55% { transform:rotate(-7deg); } 78% { transform:rotate(3deg); } 100% { transform:rotate(0deg); } }
+  @keyframes trainWiggle {
+    0%,100% { transform:translateX(0); } 25% { transform:translateX(-2px); } 75% { transform:translateX(2px); } }
+
+  /* reaction cycle — like → love → wow (JS swaps, spring flip in) */
+  .rx { position:absolute; inset:0; display:grid; place-items:center; opacity:0; }
+  .rx svg { width:26px; height:26px; display:block; }
+  .rx.on { animation:rxIn .55s var(--lg-spring) both; }
+  @keyframes rxIn { 0% { opacity:0; transform:scale(.3) rotate(-12deg); } 100% { opacity:1; transform:scale(1) rotate(0deg); } }
+
+  /* bell halo ring — emanates from the icon circle */
+  .halo { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px;
+    border-radius:50%; border:2px solid rgba(255,206,0,.55); opacity:0; pointer-events:none;
+    box-shadow:0 0 10px rgba(255,206,0,.22), inset 0 0 8px rgba(255,206,0,.16); }
+  @keyframes haloPulse {
+    0% { transform:scale(.55); opacity:0; } 25% { opacity:.55; } 100% { transform:scale(1.6); opacity:0; } }
+
+  /* subscribe: one thin red light-line sweeps under the card */
+  .pline { position:absolute; left:9%; right:9%; bottom:-5px; height:1.5px; border-radius:2px;
+    background:linear-gradient(90deg, rgba(255,0,51,0), rgba(255,0,51,.85) 24%, rgba(255,64,92,.9) 76%, rgba(255,0,51,0));
+    box-shadow:0 0 5px rgba(255,0,51,.35);
+    opacity:0; transform:scaleX(.02); transform-origin:left center; pointer-events:none; z-index:6; }
+  .stgw.run .pline { animation:plineRun 2.4s cubic-bezier(.25,.6,.2,1) .4s both; }
+  @keyframes plineRun {
+    0% { opacity:0; transform:scaleX(.02); } 14% { opacity:.9; }
+    76% { opacity:.9; transform:scaleX(1); } 100% { opacity:0; transform:scaleX(1); } }
+
+  /* share: accent streak + the send glyph flies off the card */
+  .streak { position:absolute; left:9%; right:9%; bottom:-5px; height:1.5px; border-radius:2px;
+    background:linear-gradient(90deg, transparent, var(--acc,#fff) 26%, var(--acc,#fff) 74%, transparent);
+    opacity:0; transform:scaleX(.05); transform-origin:left center; pointer-events:none; z-index:6; }
+  .stgw.run .streak { animation:streakRun 1.3s cubic-bezier(.25,.6,.2,1) .35s both; }
+  @keyframes streakRun {
+    0% { opacity:0; transform:scaleX(.05); } 18% { opacity:.8; }
+    70% { opacity:.8; transform:scaleX(1); } 100% { opacity:0; transform:scaleX(1); } }
+  .plane { position:absolute; left:14px; top:50%; width:18px; height:18px; margin-top:-9px;
+    color:#fff; opacity:0; z-index:7; pointer-events:none; }
+  .plane svg { width:100%; height:100%; display:block; filter:drop-shadow(0 1px 4px rgba(0,0,0,.3)); }
+  body[data-theme="frost"] .plane { color:#17140A; }
+  .stgw.run .plane { animation:planeFly 1.15s cubic-bezier(.3,.6,.3,1) .45s both; }
+  @keyframes planeFly {
+    0% { opacity:0; transform:translate(0,2px) rotate(0deg); } 15% { opacity:1; }
+    100% { opacity:0; transform:translate(242px,-18px) rotate(-6deg); } }
+
+  /* ================= 3D HERO OBJECTS (64px slot, left of text) ================= */
+  .obj-stage { position:relative; width:64px; height:64px; flex:none;
+    display:grid; place-items:center; transform-style:preserve-3d; }
+  .oshadow { position:absolute; left:50%; bottom:-2px; width:46px; height:9px;
+    transform:translateX(-50%); border-radius:50%; opacity:.42;
+    background:radial-gradient(50% 50% at 50% 50%, rgba(10,7,0,.45), transparent 68%); }
+  .pop { transform-style:preserve-3d; }
+  .tok { position:relative; transform-style:preserve-3d; }
+  .tok-edge { position:absolute; inset:0; }
+  .tok-face { position:absolute; inset:0; backface-visibility:hidden; }
+  .tok-face svg { width:100%; height:100%; display:block; }
+
+  /* COIN: flip in, land (squash + drop), rest on a barely-there float */
+  .pop--coin { animation:coinLand 1.05s both; }
+  @keyframes coinLand {
+    0% { transform:translateY(12px) scale(.74); opacity:0; }
+    32% { transform:translateY(-7px) scale(1.015); opacity:1; }
+    55% { transform:translateY(1px) scale(1.008,.988); }
+    63% { transform:translateY(2px) scale(1.017,.978); }
+    76% { transform:translateY(-.5px) scale(.995,1.004); }
+    100% { transform:translateY(0) scale(1); } }
+  .coin { animation:lgCoinFlip .62s cubic-bezier(.3,.62,.3,1) both,
+    idleFloat 4.6s ease-in-out 1.35s infinite; }
+  .oshadow--coin { animation:shadowLand 1.05s linear both, shadowIdle 4.6s ease-in-out 1.35s infinite; }
+  @keyframes shadowLand {
+    0% { transform:translateX(-50%) scale(.55); opacity:0; }
+    32% { transform:translateX(-50%) scale(.92); opacity:.30; }
+    55% { transform:translateX(-50%) scale(.80); opacity:.40; }
+    63% { transform:translateX(-50%) scale(.72); opacity:.55; }
+    76% { transform:translateX(-50%) scale(.80); opacity:.44; }
+    100% { transform:translateX(-50%) scale(.78); opacity:.48; } }
+  @keyframes shadowIdle {
+    0%,100% { transform:translateX(-50%) scale(.78); opacity:.48; }
+    50% { transform:translateX(-50%) scale(.71); opacity:.38; } }
+
+  /* GEM: one refractive tick + settle */
+  .pop--gem { animation:gemTick .95s both; }
+  @keyframes gemTick {
+    0% { transform:rotateY(30deg) scale(.72); opacity:0; }
+    42% { transform:rotateY(-9deg) scale(1.03); opacity:1; }
+    64% { transform:rotateY(4deg) scale(.99); }
+    84% { transform:rotateY(-1.5deg) scale(1.003); }
+    100% { transform:rotateY(0deg) scale(1); } }
+  .gem { animation:idleFloat 4.6s ease-in-out 1.4s infinite; }
+  .glint { position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(115deg, transparent 44%, rgba(255,255,255,.5) 50%, transparent 56%) no-repeat;
+    background-size:38% 100%; background-position:-45% 0;
+    animation:glintSweep 1.1s cubic-bezier(.32,.72,0,1) .24s 1 both; }
+  @keyframes glintSweep { from { background-position:-45% 0; } to { background-position:145% 0; } }
+
+  /* M-PESA tile: matte ceramic squircle, spring tilt in */
+  .pop--tile { animation:tileIn .95s both; }
+  @keyframes tileIn {
+    0% { transform:rotateY(-22deg) scale(.72); opacity:0; }
+    46% { transform:rotateY(5deg) scale(1.035); opacity:1; }
+    68% { transform:rotateY(-2deg) scale(.996); }
+    100% { transform:rotateY(0deg) scale(1); } }
+  .tile { width:64px; height:64px; border-radius:20px; position:relative; display:grid; place-items:center;
+    background:linear-gradient(165deg,#52BE3F,#43B02A 58%,#2F871E);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.20), inset 0 -3px 8px rgba(10,40,5,.30),
+      inset 0 0 0 1px rgba(255,255,255,.10), inset 0 -1px 0 rgba(255,255,255,.08),
+      0 0 0 1px rgba(18,54,8,.32), 0 7px 16px rgba(16,52,8,.30);
+    animation:idleFloat 4.4s ease-in-out 1.3s infinite; }
+  .tile::before { content:""; position:absolute; inset:0; border-radius:inherit;
+    background:radial-gradient(125% 125% at 32% 20%,
+      rgba(255,255,255,.20), rgba(255,255,255,0) 48%, rgba(8,40,4,.20) 100%); }
+  .tile svg { width:64px; height:64px; display:block; position:relative; }
+
+  /* generic token (bubble / gift / star): one tick + float */
+  .pop--tok { animation:tokTick .95s cubic-bezier(.25,.8,.3,1) both; }
+  @keyframes tokTick {
+    0% { transform:rotateY(26deg) scale(.7); opacity:0; }
+    45% { transform:rotateY(-8deg) scale(1.04); opacity:1; }
+    70% { transform:rotateY(3deg) scale(.99); }
+    100% { transform:rotateY(0deg) scale(1); } }
+  .toki { animation:idleFloat 4.6s ease-in-out 1.35s infinite; }
+
+  /* badge: stamped in from above */
+  .pop--stamp { animation:stampIn .78s cubic-bezier(.25,.8,.3,1) both; }
+  @keyframes stampIn {
+    0% { transform:scale(1.55) translateY(-6px); opacity:0; }
+    55% { transform:scale(.94) translateY(1px); opacity:1; }
+    78% { transform:scale(1.02); }
+    100% { transform:scale(1); } }
+  .stampT { animation:idleFloat 4.6s ease-in-out 1.2s infinite; }
+
+  @keyframes idleFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-2px); } }
+
+  /* sparks — round only */
+  .lg-spark { z-index:6; }
+</style>
+</head>
+<body data-theme="obsidian">
+<div id="stage">
+  <canvas id="chart" width="1920" height="1080"></canvas>
+  <div id="bgLayer"></div>
+  <div id="tabs"></div>
+  <div id="help"><span id="keys"></span><span class="hint">B background &middot; M material &middot; tabs auto-cycle + chips filter &middot; click a card refires</span></div>
+  <div id="dock"></div>
+</div>
+
+<script src="assets/liquid-glass.js"></script>
+<script>
+var Q = new URLSearchParams(location.search);
+
+/* ---------- material: obsidian default · frost · chameleon · clear->frost ---------- */
+var qt = Q.get('theme');
+var THEME = qt === 'frost' ? 'frost' : qt === 'chameleon' ? 'chameleon' :
+  (qt === 'clear' ? 'frost' : 'obsidian');
+document.body.dataset.theme = THEME;
+var OBS = Q.get('obs') === '1', G = Q.get('g') === '1';
+if (OBS) { document.body.classList.add('obs'); document.documentElement.classList.add('obs'); }
+if (G) document.body.classList.add('g');
+
+/* ================= animated backdrop (chart feeds chameleon energy) ================= */
+var C = document.getElementById('chart'), X = C.getContext('2d');
+var BGS = ['chart', 'bright', 'dark', 'wash'], bgMode = 'chart', curBg = 0;
+var N = 160, D = [], i, p2 = 640;
+for (i = 0; i < N; i++) { p2 += (Math.random() - .47) * 9; D.push(p2); }
+
+function drawChart(ts) {
+  var t, j;
+  X.fillStyle = '#0A0C14'; X.fillRect(0, 0, 1920, 1080);
+  X.strokeStyle = 'rgba(255,255,255,.045)';
+  for (j = 0; j < 1920; j += 110) { X.beginPath(); X.moveTo(j, 0); X.lineTo(j, 1080); X.stroke(); }
+  for (j = 0; j < 1080; j += 85) { X.beginPath(); X.moveTo(0, j); X.lineTo(1920, j); X.stroke(); }
+  if (!drawChart.last || ts - drawChart.last > 66) {         /* 15fps push = motion energy */
+    drawChart.last = ts;
+    D.push(D[D.length - 1] + (Math.random() - .47) * 14); D.shift();
+  }
+  var lo = Math.min.apply(null, D), hi = Math.max.apply(null, D), span = Math.max(hi - lo, 40);
+  X.beginPath();
+  D.forEach(function (v, ix) { var px = ix * 12.5, py = 950 - (v - lo) / span * 700; ix ? X.lineTo(px, py) : X.moveTo(px, py); });
+  X.strokeStyle = 'rgba(255,206,0,.85)'; X.lineWidth = 2.5; X.stroke();
+  X.lineTo((N - 1) * 12.5, 1080); X.lineTo(0, 1080); X.closePath();
+  X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
+  var g = X.createRadialGradient(960, 540, 380, 960, 540, 1250);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.42)');
+  X.fillStyle = g; X.fillRect(0, 0, 1920, 1080);
+}
+function drawWash(t) {
+  var hue = (t * 9) % 360;
+  var g2 = X.createLinearGradient(0, 0, 1920, 1080);
+  g2.addColorStop(0, 'hsl(' + hue + ' 42% 12%)');
+  g2.addColorStop(.5, 'hsl(' + ((hue + 40) % 360) + ' 34% 17%)');
+  g2.addColorStop(1, 'hsl(' + ((hue + 90) % 360) + ' 40% 10%)');
+  X.fillStyle = g2; X.fillRect(0, 0, 1920, 1080);
+  var w1 = X.createRadialGradient(480 + Math.sin(t * .5) * 220, 380, 60, 480 + Math.sin(t * .5) * 220, 380, 620);
+  w1.addColorStop(0, 'hsl(' + ((hue + 180) % 360) + ' 60% 52% / .30)'); w1.addColorStop(1, 'transparent');
+  X.fillStyle = w1; X.fillRect(0, 0, 1920, 1080);
+  var w2 = X.createRadialGradient(1450 + Math.cos(t * .38) * 200, 760, 60, 1450 + Math.cos(t * .38) * 200, 760, 560);
+  w2.addColorStop(0, 'hsl(' + ((hue + 60) % 360) + ' 55% 55% / .26)'); w2.addColorStop(1, 'transparent');
+  X.fillStyle = w2; X.fillRect(0, 0, 1920, 1080);
+}
+(function loop(ts) {
+  if (bgMode === 'chart') drawChart(ts || 0);
+  else if (bgMode === 'wash') drawWash((ts || 0) / 1000);
+  requestAnimationFrame(loop);
+})();
+
+function bg(name) {
+  var b = document.getElementById('bgLayer');
+  b.className = ''; C.style.display = 'block';
+  document.body.classList.remove('bg-bright');
+  bgMode = 'chart';
+  if (name === 'bright' || name === 'dark') {
+    b.className = name; C.style.display = 'none';
+    if (name === 'bright') document.body.classList.add('bg-bright');
+  } else if (name === 'wash') { bgMode = 'wash'; }
+  rematerial(); chamSync();
+}
+if (BGS.indexOf(Q.get('bg')) > -1) { bg(Q.get('bg')); curBg = BGS.indexOf(Q.get('bg')); }
+
+/* ================= icons — platform marks + precise 24-grid glyphs ================= */
+function pth(d, f, extra) { return '<path d="' + d + '" fill="' + f + '"' + (extra || '') + '/>'; }
+function svg24(inner) { return '<svg viewBox="0 0 24 24" fill="none">' + inner + '</svg>'; }
+
+var D_X = 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z';
+var D_TIKTOK = 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z';
+var D_FB = 'M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z';
+var D_KICK = 'M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z';
+var D_BELL = 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z';
+var D_THUMB = 'M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z';
+var D_HEART = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+var D_SEND = 'M2.01 21L23 12 2.01 3 2 10l15 2-15 2z';
+var D_GIFT = 'M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z';
+var D_CUT = 'M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z';
+var D_TRAIN = 'M12 2c-4 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h2.23l2-2H14l2 2h2v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-4-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-7H6V6h5v4zm2 0V6h5v4h-5zm3.5 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z';
+var D_GROUP = 'M12 12.75c1.63 0 3.07.39 4.24.9 1.08.48 1.76 1.56 1.76 2.73V18H6v-1.61c0-1.18.68-2.26 1.76-2.73 1.17-.52 2.61-.91 4.24-.91zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm1.13 1.1c-.37-.06-.74-.1-1.13-.1-.99 0-1.93.21-2.78.58C.48 14.9 0 15.62 0 16.43V18h4.5v-1.61c0-.83.23-1.61.63-2.29zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85-.85-.37-1.79-.58-2.78-.58-.39 0-.76.04-1.13.1.4.68.63 1.46.63 2.29V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z';
+
+/* theme-aware glyph colors: frost = ink on the light disc, else white/gold */
+function gold(t) { return t ? '#C89000' : '#FFCE00'; }
+function mono(t) { return t ? '#17140A' : '#FFFFFF'; }
+var GLYPH = {
+  x:     function (t) { return svg24('<g transform="translate(.45 0)">' + pth(D_X, mono(t)) + '</g>'); },
+  bell:  function (t) { return svg24(pth(D_BELL, gold(t))); },
+  thumb: function (t) { return svg24(pth(D_THUMB, gold(t))); },
+  heart: function () { return svg24(pth(D_HEART, '#FF3B5C')); },
+  send:  function (t) { return svg24(pth(D_SEND, mono(t))); },
+  gift:  function (t) { return svg24(pth(D_GIFT, gold(t))); },
+  cut:   function (t) { return svg24(pth(D_CUT, mono(t))); },
+  train: function (t) { return svg24(pth(D_TRAIN, mono(t))); },
+  group: function (t) { return svg24(pth(D_GROUP, mono(t))); }
+};
+var MARK = {
+  youtube: function () { return '<svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg>'; },
+  twitch:  function () { return '<svg viewBox="0 0 24 24"><g transform="translate(0 1.4)"><path fill="#9146FF" d="M11.571 4.714h1.715v5.143h-1.715zm4.715 0H18v5.143h-1.714zM6 0 1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></g></svg>'; },
+  tiktok:  function (t) { return svg24('<g transform="translate(1.6 0) scale(.9)">' + pth(D_TIKTOK, mono(t)) + '</g>'); },
+  facebook:function () { return svg24(pth(D_FB, '#1877F2')); },
+  kick:    function () { return svg24(pth(D_KICK, '#53FC18')); }
+};
+/* facebook reaction faces (like/love/wow) — theme independent */
+function rxStack() {
+  return '<span class="rx">' + svg24(pth(D_THUMB, '#1877F2')) + '</span>' +
+         '<span class="rx">' + svg24(pth(D_HEART, '#F33E5A')) + '</span>' +
+         '<span class="rx"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#FFCE00"/><circle cx="12" cy="12" r="10" fill="none" stroke="rgba(122,88,0,.35)" stroke-width="1"/><circle cx="8.4" cy="9.4" r="1.4" fill="#1F1702"/><circle cx="15.6" cy="9.4" r="1.4" fill="#1F1702"/><ellipse cx="12" cy="15.4" rx="2.7" ry="3.5" fill="#1F1702"/></svg></span>';
+}
+var PLANE_SVG = '<svg viewBox="0 0 24 24">' + pth(D_SEND, 'currentColor') + '</svg>';
+
+/* ================= 3D hero art (coin/tile/gem/bell builders reused from spectacle) ================= */
+function feat(fill) {
+  return '<path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="' + fill + '"/>' +
+    '<path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="' + fill + '"/>' +
+    '<path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="' + fill + '"/>';
+}
+function coinFront() {
+  return '<svg viewBox="0 0 78 78" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><radialGradient id="cgF" cx="38%" cy="32%" r="88%">' +
+    '<stop offset="0" stop-color="#E2BC4E"/><stop offset=".5" stop-color="#D2A626"/><stop offset=".86" stop-color="#BC9118"/><stop offset="1" stop-color="#96701A"/>' +
+    '</radialGradient></defs>' +
+    '<circle cx="39" cy="39" r="38" fill="url(#cgF)"/>' +
+    '<g fill="none">' +
+    '<circle cx="39" cy="39" r="35.6" stroke="rgba(122,88,0,.05)" stroke-width="1.1"/>' +
+    '<circle cx="39" cy="39" r="34.2" stroke="rgba(255,238,180,.05)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="32.9" stroke="rgba(122,88,0,.06)" stroke-width="1.3"/>' +
+    '<circle cx="39" cy="39" r="30.4" stroke="rgba(122,88,0,.05)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="27.6" stroke="rgba(255,238,180,.06)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="24.8" stroke="rgba(122,88,0,.05)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="21.9" stroke="rgba(255,238,180,.05)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="18.7" stroke="rgba(122,88,0,.05)" stroke-width="1.2"/>' +
+    '<circle cx="39" cy="39" r="15.4" stroke="rgba(255,238,180,.05)" stroke-width="1"/>' +
+    '</g>' +
+    '<circle cx="39" cy="39" r="36.4" fill="none" stroke="rgba(255,238,180,.30)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="34.4" fill="none" stroke="rgba(112,80,0,.36)" stroke-width="2.4" stroke-dasharray="2.2 2.2"/>' +
+    '<circle cx="39" cy="39" r="31.5" fill="none" stroke="rgba(112,80,0,.42)" stroke-width="1.1"/>' +
+    '<circle cx="39" cy="39" r="27.5" fill="rgba(70,48,0,.055)" stroke="rgba(112,80,0,.16)" stroke-width=".8"/>' +
+    '<path d="M19 27 A27 27 0 0 1 36 13" stroke="rgba(255,240,190,.30)" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    '<g transform="translate(39,39.5) scale(1.8) translate(-16.9,-22.6)">' +
+    '<g transform="translate(0,-0.5)">' + feat('rgba(90,62,0,.45)') + '</g>' +
+    '<g transform="translate(0,1.15)">' + feat('rgba(255,240,185,.5)') + '</g>' + feat('#7E5A00') +
+    '</g></svg>';
+}
+function coinBack() {
+  return '<svg viewBox="0 0 78 78" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><radialGradient id="cgB" cx="38%" cy="32%" r="88%">' +
+    '<stop offset="0" stop-color="#D4A833"/><stop offset=".55" stop-color="#C29522"/><stop offset="1" stop-color="#96701A"/>' +
+    '</radialGradient></defs>' +
+    '<circle cx="39" cy="39" r="38" fill="url(#cgB)"/>' +
+    '<circle cx="39" cy="39" r="33" stroke="rgba(122,88,0,.06)" stroke-width="6" fill="none"/>' +
+    '<circle cx="39" cy="39" r="24" stroke="rgba(255,238,180,.05)" stroke-width="5" fill="none"/>' +
+    '<circle cx="39" cy="39" r="36.4" fill="none" stroke="rgba(255,238,180,.26)" stroke-width="1"/>' +
+    '<circle cx="39" cy="39" r="33" fill="none" stroke="rgba(104,74,0,.4)" stroke-width="1.2"/>' +
+    '<g transform="translate(39,37.5) scale(1.05) translate(-16.9,-22.6)">' +
+    '<g transform="translate(0,-0.5)">' + feat('rgba(84,58,0,.4)') + '</g>' + feat('rgba(104,74,0,.75)') + '</g>' +
+    '<text x="39" y="57.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="6.5" font-weight="700" letter-spacing="1.5" fill="rgba(104,74,0,.75)">SMILE.CO.KE</text>' +
+    '</svg>';
+}
+function tileSVG() {
+  return '<svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg">' +
+    '<g transform="translate(17,17) scale(1.75)">' +
+    '<path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" fill="#FFFFFF"/>' +
+    '</g></svg>';
+}
+var GEM_CLIP = 'polygon(25% 1.4%, 75% 1.4%, 98.7% 33.3%, 50% 98.6%, 1.3% 33.3%)';
+var PURPLE = { hi: '#F2E7FF', light: '#C9A4FF', light2: '#A878FF', base: '#9146FF',
+  deep: '#5E2799', deep2: '#4A1878', dark: '#331263' };
+function gemSVG(p) {
+  return '<svg viewBox="0 0 76 72" xmlns="http://www.w3.org/2000/svg">' +
+    '<polygon points="21,3.5 59,3.5 76.5,26.5 39.5,73.5 2.5,26.5" fill="rgba(14,5,26,.35)"/>' +
+    '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="' + p.base + '"/>' +
+    '<defs><radialGradient id="sss" cx="42%" cy="34%" r="62%">' +
+    '<stop offset="0" stop-color="rgba(255,255,255,.16)"/>' +
+    '<stop offset=".55" stop-color="rgba(170,116,255,.12)"/>' +
+    '<stop offset="1" stop-color="rgba(170,116,255,0)"/>' +
+    '</radialGradient></defs>' +
+    '<circle cx="38" cy="29" r="17" fill="url(#sss)"/>' +
+    '<polygon points="19,1 1,24 15,25" fill="' + p.light + '"/>' +
+    '<polygon points="19,1 15,25 27,9" fill="' + p.light2 + '"/>' +
+    '<polygon points="19,1 27,9 45,7" fill="' + p.hi + '"/>' +
+    '<polygon points="19,1 45,7 57,1" fill="' + p.light + '"/>' +
+    '<polygon points="57,1 45,7 58,22" fill="' + p.base + '"/>' +
+    '<polygon points="57,1 58,22 75,24" fill="' + p.deep + '"/>' +
+    '<polygon points="27,9 45,7 58,22 20,24" fill="' + p.hi + '"/>' +
+    '<polygon points="1,24 15,25 38,71" fill="' + p.light + '"/>' +
+    '<polygon points="15,25 20,24 38,71" fill="' + p.base + '"/>' +
+    '<polygon points="20,24 58,22 38,71" fill="' + p.deep + '"/>' +
+    '<polygon points="58,22 75,24 38,71" fill="' + p.deep2 + '"/>' +
+    '<polygon points="23,26 34,27 29,49 21,36" fill="rgba(255,255,255,.26)"/>' +
+    '<polygon points="46,28 54,27 45,56 39,45" fill="rgba(255,255,255,.17)"/>' +
+    '<path d="M15 25 L20 24" stroke="rgba(255,255,255,.38)" stroke-width="1"/>' +
+    '<polygon points="28,10.5 38,11.5 33,20.5 25.5,18" fill="rgba(255,255,255,.78)"/>' +
+    '<circle cx="31.5" cy="15" r="1.7" fill="rgba(255,255,255,.85)"/>' +
+    '<path d="M48 11.5 h7 M51.5 8 v7" stroke="rgba(255,255,255,.45)" stroke-width="1" stroke-linecap="round"/>' +
+    '<polygon points="20,24 58,22 44,26 30,27" fill="rgba(20,4,40,.28)"/>' +
+    '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="none" stroke="' + p.dark + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '</svg>';
+}
+function gemBack(p) {
+  return '<svg viewBox="0 0 76 72" xmlns="http://www.w3.org/2000/svg">' +
+    '<polygon points="19,1 57,1 75,24 38,71" fill="' + p.deep + '"/>' +
+    '<polygon points="27,24 49,24 38,56" fill="' + p.dark + '"/>' +
+    '<path d="M16 24 L60 24" stroke="rgba(255,255,255,.18)" stroke-width="1"/>' +
+    '<polygon points="19,1 57,1 75,24 38,71 1,24" fill="none" stroke="' + p.dark + '" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '</svg>';
+}
+/* SUPER CHAT bubble — true bubble-silhouette token */
+var BUBBLE_PATH = 'M14 8h36c5.5 0 10 4.5 10 10v20c0 5.5-4.5 10-10 10H26l-9.5 8 .8-8H14C8.5 48 4 43.5 4 38V18C4 12.5 8.5 8 14 8z';
+var BUBBLE_CLIP = "path('" + BUBBLE_PATH + "')";
+function bubbleFront() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="bb1" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#FFDF3F"/><stop offset=".52" stop-color="#FFCE00"/><stop offset="1" stop-color="#C88F00"/>' +
+    '</linearGradient></defs>' +
+    '<path d="' + BUBBLE_PATH + '" fill="url(#bb1)"/>' +
+    '<path d="' + BUBBLE_PATH + '" fill="none" stroke="rgba(122,88,0,.45)" stroke-width="1.2"/>' +
+    '<circle cx="32" cy="29" r="14" fill="rgba(255,244,200,.16)"/>' +
+    '<text x="32" y="37.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="23" font-weight="800" fill="#7A5800">$</text>' +
+    '<path d="M10 17c1.5-3 4.2-5.2 7.6-6.4" stroke="rgba(255,244,200,.55)" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
+}
+function bubbleBack() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="' + BUBBLE_PATH + '" fill="#D8A81C"/>' +
+    '<circle cx="32" cy="29" r="15" fill="none" stroke="rgba(122,88,0,.4)" stroke-width="1.2"/>' +
+    '<text x="32" y="32.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" font-weight="800" letter-spacing=".5" fill="rgba(104,74,0,.8)">CHAT</text>' +
+    '</svg>';
+}
+/* MEMBERSHIP seal badge */
+function badgeFront() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><radialGradient id="bdg1" cx="38%" cy="30%" r="80%">' +
+    '<stop offset="0" stop-color="#FF5C7A"/><stop offset=".55" stop-color="#FF0033"/><stop offset="1" stop-color="#B80023"/>' +
+    '</radialGradient></defs>' +
+    '<circle cx="32" cy="32" r="31" fill="url(#bdg1)"/>' +
+    '<circle cx="32" cy="32" r="31" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1"/>' +
+    '<circle cx="32" cy="32" r="26.5" fill="none" stroke="rgba(255,255,255,.30)" stroke-width="1.2" stroke-dasharray="2.4 2.4"/>' +
+    '<path d="M32 18.5l3.9 8.1 8.9 1-6.5 6 1.7 8.8-8-4.4-8 4.4 1.7-8.8-6.5-6 8.9-1z" fill="#FFFFFF"/>' +
+    '<path d="M13 23a21 21 0 0 1 11.5-9.6" stroke="rgba(255,255,255,.42)" stroke-width="1.7" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
+}
+function badgeBack() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="32" cy="32" r="31" fill="#C41230"/>' +
+    '<circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>' +
+    '<text x="32" y="35.5" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" font-weight="800" letter-spacing="1" fill="rgba(255,255,255,.75)">MEMBER</text>' +
+    '</svg>';
+}
+/* TikTok gift box */
+function giftFront() {
+  return '<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="gf1" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#FF6B8A"/><stop offset=".6" stop-color="#FE2C55"/><stop offset="1" stop-color="#C81E41"/>' +
+    '</linearGradient></defs>' +
+    '<rect x="6" y="19" width="48" height="37" rx="7" fill="url(#gf1)"/>' +
+    '<rect x="6" y="19" width="48" height="37" rx="7" fill="none" stroke="rgba(90,5,25,.4)" stroke-width="1"/>' +
+    '<rect x="26" y="19" width="8" height="37" fill="rgba(255,255,255,.85)"/>' +
+    '<rect x="3" y="12" width="54" height="12" rx="5" fill="#FF4E6E"/>' +
+    '<rect x="3" y="12" width="54" height="12" rx="5" fill="none" stroke="rgba(90,5,25,.35)" stroke-width="1"/>' +
+    '<rect x="26" y="12" width="8" height="12" fill="#FFFFFF"/>' +
+    '<path d="M30 12C24 4 16 6 17 11c1 4 8 4 13 1z" fill="#FF7A93" stroke="rgba(140,10,40,.35)" stroke-width="1"/>' +
+    '<path d="M30 12c6-8 14-6 13-1-1 4-8 4-13 1z" fill="#FF7A93" stroke="rgba(140,10,40,.35)" stroke-width="1"/>' +
+    '<circle cx="30" cy="12" r="2.6" fill="#FFFFFF"/>' +
+    '<path d="M10 23c1.4-1.6 3.4-2.7 5.8-3.1" stroke="rgba(255,255,255,.4)" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
+}
+function giftBack() {
+  return '<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect x="3" y="12" width="54" height="44" rx="7" fill="#D8204A"/>' +
+    '<rect x="26" y="12" width="8" height="44" fill="rgba(255,255,255,.55)"/>' +
+    '</svg>';
+}
+var STAR_CLIP = 'polygon(50% 2%, 61.8% 36.6%, 98% 36.6%, 69% 58%, 80.9% 92%, 50% 71%, 19.1% 92%, 31% 58%, 2% 36.6%, 38.2% 36.6%)';
+function starFront() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="st1" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#FFE45C"/><stop offset=".5" stop-color="#FFCE00"/><stop offset="1" stop-color="#C88F00"/>' +
+    '</linearGradient></defs>' +
+    '<polygon points="32,1.3 39.5,23.4 62.7,23.4 44.2,37.1 51.8,58.9 32,45.4 12.2,58.9 19.8,37.1 1.3,23.4 24.5,23.4" fill="url(#st1)"/>' +
+    '<polygon points="32,1.3 39.5,23.4 24.5,23.4" fill="rgba(255,255,255,.42)"/>' +
+    '<polygon points="1.3,23.4 24.5,23.4 19.8,37.1" fill="rgba(255,244,200,.30)"/>' +
+    '<polygon points="62.7,23.4 39.5,23.4 44.2,37.1" fill="rgba(160,110,0,.30)"/>' +
+    '<polygon points="19.8,37.1 44.2,37.1 32,45.4" fill="rgba(255,244,200,.22)"/>' +
+    '<polygon points="32,1.3 39.5,23.4 62.7,23.4 44.2,37.1 51.8,58.9 32,45.4 12.2,58.9 19.8,37.1 1.3,23.4 24.5,23.4" fill="none" stroke="rgba(140,95,0,.55)" stroke-width="1.2" stroke-linejoin="round"/>' +
+    '</svg>';
+}
+function starBack() {
+  return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+    '<polygon points="32,1.3 39.5,23.4 62.7,23.4 44.2,37.1 51.8,58.9 32,45.4 12.2,58.9 19.8,37.1 1.3,23.4 24.5,23.4" fill="#D8A81C"/>' +
+    '<polygon points="32,10 37,24.5 24.5,24.5" fill="rgba(122,88,0,.25)"/>' +
+    '</svg>';
+}
+
+/* ---- token builder (N edge layers + front/back faces) — reused from spectacle ---- */
+function makeToken(stage, o) {
+  var pop = document.createElement('div'); pop.className = 'pop' + (o.popCls ? ' ' + o.popCls : '');
+  var tok = document.createElement('div'); tok.className = 'tok ' + (o.cls || '');
+  tok.style.width = o.w + 'px'; tok.style.height = o.h + 'px';
+  var n = o.layers || 9;
+  for (var i = 0; i < n; i++) {
+    var e = document.createElement('i'); e.className = 'tok-edge';
+    e.style.transform = 'translateZ(' + (-o.thick / 2 + o.thick * i / (n - 1)).toFixed(2) + 'px)';
+    e.style.background = i % 2 ? o.edgeB : o.edgeA;
+    if (o.round) e.style.borderRadius = o.round;
+    if (o.clip) e.style.clipPath = o.clip;
+    tok.appendChild(e);
+  }
+  var f = document.createElement('div'); f.className = 'tok-face tok-face--front';
+  f.style.transform = 'translateZ(' + (o.thick / 2 + .5) + 'px)'; f.innerHTML = o.front;
+  var b = document.createElement('div'); b.className = 'tok-face';
+  b.style.transform = 'rotateY(180deg) translateZ(' + (o.thick / 2 + .5) + 'px)'; b.innerHTML = o.back;
+  tok.appendChild(f); tok.appendChild(b);
+  pop.appendChild(tok); stage.appendChild(pop);
+  return tok;
+}
+function heroCoin(stage) {
+  makeToken(stage, { w: 64, h: 64, thick: 8, round: '50%', layers: 9,
+    edgeA: '#CE9E20', edgeB: '#A87E15', front: coinFront(), back: coinBack(),
+    cls: 'coin', popCls: 'pop--coin' });
+  stage.querySelector('.oshadow').classList.add('oshadow--coin');
+}
+function heroTile(stage) {
+  var pop = document.createElement('div'); pop.className = 'pop pop--tile';
+  var tile = document.createElement('div'); tile.className = 'tile';
+  tile.innerHTML = tileSVG();
+  pop.appendChild(tile); stage.appendChild(pop);
+}
+function heroGem(stage) {
+  var tok = makeToken(stage, { w: 62, h: 58, thick: 9, clip: GEM_CLIP, layers: 9,
+    edgeA: PURPLE.deep, edgeB: PURPLE.dark, front: gemSVG(PURPLE), back: gemBack(PURPLE),
+    cls: 'gem', popCls: 'pop--gem' });
+  var g = document.createElement('i'); g.className = 'glint'; g.style.clipPath = GEM_CLIP;
+  tok.querySelector('.tok-face--front').appendChild(g);
+}
+function heroBubble(stage) {
+  var tok = makeToken(stage, { w: 64, h: 64, thick: 8, clip: BUBBLE_CLIP, layers: 9,
+    edgeA: '#E0AF22', edgeB: '#B8890F', front: bubbleFront(), back: bubbleBack(),
+    cls: 'toki', popCls: 'pop--tok' });
+  var g = document.createElement('i'); g.className = 'glint'; g.style.clipPath = BUBBLE_CLIP;
+  tok.querySelector('.tok-face--front').appendChild(g);
+}
+function heroBadge(stage) {
+  makeToken(stage, { w: 64, h: 64, thick: 7, round: '50%', layers: 9,
+    edgeA: '#D40F35', edgeB: '#9E0022', front: badgeFront(), back: badgeBack(),
+    cls: 'stampT', popCls: 'pop--stamp' });
+}
+function heroGift(stage) {
+  var tok = makeToken(stage, { w: 60, h: 60, thick: 8, clip: 'inset(0 round 14px)', layers: 9,
+    edgeA: '#E42650', edgeB: '#A81438', front: giftFront(), back: giftBack(),
+    cls: 'toki', popCls: 'pop--tok' });
+  var g = document.createElement('i'); g.className = 'glint';
+  g.style.clipPath = 'inset(0 round 14px)';
+  tok.querySelector('.tok-face--front').appendChild(g);
+}
+function heroStar(stage) {
+  var tok = makeToken(stage, { w: 62, h: 62, thick: 7, clip: STAR_CLIP, layers: 9,
+    edgeA: '#E0AF22', edgeB: '#B8890F', front: starFront(), back: starBack(),
+    cls: 'toki', popCls: 'pop--tok' });
+  var g = document.createElement('i'); g.className = 'glint'; g.style.clipPath = STAR_CLIP;
+  tok.querySelector('.tok-face--front').appendChild(g);
+}
+
+/* ================= spark palettes + burst (round only, 5-8, muted) ================= */
+var GOLD_M = ['#D9AC2B', '#C79A1F', '#EFD98A'];
+var PURPLE_M = ['#7E4FD1', '#9268DE', '#B79AEB'];
+var PINK_M = ['#FE2C55', '#FF6B8A', '#FF9EB5'];
+var BLUE_M = ['#1877F2', '#5A9BFF', '#9CC2FF'];
+var GREEN_M = ['#46D412', '#63E83A', '#9CEF77'];
+function burst(el, colors, n) {
+  var w = el.offsetWidth || 300;
+  for (var i = 0; i < n; i++) {
+    (function (i) {
+      setTimeout(function () {
+        var size = 3 + Math.random() * 4.5;
+        var life = 950 + Math.random() * 380;
+        var c = colors[(Math.random() * colors.length) | 0];
+        var s = LG.spark(el, 18 + Math.random() * Math.min(w - 40, 84), 46 + (Math.random() - .5) * 12, size, life, { z: 6 });
+        s.style.background = 'radial-gradient(circle at 38% 32%, rgba(255,252,240,.85), ' + c + ' 62%)';
+        s.style.boxShadow = '0 0 6px ' + c + '44';
+      }, 80 + i * 85 + Math.random() * 60);
+    })(i);
+  }
+}
+
+/* ================= count-up: expo-out solver, locked-width chips ================= */
+function bez(x1, y1, x2, y2) {
+  var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  function sx(t) { return ((ax * t + bx) * t + cx) * t; }
+  function sy(t) { return ((ay * t + by) * t + cy) * t; }
+  function dx(t) { return (3 * ax * t + 2 * bx) * t + cx; }
+  return function (x) {
+    var t = x, e, j;
+    for (j = 0; j < 6; j++) { e = sx(t) - x; if (Math.abs(e) < 1e-5) break; t -= e / dx(t); }
+    t = Math.min(1, Math.max(0, t));
+    return sy(t);
+  };
+}
+var EASE = bez(.16, 1, .3, 1);
+function countUp(el, target, fmt, dur) {
+  if (!el) return;
+  var t0 = performance.now();
+  var fr = function (t) {
+    var p = Math.min(1, (t - t0) / dur), v = EASE(p);
+    el.textContent = fmt(target * v);
+    if (p < 1) requestAnimationFrame(fr);
+  };
+  requestAnimationFrame(fr);
+}
+function usd(v) { return '$' + v.toFixed(2); }
+function kes(v) { return 'KSh ' + Math.round(v); }
+
+/* ================= THE 21+ RECIPES — every platform interaction ================= */
+var ACC = {
+  universal: 'rgba(255,206,0,.9)', youtube: 'rgba(255,0,51,.9)', twitch: 'rgba(145,70,255,.9)',
+  tiktok: 'rgba(254,44,85,.9)', facebook: 'rgba(24,119,242,.9)', kick: 'rgba(83,252,24,.9)'
+};
+var REC = {};
+/* ---- UNIVERSAL ---- */
+REC.follow = { plat: 'universal', verb: 'FOLLOW', sub: '@smile.co.ke &middot; everywhere',
+  face: 'draw', sparks: { c: GOLD_M, n: 6 }, fxd: 520 };
+REC.like = { plat: 'universal', verb: 'LIKE', sub: 'tap in &mdash; the desk feels it',
+  icon: GLYPH.thumb, mo: 'press' };
+REC.heart = { plat: 'universal', verb: 'HEART', sub: 'love from the chat',
+  icon: GLYPH.heart, mo: 'pulse' };
+REC.share = { plat: 'universal', verb: 'SHARE', sub: 'send it to a friend',
+  icon: GLYPH.send, fx: 'streak' };
+REC.bell = { plat: 'universal', verb: 'BELL', sub: 'all notifications &middot; on',
+  icon: GLYPH.bell, mo: 'ring' };
+REC.tip = { plat: 'universal', verb: 'TIP RECEIVED', hero: heroTile, face: 'glow',
+  amt: { cls: 'amt--kes', zero: 'KSh 0', target: 250, fmt: kes }, sub: '<b class="mp">M-PESA</b> &middot; asante sana',
+  sparks: { c: GOLD_M, n: 7 }, fxd: 640 };
+/* ---- YOUTUBE ---- */
+REC.subscribe = { plat: 'youtube', verb: 'SUBSCRIBE', sub: 'youtube.com/@smile.co.ke',
+  face: 'draw', fx: 'pline', sparks: { c: GOLD_M, n: 6 }, fxd: 520 };
+REC.super = { plat: 'youtube', verb: 'SUPER THANKS', hero: heroCoin,
+  amt: { cls: 'amt--usd', zero: '$0.00', target: 5, fmt: usd }, sub: '<i class="yt"></i>from @viewerriver',
+  sparks: { c: GOLD_M, n: 7 }, fxd: 660 };
+REC.superchat = { plat: 'youtube', verb: 'SUPER CHAT', hero: heroBubble,
+  amt: { cls: 'amt--usd', zero: '$0.00', target: 20, fmt: usd }, sub: 'pinned to the top of chat',
+  sparks: { c: GOLD_M, n: 7 }, fxd: 620 };
+REC.membership = { plat: 'youtube', verb: 'MEMBERSHIP', hero: heroBadge,
+  sub: 'welcome to the members desk', sparks: { c: GOLD_M, n: 6 }, fxd: 560 };
+REC.bellyt = { plat: 'youtube', verb: 'BELL', sub: 'premieres &amp; live &middot; all on',
+  icon: GLYPH.bell, mo: 'ring' };
+/* ---- TWITCH ---- */
+REC.followtw = { plat: 'twitch', verb: 'FOLLOW', sub: 'twitch.tv/smilecoke',
+  face: 'draw', sparks: { c: PURPLE_M, n: 6 }, fxd: 520 };
+REC.subscribetw = { plat: 'twitch', verb: 'SUBSCRIBE', sub: 'tier 1 &middot; welcome to the desk',
+  face: 'draw', sparks: { c: PURPLE_M, n: 7 }, fxd: 520 };
+REC.cheer = { plat: 'twitch', verb: 'CHEER', hero: heroGem,
+  amt: { cls: 'amt--bits', zero: '0 BITS', target: 100, fmt: function (v) { return Math.round(v) + ' BITS'; } },
+  sub: 'twitch.tv/smilecoke', sparks: { c: PURPLE_M, n: 7 }, fxd: 600 };
+REC.gifted = { plat: 'twitch', verb: 'GIFTED SUBS', sub: 'gifted the desk <b>5</b> subs',
+  icon: GLYPH.gift, sparks: { c: PURPLE_M, n: 5 }, fxd: 520 };
+REC.raid = { plat: 'twitch', verb: 'RAID', icon: GLYPH.group,
+  amt: { cls: 'amt--view', zero: '0', target: 120, fmt: function (v) { return '' + Math.round(v); } },
+  sub: 'viewers &middot; thank you @nightowl', fxd: 600 };
+REC.hype = { plat: 'twitch', verb: 'HYPE TRAIN', icon: GLYPH.train, mo: 'chug', meter: true,
+  sub: 'level 3 &middot; all aboard' };
+REC.clip = { plat: 'twitch', verb: 'CLIP IT', sub: '30 seconds of gold, saved',
+  icon: GLYPH.cut, mo: 'snip' };
+/* ---- TIKTOK ---- */
+REC.followtt = { plat: 'tiktok', verb: 'FOLLOW', sub: 'tiktok.com/@smile.co.ke',
+  face: 'draw', sparks: { c: PINK_M, n: 6 }, fxd: 520 };
+REC.likett = { plat: 'tiktok', verb: 'LIKE', sub: 'double-tap energy',
+  icon: GLYPH.heart, mo: 'pulse' };
+REC.gift = { plat: 'tiktok', verb: 'GIFT SENT', hero: heroGift,
+  amt: { cls: 'amt--coins', zero: '0 coins', target: 500, fmt: function (v) { return Math.round(v) + ' coins'; } },
+  sub: 'from @fypfan &middot; rose stack', sparks: { c: PINK_M, n: 7 }, fxd: 620 };
+REC.sharett = { plat: 'tiktok', verb: 'SHARE', sub: 'straight to the fyp',
+  icon: GLYPH.send, fx: 'streak' };
+/* ---- FACEBOOK ---- */
+REC.followfb = { plat: 'facebook', verb: 'FOLLOW', sub: 'facebook.com/smile.co.ke',
+  face: 'draw', sparks: { c: BLUE_M, n: 6 }, fxd: 520 };
+REC.reaction = { plat: 'facebook', verb: 'REACTION', sub: 'like &middot; love &middot; wow',
+  icon: function () { return rxStack(); }, mo: 'cycle' };
+REC.stars = { plat: 'facebook', verb: 'STARS SENT', hero: heroStar,
+  amt: { cls: 'amt--stars', zero: '0 Stars', target: 250, fmt: function (v) { return Math.round(v) + ' Stars'; } },
+  sub: 'from the desk group', sparks: { c: GOLD_M, n: 7 }, fxd: 620 };
+REC.sharefb = { plat: 'facebook', verb: 'SHARE', sub: 'post it to the group',
+  icon: GLYPH.send, fx: 'streak' };
+/* ---- KICK ---- */
+REC.followck = { plat: 'kick', verb: 'FOLLOW', sub: 'kick.com/smilecoke',
+  face: 'draw', sparks: { c: GREEN_M, n: 6 }, fxd: 520 };
+REC.subscribeck = { plat: 'kick', verb: 'SUBSCRIBE', sub: 'the green side of the desk',
+  face: 'draw', sparks: { c: GREEN_M, n: 7 }, fxd: 520 };
+REC.tipck = { plat: 'kick', verb: 'TIP RECEIVED', hero: heroTile, face: 'glow',
+  amt: { cls: 'amt--kes', zero: 'KSh 0', target: 500, fmt: kes }, sub: '<b class="mp">M-PESA</b> &middot; tip jar open',
+  sparks: { c: GREEN_M, n: 7 }, fxd: 640 };
+
+var ORDER = ['follow', 'like', 'heart', 'share', 'bell', 'tip',
+  'subscribe', 'super', 'superchat', 'membership', 'bellyt',
+  'followtw', 'subscribetw', 'cheer', 'gifted', 'raid', 'hype', 'clip',
+  'followtt', 'likett', 'gift', 'sharett',
+  'followfb', 'reaction', 'stars', 'sharefb',
+  'followck', 'subscribeck', 'tipck'];
+
+/* ================= glass tuning (matte family; core speaks) ================= */
+function brightNow() { return document.body.classList.contains('bg-bright'); }
+var MAT = {
+  obsidian: { sat: 1.38, bri: .99 },
+  chameleon: { sat: 1.30, bri: 1.00 },
+  frost: { sat: 1.22, bri: 1.05 },
+  frostBright: { sat: 1.10, bri: .98 }
+};
+function glassOpts(id) {
+  var r = REC[id], hero = !!r.hero;
+  var s = hero ? 82 : 78, ca = hero ? 1.6 : 1.5, blur = hero ? 2.5 : 2.3;
+  var m;
+  if (THEME === 'obsidian') m = MAT.obsidian;
+  else if (THEME === 'chameleon') m = MAT.chameleon;
+  else m = brightNow() ? MAT.frostBright : MAT.frost;
+  return { theme: THEME, depth: 14, strength: s, ca: ca, blur: blur, saturate: m.sat, brightness: m.bri };
+}
+function rematerial() {
+  if (!ORDER) return;
+  ORDER.forEach(function (id) {
+    var r = REC[id], el = r && r.el; if (!el) return;
+    ['lg-backdrop', 'lg-tint', 'lg-rim', 'lg-spec', 'lg-grain'].forEach(function (c) {
+      Array.prototype.forEach.call(el.querySelectorAll(':scope > ' + c), function (n) { n.remove(); });
+    });
+    el._ref = LG.glass(el, glassOpts(id));
+    if (!r.hero) renderIcon(r, el);
+  });
+}
+
+/* ================= build ================= */
+/* ---- THE SMILE — verbatim face from assets/smile-face.svg, paths byte-true.
+     Round-7 logo verdicts: A THE DRAW (follow/subscribe resolve) + D THE GLOWLINE
+     (M-PESA tip gratitude). B blink / E watch were killed by the studies page. ---- */
+var FACE_INNER =
+  '<svg viewBox="5 10.8 23.8 23.8" aria-hidden="true">' +
+  '<path class="f-disc" d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>' +
+  '<path class="f-eye f-eye-l" d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>' +
+  '<path class="f-eye f-eye-r" d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>' +
+  '<path class="f-mouth" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>' +
+  '</svg>';
+function makeFace(mode) {
+  var span = document.createElement('span');
+  span.className = 'face';
+  if (mode === 'draw' || mode === 'glow') span.classList.add('f-draw');
+  if (mode === 'glow') span.classList.add('f-glow');
+  span.innerHTML = FACE_INNER;
+  if (mode === 'glow') {
+    var m = span.querySelector('.f-mouth');
+    span.style.setProperty('--ml', m.getTotalLength().toFixed(2));
+    var groove = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    groove.setAttribute('class', 'f-groove');
+    groove.setAttribute('d', m.getAttribute('d'));
+    groove.setAttribute('aria-hidden', 'true');
+    m.parentNode.insertBefore(groove, m);
+  }
+  return span;
+}
+function faceReset(el) {
+  el.querySelectorAll('.face').forEach(function (fc) {
+    fc.classList.remove('eyes-in', 'mouth-draw', 'resolve');
+  });
+}
+function faceRun(el) {                 /* A: eyes 540 → mouth 600 · D: arrive 600 → trace 720 */
+  var fc = el.querySelector('.face'); if (!fc) return;
+  if (fc.classList.contains('f-glow')) {
+    el._t4 = setTimeout(function () { fc.classList.add('eyes-in'); }, 600);
+    el._t5 = setTimeout(function () { fc.classList.add('resolve'); }, 720);
+  } else {
+    el._t4 = setTimeout(function () { fc.classList.add('eyes-in'); }, 540);
+    el._t5 = setTimeout(function () { fc.classList.add('mouth-draw'); }, 600);
+  }
+}
+
+var dock = document.getElementById('dock');
+ORDER.forEach(function (id) {
+  var r = REC[id]; r.id = id;
+  r.wrap = document.createElement('div'); r.wrap.className = 'stgw';
+  r.wrap.style.setProperty('--acc', ACC[r.plat]);
+  var el = document.createElement('div'); el.className = 'stg';
+  el.dataset.id = id; el.dataset.mo = r.mo || 'pop';
+  var h = '';
+  if (r.hero) h += '<span class="obj-stage lg-scene"><i class="oshadow"></i></span>';
+  else h += '<span class="ic"></span>';
+  h += '<span class="tx"><b class="ttl">' + r.verb + '</b>';
+  if (r.meter) h += '<span class="subrow"><span class="meter"><i></i><i></i><i></i><i></i><i></i></span><span class="sub">' + r.sub + '</span></span>';
+  else if (r.amt) h += '<span class="subrow"><b class="amt ' + r.amt.cls + '">' + r.amt.zero + '</b><span class="sub">' + r.sub + '</span></span>';
+  else h += '<span class="sub">' + r.sub + '</span>';
+  h += '</span>';
+  el.innerHTML = h;
+  if (r.hero) r.hero(el.querySelector('.obj-stage'));
+  if (r.face === 'glow') {
+    var fe = makeFace('glow'); fe.classList.add('face--end'); el.appendChild(fe);
+    el.classList.add('has-face-end');
+  }
+  renderIcon(r, el);
+  r.el = el;
+  r.wrap.appendChild(el);
+  if (r.fx === 'pline') r.wrap.insertAdjacentHTML('beforeend', '<i class="pline"></i>');
+  if (r.fx === 'streak') r.wrap.insertAdjacentHTML('beforeend', '<i class="streak"></i><span class="plane">' + PLANE_SVG + '</span>');
+  el.addEventListener('click', function () { userFire(id); });
+  el._ref = LG.glass(el, glassOpts(id));
+  dock.appendChild(r.wrap);
+});
+function renderIcon(r, el) {
+  var ic = (el || r.el).querySelector('.ic'); if (!ic) return;
+  if (r.face === 'draw') {           /* THE DRAW: smile replaces the glyph in the circle */
+    ic.innerHTML = ''; ic.appendChild(makeFace('draw'));
+    el.dataset.mo = 'face';
+    return;
+  }
+  ic.innerHTML = r.icon(THEME === 'frost');
+  if (r.mo === 'ring') ic.insertAdjacentHTML('beforeend', '<i class="halo"></i>');
+}
+
+/* ================= chameleon eyes on the animated canvas ================= */
+var CHAM = null;
+function chamStart() {
+  if (CHAM || !ORDER) return;
+  var st = document.getElementById('stage');
+  CHAM = ORDER.map(function (id) {
+    return LG.chameleon(REC[id].el, { source: C, stage: st, interval: 420, hue: 224, sat: 22 });
+  });
+}
+function chamStop() { if (CHAM) { CHAM.forEach(function (c) { c.stop(); }); CHAM = null; } }
+var CHAM_PRESET = { bright: { h: 46, s: 34, e: .05 }, dark: { h: 222, s: 12, e: 0 } };
+function chamSync() {
+  if (THEME !== 'chameleon') { chamStop(); return; }
+  if (bgMode === 'chart' || bgMode === 'wash') { chamStop(); chamStart(); }
+  else {
+    chamStop();
+    var p = CHAM_PRESET[bgMode];
+    ORDER.forEach(function (id) {
+      var el = REC[id].el; if (!el || !p) return;
+      el.style.setProperty('--ch-h', p.h);
+      el.style.setProperty('--ch-s', p.s);
+      el.style.setProperty('--ch-e', p.e);
+    });
+  }
+}
+
+/* ================= reaction cycle (like -> love -> wow) ================= */
+function runCycle(el) {
+  var rxs = el.querySelectorAll('.rx');
+  (el._rxT || []).forEach(clearTimeout); el._rxT = [];
+  rxs.forEach(function (n) { n.classList.remove('on'); });
+  function show(i) { rxs.forEach(function (n, k) { if (k !== i) n.classList.remove('on'); }); rxs[i].classList.add('on'); }
+  show(0);
+  el._rxT.push(setTimeout(function () { show(1); }, 800));
+  el._rxT.push(setTimeout(function () { show(2); }, 1600));
+}
+
+/* ================= fire / kill / spine (.in — sheen — 4600 hold — .out — 5150 tuck) ================= */
+var active = null;
+function clearT(r) {
+  var el = r.el;
+  clearTimeout(el._t1); clearTimeout(el._t2); clearTimeout(el._t3);
+  clearTimeout(el._t4); clearTimeout(el._t5);
+  (el._rxT || []).forEach(clearTimeout);
+}
+function kill(r) {
+  if (!r) return;
+  clearT(r);
+  faceReset(r.el);
+  r.el.classList.remove('in', 'out', 'sheen', 'on');
+  r.wrap.classList.remove('run');
+}
+function fire(id) {
+  var r = REC[id]; if (!r) return;
+  var el = r.el, wasOn = (active === r);
+  if (active && active !== r) kill(active);
+  clearT(r);
+  active = r;
+  el.classList.remove('on');
+  if (wasOn) void el.offsetWidth;      /* true unrender: restarts hero animations */
+  el.classList.add('on');
+  if (wasOn) void el.offsetWidth;
+  if (r.fx) { r.wrap.classList.remove('run'); void r.wrap.offsetWidth; r.wrap.classList.add('run'); }
+  requestAnimationFrame(function () { requestAnimationFrame(function () {
+    if (el._ref) el._ref.refresh();    /* displacement map at true size */
+    el.classList.remove('in', 'out', 'sheen');
+    void el.offsetWidth;
+    el.classList.add('in', 'sheen');
+  }); });
+  faceReset(el);
+  faceRun(el);
+  if (r.mo === 'cycle') runCycle(el);
+  el._t1 = setTimeout(function () {
+    if (r.sparks) burst(el, r.sparks.c, r.sparks.n);
+    if (r.amt) countUp(el.querySelector('.amt'), r.amt.target, r.amt.fmt, 840);
+  }, r.fxd || 600);
+  el._t2 = setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); }, 4600);
+  el._t3 = setTimeout(function () { el.classList.remove('out', 'on'); if (active === r) active = null; }, 5150);
+}
+function userFire(id) { if (TYPE) { fire(id); } else { stopDemo(); fire(id); } }
+
+/* ================= tabs (filter + auto-cycle) ================= */
+var TABS = [
+  { id: 'all', label: 'ALL', dot: '#FFCE00' },
+  { id: 'youtube', label: 'YOUTUBE', dot: '#FF0033' },
+  { id: 'twitch', label: 'TWITCH', dot: '#9146FF' },
+  { id: 'tiktok', label: 'TIKTOK', dot: '#FE2C55' },
+  { id: 'facebook', label: 'FACEBOOK', dot: '#1877F2' },
+  { id: 'kick', label: 'KICK', dot: '#53FC18' }
+];
+var TABIDS = TABS.map(function (t) { return t.id; });
+var activeTab = 'all';
+var tabsEl = document.getElementById('tabs');
+TABS.forEach(function (t) {
+  var b = document.createElement('button'); b.className = 'tab'; b.dataset.tab = t.id;
+  b.style.setProperty('--pa', t.dot);
+  b.innerHTML = '<i></i>' + t.label;
+  b.addEventListener('click', function () {
+    if (TYPE) return;
+    setTab(t.id); stopDemo(); startDemo(true);
+  });
+  tabsEl.appendChild(b);
+});
+function setTab(id) {
+  activeTab = id;
+  tabsEl.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === id); });
+  demoIdx = 0; renderHelp();
+}
+function visibleIds() {
+  return ORDER.filter(function (id) { return activeTab === 'all' || REC[id].plat === activeTab; });
+}
+
+/* ================= help chip (live key mapping) ================= */
+var KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'q', 'w', 'e', 'r', 't', 'y', 'u'];
+var keysEl = document.getElementById('keys');
+function renderHelp() {
+  var vis = visibleIds();
+  var html = vis.slice(0, KEYS.length).map(function (id, i) {
+    return '<span class="k">' + KEYS[i] + '</span> ' + REC[id].verb;
+  }).join('<i class="sep">&middot;</i>');
+  if (vis.length > KEYS.length) html += '<i class="sep">&middot;</i>+' + (vis.length - KEYS.length) + ' more &mdash; click a card';
+  keysEl.innerHTML = html;
+}
+renderHelp();
+
+/* ================= demo cycle: ~6.8s through visible recipes, tabs rotate every 4 ================= */
+var demoTimer = null, demoIdx = 0, fireCount = 0, cycling = false;
+function tickDemo() {
+  var vis = visibleIds();
+  if (!vis.length) return;
+  fire(vis[demoIdx++ % vis.length]);
+  if (++fireCount % 4 === 0) setTab(TABIDS[(TABIDS.indexOf(activeTab) + 1) % TABIDS.length]);
+}
+function startDemo(fireNow) {
+  stopDemo(); cycling = true;
+  if (fireNow) tickDemo();
+  demoTimer = setInterval(tickDemo, 6800);
+}
+function stopDemo() {
+  cycling = false;
+  if (demoTimer) { clearInterval(demoTimer); demoTimer = null; }
+}
+
+/* ================= keys ================= */
+var THEMES = ['frost', 'obsidian', 'chameleon'];
+addEventListener('keydown', function (e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  var k = e.key.toLowerCase();
+  if (k === 'b') { curBg = (curBg + 1) % BGS.length; bg(BGS[curBg]); return; }
+  if (k === 'm') { setTheme(THEMES[(THEMES.indexOf(THEME) + 1) % THEMES.length]); return; }
+  if (TYPE) return;
+  var i = KEYS.indexOf(k);
+  if (i > -1) {
+    var vis = visibleIds();
+    if (i < vis.length) { stopDemo(); fire(vis[i]); }
+  }
+});
+function setTheme(t) {
+  THEME = t;
+  document.body.dataset.theme = t;
+  rematerial(); chamSync();
+}
+
+/* ================= boot ================= */
+chamSync();
+var TYPE = Q.get('type');
+var typeTimer = null;
+if (TYPE && REC[TYPE]) {
+  fire(TYPE);
+  typeTimer = setInterval(function () { fire(TYPE); }, 7000);
+} else {
+  TYPE = null;
+  setTimeout(function () { startDemo(true); }, 400);
+}
+</script>
+</body>
+</html>

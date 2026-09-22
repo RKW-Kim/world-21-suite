@@ -6,7 +6,12 @@
    API:
      LG.glass(el, opts) -> {refresh}
        opts: radius, depth(12), strength(72), ca(1.6), blur(1.5),
-             theme('clear'|'obsidian'), saturate(1.7), brightness(1.08)
+             theme('frost'|'obsidian'|'chameleon'|'clear'),
+             saturate(1.7), brightness(1.08)
+     LG.chameleon(el, opts) -> {sample, stop}   (round 7 matte core)
+       opts: source (canvas|video el), stage (el mapping 1:1 to source
+             px space), interval(420ms), hue, sat — samples the region
+             behind the card, drives --ch-h/--ch-s/--ch-e on it.
      LG.filter(o) -> dataURI svg filter (advanced use)
    ============================================================ */
 var LG = (function () {
@@ -80,7 +85,11 @@ var LG = (function () {
       saturate: opts.saturate != null ? opts.saturate : 1.7,
       brightness: opts.brightness != null ? opts.brightness : 1.08
     };
-    var theme = o.theme === 'obsidian' ? 'lg--obsidian' : 'lg--clear';
+    var THEME_CLASS = {
+      clear: 'lg--clear', frost: 'lg--frost', obsidian: 'lg--obsidian', chameleon: 'lg--chameleon'
+    };
+    var theme = THEME_CLASS[o.theme] || 'lg--clear';
+    var matte = (o.theme === 'frost' || o.theme === 'obsidian' || o.theme === 'chameleon');
 
     if (!el.classList.contains('lg')) el.classList.add('lg');
     el.classList.add(theme);
@@ -102,6 +111,10 @@ var LG = (function () {
     el.insertBefore(tint, content);
     el.insertBefore(rim, content);
     el.insertBefore(spec, content);
+    if (matte) {                    /* matte family: mineral grain over the tint */
+      var grain = document.createElement('div'); grain.className = 'lg-grain';
+      el.insertBefore(grain, content);
+    }
 
     function apply() {
       var r = el.getBoundingClientRect();
@@ -147,5 +160,99 @@ var LG = (function () {
     return s;
   }
 
-  return { glass: glass, filter: filter, displacementMap: displacementMap, spark: spark, supportsUrl: supportsUrl };
+  /* ----------------------------------------------------------------
+     LG.chameleon(el, opts) — the smart material (round 7).
+     Samples the region of `opts.source` (canvas/video element) that
+     sits BEHIND `el`, extracts the weighted dominant hue + chroma and
+     a motion-energy score, then drives CSS custom properties:
+       --ch-h (0-360)  --ch-s (0-100)  --ch-e (0-1)
+     The .lg--chameleon theme maps those onto tint/rim/breath, so the
+     glass colour and life respond to what's happening behind it.
+     opts.source  canvas or <video> element (same-origin pixels)
+     opts.stage   element whose client rect maps 1:1 onto source px
+                  space (defaults to viewport)
+     opts.interval sampling cadence ms (default 420)
+     opts.hue/opts.sat  initial/fallback values
+     Returns { sample, stop }.
+     NOTE: in OBS the browser source cannot see the video behind it —
+     ship ?tint=h,s pages there; in-lab this runs for real.
+     ---------------------------------------------------------------- */
+  function chameleon(el, opts) {
+    opts = opts || {};
+    var src = opts.source;
+    var stage = opts.stage || null;
+    var SW = opts.sourceWidth || 1920, SH = opts.sourceHeight || 1080;
+    var box = document.createElement('canvas');
+    box.width = 32; box.height = 18;
+    var bctx = box.getContext('2d', { willReadFrequently: true });
+    var prev = null;
+    var cur = { h: opts.hue != null ? opts.hue : 224, s: opts.sat != null ? opts.sat : 22, e: 0 };
+    var tgt = { h: cur.h, s: cur.s, e: 0 };
+    var running = true, lastErr = 0;
+
+    function sampleRegion() {
+      if (!src || !running) return;
+      var r = el.getBoundingClientRect();
+      var stageW = stage ? stage.clientWidth : (window.innerWidth || SW);
+      var stageH = stage ? stage.clientHeight : (window.innerHeight || SH);
+      var sx = SW / Math.max(stageW, 1), sy = SH / Math.max(stageH, 1);
+      var x = r.left * sx, y = r.top * sy;
+      var w = Math.max(6, r.width * sx), h = Math.max(6, r.height * sy);
+      try { bctx.drawImage(src, x, y, w, h, 0, 0, 32, 18); }
+      catch (e) { if (++lastErr < 4) console.warn('chameleon drawImage:', e.message); return; }
+      var px;
+      try { px = bctx.getImageData(0, 0, 32, 18).data; }
+      catch (e) { if (++lastErr < 4) console.warn('chameleon getImageData:', e.message); return; }
+      var n = 32 * 18, i;
+      var sumX = 0, sumY = 0, sumW = 0, sumL = 0;
+      for (i = 0; i < n; i++) {
+        var R = px[i*4] / 255, G = px[i*4+1] / 255, B = px[i*4+2] / 255;
+        var mx = Math.max(R, G, B), mn = Math.min(R, G, B), c = mx - mn;
+        var L = mx, S = mx ? c / mx : 0, H = 0;
+        if (c > 0.004) {
+          if (mx === R) H = 60 * (((G - B) / c) % 6);
+          else if (mx === G) H = 60 * ((B - R) / c + 2);
+          else H = 60 * ((R - G) / c + 4);
+          if (H < 0) H += 360;
+        } else S = 0;
+        var wgt = S * S + 0.02;          /* grey pixels barely vote */
+        sumX += Math.cos(H * Math.PI / 180) * wgt;
+        sumY += Math.sin(H * Math.PI / 180) * wgt;
+        sumW += wgt; sumL += L;
+      }
+      var H2 = sumW ? Math.atan2(sumY, sumX) * 180 / Math.PI : tgt.h;
+      if (H2 < 0) H2 += 360;
+      var S2 = sumW ? Math.min(100, (sumW / n) * 165) : tgt.s;
+      tgt.h = H2;
+      tgt.s = Math.max(9, S2);
+      if (prev) {                        /* scene energy: mean abs delta */
+        var dsum = 0;
+        for (i = 0; i < n * 4; i += 4)
+          dsum += Math.abs(px[i] - prev[i]) + Math.abs(px[i+1] - prev[i+1]) + Math.abs(px[i+2] - prev[i+2]);
+        tgt.e = Math.min(1, Math.pow((dsum / (n * 3)) / 255 * 6.5, 0.75));
+      }
+      prev = new Uint8ClampedArray(px);  /* copy — getImageData reuses */
+    }
+
+    function tick() {
+      var k = 0.14, dh = tgt.h - cur.h;
+      if (dh > 180) dh -= 360; else if (dh < -180) dh += 360;
+      cur.h = (cur.h + dh * k + 360) % 360;
+      cur.s += (tgt.s - cur.s) * k;
+      cur.e += (tgt.e - cur.e) * 0.10;
+      el.style.setProperty('--ch-h', cur.h.toFixed(1));
+      el.style.setProperty('--ch-s', cur.s.toFixed(1));
+      el.style.setProperty('--ch-e', cur.e.toFixed(3));
+    }
+
+    sampleRegion();
+    var sampler = setInterval(sampleRegion, opts.interval || 420);
+    (function loop() { if (!running) return; tick(); requestAnimationFrame(loop); })();
+    return {
+      sample: sampleRegion,
+      stop: function () { running = false; clearInterval(sampler); }
+    };
+  }
+
+  return { glass: glass, filter: filter, displacementMap: displacementMap, spark: spark, chameleon: chameleon, supportsUrl: supportsUrl };
 })();

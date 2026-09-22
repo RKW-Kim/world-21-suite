@@ -148,3 +148,120 @@
 .lg.nodisp .lg-backdrop {
   backdrop-filter: blur(14px) saturate(180%) !important;
 }
+
+/* ============================================================
+   MATTE FAMILY — round 7 ("not piano black")
+   Matte glass scatters light: no crisp specular hairlines,
+   broad soft top-light, fine mineral grain, diffuse rims.
+   Themes: frost (white) · obsidian (black) · chameleon
+   (adaptive: hue/sat/energy driven by what's behind it).
+   ============================================================ */
+
+/* fine mineral grain — one tiled feTurbulence layer per card */
+.lg-grain {
+  position: absolute; inset: 0; z-index: 2;
+  border-radius: inherit; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: .07; mix-blend-mode: overlay;
+}
+
+/* one accent per card — platform color tinted into the BOTTOM rim only
+   (promoted to core from the obsidian page: it was the winning rule) */
+.lg--frost .lg-rim::after, .lg--obsidian .lg-rim::after, .lg--chameleon .lg-rim::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+  background: linear-gradient(0deg, var(--acc, transparent) 0%, transparent 42%);
+  opacity: var(--acc-o, 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* matte sheen — a luminous swell, not a polished stripe */
+.lg--frost .lg-spec::before, .lg--obsidian .lg-spec::before, .lg--chameleon .lg-spec::before {
+  inset: -35% -12%;
+  background: radial-gradient(110% 85% at 50% -25%, rgba(255,255,255,.13), transparent 58%);
+  transform: none;
+}
+@keyframes lgSheenM {
+  0%   { opacity: 0; transform: translateX(-12%); }
+  45%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(12%); }
+}
+.lg--frost.sheen .lg-spec::before, .lg--obsidian.sheen .lg-spec::before,
+.lg--chameleon.sheen .lg-spec::before { animation-name: lgSheenM; }
+
+/* ---------- FROST (matte white glass) ---------- */
+.lg--frost {
+  background: rgba(250, 250, 248, .30);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, .34),
+    0 2px 8px rgba(0, 0, 0, .22);
+}
+.lg--frost .lg-tint {
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.32), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(246,245,242,.10) 55%, rgba(236,233,226,.16) 100%);
+}
+.lg--frost .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.26),
+    inset 0 2px 10px -2px rgba(255,255,255,.52),
+    inset 0 -2px 12px -4px rgba(28,24,12,.10),
+    inset 0 0 14px rgba(255,255,255,.16);
+}
+.lg--frost .lg-grain { mix-blend-mode: soft-light; opacity: .11; }
+
+/* ---------- OBSIDIAN (matte black glass — volcanic, not piano) ---------- */
+.lg--obsidian {
+  background: rgba(6, 7, 10, .60);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, .58),
+    0 3px 12px rgba(0, 0, 0, .42);
+}
+.lg--obsidian .lg-tint {
+  background:
+    radial-gradient(46% 32% at 50% -8%, rgba(255,255,255,.09), transparent 68%),
+    linear-gradient(180deg, rgba(24,26,32,.26) 0%, rgba(8,9,12,.32) 46%, rgba(2,3,5,.52) 100%);
+}
+.lg--obsidian .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.09),
+    inset 0 2px 12px -3px rgba(255,255,255,.16),
+    inset 0 -2px 14px -4px rgba(255,255,255,.06),
+    inset 0 0 18px rgba(255,255,255,.045);
+}
+.lg--obsidian .lg-grain { opacity: .11; }
+
+/* ---------- CHAMELEON (adaptive matte glass) ----------
+   JS (LG.chameleon) samples what's behind the card and drives:
+     --ch-h  hue of the backdrop (0-360)        --ch-s  weighted chroma (0-100)
+     --ch-e  scene energy 0-1 (motion behind)   → tint, rim and breath all follow */
+.lg--chameleon {
+  background: hsl(var(--ch-h, 224) calc(var(--ch-s, 24) * 1%) calc(var(--ch-l, 7) * 1%) / .56);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, .58),
+    0 3px 12px rgba(0, 0, 0, .42);
+}
+.lg--chameleon .lg-tint {
+  background:
+    radial-gradient(46% 32% at 50% -8%,
+      hsl(var(--ch-h) calc(var(--ch-s) * 1%) 82% / calc(.10 + var(--ch-e, 0) * .12)), transparent 68%),
+    linear-gradient(180deg,
+      hsl(var(--ch-h) calc(var(--ch-s) * .8) calc(22 * 1%) / .28) 0%,
+      hsl(var(--ch-h) calc(var(--ch-s) * .9) calc(9 * 1%) / .32) 46%,
+      hsl(var(--ch-h) calc(var(--ch-s) * 1%) calc(5 * 1%) / .50) 100%);
+  animation: chBreathe 5.6s ease-in-out infinite;   /* the material is alive */
+}
+.lg--chameleon .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--ch-h) calc(var(--ch-s) * 1%) 80% / .12),
+    inset 0 2px 12px -3px hsl(var(--ch-h) calc(var(--ch-s) * 1%) 70% / .18),
+    inset 0 -2px 14px -4px rgba(255,255,255,.06);
+}
+.lg--chameleon .lg-grain { opacity: .07; }
+@keyframes chBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(calc(1 + var(--ch-e, 0) * .014)); }
+}
