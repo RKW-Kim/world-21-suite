@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · PANEL — multi-guest desk · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(18,22,34,.74); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#9AA4BC; --faint:#5A6478;
+  --gold:#FFCE00; --gold-ink:#1F1702; --up:#10B981; --dn:#F6465D; --blue:#6E9BFF;
+  --r-xl:24px; --r-lg:18px;
+  --expo:cubic-bezier(.16,1,.3,1);
+  --sh:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.32),0 3px 8px rgba(0,0,0,.24),0 22px 54px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.num{font-variant-numeric:tabular-nums}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center}
+@keyframes enter{to{opacity:1;transform:none}}
+.enter{opacity:0;transform:translateY(16px) scale(.985);animation:enter .85s var(--expo) forwards}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes eq{0%,100%{height:30%}50%{height:95%}}
+
+/* guest cards */
+.guest{position:absolute;border-radius:var(--r-lg);overflow:hidden;z-index:10;
+  box-shadow:0 0 0 1.5px rgba(255,206,0,.3),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 44px rgba(0,0,0,.45);
+  transition:box-shadow .5s}
+.guest.spot{box-shadow:0 0 0 2.5px rgba(255,206,0,.9),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 44px rgba(0,0,0,.5),0 0 34px rgba(255,206,0,.28)}
+.guest .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%)}
+.guest.showph .ph{display:flex}
+.guest .ph img{width:48px;height:48px;filter:drop-shadow(0 8px 18px rgba(255,206,0,.2))}
+.guest .ph .t{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.18em;color:var(--faint)}
+.guest .lab{position:absolute;left:10px;top:10px;z-index:6;display:flex;align-items:center;gap:7px;padding:5.5px 12px;
+  border-radius:999px;background:rgba(9,11,18,.88);font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  font-weight:600;letter-spacing:.14em;color:var(--gold);box-shadow:0 0 0 1px rgba(255,206,0,.3)}
+.guest .lab i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite}
+.guest.spot .lab{background:rgba(255,206,0,.94);color:var(--gold-ink)}
+.guest.spot .lab i{background:var(--gold-ink)}
+.guest .idc{position:absolute;left:10px;bottom:10px;z-index:6;padding:6px 12px;border-radius:12px;
+  background:rgba(10,12,20,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.guest .idc .nm{font-weight:700;font-size:12.5px}
+.guest .idc .rl{font-family:'IBM Plex Mono',monospace;font-size:7.5px;font-weight:600;letter-spacing:.14em;color:var(--gold);margin-top:1px}
+.guest .lvl{position:absolute;right:10px;bottom:14px;z-index:6;display:flex;align-items:flex-end;gap:2px;height:16px}
+.guest .lvl i{width:2.5px;border-radius:2px;background:var(--gold);animation:eq 0.9s ease-in-out infinite}
+.guest .lvl i:nth-child(2){animation-delay:.14s}.guest .lvl i:nth-child(3){animation-delay:.28s}
+.guest .lvl i:nth-child(4){animation-delay:.42s}.guest .lvl i:nth-child(5){animation-delay:.56s}
+.guest .tag2{position:absolute;right:10px;top:10px;z-index:6;padding:5px 10px;border-radius:999px;background:rgba(9,11,18,.88);
+  font-family:'IBM Plex Mono',monospace;font-size:7.5px;font-weight:600;letter-spacing:.12em;color:var(--muted);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+
+/* stage */
+#stage{position:absolute;border-radius:var(--r-xl);background:rgba(12,15,23,.82);box-shadow:var(--sh),0 0 0 1.5px rgba(255,206,0,.22);z-index:10}
+#stage .head{display:flex;align-items:center;gap:12px;padding:12px 18px 8px}
+#stage .head .h{font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+#stage .head .asp{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;
+  letter-spacing:.12em;color:var(--gold);background:rgba(255,206,0,.1);border-radius:999px;padding:4px 10px;
+  box-shadow:inset 0 0 0 1px rgba(255,206,0,.3)}
+#stage .holeW{position:relative;margin:0 14px;border-radius:14px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+#stage .holeW .wm{position:absolute;right:12px;bottom:10px;width:38px;opacity:.1;pointer-events:none}
+#stage .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%);border-radius:14px}
+#stage.showph .ph{display:flex}
+#stage .ph img{width:74px;height:74px;filter:drop-shadow(0 8px 18px rgba(255,206,0,.18))}
+#stage .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--faint)}
+#stage .foot{display:flex;align-items:center;gap:10px;padding:9px 18px 12px}
+#stage .foot .chip{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.12em;
+  color:var(--muted);background:rgba(255,255,255,.045);border-radius:8px;padding:5px 10px}
+#stage .foot .ghost{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--faint);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.18em}
+#stage .foot .ghost img{width:18px;height:18px;opacity:.5}
+
+/* chat */
+.textmod{position:absolute;border-radius:var(--r-lg);background:var(--card);-webkit-backdrop-filter:blur(20px) saturate(1.3);
+  backdrop-filter:blur(20px) saturate(1.3);box-shadow:var(--sh);border:1px solid var(--line);z-index:10;overflow:hidden}
+.textmod .h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  font-weight:600;letter-spacing:.18em;color:var(--muted);padding:13px 16px 9px}
+.textmod .h .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+#chatMod .lines{position:absolute;left:16px;right:16px;top:44px;bottom:12px;display:flex;flex-direction:column;
+  justify-content:flex-end;gap:7px;overflow:hidden}
+#chatMod .line{display:flex;gap:8px;align-items:flex-start;animation:enter .5s var(--expo) both;flex:none}
+#chatMod .line .av{flex:none;width:22px;height:22px;border-radius:50%;background:rgba(255,206,0,.14);display:flex;
+  align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--gold);margin-top:1px}
+#chatMod .line .tx{font-size:12px;line-height:1.4;color:#C9D2E4;min-width:0}
+#chatMod .line .tx b{color:var(--fg)}
+#chatMod .line .tx .pf{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:5px}
+
+/* spotlight banner */
+#spot{position:absolute;left:0;right:0;bottom:92px;display:none;justify-content:center;z-index:44;pointer-events:none}
+#spot.on{display:flex}
+#spot .pill{display:flex;align-items:center;gap:12px;padding:10px 22px;border-radius:999px;
+  background:rgba(255,206,0,.95);color:var(--gold-ink);box-shadow:0 14px 34px rgba(255,206,0,.3);
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.2em}
+#spot .pill .sq{width:8px;height:8px;border-radius:3px;background:var(--gold-ink);animation:pulse 1.6s infinite}
+
+/* alerts */
+#alerts{position:absolute;right:24px;bottom:92px;z-index:45;--al-w:380px}
+/* keybar */
+#helpWrap{position:absolute;left:0;right:0;bottom:92px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:12px;padding:7px 20px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:rgba(12,15,23,.85);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+#help b{color:var(--gold)} #help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help,body.spotOn #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <div id="deck"></div>
+
+  <div id="stage" class="enter">
+    <div class="head">
+      <div class="h">DISPLAY · WINDOW CAPTURE SLOT</div>
+      <span class="asp" id="aspTag">16:9</span>
+    </div>
+    <div class="holeW" id="stageHole">
+      <div class="ph"><img src="assets/smile-face.svg" alt=""><div class="t">PLACE DISPLAY / WINDOW CAPTURE</div></div>
+      <img class="wm" src="assets/smile-face.svg" alt="">
+    </div>
+    <div class="foot">
+      <span class="chip" id="stageRes">16:9 SOURCE · FIT-TO-FRAME</span>
+      <span class="chip">SCREENSHARE · MT5 · TRADINGVIEW · BROWSER</span>
+      <span class="ghost"><img src="assets/smile-face.svg" alt="">SMILE DESK</span>
+    </div>
+  </div>
+
+  <div id="chatMod" class="textmod enter">
+    <div class="h"><span class="dot"></span>AUDIENCE CHAT · MULTIPLATFORM</div>
+    <div class="lines" id="chatLines"></div>
+  </div>
+
+  <div id="spot"><div class="pill"><span class="sq"></span><span id="spotT">ON THE DESK · WANJIKU M.</span></div></div>
+
+  <div id="alerts"></div>
+  <div id="helpWrap"><div id="help" class="enter">
+    <span><b>2–5</b> guests</span><i>·</i><span><b>E</b> spotlight</span><i>·</i><span><b>S</b> swap chat/stage</span><i>·</i>
+    <span><b>R</b> stage aspect</span><i>·</i><span><b>P</b> avatar</span><i>·</i><span><b>O</b> placeholders</span><i>·</i>
+    <span><b>Z</b> alert zone</span><i>·</i><span><b>A</b> alert</span><i>·</i><span><b>X</b> clear</span><i>·</i>
+    <span><b>C</b> calibrate</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+  <div id="cal"><div class="sheet" id="calSheet"></div></div>
+</div>
+<script src="assets/chrome.js"></script>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')';fit.s=s}
+addEventListener('resize',function(){fit();layout(gN);if($('#cal').classList.contains('on'))calOn(true)});fit();
+
+SmileChrome.mount({});
+SmileChrome.tickerCSS();
+(function(){var w=document.createElement('div');w.className='tkWrap';
+  w.innerHTML='<div class="tkPill enter"><div class="cap"><i></i><span class="t" id="tkCap">SMILE MARKETS</span></div>'+
+    '<div class="clip"><div class="tk" id="tk"></div></div></div>';
+  $('#fit').appendChild(w);
+  var offair=false;
+  function fill(){var h=SmileChrome.tickerItems(offair?'offair':'market');$('#tk').innerHTML=h+h}
+  fill();window._tkOffair=function(){offair=!offair;$('#tkCap').textContent=offair?'SMILE · OFF-AIR':'SMILE MARKETS';fill()};
+})();
+
+/* ============================================================
+   PANEL LAYOUT — guests row on top (16:9 holes, spotlight),
+   stage + chat below. Y0=112 · row H=255 · bottom row → 986.
+   ============================================================ */
+var Y0=112,ROWH=255,Y1=986,W=1920,PAD=24,GAP=16;
+var ROLES=[['WANJIKU M.','HOST'],['DAVID O.','ANALYST · CFA'],['NERIA W.','MARKETS'],['JOE KMAC','MACRO'],['SHI M.,','GUEST']];
+var gN=parseInt(G.get('g'),10)||4;if(gN<2)gN=2;if(gN>5)gN=5;
+var spot=0,swapped=false;
+var ST_ASPECTS=[['16:9',16/9],['FILL',0]],stIx=0;
+
+function layout(n){
+  gN=n;
+  var gw=Math.round((W-2*PAD-(n-1)*GAP)/n),gh=Math.round(gw*9/16);
+  if(gh>ROWH){gh=ROWH}
+  var deck=$('#deck');deck.innerHTML='';
+  for(var i=0;i<n;i++){
+    var x=PAD+i*(gw+GAP),cx=Math.round((gw-gw)*0);
+    var g=document.createElement('div');g.className='guest enter'+(i===spot?' spot':'');g.id='guest'+i;
+    g.style.cssText='left:'+x+'px;top:'+Y0+'px;width:'+gw+'px;height:'+gh+'px';
+    g.innerHTML='<div class="ph"><img src="assets/smile-face.svg" alt=""><div class="t">PLACE CAMERA '+(i+1)+'</div></div>'+
+      '<div class="lab"><i></i>CAM '+(i+1)+'</div><span class="tag2">HOLE</span>'+
+      '<div class="idc"><div class="nm">'+ROLES[i][0]+'</div><div class="rl">'+ROLES[i][1]+' · NAIROBI DESK</div></div>'+
+      '<div class="lvl"><i></i><i></i><i></i><i></i><i></i></div>';
+    deck.appendChild(g);
+  }
+  document.querySelectorAll('.guest').forEach(function(g,ix){g.classList.toggle('showph',phAll||(ix===spot&&avatar))});
+  /* bottom row */
+  var by=Y0+ROWH+GAP;
+  var chatW=672,chatX=swapped?PAD:W-PAD-chatW;
+  var stX=swapped?PAD+chatW+GAP:PAD,stW=W-2*PAD-chatW-GAP;
+  if(!swapped){stX=PAD;stW=W-2*PAD-chatW-GAP;chatX=W-PAD-chatW}
+  else{chatX=PAD;stX=PAD+chatW+GAP;stW=W-2*PAD-chatW-GAP}
+  var st=$('#stage');st.style.left=stX+'px';st.style.top=by+'px';st.style.width=stW+'px';st.style.height=(Y1-by)+'px';
+  var cm=$('#chatMod');cm.style.left=chatX+'px';cm.style.top=by+'px';cm.style.width=chatW+'px';cm.style.height=(Y1-by)+'px';
+  applyStage();
+}
+function applyStage(){
+  var st=$('#stage'),sw=st.clientWidth-28,availH=(Y1-Y0-ROWH-GAP)-40-36-24;
+  var a=ST_ASPECTS[stIx],w=sw,h=a[1]?Math.round(sw/a[1]):availH;
+  if(h>availH){h=availH;if(a[1])w=Math.round(h*a[1])}
+  var hole=$('#stageHole');hole.style.width=w+'px';hole.style.height=h+'px';hole.style.margin='0 auto';
+  $('#aspTag').textContent=a[0];
+  $('#stageRes').textContent=a[1]?'16:9 SOURCE · FIT-TO-FRAME':'SOURCE FILLS HOLE · CROP TO TASTE';
+}
+function setSpot(i){
+  spot=i%gN;
+  document.querySelectorAll('.guest').forEach(function(g,ix){
+    g.classList.toggle('spot',ix===spot);
+    g.classList.toggle('showph',phAll||(ix===spot&&avatar));
+  });
+  $('#spotT').textContent='ON THE DESK · '+ROLES[spot][0];
+}
+
+/* chat feed */
+var CHAT=[
+  ['njeri.w','the panel is balanced today','youtube','#FF4E45'],
+  ['ke_trader','ask david about the rate path','twitch','#9146FF'],
+  ['mumbi','karibu from Mombasa','tiktok','#3AE4E7'],
+  ['otienoJ','scom dividend when?','youtube','#FF4E45'],
+  ['githinji','gold looking toppy','x','#E7E9EA'],
+  ['awuor.d','mute the mic of guest 3 lol','kick','#53FC18'],
+  ['kamau254','this is better than TV','youtube','#FF4E45'],
+  ['wanjiru','NASI from Nakuru','tiktok','#3AE4E7'],
+  ['bonifacem','position sizing question','twitch','#9146FF'],
+  ['shakirah','spotlight works nicely','x','#E7E9EA'],
+  ['mutua','can you share the deck?','youtube','#FF4E45'],
+  ['amina','half-time markets please','tiktok','#3AE4E7']
+];
+var cIx=0;
+function chatTick(){
+  var c=CHAT[cIx%CHAT.length];cIx++;
+  var L=$('#chatLines'),line=document.createElement('div');line.className='line';
+  line.innerHTML='<span class="av">'+c[0][0].toUpperCase()+'</span><span class="tx"><b>'+c[0]+'</b> '+c[1]+
+    '<span class="pf" style="background:'+c[3]+'"></span></span>';
+  L.appendChild(line);
+  while(L.children.length>16)L.removeChild(L.firstChild);
+}
+for(var i=0;i<9;i++)chatTick();
+setInterval(chatTick,2100);
+
+/* alerts */
+var alerts=SmileAlerts.mount('#alerts');
+var ZONES=['left','center','right'],zIx=0;
+function applyZone(){alerts.setZone(ZONES[zIx]);
+  $('#alerts').style.left=ZONES[zIx]==='left'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.right=ZONES[zIx]==='right'?'24px':(ZONES[zIx]==='center'?'0':'auto');
+  $('#alerts').style.marginLeft=ZONES[zIx]==='center'?'auto':'0';
+  $('#alerts').style.marginRight=ZONES[zIx]==='center'?'auto':'0';}
+applyZone();
+
+/* spotlight auto-rotate */
+var spotAuto=setInterval(function(){if(!document.body.classList.contains('spotOn'))setSpot(spot+1)},6000);
+
+/* placeholders */
+var phAll=G.get('ph')==='1',avatar=false;
+
+/* calibration */
+function calOn(on){
+  var cal=$('#cal');cal.classList.toggle('on',on);if(!on)return;
+  cal.querySelectorAll('.sl').forEach(function(e){e.remove()});
+  var s=fit.s||1,rows=[];
+  for(var i=0;i<gN;i++){var g=$('#guest'+i),r=g.getBoundingClientRect();
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s),w=Math.round(r.width/s),h=Math.round(r.height/s);
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">CAM '+(i+1)+' — '+w+'×'+h+' @ '+x+','+y+'</span>';cal.appendChild(sl);
+    rows.push(['CAM '+(i+1),w+'×'+h+' @ '+x+','+y])}
+  var defs=[['STAGE HOLE','#stageHole'],['CHAT','#chatMod']];
+  defs.forEach(function(d){var el=$(d[1]),r=el.getBoundingClientRect();
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s),w=Math.round(r.width/s),h=Math.round(r.height/s);
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">'+d[0]+' — '+w+'×'+h+' @ '+x+','+y+'</span>';cal.appendChild(sl);
+    rows.push([d[0],w+'×'+h+' @ '+x+','+y])});
+  $('#calSheet').innerHTML='<div class="t">OBS SLOT SHEET · BASE 1920×1080 · '+gN+' GUESTS</div>'+
+    '<div style="position:absolute;left:-380px;top:0;width:340px"></div>'+
+    rows.map(function(r){return '<div class="rw"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('');
+}
+$('#calSheet').style.cssText='position:absolute;right:460px;top:400px;width:380px;background:rgba(8,10,16,.95);border:1px solid rgba(255,206,0,.4);border-radius:14px;padding:16px;font-size:10.5px;line-height:1.8;color:#C9D2E4;font-family:"IBM Plex Mono",monospace';
+
+/* keys */
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k>='2'&&k<='5'){layout(parseInt(k,10));if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='e'){setSpot(spot+1)}
+  else if(k==='s'){swapped=!swapped;layout(gN);if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='r'){stIx=(stIx+1)%ST_ASPECTS.length;applyStage()}
+  else if(k==='p'){avatar=!avatar;setSpot(spot)}
+  else if(k==='o'){phAll=!phAll;layout(gN)}
+  else if(k==='z'){zIx=(zIx+1)%ZONES.length;applyZone()}
+  else if(k==='k'){window._tkOffair()}
+  else if(k==='c'){calOn(!$('#cal').classList.contains('on'))}
+  else if(k==='h')document.body.classList.toggle('g');
+});
+if(G.get('g')==='1')document.body.classList.add('g');
+layout(gN);
+if(G.get('cal')==='1'){document.body.classList.add('calm');phAll=true;layout(gN);calOn(true)}
+</script>
+</body>
+</html>

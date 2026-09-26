@@ -1,0 +1,267 @@
+/* ============================================================
+   LIQUID GLASS CORE — world-21-suite stingers
+   Technique ported 1:1 from nikdelvin/liquid-glass (iOS 26
+   recreation: SVG displacement map + feDisplacementMap chain
+   via backdrop-filter) + css-tricks layered approach.
+   Themes: clear (light) / obsidian (dark). Smile gold #FFCE00.
+   ============================================================ */
+
+:root {
+  /* motion — Apple's language */
+  --lg-ease: cubic-bezier(.32, .72, 0, 1);          /* sheet, decisive   */
+  --lg-spring: cubic-bezier(.34, 1.56, .64, 1);      /* gentle overshoot  */
+  --lg-exit: cubic-bezier(.5, 0, .75, 0);            /* decisive out      */
+  --lg-gold: #FFCE00;
+  --lg-ink: #1F1702;
+}
+
+/* ---------- structure ---------- */
+.lg {
+  position: relative;
+  isolation: isolate;
+  border-radius: 999px;             /* pill default; override for cards */
+  -webkit-tap-highlight-color: transparent;
+  transform-style: preserve-3d;
+}
+.lg-backdrop {                      /* refraction layer (JS assigns filter) */
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.lg-tint {                          /* material body */
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit; pointer-events: none;
+}
+.lg-rim {                           /* specular rim: light catches the edge */
+  position: absolute; inset: 0; z-index: 2;
+  border-radius: inherit; pointer-events: none;
+}
+.lg-spec {                          /* travelling sheen */
+  position: absolute; inset: 0; z-index: 2;
+  border-radius: inherit; pointer-events: none; overflow: hidden;
+}
+.lg-spec::before {
+  content: ""; position: absolute; inset: -60% -25%;
+  background: linear-gradient(112deg,
+    transparent 43%, rgba(255,255,255,.20) 50%, transparent 57%);
+  transform: translateX(-120%) rotate(0.001deg);
+}
+.lg.sheen .lg-spec::before { animation: lgSheen 2.8s var(--lg-ease) .25s 1; }
+@keyframes lgSheen {
+  0% { transform: translateX(-120%) rotate(0.001deg); }
+  100% { transform: translateX(120%) rotate(0.001deg); }
+}
+/* display:inherit lets authors set .stg{display:flex} on the .lg element
+   itself — the content layer follows (fixes icon-above-text stacking bug) */
+.lg-content { position: relative; z-index: 3; display: inherit; width: 100%; }
+
+/* ---------- theme: CLEAR (light glass) ---------- */
+.lg--clear {
+  background: rgba(255, 255, 255, .10);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, .38),
+    0 2px 8px rgba(0, 0, 0, .25);
+}
+.lg--clear .lg-tint {
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.22), transparent 55%),
+    rgba(255, 255, 255, .06);
+}
+.lg--clear .lg-rim {
+  box-shadow:
+    inset 0 0 6px rgba(255, 255, 255, .50),
+    inset 0 1px 0 rgba(255, 255, 255, .70),
+    inset 0 -1px 0 rgba(255, 255, 255, .16),
+    inset 0 0 0 1px rgba(255, 255, 255, .22);
+}
+
+/* ---------- theme: OBSIDIAN (dark glass) ---------- */
+.lg--obsidian {
+  background: rgba(7, 9, 13, .46);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, .60),
+    0 3px 12px rgba(0, 0, 0, .45);
+}
+.lg--obsidian .lg-tint {
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.10), transparent 55%),
+    rgba(10, 12, 17, .30);
+}
+.lg--obsidian .lg-rim {
+  box-shadow:
+    inset 0 0 5px rgba(255, 255, 255, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .25),
+    inset 0 -1px 0 rgba(255, 255, 255, .05),
+    inset 0 0 0 1px rgba(255, 255, 255, .10);
+}
+
+/* ---------- typography (Apple: SF-tight, Inter stands in) ---------- */
+.lg-content {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Inter", "Segoe UI", sans-serif;
+  letter-spacing: -.015em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- entry / exit motion ---------- */
+@keyframes lgIn {
+  0%   { opacity: 0; transform: translateY(26px) scale(.84); }
+  55%  { opacity: 1; transform: translateY(-3px) scale(1.025); }
+  78%  { transform: translateY(1px) scale(.996); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes lgOut {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(14px) scale(.94); }
+}
+.lg.in  { animation: lgIn .82s var(--lg-ease) both; }
+.lg.out { animation: lgOut .46s var(--lg-exit) both; }
+
+/* content stagger — children inherit rhythm */
+.lg.in .lg-content > * { opacity: 0; animation: lgRise .62s var(--lg-ease) both; }
+.lg.in .lg-content > *:nth-child(1) { animation-delay: .16s; }
+.lg.in .lg-content > *:nth-child(2) { animation-delay: .22s; }
+.lg.in .lg-content > *:nth-child(3) { animation-delay: .28s; }
+.lg.in .lg-content > *:nth-child(4) { animation-delay: .34s; }
+@keyframes lgRise {
+  0%   { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+/* ---------- 3D helpers (premium money moments) ---------- */
+.lg-scene { perspective: 900px; }
+@keyframes lgCoinFlip {
+  0%   { transform: rotateY(0deg)   translateY(0); }
+  100% { transform: rotateY(360deg) translateY(0); }
+}
+@keyframes lgFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+.lg-spark {                       /* round sparks ONLY — never squares */
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 35% 30%, #FFF6C9, var(--lg-gold) 55%, #B8860B);
+  box-shadow: 0 0 10px rgba(255, 206, 0, .55);
+}
+
+/* ---------- fallback (no displacement support) ---------- */
+.lg.nodisp .lg-backdrop {
+  backdrop-filter: blur(14px) saturate(180%) !important;
+}
+
+/* ============================================================
+   MATTE FAMILY — round 7 ("not piano black")
+   Matte glass scatters light: no crisp specular hairlines,
+   broad soft top-light, fine mineral grain, diffuse rims.
+   Themes: frost (white) · obsidian (black) · chameleon
+   (adaptive: hue/sat/energy driven by what's behind it).
+   ============================================================ */
+
+/* fine mineral grain — one tiled feTurbulence layer per card */
+.lg-grain {
+  position: absolute; inset: 0; z-index: 2;
+  border-radius: inherit; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: .07; mix-blend-mode: overlay;
+}
+
+/* one accent per card — platform color tinted into the BOTTOM rim only
+   (promoted to core from the obsidian page: it was the winning rule) */
+.lg--frost .lg-rim::after, .lg--obsidian .lg-rim::after, .lg--chameleon .lg-rim::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+  background: linear-gradient(0deg, var(--acc, transparent) 0%, transparent 42%);
+  opacity: var(--acc-o, 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* matte sheen — a luminous swell, not a polished stripe */
+.lg--frost .lg-spec::before, .lg--obsidian .lg-spec::before, .lg--chameleon .lg-spec::before {
+  inset: -35% -12%;
+  background: radial-gradient(110% 85% at 50% -25%, rgba(255,255,255,.13), transparent 58%);
+  transform: none;
+}
+@keyframes lgSheenM {
+  0%   { opacity: 0; transform: translateX(-12%); }
+  45%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(12%); }
+}
+.lg--frost.sheen .lg-spec::before, .lg--obsidian.sheen .lg-spec::before,
+.lg--chameleon.sheen .lg-spec::before { animation-name: lgSheenM; }
+
+/* ---------- FROST (matte white glass) ---------- */
+.lg--frost {
+  background: rgba(250, 250, 248, .30);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, .34),
+    0 2px 8px rgba(0, 0, 0, .22);
+}
+.lg--frost .lg-tint {
+  background:
+    radial-gradient(120% 90% at 50% -20%, rgba(255,255,255,.32), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(246,245,242,.10) 55%, rgba(236,233,226,.16) 100%);
+}
+.lg--frost .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.26),
+    inset 0 2px 10px -2px rgba(255,255,255,.52),
+    inset 0 -2px 12px -4px rgba(28,24,12,.10),
+    inset 0 0 14px rgba(255,255,255,.16);
+}
+.lg--frost .lg-grain { mix-blend-mode: soft-light; opacity: .11; }
+
+/* ---------- OBSIDIAN (matte black glass — volcanic, not piano) ---------- */
+.lg--obsidian {
+  background: rgba(6, 7, 10, .60);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, .58),
+    0 3px 12px rgba(0, 0, 0, .42);
+}
+.lg--obsidian .lg-tint {
+  background:
+    radial-gradient(46% 32% at 50% -8%, rgba(255,255,255,.09), transparent 68%),
+    linear-gradient(180deg, rgba(24,26,32,.26) 0%, rgba(8,9,12,.32) 46%, rgba(2,3,5,.52) 100%);
+}
+.lg--obsidian .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.09),
+    inset 0 2px 12px -3px rgba(255,255,255,.16),
+    inset 0 -2px 14px -4px rgba(255,255,255,.06),
+    inset 0 0 18px rgba(255,255,255,.045);
+}
+.lg--obsidian .lg-grain { opacity: .11; }
+
+/* ---------- CHAMELEON (adaptive matte glass) ----------
+   JS (LG.chameleon) samples what's behind the card and drives:
+     --ch-h  hue of the backdrop (0-360)        --ch-s  weighted chroma (0-100)
+     --ch-e  scene energy 0-1 (motion behind)   → tint, rim and breath all follow */
+.lg--chameleon {
+  background: hsl(var(--ch-h, 224) calc(var(--ch-s, 24) * 1%) calc(var(--ch-l, 7) * 1%) / .56);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, .58),
+    0 3px 12px rgba(0, 0, 0, .42);
+}
+.lg--chameleon .lg-tint {
+  background:
+    radial-gradient(46% 32% at 50% -8%,
+      hsl(var(--ch-h) calc(var(--ch-s) * 1%) 82% / calc(.10 + var(--ch-e, 0) * .12)), transparent 68%),
+    linear-gradient(180deg,
+      hsl(var(--ch-h) calc(var(--ch-s) * .8) calc(22 * 1%) / .28) 0%,
+      hsl(var(--ch-h) calc(var(--ch-s) * .9) calc(9 * 1%) / .32) 46%,
+      hsl(var(--ch-h) calc(var(--ch-s) * 1%) calc(5 * 1%) / .50) 100%);
+  animation: chBreathe 5.6s ease-in-out infinite;   /* the material is alive */
+}
+.lg--chameleon .lg-rim {
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--ch-h) calc(var(--ch-s) * 1%) 80% / .12),
+    inset 0 2px 12px -3px hsl(var(--ch-h) calc(var(--ch-s) * 1%) 70% / .18),
+    inset 0 -2px 14px -4px rgba(255,255,255,.06);
+}
+.lg--chameleon .lg-grain { opacity: .07; }
+@keyframes chBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(calc(1 + var(--ch-e, 0) * .014)); }
+}

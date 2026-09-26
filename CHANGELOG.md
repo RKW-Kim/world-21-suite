@@ -11,6 +11,7 @@ Version tags follow the overlay-file-lineage scheme (see [`docs/development/VERS
 _Work in progress on the `prototype` integration branch. Will become `v9` (or `v10` if a new file supersedes v9) when merged to `main`._
 
 ### Added
+- **`overlay/lab/watermark.html`** (Round 5) — the Watermark Lab: 7 structures (quiet pill, word-morph, social rotor, bare, stack, +stinger, outline), 4 positions, 4 sizes, morph content editor, like-&-subscribe stinger system, phone-size check frames, transparent `?obs=1` OBS-source mode.
 - **`prototype` branch is now the active dev branch** (GitFlow `develop` equivalent).
 - **`gh-pages` branch** — orphan branch containing a flat copy of `overlay/` at its root. GitHub Pages reads from it in "Deploy from a branch" mode. Bypasses Actions entirely (which has been failing to allocate runners on this repo).
 - **`scripts/deploy-pages-branch.sh`** — one-command script that regenerates `gh-pages` from `prototype/overlay/`, adds `.nojekyll`, commits, force-pushes. Idempotent. Auto-stashes uncommitted changes.
@@ -35,6 +36,7 @@ _Work in progress on the `prototype` integration branch. Will become `v9` (or `v
 - **Cleaned `.gitignore`** — removed Python bridge cruft, added `_site/` (Pages build output).
 
 ### Removed
+- **Cinema scenes scrapped from the tournament** (user order, Round 5): `lab/cinema4` delisted from the R4 gallery, `lab/cinema` (R3) badged SCRAPPED; the watermark idea survives as the Round-5 Watermark Lab.
 - **Deleted `smile-suite/`** directory entirely (canonical copies now in `overlay/`).
 - **Deleted duplicates:** `overlay/test-7 copy.html`, `overlay/test-7 island.html`, `overlay/test-7.html.bak`.
 - **Deleted orphans:** root `test.html`, `countdown/test.html`, `starting-soon/test.html`, and the empty `countdown/` + `starting-soon/` directories.

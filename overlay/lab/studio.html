@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE LAB · STUDIO — capture slot system · true smile.co.ke</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0C14; --card:rgba(18,22,34,.74); --line:rgba(255,255,255,.08);
+  --fg:#F2F5FC; --muted:#96A0B8; --faint:#5A6478;
+  --gold:#FFCE00; --gold-2:#F0B90B; --gold-ink:#1F1702;
+  --blue:#3E6EFF; --up:#10B981; --dn:#F6465D;
+  --r-xl:26px; --r-lg:20px; --r-md:14px;
+  --expo:cubic-bezier(.16,1,.3,1); --blur:blur(20px) saturate(1.3);
+  --sh:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.32),0 3px 8px rgba(0,0,0,.24),0 22px 54px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05060B;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.num{font-variant-numeric:tabular-nums}
+#fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center}
+@keyframes enter{to{opacity:1;transform:none}}
+.enter{opacity:0;transform:translateY(18px) scale(.98);animation:enter .9s var(--expo) forwards}
+.up{color:var(--up)} .dn{color:var(--dn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hide{display:none!important}
+
+/* ---------- masthead ---------- */
+#mast{position:absolute;left:0;right:0;top:0;height:84px;display:flex;align-items:center;gap:18px;
+  padding:0 24px;z-index:20;background:rgba(9,11,18,.86);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.06)}
+#mast .logo{height:30px;flex:none}
+#mast .show{display:flex;flex-direction:column;gap:2px;padding-left:18px;border-left:1px solid var(--line)}
+#mast .show .k{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.24em;color:var(--gold)}
+#mast .show .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:-.01em}
+#mast .sp{flex:1}
+#mast .sess{display:flex;gap:8px}
+#mast .sess .sc{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+  background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
+#mast .sess .sc i{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+#mast .sess .sc.on{color:var(--fg)} #mast .sess .sc.on i{background:var(--up);animation:pulse 1.7s infinite}
+#mast .day{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--gold);
+  border:1px solid rgba(255,206,0,.35);border-radius:999px;padding:6px 13px}
+#mast .clk{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px}
+
+/* ---------- reserved bottom band (cards may NEVER enter this) ---------- */
+#band{position:absolute;left:0;right:0;bottom:0;height:52px;z-index:25;display:flex;align-items:stretch;overflow:hidden;
+  background:rgba(9,11,18,.9);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#band .cap{flex:none;display:flex;align-items:center;gap:10px;padding:0 22px;background:var(--gold);color:var(--gold-ink);
+  clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%)}
+#band .cap i{width:7px;height:7px;border-radius:50%;background:var(--gold-ink);animation:pulse 1.7s infinite}
+#band .cap .t{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.2em}
+#band .clip{flex:1;display:flex;align-items:center;overflow:hidden;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 22px calc(100% - 22px),transparent);
+  mask:linear-gradient(90deg,transparent,#000 22px calc(100% - 22px),transparent)}
+#band .tk{display:flex;align-items:center;gap:34px;padding:0 17px;white-space:nowrap;animation:tk 38s linear infinite}
+#band .it{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600}
+#band .it .s{color:var(--muted)}
+#band .it.sponsor{background:rgba(255,206,0,.12);box-shadow:inset 0 0 0 1px rgba(255,206,0,.35);border-radius:999px;padding:6px 15px;color:var(--gold)}
+#band .it.sponsor .s{color:rgba(255,206,0,.75)}
+#band .it.social{color:var(--fg)} #band .it.social .s{color:var(--gold)}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ---------- capture card = FRAME with a TRANSPARENT HOLE ---------- */
+.slot{position:absolute;border-radius:var(--r-lg);z-index:10;
+  box-shadow:0 0 0 1.5px rgba(255,206,0,.38),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 44px rgba(0,0,0,.45)}
+.slot .lab{position:absolute;left:10px;top:10px;z-index:6;display:flex;align-items:center;gap:7px;padding:5.5px 12px;
+  border-radius:999px;background:rgba(9,11,18,.88);font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+  font-weight:600;letter-spacing:.18em;color:var(--gold);box-shadow:0 0 0 1px rgba(255,206,0,.3)}
+.slot .lab i{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite}
+.slot .tag2{position:absolute;right:10px;top:10px;z-index:6;padding:5.5px 11px;border-radius:999px;background:rgba(9,11,18,.88);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:.14em;color:var(--muted);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.slot .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%);border-radius:var(--r-lg)}
+.slot.showph .ph{display:flex}
+.slot .ph img{width:64px;height:64px;opacity:.92;filter:drop-shadow(0 8px 20px rgba(255,206,0,.18))}
+.slot .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.22em;color:var(--faint)}
+/* stage bezel: card fills column, hole keeps chosen aspect */
+#stageCard{background:rgba(12,15,23,.82);border-radius:var(--r-xl);box-shadow:var(--sh),0 0 0 1.5px rgba(255,206,0,.25)}
+#stageCard .head{display:flex;align-items:center;gap:12px;padding:14px 18px 10px}
+#stageCard .head .h{color:var(--muted)}
+#stageCard .head .asp{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;
+  letter-spacing:.14em;color:var(--gold);background:rgba(255,206,0,.1);border-radius:999px;padding:4px 10px;
+  box-shadow:inset 0 0 0 1px rgba(255,206,0,.3)}
+#stageCard .foot{display:flex;align-items:center;gap:10px;padding:10px 18px 14px}
+#stageCard .foot .chip{font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.14em;
+  color:var(--muted);background:rgba(255,255,255,.045);border-radius:8px;padding:5px 10px}
+#stageCard .foot .ghost{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--faint);
+  font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.2em}
+#stageCard .foot .ghost img{width:20px;height:20px;opacity:.5}
+.holeW{position:relative;margin:0 14px;border-radius:14px;overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+#winA>.holeW,#winB>.holeW{position:absolute;inset:12px;margin:0}
+.holeW .wm{position:absolute;right:12px;bottom:10px;width:44px;opacity:.1;pointer-events:none}
+#stageCard .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:radial-gradient(115% 115% at 50% 0%,#12151F,#0A0C13 72%);border-radius:14px}
+#stageCard .ph img{width:88px;height:88px;opacity:.92;filter:drop-shadow(0 8px 20px rgba(255,206,0,.18))}
+#stageCard .ph .t{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.22em;color:var(--faint)}
+#stageCard.showph .ph{display:flex}
+
+/* community card (not a capture hole) */
+.textcard{position:absolute;border-radius:var(--r-lg);background:var(--card);-webkit-backdrop-filter:var(--blur);
+  backdrop-filter:var(--blur);box-shadow:var(--sh);border:1px solid var(--line);padding:14px 16px;z-index:10}
+.textcard .h{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  font-weight:600;letter-spacing:.2em;color:var(--muted);margin-bottom:10px}
+.textcard .h .dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.qa{display:flex;flex-direction:column;gap:9px}
+.qa .q{display:flex;gap:9px;align-items:flex-start}
+.qa .q .av{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(255,206,0,.14);display:flex;
+  align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--gold)}
+.qa .q .tx{font-size:11.5px;line-height:1.45;color:#C6CEDF}
+.qa .q .tx b{color:var(--fg)}
+.qa .q .tx .pf{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.12em;color:var(--faint);display:block;margin-top:2px}
+.cta{margin-top:11px;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;
+  background:rgba(255,206,0,.08);box-shadow:inset 0 0 0 1px rgba(255,206,0,.25);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--gold)}
+
+/* sponsor hole */
+#sponsorCard{display:flex;flex-direction:column}
+#sponsorCard .h{margin-bottom:10px}
+#sponsorCard .hole{flex:1;position:relative;margin:0 14px 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 50% 0%,#12151F,#0A0C13);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+#sponsorCard .hole .play{width:34px;height:34px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(255,206,0,.3)}
+#sponsorCard .hole .play::after{content:"";width:0;height:0;border-left:10px solid var(--gold-ink);border-top:6.5px solid transparent;border-bottom:6.5px solid transparent;margin-left:2px}
+#sponsorCard .hole .msg{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'IBM Plex Mono',monospace;
+  font-size:8.5px;font-weight:600;letter-spacing:.14em;color:var(--faint)}
+
+/* alerts */
+#alerts{position:absolute;right:24px;bottom:76px;z-index:40;--al-w:380px}
+
+/* calibration */
+#cal{position:absolute;inset:0;display:none;z-index:90;font-family:'IBM Plex Mono',monospace}
+#cal.on{display:block}
+#cal .sl{position:absolute;border:1.5px dashed rgba(255,206,0,.85);border-radius:12px;box-shadow:0 0 0 3000px rgba(0,0,0,.14)}
+#cal .sl .tag{position:absolute;top:-11px;left:12px;background:#FFCE00;color:#1F1702;font-size:9.5px;font-weight:600;
+  letter-spacing:.06em;padding:3px 9px;border-radius:6px;white-space:nowrap}
+#cal .sheet{position:absolute;left:384px;top:150px;width:360px;max-height:820px;overflow:hidden;background:rgba(8,10,16,.95);
+  border:1px solid rgba(255,206,0,.4);border-radius:14px;padding:16px;font-size:10.5px;line-height:1.8;color:#C6CEDF}
+#cal .sheet .t{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--gold);margin-bottom:8px}
+#cal .sheet .rw{display:flex;justify-content:space-between;gap:10px}
+#cal .sheet .rw span:last-child{color:var(--fg);white-space:nowrap}
+#cal .sheet .note{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);color:#96A0B8;font-size:9.5px;line-height:1.7}
+#cal .sheet .note b{color:var(--gold)}
+
+/* keybar */
+#helpWrap{position:absolute;left:0;right:0;top:96px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#help{display:flex;align-items:center;gap:13px;padding:7px 20px;border-radius:999px;font-family:'IBM Plex Mono',monospace;
+  font-size:9px;font-weight:600;letter-spacing:.07em;color:var(--muted);
+  background:rgba(12,15,23,.8);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+#help b{color:var(--gold)} #help i{font-style:normal;color:rgba(255,255,255,.14)}
+body.g #help{display:none}
+body.calm .enter{animation:none!important;opacity:1!important;transform:none!important}
+</style>
+</head>
+<body>
+<div id="fit">
+  <!-- MASTHEAD -->
+  <div id="mast" class="enter">
+    <img class="logo" src="assets/smile-logo.svg" alt="smile.co.ke">
+    <div class="show"><span class="k">SHOW</span><span class="v" id="showName">NAIROBI OPENING BELL</span></div>
+    <div class="sp"></div>
+    <div class="sess" id="sess"></div>
+    <span class="day" id="day">TUE · MAR 24</span>
+    <span class="clk num" id="clk">09:42:17</span>
+  </div>
+
+  <!-- KEYBAR -->
+  <div id="helpWrap"><div id="help" class="enter">
+    <span><b>1–4</b> cams</span><i>·</i><span><b>R</b> stage aspect</span><i>·</i><span><b>P</b> placeholders</span><i>·</i>
+    <span><b>C</b> calibrate</span><i>·</i><span><b>A</b> alert</span><i>·</i><span><b>⇧A</b> spam</span><i>·</i>
+    <span><b>X</b> clear</span><i>·</i><span><b>H</b> hide</span>
+  </div></div>
+
+  <!-- capture slots injected here -->
+  <div id="leftDeck"></div>
+
+  <div id="stageCard" class="slot-frame enter" style="position:absolute">
+    <div class="head">
+      <div class="h mono" style="font-size:9.5px;font-weight:600;letter-spacing:.22em">DISPLAY · WINDOW CAPTURE SLOT</div>
+      <span class="asp" id="aspTag">16:9</span>
+    </div>
+    <div class="holeW" id="stageHole">
+      <div class="ph"><img src="assets/smile-mark.svg" alt=""><div class="t">PLACE DISPLAY / WINDOW CAPTURE</div></div>
+      <img class="wm" src="assets/smile-mark.svg" alt="">
+    </div>
+    <div class="foot">
+      <span class="chip" id="stageRes">1920 × 1080 IN</span>
+      <span class="chip">SCREENSHARE · MT5 · TRADINGVIEW · BROWSER</span>
+      <span class="ghost"><img src="assets/smile-mark.svg" alt="">SMILE DESK</span>
+    </div>
+  </div>
+
+  <div id="winA" class="slot enter"><div class="lab"><i></i>WINDOW A · CHART</div><span class="tag2">HOLE</span>
+    <div class="holeW"><div class="ph"><img src="assets/smile-mark.svg" alt=""><div class="t">PLACE MT5 / TV WINDOW</div></div></div></div>
+  <div id="winB" class="slot enter"><div class="lab"><i></i>WINDOW B · RESEARCH</div><span class="tag2">HOLE</span>
+    <div class="holeW"><div class="ph"><img src="assets/smile-mark.svg" alt=""><div class="t">PLACE BROWSER / PDF</div></div></div></div>
+
+  <div id="sponsorCard" class="textcard enter">
+    <div class="h"><span class="dot" style="background:var(--gold)"></span>SPONSOR SLOT · BANNER / VIDEO</div>
+    <div class="hole" id="sponsorHole"><div class="play"></div><div class="msg">300×100 BANNER OR MP4 URL</div></div>
+  </div>
+
+  <div id="community" class="textcard enter">
+    <div class="h"><span class="dot"></span>DESK QUESTIONS · LIVE</div>
+    <div class="qa">
+      <div class="q"><span class="av">N</span><span class="tx"><b>@njeri.w</b> do bond auctions weaken the shilling?<span class="pf">YOUTUBE</span></span></div>
+    </div>
+    <div class="cta">#TradeSmile — drop questions, get on air</div>
+  </div>
+
+  <div id="alerts"></div>
+
+  <!-- RESERVED BOTTOM BAND -->
+  <div id="band">
+    <div class="cap"><i></i><span class="t">SMILE MARKETS</span></div>
+    <div class="clip"><div class="tk" id="tk"></div></div>
+  </div>
+
+  <!-- CALIBRATION -->
+  <div id="cal"><div class="sheet" id="calSheet"></div></div>
+</div>
+<script src="assets/alert-engine.js"></script>
+<script>
+var $=function(s){return document.querySelector(s)};
+var G=new URLSearchParams(location.search);
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);$('#fit').style.transform='translate(-50%,-50%) scale('+s+')';fit.s=s}
+addEventListener('resize',function(){fit();if($('#cal').classList.contains('on'))calOn(true)});fit();
+
+/* ---------- clock · day · sessions (EAT — stream truth) ---------- */
+function eatParts(){var f=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',hour12:false,hourCycle:'h23',hour:'2-digit',minute:'2-digit',second:'2-digit'}),p={};
+  f.formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});return p}
+var DOWS=['SUN','MON','TUE','WED','THU','FRI','SAT'],MOS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+var SESSIONS=[['ASIA',3,9],['NAIROBI',9,15],['LONDON',10,19],['NEW YORK',16.5,23]];
+function head(){
+  var p=eatParts();
+  $('#clk').textContent=p.hour+':'+p.minute+':'+p.second+' EAT';
+  var d=new Date();
+  $('#day').textContent=DOWS[d.getDay()]+' · '+MOS[d.getMonth()]+' '+d.getDate();
+  var h=parseInt(p.hour,10)+parseInt(p.minute,10)/60;
+  $('#sess').innerHTML=SESSIONS.map(function(s){var on=h>=s[1]&&h<s[2];
+    return '<span class="sc'+(on?' on':'')+'"><i></i>'+s[0]+'</span>'}).join('');
+}
+setInterval(head,1000);head();
+if(G.get('show'))$('#showName').textContent=G.get('show').toUpperCase();
+
+/* ---------- ticker ---------- */
+var TK=[['USD/KES','129.42','+0.31%',1],['NSE 20','82.41','+0.9%',1],['SCOM','28.75 KES','+4.2%',1],['BTC','97,240','-1.2%',0],
+  ['XAU','2,412','+0.6%',1],['EQTY','52.10 KES','+2.8%',1],
+  ['SP','AD · SMILE QUANTUM — INVEST FROM 100 KES','',2],['SOC','#TradeSmile — tag your setups','',3],
+  ['SOC','@smile.co.ke — the desk, everywhere','',3],['SP','AD · TREASURY BOND AUCTION MAR 26 — 16.8% YTM','',2]];
+function tkHTML(){return TK.map(function(t){
+  if(t[3]===2)return '<span class="it sponsor"><span class="s">AD</span>'+t[1]+'</span>';
+  if(t[3]===3)return '<span class="it social"><span class="s">'+t[0]+'</span>'+t[1]+'</span>';
+  return '<span class="it"><span class="s">'+t[0]+'</span><span class="num">'+t[1]+'</span><span class="num '+(t[2][0]==='+'?'up':'dn')+'">'+t[2]+'</span></span>'}).join('')}
+$('#tk').innerHTML=tkHTML()+tkHTML();
+
+/* ============================================================
+   SLOT GEOMETRY — deterministic, documented, OBS-addressable.
+   Stage 1920×1080 · masthead 0–84 · band 1028–1080 (reserved)
+   content zone y 144–1004 · nothing ever enters the band.
+   ============================================================ */
+var Y0=144,Y1=1004,DECK=[24,300],RIGHT=[1452,444],GAP=20;
+var ROLES=['HOST','ANALYST','CO-HOST','GUEST'];
+var stage=$('#stageCard'),deck=$('#leftDeck');
+
+function layout(n){
+  n=Math.min(4,Math.max(1,n));cams=n;
+  /* left deck: n person cards */
+  var ch=(Y1-Y0-GAP*(n-1))/n;
+  deck.innerHTML='';
+  for(var i=0;i<n;i++){
+    var c=document.createElement('div');c.className='slot';c.id='cam'+i;
+    var y=Math.round(Y0+i*(ch+GAP));
+    c.style.cssText='left:'+DECK[0]+'px;top:'+y+'px;width:'+DECK[1]+'px;height:'+Math.round(ch)+'px';
+    c.innerHTML='<div class="lab"><i></i>CAM '+(i+1)+' · '+ROLES[i]+'</div><span class="tag2">HOLE</span>'+
+      '<div class="ph"><img src="assets/smile-mark.svg" alt=""><div class="t">PLACE CAMERA '+(i+1)+'</div></div>';
+    deck.appendChild(c);
+  }
+  /* stage: 1080 wide centered between deck and right col */
+  var sx=348,sw=1080;
+  stage.style.cssText='left:'+sx+'px;top:'+Y0+'px;width:'+sw+'px;height:'+(Y1-Y0)+'px;position:absolute';
+  applyAspect();
+  /* right column fixed stack */
+  place('winA',RIGHT[0],144,RIGHT[1],290);
+  place('winB',RIGHT[0],450,RIGHT[1],232);
+  place('sponsorCard',RIGHT[0],698,RIGHT[1],140);
+  place('community',RIGHT[0],854,RIGHT[1],150);
+}
+function place(id,x,y,w,h){var e=$('#'+id);e.style.cssText+=';left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px;position:absolute'}
+function holeSize(id){ /* inner hole rect (account .holeW margins) */
+  var e=$('#'+id+' .holeW')||$('#'+id),r=e.getBoundingClientRect(),s=fit.s||1;
+  return {x:Math.round(r.left/s),y:Math.round((r.top-(innerHeight-1080*s)/2)/s),w:Math.round(r.width/s),h:Math.round(r.height/s)}}
+
+/* stage aspect cycle: 16:9 → 16:10 → 4:3 → FILL */
+var ASPECTS=[['16:9',16/9],['16:10',1.6],['4:3',4/3],['FILL',0]],aspIx=0;
+function applyAspect(){
+  var sw=1080-28,avail=(Y1-Y0)-96-28; /* head+foot ~96 */
+  var a=ASPECTS[aspIx],w=sw,h=a[1]?Math.round(sw/a[1]):avail;
+  if(h>avail){h=avail;if(a[1])w=Math.round(h*a[1])}
+  var hole=$('#stageHole');hole.style.width=w+'px';hole.style.height=h+'px';hole.style.margin='0 auto';
+  $('#aspTag').textContent=a[0];
+  $('#stageRes').textContent=a[1]?'PLACE '+a[0]+' SOURCE · FIT-TO-FRAME':'SOURCE FILLS HOLE · CROP TO TASTE';
+}
+
+/* ---------- cams state ---------- */
+var cams=parseInt(G.get('cams'),10);if(isNaN(cams))cams=2;
+layout(cams);
+
+/* ---------- placeholders ---------- */
+var ph=G.get('ph')==='1';
+function applyPh(){document.querySelectorAll('.slot, #stageCard').forEach(function(e){e.classList.toggle('showph',ph)})}
+applyPh();
+
+/* ---------- alerts ---------- */
+var alerts=SmileAlerts.mount('#alerts');
+if(G.get('g')==='1')document.body.classList.add('g');
+
+/* ---------- calibration ---------- */
+function calOn(on){
+  var cal=$('#cal');cal.classList.toggle('on',on);if(!on)return;
+  cal.querySelectorAll('.sl').forEach(function(e){e.remove()});
+  var s=fit.s||1,rows=[];
+  var defs=[['STAGE HOLE','#stageHole'],['WINDOW A','#winA .holeW'],['WINDOW B','#winB .holeW'],
+    ['SPONSOR HOLE','#sponsorHole'],['CAM 1','#cam0'],['CAM 2','#cam1'],['CAM 3','#cam2'],['CAM 4','#cam3']];
+  defs.forEach(function(d){var el=$(d[1]);if(!el)return;var r=el.getBoundingClientRect();
+    if(r.width<4)return;
+    var x=Math.round(r.left/s),y=Math.round((r.top-(innerHeight-1080*s)/2)/s),w=Math.round(r.width/s),h=Math.round(r.height/s);
+    var sl=document.createElement('div');sl.className='sl';
+    sl.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px';
+    sl.innerHTML='<span class="tag">'+d[0]+' — '+w+'×'+h+' @ '+x+','+y+'</span>';cal.appendChild(sl);
+    rows.push([d[0],w+'×'+h+' @ '+x+','+y]);});
+  $('#calSheet').innerHTML='<div class="t">OBS SLOT SHEET · BASE 1920×1080 · '+cams+' CAM(S)</div>'+
+    rows.map(function(r){return '<div class="rw"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'}).join('')+
+    '<div class="note"><b>Workflow:</b> add each capture BELOW this browser source · set Position/Size to the values above · '+
+    'mismatched ratio → hold Alt(Opt) and drag the red handles to crop · never place anything under the bottom band (1028–1080). '+
+    'Full guide: <b>guide.html</b></div>';
+}
+
+/* ---------- keys ---------- */
+addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+  if(k>='1'&&k<='4'){layout(parseInt(k,10));if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='r'){aspIx=(aspIx+1)%ASPECTS.length;applyAspect();if($('#cal').classList.contains('on'))calOn(true)}
+  else if(k==='p'){ph=!ph;applyPh()}
+  else if(k==='c'){document.body.classList.add('calm');calOn(!$('#cal').classList.contains('on'))}
+  else if(k==='a'&&!e.shiftKey)alerts.push(alerts.fake());
+  else if(k==='a'&&e.shiftKey)alerts.storm(6);
+  else if(k==='x')alerts.clear();
+  else if(k==='h')document.body.classList.toggle('g');
+});
+if(G.get('cal')==='1'){document.body.classList.add('calm');ph=true;applyPh();calOn(true)}
+
+</script>
+</body>
+</html>

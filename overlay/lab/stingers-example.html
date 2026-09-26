@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LIQUID GLASS — reference pattern (stingers core)</title>
+<link rel="stylesheet" href="assets/liquid-glass.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0A0C14; }
+  html.obs, body.obs { background:transparent !important; }
+
+  #stage { position:absolute; inset:0; }
+  #bgLayer { position:absolute; inset:0; display:none; }
+  #bgLayer.bright { display:block; background:linear-gradient(135deg,#F7F3EA,#E8DFC9 45%,#D9CBA6); }
+  #bgLayer.dark { display:block; background:linear-gradient(160deg,#0E1118,#131720 50%,#0B0D12); }
+  #bgLayer.grad { display:block; background:
+    radial-gradient(60% 90% at 20% 15%, rgba(255,206,0,.32), transparent 60%),
+    radial-gradient(55% 80% at 82% 80%, rgba(64,120,255,.25), transparent 60%),
+    linear-gradient(140deg,#151226,#1B1440 55%,#0D0B1A); }
+  #chart { position:absolute; inset:0; }
+
+  /* fire target: bottom-right, the stinger's home */
+  #dock { position:absolute; right:36px; bottom:36px; display:flex; flex-direction:column; align-items:flex-end; gap:14px; }
+
+  /* a minimal stinger card — copy this pattern */
+  .stg { display:flex; align-items:center; gap:14px; padding:16px 26px 16px 16px; cursor:pointer; }
+  .stg .ic { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; flex:none;
+    background:linear-gradient(145deg,rgba(255,255,255,.28),rgba(255,255,255,.06)); }
+  .stg .ic svg { width:24px; height:24px; }
+  .stg .tx { display:flex; flex-direction:column; gap:2px; }
+  .stg .tx b { font-size:19px; font-weight:700; letter-spacing:-.02em; color:#fff; }
+  .stg--clear .tx b { color:#14161c; }
+  .stg .tx span { font-size:13px; font-weight:500; color:rgba(255,255,255,.66); }
+  .stg--clear .tx span { color:rgba(20,22,28,.55); }
+
+  #help { position:absolute; left:20px; top:18px; font:600 12px "Inter",system-ui,sans-serif;
+    color:rgba(255,255,255,.55); background:rgba(10,12,18,.5); padding:8px 12px; border-radius:10px;
+    backdrop-filter:blur(8px); z-index:9; }
+  body.obs #help, body.g { display:none !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="chart" width="1920" height="1080"></canvas>
+  <div id="bgLayer"></div>
+  <div id="help">1 clear follow · 2 obsidian subscribe · B background · click card refires</div>
+  <div id="dock"></div>
+</div>
+
+<script src="assets/liquid-glass.js"></script>
+<script>
+var Q = new URLSearchParams(location.search);
+var THEME = Q.get('theme') === 'obsidian' ? 'obsidian' : 'clear';
+if (Q.get('obs') === '1') document.body.classList.add('obs');
+if (Q.get('g') === '1') document.body.classList.add('g');
+document.body.classList.toggle('obs', Q.get('obs') === '1');
+
+/* simple backdrop so glass has something to refract */
+var C = document.getElementById('chart'), X = C.getContext('2d'), D = [];
+(function () {
+  var p = 600;
+  for (var i = 0; i < 120; i++) { D.push(p); p += (Math.random() - .47) * 9; }
+  var lo = Math.min.apply(null, D), hi = Math.max.apply(null, D);
+  X.fillStyle = '#0A0C14'; X.fillRect(0, 0, 1920, 1080);
+  X.strokeStyle = 'rgba(255,255,255,.045)';
+  for (var gx = 0; gx < 1920; gx += 110) { X.beginPath(); X.moveTo(gx, 0); X.lineTo(gx, 1080); X.stroke(); }
+  for (var gy = 0; gy < 1080; gy += 85) { X.beginPath(); X.moveTo(0, gy); X.lineTo(1920, gy); X.stroke(); }
+  X.beginPath();
+  D.forEach(function (v, i) { var px = i * 16, py = 950 - (v - lo) / (hi - lo) * 760; i ? X.lineTo(px, py) : X.moveTo(px, py); });
+  X.strokeStyle = 'rgba(255,206,0,.85)'; X.lineWidth = 2.5; X.stroke();
+  X.lineTo(120 * 16, 1080); X.lineTo(0, 1080); X.closePath();
+  X.fillStyle = 'rgba(255,206,0,.05)'; X.fill();
+})();
+
+function bg(name) {
+  var b = document.getElementById('bgLayer');
+  b.className = ''; C.style.display = 'block';
+  if (name === 'bright' || name === 'dark' || name === 'grad') { b.className = name; C.style.display = 'none'; }
+}
+
+/* THE PATTERN: build DOM, call LG.glass, then animate .in/.out */
+var ICONS = {
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.85-.46-5.58a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2C1 8.15 1 12 1 12s0 3.85.46 5.58a2.78 2.78 0 0 0 1.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2C23 15.85 23 12 23 12z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98" fill="#1F1702"/></svg>'
+};
+
+function makeStinger(theme, icon, iconColor, title, sub, gold) {
+  var el = document.createElement('div');
+  el.className = 'stg stg--' + theme;
+  el.innerHTML =
+    '<span class="ic" style="color:' + iconColor + '">' + icon + '</span>' +
+    '<span class="tx"><b>' + (gold ? '<em style="color:var(--lg-gold);font-style:normal">' : '') + title + (gold ? '</em>' : '') + '</b><span>' + sub + '</span></span>';
+  document.getElementById('dock').appendChild(el);
+  LG.glass(el, { theme: theme, strength: 80, ca: 1.8 });
+  el.addEventListener('click', fire);
+  return el;
+}
+
+var cardA = makeStinger('clear', ICONS.bell, '#FFB300', 'SUBSCRIBE', 'youtube.com/@smile.co.ke', true);
+var cardB = makeStinger('obsidian', ICONS.play, '#fff', 'FOLLOW', '@smile.co.ke · everywhere', false);
+
+var cur = 0;
+function fire() {
+  var el = (cur++ % 2 === 0) ? cardA : cardB;
+  el.classList.remove('in', 'out', 'sheen');
+  void el.offsetWidth;                       /* restart animations */
+  el.classList.add('in', 'sheen');
+  LG.spark(el, 44, 4, 7, 900); LG.spark(el, 90, 2, 5, 900); LG.spark(el, 62, 6, 9, 1100);
+  setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); }, 4600);
+  setTimeout(function () { el.classList.remove('out'); }, 5150);
+}
+
+addEventListener('keydown', function (e) {
+  var k = e.key.toLowerCase();
+  if (k === '1' || k === '2') fire();
+  if (k === 'b') bg(['chart', 'bright', 'dark', 'grad'][(++curBg) % 4]);
+});
+var curBg = 0;
+fire();
+</script>
+</body>
+</html>
