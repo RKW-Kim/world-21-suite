@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · start · keynote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  [hidden]{display:none!important}
+  body{
+    background:#000;color:#F5F5F7;
+    font-family:-apple-system,'SF Pro Display','Inter','Helvetica Neue',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    display:grid;place-items:center;
+  }
+  /* the only decoration: one ultra-soft radial light behind the headline */
+  .glow{
+    position:fixed;left:50%;top:42%;width:600px;height:600px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,255,255,.04) 0%,rgba(255,255,255,0) 70%);
+    pointer-events:none;
+  }
+  .stage{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+  h1{
+    font-size:clamp(80px,12vw,190px);
+    font-weight:600;letter-spacing:-.025em;line-height:1.05;
+  }
+  .count{
+    display:flex;align-items:baseline;justify-content:center;
+    margin-top:6px;
+    font-size:clamp(64px,9vw,140px);
+    font-weight:200;line-height:1.05;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+    transition:opacity .6s ease;
+  }
+  .count .colon{opacity:.4;padding:0 .05em}
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+  .pill{
+    margin-top:44px;
+    background:#1D1D1F;color:#F5F5F7;
+    font-size:13px;font-weight:400;letter-spacing:.01em;
+    padding:10px 20px;border-radius:999px;
+  }
+  .live{margin-top:22px;font-size:15px;font-weight:500;color:#F5F5F7;opacity:0}
+  [data-when-live]:not([hidden]){animation:rise .9s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .mark{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);width:72px;height:72px}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <main class="stage">
+    <h1>Starting soon.</h1>
+    <div class="count" data-cd-wrap role="timer" aria-label="Counting down to live">
+      <span data-cd-h hidden>00</span><span class="colon" data-cd-hc hidden>:</span><span data-cd-m>10</span><span class="colon">:</span><span data-cd-s>00</span>
+    </div>
+    <p class="pill">podcast + screen share today</p>
+    <p class="live" data-when-live hidden>We're live.</p>
+  </main>
+  <img class="mark" src="../assets/smile-mark.svg" alt="SMILE" width="72" height="72">
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000,tp=q.get('t');
+  if(tp){
+    if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;}
+    else{var d=new Date(tp);if(!isNaN(d.getTime()))target=d.getTime();}
+  }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var eh=document.querySelector('[data-cd-h]'),ec=document.querySelector('[data-cd-hc]'),
+      em=document.querySelector('[data-cd-m]'),es=document.querySelector('[data-cd-s]');
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
+    if(em){
+      em.textContent=P(m);es.textContent=P(x);
+      if(h>0){eh.textContent=P(h);eh.removeAttribute('hidden');ec.removeAttribute('hidden');}
+      else{eh.setAttribute('hidden','');ec.setAttribute('hidden','');}
+    }
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick();setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

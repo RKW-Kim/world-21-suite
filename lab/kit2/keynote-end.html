@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · end · keynote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  [hidden]{display:none!important}
+  body{
+    background:#000;color:#F5F5F7;
+    font-family:-apple-system,'SF Pro Display','Inter','Helvetica Neue',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    display:grid;place-items:center;
+  }
+  .stage{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .logo{height:48px;width:auto;margin-bottom:44px}
+  h1{
+    font-size:clamp(80px,12vw,190px);
+    font-weight:600;letter-spacing:-.025em;line-height:1.05;
+  }
+  .links{
+    margin-top:42px;
+    display:flex;align-items:center;gap:14px;
+    font-size:16px;font-weight:400;
+  }
+  .links a{color:#2997FF;text-decoration:none;transition:opacity .25s ease}
+  .links a:hover{opacity:.7}
+  .links .sep{color:#86868B}
+  .meta{
+    margin-top:26px;
+    font-size:13px;font-weight:400;color:#86868B;
+  }
+  .meta [data-ep]{font-variant-numeric:tabular-nums}
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <main class="stage">
+    <img class="logo" src="../assets/smile-logo.svg" alt="SMILE" height="48">
+    <h1>Thanks for watching.</h1>
+    <nav class="links" aria-label="Show links">
+      <a href="#">Follow the show</a><span class="sep" aria-hidden="true">·</span><a href="#">Watch the clips</a><span class="sep" aria-hidden="true">·</span><a href="#">Next week</a>
+    </nav>
+    <p class="meta">smile — episode <span data-ep>128</span> · recorded live</p>
+  </main>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000,tp=q.get('t');
+  if(tp){
+    if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;}
+    else{var d=new Date(tp);if(!isNaN(d.getTime()))target=d.getTime();}
+  }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){
+      e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x);
+    });
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick();setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

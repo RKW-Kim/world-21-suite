@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · START · arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D14; --panel:rgba(15,20,32,.88); --line:#1E293B;
+    --cy:#22D3EE; --mg:#F43F8E; --wht:#F8FAFC; --slt:#94A3B8;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; overflow:hidden; background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size:64px 64px;
+    font-family:'Chakra Petch','Segoe UI',sans-serif; color:var(--wht);
+  }
+  [hidden]{display:none!important}
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+
+  /* CRT layers */
+  .vignette{position:fixed; inset:0; z-index:60; pointer-events:none;
+    background:radial-gradient(120% 130% at 50% 50%, transparent 55%, rgba(0,0,0,.25) 100%)}
+  .scan{position:fixed; inset:0; z-index:61; pointer-events:none; opacity:.35;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px)}
+
+  /* chrome */
+  .brand{position:fixed; top:42px; left:48px; z-index:10; font-weight:700; font-size:13px;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--wht)}
+  .brand span{color:var(--slt); font-weight:500}
+  .wm{position:fixed; top:36px; right:48px; width:72px; height:72px; z-index:12;
+    filter:drop-shadow(4px 4px 0 rgba(0,0,0,.5))}
+
+  /* blinking attract caption */
+  .press-row{position:fixed; top:58px; left:0; right:0; z-index:10; text-align:center}
+  .press{font-weight:700; font-size:15px; letter-spacing:.34em; text-indent:.34em;
+    text-transform:uppercase; color:var(--cy); animation:blink 1s steps(1,end) infinite}
+  @keyframes blink{0%,54%{opacity:1}55%,100%{opacity:0}}
+
+  /* center hero */
+  .mid{position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:44px; padding:0 48px;
+    text-align:center; pointer-events:none; transform:translateY(-3vh)}
+  .coin-wrap{width:64px; height:64px; flex:none; animation:bob 1.3s ease-in-out infinite}
+  .coin{width:8px; height:8px; background:transparent;
+    box-shadow:
+    16px 0px 0 0 #22D3EE,
+    24px 0px 0 0 #22D3EE,
+    32px 0px 0 0 #22D3EE,
+    40px 0px 0 0 #22D3EE,
+    8px 8px 0 0 #22D3EE,
+    16px 8px 0 0 #22D3EE,
+    24px 8px 0 0 #22D3EE,
+    32px 8px 0 0 #22D3EE,
+    40px 8px 0 0 #22D3EE,
+    48px 8px 0 0 #22D3EE,
+    0px 16px 0 0 #22D3EE,
+    8px 16px 0 0 #22D3EE,
+    16px 16px 0 0 #22D3EE,
+    24px 16px 0 0 #22D3EE,
+    32px 16px 0 0 #22D3EE,
+    40px 16px 0 0 #22D3EE,
+    48px 16px 0 0 #22D3EE,
+    56px 16px 0 0 #22D3EE,
+    0px 24px 0 0 #22D3EE,
+    8px 24px 0 0 #22D3EE,
+    16px 24px 0 0 #22D3EE,
+    24px 24px 0 0 #F8FAFC,
+    32px 24px 0 0 #F8FAFC,
+    40px 24px 0 0 #22D3EE,
+    48px 24px 0 0 #22D3EE,
+    56px 24px 0 0 #22D3EE,
+    0px 32px 0 0 #22D3EE,
+    8px 32px 0 0 #22D3EE,
+    16px 32px 0 0 #22D3EE,
+    24px 32px 0 0 #F8FAFC,
+    32px 32px 0 0 #F8FAFC,
+    40px 32px 0 0 #22D3EE,
+    48px 32px 0 0 #22D3EE,
+    56px 32px 0 0 #22D3EE,
+    0px 40px 0 0 #22D3EE,
+    8px 40px 0 0 #22D3EE,
+    16px 40px 0 0 #22D3EE,
+    24px 40px 0 0 #22D3EE,
+    32px 40px 0 0 #22D3EE,
+    40px 40px 0 0 #22D3EE,
+    48px 40px 0 0 #22D3EE,
+    56px 40px 0 0 #22D3EE,
+    8px 48px 0 0 #22D3EE,
+    16px 48px 0 0 #22D3EE,
+    24px 48px 0 0 #22D3EE,
+    32px 48px 0 0 #22D3EE,
+    40px 48px 0 0 #22D3EE,
+    48px 48px 0 0 #22D3EE,
+    16px 56px 0 0 #22D3EE,
+    24px 56px 0 0 #22D3EE,
+    32px 56px 0 0 #22D3EE,
+    40px 56px 0 0 #22D3EE;
+  }
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .hero{margin:0; font-family:'Unbounded','Chakra Petch',sans-serif; font-weight:900;
+    font-size:clamp(90px,13vw,200px); line-height:.92; letter-spacing:-.01em;
+    color:var(--wht);
+    text-shadow:5px 5px 0 rgba(34,211,238,.35), -5px -5px 0 rgba(244,63,142,.35)}
+
+  /* player chips, bottom-left */
+  .chips{position:fixed; left:48px; bottom:56px; z-index:10; display:flex;
+    flex-direction:column; gap:12px}
+  .chip{display:flex; align-items:center; gap:12px; min-width:238px;
+    border:2px solid var(--line); border-radius:4px; background:var(--panel);
+    padding:14px 18px; font-weight:700; font-size:13px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--wht)}
+  .dot{width:12px; height:12px; flex:none; border-radius:2px}
+  .chip.host{box-shadow:6px 6px 0 rgba(34,211,238,.18)}
+  .chip.host .dot{background:var(--cy)}
+  .chip.guest{color:var(--slt); animation:dimblink 2.6s ease-in-out infinite}
+  .chip.guest .dot{background:#475569}
+  @keyframes dimblink{0%,55%{opacity:1}72%,100%{opacity:.45}}
+
+  /* countdown HUD, bottom-center */
+  .hud{position:fixed; bottom:56px; left:50%; transform:translateX(-50%); z-index:10;
+    min-width:460px; border:2px solid var(--line); border-radius:4px; background:var(--panel);
+    box-shadow:8px 8px 0 rgba(34,211,238,.18); padding:18px 40px 24px; text-align:center;
+    transition:opacity .5s}
+  .hud-top{display:flex; justify-content:space-between; align-items:center; gap:36px}
+  .lbl{font-weight:700; font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--cy)}
+  .ep{font-weight:600; font-size:12px; letter-spacing:.18em; color:var(--slt)}
+  .ep b{color:var(--wht); font-weight:700}
+  .cd{margin:12px 0 16px; font-weight:700; font-size:clamp(56px,8.3vh,90px); line-height:1;
+    letter-spacing:.02em; color:var(--wht); font-variant-numeric:tabular-nums}
+  .track{height:6px; border-radius:2px; background:var(--line); overflow:hidden}
+  .fill{height:100%; background:var(--cy); transform-origin:left center; transform:scaleX(1)}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+    .press{animation:none;opacity:1}
+    .chip.guest{animation:none;opacity:1}
+    .coin-wrap{animation:none}
+  }
+</style>
+</head>
+<body>
+  <div class="vignette"></div>
+
+  <header class="brand">SMILE <span>— live podcast + screen share</span></header>
+  <img class="wm" src="../assets/smile-mark.svg" alt="SMILE">
+
+  <div class="press-row">
+    <span class="press" data-hide-when-live>PRESS START</span>
+    <span class="press" data-when-live hidden>IT'S TIME</span>
+  </div>
+
+  <main class="mid">
+    <div class="coin-wrap"><div class="coin"></div></div>
+    <h1 class="hero">STARTING<br>SOON</h1>
+  </main>
+
+  <aside class="chips">
+    <div class="chip host"><i class="dot"></i>HOST — READY</div>
+    <div class="chip guest"><i class="dot"></i>CO-HOST — PENDING</div>
+  </aside>
+
+  <section class="hud" data-cd-wrap>
+    <div class="hud-top">
+      <span class="lbl">TIME REMAINING</span>
+      <span class="ep">EP <b data-ep>128</b></span>
+    </div>
+    <div class="cd" data-cd>10:00</div>
+    <div class="track"><div class="fill" id="cdFill"></div></div>
+  </section>
+
+  <div class="scan"></div>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var el0=q.get('elapsed')?parseInt(q.get('elapsed'),10):0, t0=Date.now();
+  var s0=Math.max(1,Math.round((target-t0)/1000)), fill=document.getElementById('cdFill');
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(fill){ fill.style.transform='scaleX('+(s/s0).toFixed(4)+')'; }
+    var el=el0+Math.floor((Date.now()-t0)/1000);
+    document.querySelectorAll('[data-elapsed]').forEach(function(e){ e.textContent=P(Math.floor(el/60))+':'+P(el%60); });
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-hide-when-live]').forEach(function(e){e.setAttribute('hidden','');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

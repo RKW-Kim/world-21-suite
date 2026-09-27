@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE · inter · zine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@0,9..144,400;0,9..144,900&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4EFE5;
+    --ink:#171310;
+    --blue:#2440F0;
+    --red:#FF4438;
+    --ink72:rgba(23,19,16,.72);
+    --ink30:rgba(23,19,16,.3);
+    --ink40:rgba(23,19,16,.4);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Fraunces",Georgia,serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* paper grain */
+  body::after{
+    content:"";position:fixed;inset:0;z-index:90;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  /* registration crosshairs */
+  .reg{position:fixed;width:14px;height:14px;z-index:80;pointer-events:none}
+  .reg::before{content:"";position:absolute;top:50%;left:0;right:0;height:1px;background:var(--ink40)}
+  .reg::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--ink40)}
+  .reg.tl{top:16px;left:16px}.reg.tr{top:16px;right:16px}
+  .reg.bl{bottom:16px;left:16px}.reg.br{bottom:16px;right:16px}
+
+  .sheet{
+    position:fixed;inset:0;
+    padding:clamp(28px,2.8vw,54px) clamp(40px,4.5vw,86px) clamp(84px,8vw,120px);
+    display:flex;flex-direction:column;
+  }
+  /* header rules — broadsheet */
+  .rule-thick{height:2px;background:var(--ink)}
+  .head-word{
+    font-weight:900;font-optical-sizing:auto;text-align:center;
+    font-size:clamp(30px,2.9vw,54px);line-height:1.04;letter-spacing:-.012em;
+    margin:clamp(14px,1.6vw,26px) 0 clamp(12px,1.4vw,22px);
+    text-shadow:3px 0 0 rgba(36,64,240,.55), -3px 0 0 rgba(255,68,56,.55);
+  }
+  .dateline{display:flex;align-items:center;gap:18px;border-top:1px solid var(--ink30);padding-top:10px}
+  .dl{font-family:"IBM Plex Mono",Menlo,Consolas,monospace;font-size:12px;letter-spacing:.22em;color:var(--ink)}
+  .dl-rule{flex:1;height:1px;background:var(--ink30)}
+
+  /* body — two real columns */
+  .cols{
+    columns:2;column-gap:48px;column-rule:1px solid var(--ink30);
+    width:100%;max-width:1240px;margin:clamp(20px,2.4vw,40px) auto 0;
+    font-size:clamp(14px,0.85vw,16px);line-height:1.75;
+  }
+  .lead::first-letter{
+    float:left;
+    font-family:"Fraunces",Georgia,serif;font-weight:900;font-optical-sizing:auto;
+    font-size:6.5em;line-height:.8;
+    padding:6px 14px 0 0;color:var(--blue);
+  }
+
+  /* classified ad — 2px ink box with the blue plate printed off-register */
+  .ad{
+    position:relative;break-before:column;break-inside:avoid;
+    border:2px solid var(--ink);padding:16px 18px 18px;margin:6px 0 22px;
+    font-family:"IBM Plex Mono",Menlo,Consolas,monospace;
+  }
+  .ad::before{
+    content:"";position:absolute;top:5px;left:7px;width:100%;height:100%;
+    border:2px solid var(--blue);z-index:-1;
+  }
+  .ad-head{font-size:13px;font-weight:700;letter-spacing:.24em;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  .ad-body{font-size:12px;line-height:1.7;letter-spacing:.06em;color:var(--ink)}
+  .ad-body b{font-weight:700}
+
+  /* footer */
+  .base{position:absolute;left:0;right:0;bottom:clamp(30px,3vw,50px);text-align:center;z-index:3}
+  .return{
+    display:inline-block;background:var(--blue);color:var(--paper);
+    font-family:"IBM Plex Mono",Menlo,Consolas,monospace;
+    font-size:12px;font-weight:700;letter-spacing:.16em;padding:7px 12px;margin-bottom:14px;
+  }
+  .pageno{
+    font-family:"IBM Plex Mono",Menlo,Consolas,monospace;
+    font-size:12px;letter-spacing:.22em;color:var(--ink72);
+    transition:opacity .4s ease;
+  }
+  .pageno .cd{color:var(--ink);font-weight:700}
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+  [data-when-live][hidden]{display:none!important}
+
+  /* halftone print edge */
+  .edge{
+    position:fixed;left:0;right:0;bottom:0;height:6px;z-index:2;
+    background-image:radial-gradient(circle, rgba(23,19,16,.12) 1.1px, transparent 1.3px);
+    background-size:3px 3px;
+  }
+
+  .mark{position:fixed;right:36px;bottom:34px;width:72px;height:72px;z-index:50}
+
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <span class="reg tl" aria-hidden="true"></span>
+  <span class="reg tr" aria-hidden="true"></span>
+  <span class="reg bl" aria-hidden="true"></span>
+  <span class="reg br" aria-hidden="true"></span>
+
+  <main class="sheet">
+    <header class="head">
+      <div class="rule-thick" aria-hidden="true"></div>
+      <h1 class="head-word">THE INTERMISSION EDITION</h1>
+      <div class="dateline">
+        <span class="dl">VOL. 2 &mdash; NO. <span data-ep>128</span></span>
+        <span class="dl-rule" aria-hidden="true"></span>
+        <span class="dl">FREE AS ALWAYS</span>
+      </div>
+    </header>
+
+    <section class="cols">
+      <p class="col-text lead">Stretch your jaw before talking &mdash; two slow yawns, then hum one low note. Sip water &mdash; future you says thanks, and the microphone misses nothing. Refill the mug while the kettle is still hot; it clicks off faster than you think. Drop a question in chat for the mailbag &mdash; the strange ones get read first.</p>
+      <aside class="ad">
+        <p class="ad-head">NOW PLAYING</p>
+        <p class="ad-body">lo-fi intermission mix. enquiries: <b>the chat box</b>.</p>
+      </aside>
+      <p class="col-text">Clip the last segment, it was good &mdash; the archive forgets fast and the highlights reel is hungry. Roll the shoulders. Tell the group chat we resume on time, more or less, which by livestream law counts as on time.</p>
+    </section>
+
+    <footer class="base">
+      <p class="return" data-when-live hidden>&mdash; INTERMISSION OVER: BACK TO THE SHOW &mdash;</p>
+      <p class="pageno" data-cd-wrap>SMILE &mdash; BACK IN <span class="cd" data-cd>10:00</span></p>
+    </footer>
+  </main>
+
+  <div class="edge" aria-hidden="true"></div>
+  <img class="mark" src="../assets/smile-mark.svg" alt="SMILE">
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
