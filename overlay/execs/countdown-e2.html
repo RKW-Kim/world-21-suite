@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · countdown · MASS &amp; SPRING</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= frozen scene layout (countdown-original) ================= */
+    .topbar{position:absolute;top:88px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+    .topbar .brand{font-size:34px}.topbar .brand .dw{width:42px;height:42px}
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:40px}
+    .halo{position:absolute;left:50%;top:46%;width:760px;height:760px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.07) 0%,transparent 62%);pointer-events:none}
+    .ring{position:relative;width:560px;height:560px;filter:drop-shadow(0 0 34px rgba(255,193,7,.18))}
+    .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ring circle{fill:none;stroke-width:13;stroke-linecap:round}
+    .ring .tr{stroke:rgba(255,255,255,.07)}
+    /* E2: progress is spring-followed by the engine — CSS transition removed */
+    .ring .pr{stroke:var(--yellow);stroke-dasharray:1609;transition:none}
+    .tickrow{position:absolute;inset:14px;border-radius:50%;pointer-events:none}
+    .tickrow i{position:absolute;left:50%;top:0;width:2px;height:10px;margin-left:-1px;background:rgba(255,255,255,.14);transform-origin:50% 266px}
+    .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:292px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;will-change:transform,opacity}
+    /* E2: the yellow beat-flash of the pop survives as a pure color animation;
+       scale + opacity are owned by the rAF spring. */
+    .num.zap{animation:cf .6s ease-out}
+    @keyframes cf{from{color:var(--yellow)}to{color:var(--paper)}}
+    .label{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:.42em;margin-right:-.42em;text-transform:uppercase;color:var(--muted);margin-top:36px}
+    .flash{position:absolute;inset:0;background:var(--yellow);opacity:0;pointer-events:none}.flash.go{animation:fl 1s ease forwards}
+    @keyframes fl{0%{opacity:0}16%{opacity:1}100%{opacity:0}}
+    /* E2: endlogo reveal re-driven by spring (overshoot + settle); class hooks kept */
+    .endlogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0}
+    .endlogo.go{animation:none;opacity:1}
+    .endlogo .brand{font-size:190px;background:rgba(20,20,20,.9);padding:.16em .32em;border-radius:.16em;border:1px solid var(--line);box-shadow:0 40px 120px rgba(0,0,0,.6);will-change:transform,opacity}
+    .endlogo .brand .dw{width:150px;height:150px}
+
+    /* ================= E2 · MASS & SPRING execution layer =================
+       Entrances: critically-damped settle. Num pops: underdamped spring with
+       real overshoot. Halo: engine-driven tide. rAF paused on document.hidden. */
+    .halo,.topbar,.label{will-change:transform,opacity}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:18%;--d:.3s"></span>
+  <span class="spark" style="left:82%;top:24%;--d:1.6s;background:var(--up)"></span>
+  <span class="spark" style="left:76%;top:80%;--d:2.8s"></span>
+  <span class="spark" style="left:22%;top:74%;--d:3.7s;background:var(--sky)"></span>
+  <div class="topbar">
+    <span class="brand"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark">● OPENING BELL</div>
+  </div>
+  <div class="halo"></div>
+  <div class="wrap">
+    <div class="ring">
+      <svg viewBox="0 0 560 560"><circle class="tr" cx="280" cy="280" r="256"/><circle class="pr" id="pr" cx="280" cy="280" r="256"/></svg>
+      <div class="tickrow" id="ticks"></div>
+      <div class="num" id="num">10</div>
+    </div>
+    <div class="label">opening bell in</div>
+  </div>
+  <div class="endlogo" id="end">
+    <span class="brand" data-mood="bounce">
+      <span class="dw">
+        <svg class="disc" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+        </svg>
+      </span><b>smile</b>
+    </span>
+  </div>
+  <div class="flash" id="flash"></div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  const q=new URLSearchParams(location.search);const total=+(q.get('from')||10);let n=total,AC;
+  const num=document.getElementById('num'),pr=document.getElementById('pr'),C=1609;
+  const stage=document.querySelector('.stage'),ring=document.querySelector('.ring'),halo=document.querySelector('.halo'),
+        label=document.querySelector('.label'),topbar=document.querySelector('.topbar'),end=document.getElementById('end');
+  (function(){const row=document.getElementById('ticks');for(let i=0;i<60;i++){const t=document.createElement('i');t.style.transform=`rotate(${i*6}deg)`;if(i%5===0)t.style.height='16px';row.appendChild(t);}})();
+  function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.18);o.start();o.stop(AC.currentTime+.2);}catch(e){}}
+
+  /* ---------- hand-rolled spring engine (semi-implicit Euler) ---------- */
+  const springs=[];
+  function Spring(x,p,k,c,delay){this.x=x;this.p=p;this.v=0;this.k=k;this.c=c;this.t0=performance.now()+(delay||0);springs.push(this);}
+  Spring.prototype.impulse=function(x,v){this.x=x;this.v=v||0;this.t0=performance.now();};
+  Spring.prototype.step=function(dt,now){if(now<this.t0)return;
+    /* sub-stepped integration: unconditionally stable even on dropped frames
+       (long dt would otherwise make high-k springs oscillate/diverge) */
+    if(dt>0.032)dt=0.032;
+    let steps=Math.ceil(dt/(1/240));if(steps>8)steps=8;
+    const sdt=dt/steps;
+    for(let i=0;i<steps;i++){const a=this.k*(this.p-this.x)-this.c*this.v;this.v+=a*sdt;this.x+=this.v*sdt;}};
+  const crit=(k)=>2*Math.sqrt(k);                       /* critically damped c */
+  /* ---------- scene springs (entrance: settle · pop: overshoot) ---------- */
+  const tbY =new Spring(-16,0,110,crit(110),80),   tbO =new Spring(0,1,140,crit(140),80);
+  const rgS =new Spring(.94,1,120,crit(120),200),  rgO =new Spring(0,1,150,crit(150),200);
+  const hlO =new Spring(0,1,60,crit(60),350);
+  const lbY =new Spring(18,0,110,crit(110),460),   lbO =new Spring(0,1,140,crit(140),460);
+  const nmS =new Spring(1,1,300,2*Math.sqrt(300)*.6), nmO=new Spring(1,1,380,crit(380));
+  const prS =new Spring(0,0,120,crit(120));
+  const edS =new Spring(.72,1,180,2*Math.sqrt(180)*.62), edO=new Spring(0,1,200,crit(200));
+  let endOn=false;
+  /* pre-paint state (no FOUC): hidden/displaced before first rAF */
+  topbar.style.opacity=0;label.style.opacity=0;ring.style.opacity=0;halo.style.opacity=0;
+  ring.style.transform='scale(.94)';topbar.style.transform='translateY(-16px)';label.style.transform='translateY(18px)';
+
+  let raf=null,last=0;
+  function frame(now){
+    raf=requestAnimationFrame(frame);
+    let dt=(now-last)/1000;last=now;
+    if(dt>0.05)dt=0.05;if(dt<=0)dt=0.0001;
+    for(let i=0;i<springs.length;i++)springs[i].step(dt,now);
+    topbar.style.transform=`translateY(${tbY.x.toFixed(2)}px)`;topbar.style.opacity=tbO.x.toFixed(3);
+    ring.style.transform=`scale(${rgS.x.toFixed(4)})`;ring.style.opacity=rgO.x.toFixed(3);
+    label.style.transform=`translateY(${lbY.x.toFixed(2)}px)`;label.style.opacity=lbO.x.toFixed(3);
+    const w=now/1000*(2*Math.PI/7.5);   /* halo: entrance spring × engine tide */
+    halo.style.transform=`translate(-50%,-50%) scale(${(1+0.045*Math.sin(w)).toFixed(4)})`;
+    halo.style.opacity=(hlO.x*(0.82+0.18*Math.sin(w-0.8))).toFixed(3);
+    num.style.transform=`scale(${nmS.x.toFixed(4)})`;num.style.opacity=nmO.x.toFixed(3);
+    pr.style.strokeDashoffset=prS.x.toFixed(1);
+    if(endOn){end.style.transform=`scale(${edS.x.toFixed(4)})`;end.style.opacity=edO.x.toFixed(3);}
+  }
+  function start(){if(raf===null){last=performance.now();raf=requestAnimationFrame(frame);}}
+  function stop(){if(raf!==null){cancelAnimationFrame(raf);raf=null;}}
+  document.addEventListener('visibilitychange',()=>{document.hidden?stop():start();});
+  start();
+
+  /* ---------- countdown (original timing chain, spring-driven beats) ---------- */
+  (function tick(){if(n>0){
+    num.textContent=n;
+    nmS.impulse(1.26,0);nmO.impulse(.12,0);            /* pop = spring overshoot + settle */
+    num.classList.remove('zap');void num.offsetWidth;num.classList.add('zap');
+    prS.p=C*(1-n/total);                                /* ring progress spring-follows */
+    beep(n<=3?988:660);n--;setTimeout(tick,1000);
+  }else{
+    beep(1319);document.getElementById('flash').classList.add('go');
+    end.classList.add('go');endOn=true;edS.impulse(.72,0);edO.impulse(0,0);
+  }})();
+</script>
+</body>
+</html>

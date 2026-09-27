@@ -1,0 +1,116 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · TECH · MATERIAL STUDY</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ============ TECH BASE (derived from brb skeleton — frozen) ============ */
+  body{font-variant-numeric:tabular-nums}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:60px}
+  .field{position:absolute;inset:0}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07)}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+  .prog{fill:none;stroke:var(--yellow);stroke-width:7;stroke-linecap:round;stroke-dasharray:1046.15;stroke-dashoffset:1043;filter:drop-shadow(0 0 12px rgba(255,193,7,.35))}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;max-width:880px;font-size:26px;font-weight:500;color:#a8a8a8;text-wrap:balance}
+  .chips{margin-top:36px;display:flex;gap:14px;align-items:center}
+  .bnc{margin-top:32px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:bdot 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes bdot{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  /* pre-upgrade fallback face (smile-mark.js swaps innerHTML) */
+  .face .eye{position:absolute;top:33%;width:14px;height:19px;border-radius:50%;background:#0b0b0b}
+  .face .eye.l{left:29%}.face .eye.r{right:29%}
+  .face svg.mouth{position:absolute;left:50%;top:50%;width:58%;transform:translateX(-50%)}
+  .face svg.mouth path{fill:none;stroke:#0b0b0b;stroke-width:10.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ E3 · MATERIAL STUDY — the surfaces are the story ============
+     glass buffer ring with a rotating specular · reconnect fill as flowing
+     energy gradient with a comet head · face bloom halo + soft top-light ·
+     glassy chips · luminous ticker sweep. Geometry untouched. */
+
+  /* glass ring: quieter track + rotating specular confined to the band */
+  .buffer::before{border-color:rgba(255,255,255,.055);box-shadow:inset 0 0 30px rgba(255,255,255,.02)}
+  .spec{position:absolute;inset:-2px;border-radius:50%;pointer-events:none;
+    background:conic-gradient(from 20deg,transparent 0 34%,rgba(255,255,255,.14) 44%,rgba(255,255,255,.35) 50%,rgba(255,255,255,.14) 56%,transparent 66%);
+    -webkit-mask:radial-gradient(closest-side,transparent calc(100% - 17px),#000 calc(100% - 13px),#000 calc(100% - 2px),transparent);
+    mask:radial-gradient(closest-side,transparent calc(100% - 17px),#000 calc(100% - 13px),#000 calc(100% - 2px),transparent);
+    animation:spec 9s linear infinite;will-change:transform}
+  @keyframes spec{to{transform:rotate(360deg)}}
+
+  /* energy fill: gradient stroke whose light rotates around the ring (SMIL) */
+  .prog{stroke:url(#egrad);animation:reconnect 8s infinite;animation-timing-function:cubic-bezier(.5,.07,.5,.93)}
+  @keyframes reconnect{
+    0%   {stroke-dashoffset:1043;opacity:1}
+    62%  {stroke-dashoffset:0}
+    80%  {stroke-dashoffset:0;opacity:1;animation-timing-function:cubic-bezier(.45,0,.55,1)}
+    92%  {stroke-dashoffset:0;opacity:0;animation-timing-function:linear}
+    100% {stroke-dashoffset:1043;opacity:0}
+  }
+  /* comet head rides the leading edge (same offset keyframes, gated opacity) */
+  .head{fill:none;stroke:#FFF6D6;stroke-width:7;stroke-linecap:round;stroke-dasharray:30 1016.15;filter:drop-shadow(0 0 10px rgba(255,240,180,.9));
+    animation:reconnect 8s infinite,headGate 8s ease-in-out infinite;animation-timing-function:cubic-bezier(.5,.07,.5,.93),ease-in-out}
+  @keyframes headGate{0%{opacity:0}8%{opacity:1}80%{opacity:1}92%{opacity:0}100%{opacity:0}}
+
+  /* face bloom halo + soft top-light */
+  .halo{position:absolute;width:310px;height:310px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,193,7,.3),rgba(255,193,7,.09) 46%,transparent 72%);
+    animation:halo 5.6s ease-in-out infinite;will-change:transform,opacity}
+  @keyframes halo{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:.9;transform:scale(1.06)}}
+  .toplight{position:absolute;width:216px;height:216px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle at 50% -18%,rgba(255,255,255,.42),transparent 56%);mix-blend-mode:screen}
+
+  /* glassy chips: same geometry, new finish */
+  .chip.ghost{background:linear-gradient(160deg,rgba(255,193,7,.16),rgba(255,193,7,.05));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 0 1px rgba(255,193,7,.08),0 8px 30px rgba(0,0,0,.35)}
+  .chip.dark{background:linear-gradient(160deg,rgba(30,30,30,.8),rgba(16,16,16,.72));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 0 0 1px rgba(255,255,255,.03),0 10px 34px rgba(0,0,0,.4)}
+
+  /* luminous sweep across the existing ticker */
+  .ticker::after{content:"";position:absolute;top:0;bottom:0;left:0;width:26%;pointer-events:none;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+    transform:translateX(-130%);opacity:0;animation:tkGlow 12s ease-in-out infinite;will-change:transform}
+  @keyframes tkGlow{0%{transform:translateX(-130%);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateX(480%);opacity:0}}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="field">
+    <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  </div>
+  <div class="wrap">
+    <div class="buffer">
+      <div class="halo"></div>
+      <svg class="ring" viewBox="0 0 340 340" aria-hidden="true">
+        <defs>
+          <linearGradient id="egrad" gradientUnits="userSpaceOnUse" x1="170" y1="0" x2="170" y2="340">
+            <stop offset="0" stop-color="#FFE082"/><stop offset=".5" stop-color="#FFC107"/><stop offset="1" stop-color="#F5A623"/>
+            <animateTransform attributeName="gradientTransform" type="rotate" from="0 170 170" to="360 170 170" dur="7s" repeatCount="indefinite"/>
+          </linearGradient>
+        </defs>
+        <circle class="prog" cx="170" cy="170" r="166.5"/>
+        <circle class="head" cx="170" cy="170" r="166.5"/>
+      </svg>
+      <div class="spec"></div>
+      <div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div>
+      <div class="toplight"></div>
+    </div>
+    <h1 class="rise" style="--rd:.12s">we're on <span class="y">it</span>.</h1>
+    <p class="sub rise" style="--rd:.28s">Feed hiccup on our side — the desk is already on it. Back to the charts in a moment.</p>
+    <div class="chips rise" style="--rd:.44s">
+      <span class="chip ghost">● FEED RECONNECTING</span>
+      <span class="chip dark">SYSTEMS NOMINAL</span>
+    </div>
+    <div class="bnc rise" style="--rd:.58s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>

@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · brb · TYPE IN MOTION</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ================= E4 · TYPE IN MOTION =================
+     Same design; the text is the performer. The h1 reveals per-word through
+     mask wipes ("paused." — the .y word — lands last), the sub fades in
+     reading rhythm, the dots arrive one by one on a spring overshoot.
+     Positions, sizes and copy identical; only the reveal is engineered.  */
+
+  /* --- skeleton: identical geometry to the frozen design --- */
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding-bottom:60px}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;font-size:26px;font-weight:500;color:#a8a8a8}
+  .bnc{margin-top:34px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow)}
+  .bnc span:nth-child(2){background:var(--up)}
+  .bnc span:nth-child(3){background:var(--down)}
+
+  /* containers stay put; their children perform */
+  .rise{animation:none;opacity:1}
+
+  /* --- the lens arrives first, quietly (type takes the spotlight) --- */
+  .buffer{animation:bufIn .9s cubic-bezier(.19,1,.22,1) both}
+  @keyframes bufIn{from{opacity:0;transform:translateY(12px) scale(.94)}to{opacity:1;transform:none}}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;
+    border:7px solid rgba(255,255,255,.07);border-top-color:var(--yellow);
+    animation:spin 1.5s cubic-bezier(.6,.15,.4,.85) infinite;will-change:transform}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;
+    border:2px dashed rgba(255,193,7,.22);
+    animation:spinRev 14s linear infinite;will-change:transform}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite;will-change:transform}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+  /* --- h1: per-word mask wipes. Padding/negative margin keeps descenders
+         (p!) alive inside the overflow mask without shifting layout. --- */
+  h1 .w{display:inline-block;overflow:hidden;vertical-align:bottom;
+        padding:.1em 0 .22em;margin:-.1em 0 -.22em}
+  h1 .w i{display:inline-block;font-style:normal;transform:translateY(135%);
+          animation:wIn .8s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--wd,0s)}
+  @keyframes wIn{to{transform:translateY(0)}}
+
+  /* --- sub: reading rhythm, phrase by phrase --- */
+  .sub b{display:inline-block;font-weight:inherit;opacity:0;transform:translateY(8px);
+         animation:sIn .7s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--sd,0s)}
+  @keyframes sIn{to{opacity:1;transform:none}}
+
+  /* --- dots: arrive one by one on a spring, then join the bounce --- */
+  .bnc span{opacity:0;transform:scale(0);
+    animation:dotIn .65s var(--ease-spring) forwards var(--dd,0s),
+              b 1.2s ease-in-out calc(var(--dd,0s) + .65s) infinite}
+  @keyframes dotIn{0%{opacity:0;transform:scale(0)}45%{opacity:1}100%{opacity:1;transform:scale(1)}}
+  @keyframes b{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  <div class="wrap">
+    <div class="buffer"><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <h1 class="rise" style="--rd:.1s" aria-label="positions paused."><span class="w"><i style="--wd:.5s">positions</i></span> <span class="w"><i style="--wd:.85s"><span class="y">paused</span>.</i></span></h1>
+    <p class="sub rise" style="--rd:.2s"><b style="--sd:1.3s">Trader stepped away —</b> <b style="--sd:1.45s">charts secured,</b> <b style="--sd:1.6s">smile intact.</b></p>
+    <div class="bnc rise" style="--rd:.3s"><span style="--dd:1.95s"></span><span style="--dd:2.1s"></span><span style="--dd:2.25s"></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>

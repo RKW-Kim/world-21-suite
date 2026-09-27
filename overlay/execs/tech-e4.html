@@ -1,0 +1,182 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · TECH · TYPE IN MOTION</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ============ TECH BASE (derived from brb skeleton — frozen) ============ */
+  body{font-variant-numeric:tabular-nums}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:60px}
+  .field{position:absolute;inset:0}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07)}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+  .prog{fill:none;stroke:var(--yellow);stroke-width:7;stroke-linecap:round;stroke-dasharray:1046.15;stroke-dashoffset:1043;filter:drop-shadow(0 0 12px rgba(255,193,7,.35))}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;max-width:880px;font-size:26px;font-weight:500;color:#a8a8a8;text-wrap:balance}
+  .chips{margin-top:36px;display:flex;gap:14px;align-items:center}
+  .bnc{margin-top:32px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:bdot 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes bdot{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  /* pre-upgrade fallback face (smile-mark.js swaps innerHTML) */
+  .face .eye{position:absolute;top:33%;width:14px;height:19px;border-radius:50%;background:#0b0b0b}
+  .face .eye.l{left:29%}.face .eye.r{right:29%}
+  .face svg.mouth{position:absolute;left:50%;top:50%;width:58%;transform:translateX(-50%)}
+  .face svg.mouth path{fill:none;stroke:#0b0b0b;stroke-width:10.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ E4 · TYPE IN MOTION — text is the performer ============
+     h1: per-word mask reveal · sub: reading-rhythm word reveal ·
+     status chips type themselves with a caret · the reconnect percentage
+     reads out beside the ring on a true odometer (continuous digit rolls). */
+
+  /* h1 per-word mask reveal (same words, same size, same position) */
+  h1.k-h1{animation:none;opacity:1}
+  .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+  .wi{display:inline-block;transform:translateY(115%);animation:wUp 1.1s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--wd,0s);will-change:transform}
+  @keyframes wUp{to{transform:translateY(0)}}
+
+  /* sub: reading-rhythm reveal (words faded up in reading order) */
+  .sub.rise{animation:none;opacity:0}
+  .sub .rw{display:inline-block;opacity:0;transform:translateY(14px);animation:rwIn .8s cubic-bezier(.22,1,.36,1) forwards;animation-delay:var(--rd,0s)}
+  @keyframes rwIn{to{opacity:1;transform:translateY(0)}}
+
+  /* chips: shell reserved (zero layout shift), glyphs typed in */
+  .chips.rise{animation:none;opacity:1}
+  .chips .chip{opacity:0}
+  .chip .ch{opacity:0}
+  .chip .ch.on{opacity:1}
+  .caret{display:inline-block;width:2px;height:1em;background:var(--yellow);vertical-align:-.12em;margin-left:2px;animation:caretB .9s steps(2) infinite}
+  @keyframes caretB{50%{opacity:0}}
+
+  /* odometer readout badge pinned beside the ring (absolute — no layout shift) */
+  .readout{position:absolute;left:50%;bottom:-16px;transform:translateX(-50%);z-index:2;
+    padding:8px 16px;border-radius:999px;background:rgba(20,20,20,.86);border:1px solid var(--line);
+    box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;animation:roIn .8s cubic-bezier(.22,1,.36,1) forwards .9s}
+  @keyframes roIn{to{opacity:1}}
+  .roin{display:inline-flex;align-items:center;gap:10px}
+  .rl{font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.14em;color:var(--muted)}
+  .odo{display:inline-flex;align-items:center;height:1em;font-family:var(--font-display);font-weight:800;font-size:17px;line-height:1;color:var(--yellow);font-variant-numeric:tabular-nums}
+  .dg{display:inline-block;height:1em;overflow:hidden;width:1ch;text-align:center}
+  .strip{display:block;will-change:transform}
+  .strip i{display:block;height:1em;line-height:1;font-style:normal}
+  .pc{color:var(--yellow);font-family:var(--font-display);font-weight:800;font-size:17px}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="field">
+    <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  </div>
+  <div class="wrap">
+    <div class="buffer">
+      <svg class="ring" viewBox="0 0 340 340" aria-hidden="true">
+        <circle class="prog" cx="170" cy="170" r="166.5"/>
+      </svg>
+      <div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div>
+      <div class="readout" aria-hidden="true"><span class="roin"><span class="rl">RECONNECT</span><span class="odo" id="odo"></span><span class="pc">%</span></span></div>
+    </div>
+    <h1 class="rise k-h1" aria-label="we're on it."><span class="w"><span class="wi" style="--wd:.15s">we're</span></span> <span class="w"><span class="wi" style="--wd:.28s">on</span></span> <span class="w"><span class="wi" style="--wd:.41s"><span class="y">it</span>.</span></span></h1>
+    <p class="sub rise" style="--rd:.28s">Feed hiccup on our side — the desk is already on it. Back to the charts in a moment.</p>
+    <div class="chips rise" style="--rd:.44s">
+      <span class="chip ghost">● FEED RECONNECTING</span>
+      <span class="chip dark">SYSTEMS NOMINAL</span>
+    </div>
+    <div class="bnc rise" style="--rd:.58s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+/* E4 · kinetic type + odometer — one clock drives fill and readout */
+(function(){
+  const C=1046.15;
+  const prog=document.querySelector('.ring .prog');
+  const ro=document.querySelector('.readout');
+  const roin=ro.querySelector('.roin');
+
+  /* ---- build the odometer strips (H,T,O) ---- */
+  const odo=document.getElementById('odo');
+  function strip(n){
+    const dg=document.createElement('span');dg.className='dg';
+    const sp=document.createElement('span');sp.className='strip';
+    for(let i=0;i<n;i++){const d=document.createElement('i');d.textContent=String(i%10);sp.appendChild(d);}
+    dg.appendChild(sp);odo.appendChild(dg);return sp;
+  }
+  const sH=strip(2),sT=strip(11),sO=strip(11);   /* 0–1 · 0-9+0 · 0-9+0 */
+
+  /* ---- sub: split into words, reading-rhythm reveal ---- */
+  const sub=document.querySelector('.sub');
+  const words=sub.textContent.trim().split(/\s+/);
+  sub.textContent='';
+  words.forEach(function(w,i){
+    const s=document.createElement('span');s.className='rw';s.textContent=w;
+    s.style.setProperty('--rd',(0.55+i*0.045).toFixed(3)+'s');
+    sub.appendChild(s);sub.appendChild(document.createTextNode(' '));
+  });
+  sub.style.opacity='1';
+
+  /* ---- chips: type themselves (glyphs pre-reserved → zero shift) ---- */
+  function typeChip(chip,start){
+    const text=chip.textContent;chip.textContent='';
+    const chars=Array.prototype.map.call(text,function(c){
+      const s=document.createElement('span');s.className='ch';s.textContent=c;chip.appendChild(s);return s;
+    });
+    const caret=document.createElement('i');caret.className='caret';chip.appendChild(caret);
+    setTimeout(function(){
+      chip.style.opacity='1';
+      let i=0;
+      const iv=setInterval(function(){
+        if(i<chars.length){chars[i++].classList.add('on');}
+        else{clearInterval(iv);setTimeout(function(){caret.remove();},1900);}
+      },26);
+    },start);
+  }
+  const chips=document.querySelectorAll('.chips .chip');
+  typeChip(chips[0],1050);
+  typeChip(chips[1],1850);
+
+  /* ---- reconnect cycle: fill 0→100 (eased), hold, fade, fast back-roll ---- */
+  const TF=5.2,TH=7.4,TE=8.2,CYC=8.55;
+  const eio=function(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;};
+
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+    sub.style.opacity='1';
+    chips.forEach(function(c){c.style.opacity='1';c.querySelectorAll('.ch').forEach(function(x){x.classList.add('on');});});
+    ro.style.opacity='1';
+    prog.style.strokeDashoffset='0';
+    return;
+  }
+
+  let raf=0,last=0,acc=0;
+  function frame(now){
+    raf=requestAnimationFrame(frame);
+    let dt=(now-last)/1000; last=now;
+    if(!(dt>0))dt=0; if(dt>.25)dt=.25;   /* wall clock, hiccup-proof */
+    acc+=dt; if(acc>=CYC)acc-=CYC;
+    let v,op=1;
+    if(acc<TF)v=100*eio(acc/TF);
+    else if(acc<TH)v=100;
+    else if(acc<TE){v=100;op=1-(acc-TH)/(TE-TH);}
+    else{v=100*(1-(acc-TE)/(CYC-TE));op=0;}   /* invisible fast back-roll */
+    prog.style.strokeDashoffset=(1043*(1-v/100)).toFixed(2);
+    prog.style.opacity=op.toFixed(3);
+    roin.style.opacity=op.toFixed(3);
+    sH.style.transform='translateY('+(-(v/100)).toFixed(3)+'em)';
+    sT.style.transform='translateY('+(-((v/10)%10)).toFixed(3)+'em)';
+    sO.style.transform='translateY('+(-(v%10)).toFixed(3)+'em)';
+  }
+  last=performance.now();raf=requestAnimationFrame(frame);
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){cancelAnimationFrame(raf);raf=0;}
+    else if(!raf){last=performance.now();raf=requestAnimationFrame(frame);}
+  });
+})();
+</script>
+</body></html>

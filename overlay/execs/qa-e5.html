@@ -1,0 +1,115 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · qa · AMBIENT CINEMA</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* E5 AMBIENT CINEMA — the premium idle: multi-depth parallax drift, 40s light sweep,
+     8s face glow tide, mic-meter breathing wave, luminous depth ticker.
+     Entrances slower + longer-staggered; every loop seamless (alternate / held-offstage). */
+  :root{--ease-out:cubic-bezier(.19,1,.22,1)}
+  .topbar{position:absolute;top:88px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+  .topbar .brand{font-size:44px}.topbar .brand .dw{width:52px;height:52px}
+  .clock{font-size:22px;font-variant-numeric:tabular-nums}
+  .left{position:absolute;left:120px;top:224px;z-index:3;max-width:960px}
+  .kicker{margin-bottom:26px}
+  h1{font-family:var(--font-display);font-weight:800;font-size:132px;line-height:.94;letter-spacing:-.035em}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:24px;max-width:640px;font-size:24px;font-weight:500;color:#a8a8a8;line-height:1.45}
+  .stats{margin-top:32px;display:flex;gap:56px}
+  .stats .n{font-family:var(--font-display);font-weight:800;font-size:46px;color:var(--yellow);line-height:1;font-variant-numeric:tabular-nums}
+  .stats .n.qwrap{display:grid;overflow:hidden;padding:.09em 0;margin:-.09em 0}
+  .stats .qn{grid-area:1/1}
+  .stats .t{font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--muted);margin-top:8px}
+  .ldot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--up);margin-right:9px;vertical-align:1px;box-shadow:0 0 8px rgba(14,203,129,.8);animation:ldp 2.2s ease-in-out infinite}
+  @keyframes ldp{0%,100%{opacity:1}50%{opacity:.35}}
+  .socials{margin-top:28px;display:flex;gap:14px}
+  .right{position:absolute;right:150px;top:0;bottom:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:54px;z-index:3}
+  .orbit{position:relative;width:318px;height:318px;display:grid;place-items:center}
+  .orbit::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.5);border-radius:50%;animation:spin 26s linear infinite;will-change:transform}
+  .orbit::after{content:"";position:absolute;inset:26px;border:1px solid rgba(255,193,7,.16);border-radius:50%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* face glow tide: 8s scale + drift + halo breathing */
+  .orbit .face{width:212px;height:212px;animation:faceTide 8s ease-in-out infinite;will-change:transform}
+  @keyframes faceTide{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.035)}}
+  .orbit .face::before{content:"";position:absolute;inset:-24%;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,transparent 46%,rgba(255,193,7,.15) 58%,transparent 74%);
+    animation:haloTide 8s ease-in-out infinite}
+  @keyframes haloTide{0%,100%{opacity:.45}50%{opacity:1}}
+  /* depth layer 1: bg grid drifts slow */
+  .bg::before{content:"";position:absolute;inset:0;pointer-events:none;will-change:transform;
+    background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.05) 50%,transparent 60%);
+    transform:translateX(-100%);animation:sweep 40s ease-in-out infinite}
+  @keyframes sweep{0%{transform:translateX(-100%)}42%{transform:translateX(100%)}100%{transform:translateX(100%)}}
+  .bg::after{animation:gridDrift 56s ease-in-out infinite alternate;will-change:transform}
+  @keyframes gridDrift{to{transform:translate(-14px,10px)}}
+  /* depth layer 2: skyline drifts slower, opposite feel */
+  #skyline{animation:skyDrift 76s ease-in-out infinite alternate;will-change:transform}
+  @keyframes skyDrift{to{transform:translateX(-18px)}}
+  /* mic-meter breathing wave across the column */
+  .cbars{display:flex;gap:14px;align-items:flex-end;height:120px}
+  .cbars span{position:relative;width:26px;border-radius:6px;transform-origin:bottom;animation:bar 2.6s ease-in-out infinite;will-change:transform}
+  .cbars span::before{content:"";position:absolute;left:50%;top:-14%;bottom:-10%;width:4px;transform:translateX(-50%);background:inherit;filter:brightness(.6)}
+  .cbars span:nth-child(1){height:34px;background:var(--down);animation-delay:0s}
+  .cbars span:nth-child(2){height:58px;background:var(--up);animation-delay:.14s}
+  .cbars span:nth-child(3){height:44px;background:var(--down);animation-delay:.28s}
+  .cbars span:nth-child(4){height:82px;background:var(--up);animation-delay:.42s}
+  .cbars span:nth-child(5){height:66px;background:var(--down);animation-delay:.56s}
+  .cbars span:nth-child(6){height:104px;background:var(--up);animation-delay:.7s}
+  .cbars span:nth-child(7){height:120px;background:var(--yellow);animation-delay:.84s}
+  @keyframes bar{0%,100%{transform:scaleY(.72)}50%{transform:scaleY(1)}}
+  /* ticker depth shadow */
+  .tk span{text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .tk .hd{color:var(--yellow);font-weight:800;border-left:none}
+  /* entrances: slower, longer-staggered */
+  .rise{animation-duration:1.5s}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div><div id="skyline"></div>
+  <span class="spark" style="left:10%;top:24%;--d:0s"></span><span class="spark" style="left:46%;top:14%;--d:1.4s;background:var(--up)"></span><span class="spark" style="left:88%;top:20%;--d:.8s;background:var(--down)"></span><span class="spark" style="left:68%;top:64%;--d:2.2s"></span><span class="spark" style="left:26%;top:70%;--d:3.1s;background:var(--sky)"></span>
+  <div class="topbar">
+    <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark clock rise" style="--rd:.18s"><span id="clock">--:--</span>&nbsp;· NAIROBI DESK</div>
+  </div>
+  <div class="left">
+    <span class="chip solid kicker rise" style="--rd:.32s">● LIVE Q&amp;A · ASK US ANYTHING</span>
+    <h1 class="rise" style="--rd:.46s">ask us<br><span class="y">anything</span>.</h1>
+    <p class="sub rise" style="--rd:.66s">The floor is open — drop your questions in chat and we'll get through as many as we can.</p>
+    <div class="stats rise" style="--rd:.84s">
+      <div><div class="n qwrap"><span class="qn" id="qn">12</span></div><div class="t">QUESTIONS IN QUEUE</div></div>
+      <div><div class="n">1,416</div><div class="t"><i class="ldot"></i>LIVE · WATCHING</div></div>
+    </div>
+    <div class="socials rise" style="--rd:1.02s"><span class="chip ghost">DROP YOURS IN CHAT</span><span class="chip ghost">@smileke</span><span class="chip ghost">#SmileSquad</span></div>
+  </div>
+  <div class="right">
+    <div class="orbit rise" style="--rd:.6s"><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <div class="cbars rise" style="--rd:.74s"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:46s">
+    <div class="tk"><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  var sky=document.getElementById('skyline'),cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
+  for(var i=0;i<26;i++){var c=document.createElement('span');c.className='cndl';c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';c.style.height=(70+Math.random()*240)+'px';c.style.background=cols[i%6];c.style.setProperty('--d',(0.6+i*0.06)+'s');sky.appendChild(c);}
+  function clockUpd(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-KE',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',hour12:false});}
+  clockUpd();setInterval(clockUpd,10000);
+  /* queue counter — slower, calmer roll to match the ambient pace */
+  (function(){
+    var wrap=document.querySelector('.qwrap'),val=12,CAP=21;
+    var E='cubic-bezier(.22,1,.36,1)',D=950;
+    function roll(to,dir){
+      var old=wrap.querySelector('.qn');if(!old)return;
+      if(parseInt(old.textContent,10)===to)return;
+      var nw=document.createElement('span');nw.className='qn';nw.textContent=to;
+      nw.style.transform='translateY('+(dir*115)+'%)';wrap.appendChild(nw);
+      old.animate([{transform:'translateY(0)'},{transform:'translateY('+(-dir*115)+'%)'}],{duration:D,easing:E,fill:'forwards'}).onfinish=function(){old.remove()};
+      nw.animate([{transform:'translateY('+(dir*115)+'%)'},{transform:'translateY(0)'}],{duration:D,easing:E}).onfinish=function(){nw.style.transform=''};
+    }
+    function tick(){
+      if(val>=CAP){val=12;roll(12,-1)}else{val+=1;roll(val,1)}
+      setTimeout(tick,4200+Math.random()*4600);
+    }
+    setTimeout(tick,4800);
+  })();
+</script></body></html>

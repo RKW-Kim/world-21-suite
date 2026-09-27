@@ -1,0 +1,129 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · qa · MASS &amp; SPRING</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* E2 MASS & SPRING — same design; every entrance + idle is re-driven by a tiny hand-rolled
+     spring engine (rAF). Entrances critically damped; face + counter rolls underdamped;
+     ticker stays CSS linear. rAF pauses on document.hidden. */
+  .topbar{position:absolute;top:88px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+  .topbar .brand{font-size:44px}.topbar .brand .dw{width:52px;height:52px}
+  .clock{font-size:22px;font-variant-numeric:tabular-nums}
+  .left{position:absolute;left:120px;top:224px;z-index:3;max-width:960px}
+  .kicker{margin-bottom:26px}
+  h1{font-family:var(--font-display);font-weight:800;font-size:132px;line-height:.94;letter-spacing:-.035em}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:24px;max-width:640px;font-size:24px;font-weight:500;color:#a8a8a8;line-height:1.45}
+  .stats{margin-top:32px;display:flex;gap:56px}
+  .stats .n{font-family:var(--font-display);font-weight:800;font-size:46px;color:var(--yellow);line-height:1;font-variant-numeric:tabular-nums}
+  .stats .n.qwrap{display:grid;overflow:hidden;padding:.09em 0;margin:-.09em 0}
+  .stats .qn{grid-area:1/1}
+  .stats .t{font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--muted);margin-top:8px}
+  .ldot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--up);margin-right:9px;vertical-align:1px;box-shadow:0 0 8px rgba(14,203,129,.8);animation:ldp 2.2s ease-in-out infinite}
+  @keyframes ldp{0%,100%{opacity:1}50%{opacity:.35}}
+  .socials{margin-top:28px;display:flex;gap:14px}
+  .right{position:absolute;right:150px;top:0;bottom:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:54px;z-index:3}
+  .orbit{position:relative;width:318px;height:318px;display:grid;place-items:center}
+  .orbit::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.5);border-radius:50%;animation:spin 26s linear infinite}
+  .orbit::after{content:"";position:absolute;inset:26px;border:1px solid rgba(255,193,7,.16);border-radius:50%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* springs take over the face + bars idle: kill their CSS loops, keep everything else */
+  .orbit .face{width:212px;height:212px;animation:none;will-change:transform}
+  .cbars{display:flex;gap:14px;align-items:flex-end;height:120px}
+  .cbars span{position:relative;width:26px;border-radius:6px;transform-origin:bottom;animation:none;will-change:transform}
+  .cbars span::before{content:"";position:absolute;left:50%;top:-14%;bottom:-10%;width:4px;transform:translateX(-50%);background:inherit;filter:brightness(.6)}
+  .cbars span:nth-child(1){height:34px;background:var(--down)}.cbars span:nth-child(2){height:58px;background:var(--up)}
+  .cbars span:nth-child(3){height:44px;background:var(--down)}.cbars span:nth-child(4){height:82px;background:var(--up)}
+  .cbars span:nth-child(5){height:66px;background:var(--down)}.cbars span:nth-child(6){height:104px;background:var(--up)}
+  .cbars span:nth-child(7){height:120px;background:var(--yellow)}
+  /* springs own the entrances: CSS rise disabled, opacity+transform driven in rAF */
+  .rise{animation:none;opacity:1} /* core .rise opacity:0 overridden; JS drives inline opacity pre-paint */
+  .tk .hd{color:var(--yellow);font-weight:800;border-left:none}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div><div id="skyline"></div>
+  <span class="spark" style="left:10%;top:24%;--d:0s"></span><span class="spark" style="left:46%;top:14%;--d:1.4s;background:var(--up)"></span><span class="spark" style="left:88%;top:20%;--d:.8s;background:var(--down)"></span><span class="spark" style="left:68%;top:64%;--d:2.2s"></span><span class="spark" style="left:26%;top:70%;--d:3.1s;background:var(--sky)"></span>
+  <div class="topbar">
+    <span class="brand rise"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark clock rise"><span id="clock">--:--</span>&nbsp;· NAIROBI DESK</div>
+  </div>
+  <div class="left">
+    <span class="chip solid kicker rise">● LIVE Q&amp;A · ASK US ANYTHING</span>
+    <h1 class="rise">ask us<br><span class="y">anything</span>.</h1>
+    <p class="sub rise">The floor is open — drop your questions in chat and we'll get through as many as we can.</p>
+    <div class="stats rise">
+      <div><div class="n qwrap"><span class="qn" id="qn">12</span></div><div class="t">QUESTIONS IN QUEUE</div></div>
+      <div><div class="n">1,416</div><div class="t"><i class="ldot"></i>LIVE · WATCHING</div></div>
+    </div>
+    <div class="socials rise"><span class="chip ghost">DROP YOURS IN CHAT</span><span class="chip ghost">@smileke</span><span class="chip ghost">#SmileSquad</span></div>
+  </div>
+  <div class="right">
+    <div class="orbit rise"><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <div class="cbars rise"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:46s">
+    <div class="tk"><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span class="hd">✦ Q&amp;A SESSION</span><span>drop questions in chat</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  var sky=document.getElementById('skyline'),cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
+  for(var i=0;i<26;i++){var c=document.createElement('span');c.className='cndl';c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';c.style.height=(70+Math.random()*240)+'px';c.style.background=cols[i%6];c.style.setProperty('--d',(0.6+i*0.06)+'s');sky.appendChild(c);}
+  function clockUpd(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-KE',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',hour12:false});}
+  clockUpd();setInterval(clockUpd,10000);
+  /* ---- hand-rolled spring engine (~40 lines) ---- */
+  (function(){
+    function Spr(k,c,p){this.k=k;this.c=c;this.p=p;this.v=0;this.t=p}
+    Spr.prototype.step=function(dt){
+      var a=this.k*(this.t-this.p)-this.c*this.v;this.v+=a*dt;this.p+=this.v*dt;
+      if(Math.abs(this.t-this.p)<.0004&&Math.abs(this.v)<.0015){this.p=this.t;this.v=0;return true}
+      return false};
+    /* entrances: critically damped settle, staggered like the base --rd rhythm */
+    var plan=[['.topbar .brand',.05],['.topbar .clock',.15],['.kicker',.22],['h1',.32],['.sub',.42],['.stats',.52],['.socials',.62],['.orbit',.4],['.cbars',.55]];
+    var ents=plan.map(function(pr){var el=document.querySelector(pr[0]);
+      el.style.opacity='0';el.style.transform='translateY(28px)';
+      return{el:el,s:new Spr(120,21.9,0),d:pr[1],done:false}});
+    /* face idle: underdamped bob chasing a flipping target (1-2 visible oscillations) */
+    var face=document.querySelector('.orbit .face'),fs=new Spr(30,5.5,0);
+    /* mic-meter bars: near-critical springs chasing a travelling sine target */
+    var bars=[].slice.call(document.querySelectorAll('.cbars span'));
+    var bs=bars.map(function(){return new Spr(140,17,.86)});
+    bars.forEach(function(b){b.style.transform='scaleY(.86)'});
+    /* queue counter rolls via spring */
+    var wrap=document.querySelector('.qwrap'),val=12,roll=null,rdir=1;
+    function startRoll(to,d){
+      var old=wrap.querySelector('.qn');if(!old)return;
+      if(parseInt(old.textContent,10)===to)return;
+      var nw=document.createElement('span');nw.className='qn';nw.textContent=to;
+      nw.style.transform='translateY('+(d*115)+'%)';wrap.appendChild(nw);
+      roll={old:old,nw:nw,s:new Spr(120,13.5,0)};rdir=d;
+    }
+    var T=0,last=0,raf=0;
+    function frame(ts){
+      raf=requestAnimationFrame(frame);
+      if(!last)last=ts;var dt=Math.min((ts-last)/1000,.033);last=ts;T+=dt;
+      for(var i=0;i<ents.length;i++){var e=ents[i];if(e.done)continue;
+        var tt=T-e.d;if(tt<0)continue;
+        e.s.t=1;var fin=e.s.step(dt);var o=Math.min(1,tt/.4);
+        if(fin&&o>=1){e.el.style.opacity='';e.el.style.transform='';e.done=true}
+        else{e.el.style.opacity=o.toFixed(3);e.el.style.transform='translateY('+(28*(1-e.s.p)).toFixed(2)+'px)'}}
+      fs.t=(Math.floor(T/2.6)%2)?-12:0;fs.step(dt);
+      face.style.transform='translateY('+fs.p.toFixed(2)+'px)';
+      for(var j=0;j<bars.length;j++){bs[j].t=.86+.14*Math.sin(T*2+j*.55);bs[j].step(dt);
+        bars[j].style.transform='scaleY('+bs[j].p.toFixed(4)+')'}
+      if(roll){var rfin=roll.s.step(dt),p=roll.s.p;
+        roll.old.style.transform='translateY('+(-p*115*rdir).toFixed(2)+'%)';
+        roll.nw.style.transform='translateY('+((1-p)*115*rdir).toFixed(2)+'%)';
+        if(rfin){roll.nw.style.transform='';roll.old.remove();roll=null}}
+    }
+    raf=requestAnimationFrame(frame);
+    /* OBS hygiene: no rAF burn while hidden */
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden){if(raf){cancelAnimationFrame(raf);raf=0}}
+      else if(!raf){last=0;raf=requestAnimationFrame(frame)}});
+    function tick(){
+      if(val>=21){val=12;startRoll(12,-1)}else{val+=1;startRoll(val,1)}
+      setTimeout(tick,3800+Math.random()*4200);}
+    setTimeout(tick,4400);
+  })();
+</script></body></html>

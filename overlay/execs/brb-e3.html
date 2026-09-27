@@ -1,0 +1,106 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · brb · MATERIAL STUDY</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ================= E3 · MATERIAL STUDY =================
+     Same design, same choreography — different matter. The buffer lens
+     becomes glass (depth shadows, inset strokes, blurred backdrop) with a
+     rotating specular highlight riding the rim; the face gets a bloom halo
+     and a top light; dots become glowing orbs with under-trails; the
+     ticker receives a slow luminous sweep. Geometry untouched: every
+     effect is gradient / shadow / mask / opacity on EXISTING elements.   */
+
+  /* --- skeleton: identical geometry to the frozen design --- */
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding-bottom:60px}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;font-size:26px;font-weight:500;color:#a8a8a8}
+  .bnc{margin-top:34px;display:flex;gap:14px}
+  .bnc span{position:relative;width:14px;height:14px;border-radius:50%;background:var(--yellow)}
+
+  /* --- the lens: thick glass. backdrop blur + inset light + floor occlusion --- */
+  .buffer{isolation:isolate;border-radius:50%;
+    background:radial-gradient(circle at 50% 34%, rgba(255,255,255,.05), rgba(255,255,255,.012) 56%, rgba(255,255,255,0) 72%);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.05),
+      inset 0 26px 54px rgba(255,255,255,.028),
+      inset 0 -34px 62px rgba(0,0,0,.38),
+      0 36px 90px rgba(0,0,0,.5);
+    -webkit-backdrop-filter:blur(5px);
+    backdrop-filter:blur(5px)}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;z-index:1;
+    border:7px solid rgba(255,255,255,.07);border-top-color:var(--yellow);
+    animation:spin 1.5s cubic-bezier(.6,.15,.4,.85) infinite;will-change:transform}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;z-index:1;
+    border:2px dashed rgba(255,193,7,.22);
+    animation:spinRev 14s linear infinite;will-change:transform}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+
+  /* --- rotating specular highlight, masked to the glass rim --- */
+  .buffer .spec{position:absolute;inset:-2px;border-radius:50%;z-index:2;pointer-events:none;
+    background:conic-gradient(from 0deg,
+      transparent 0deg 246deg,
+      rgba(255,255,255,.12) 292deg,
+      rgba(255,193,7,.20) 322deg,
+      transparent 356deg 360deg);
+    -webkit-mask:radial-gradient(circle, transparent 63%, #000 67%, #000 101%);
+    mask:radial-gradient(circle, transparent 63%, #000 67%, #000 101%);
+    mix-blend-mode:screen;
+    animation:spin 9s linear infinite;will-change:transform}
+
+  /* --- face: bloom halo behind + glass top-light over, riding the breathe --- */
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite;will-change:transform}
+  .face::before{content:"";position:absolute;inset:-34%;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle, rgba(255,193,7,.30) 0%, rgba(255,193,7,.10) 42%, transparent 66%);
+    animation:haloTide 3.4s ease-in-out infinite}
+  .face::after{content:"";position:absolute;inset:0;border-radius:50%;z-index:2;pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.07) 32%, transparent 52%);
+    animation:topLight 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes haloTide{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes topLight{0%,100%{opacity:.85}50%{opacity:1}}
+
+  /* --- dots: glowing orbs with under-trails --- */
+  .bnc{perspective:600px}
+  .bnc span{animation:b 1.2s ease-in-out infinite;will-change:transform}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  .bnc span:nth-child(1){box-shadow:0 0 10px rgba(255,193,7,.85), 0 0 30px rgba(255,193,7,.35), inset 0 -2px 4px rgba(0,0,0,.18)}
+  .bnc span:nth-child(2){box-shadow:0 0 10px rgba(14,203,129,.85), 0 0 30px rgba(14,203,129,.35), inset 0 -2px 4px rgba(0,0,0,.18)}
+  .bnc span:nth-child(3){box-shadow:0 0 10px rgba(246,70,93,.85), 0 0 30px rgba(246,70,93,.35), inset 0 -2px 4px rgba(0,0,0,.18)}
+  .bnc span::after{content:"";position:absolute;top:calc(100% + 3px);left:50%;width:5px;height:18px;
+    border-radius:3px;transform:translateX(-50%);transform-origin:top center;pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,193,7,.55), transparent);
+    animation:trail 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2)::after{background:linear-gradient(180deg, rgba(14,203,129,.55), transparent)}
+  .bnc span:nth-child(3)::after{background:linear-gradient(180deg, rgba(246,70,93,.55), transparent)}
+  .bnc span:nth-child(2)::after{animation-delay:.15s}
+  .bnc span:nth-child(3)::after{animation-delay:.3s}
+  @keyframes b{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  @keyframes trail{0%,100%{opacity:.2;transform:translateX(-50%) scaleY(.55)}50%{opacity:.8;transform:translateX(-50%) scaleY(1)}}
+
+  /* --- ticker: slow luminous sweep crossing the marquee --- */
+  .ticker::after{content:"";position:absolute;top:0;bottom:0;left:0;width:34%;pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.055) 42%, rgba(255,193,7,.09) 58%, transparent);
+    transform:translateX(-130%);
+    animation:tkSweep 9s ease-in-out infinite}
+  @keyframes tkSweep{0%{transform:translateX(-130%)}62%{transform:translateX(430%)}100%{transform:translateX(430%)}}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  <div class="wrap">
+    <div class="buffer"><i class="spec"></i><div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div></div>
+    <h1 class="rise" style="--rd:.1s">positions <span class="y">paused</span>.</h1>
+    <p class="sub rise" style="--rd:.2s">Trader stepped away — charts secured, smile intact.</p>
+    <div class="bnc rise" style="--rd:.3s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ BE RIGHT BACK</span><span>positions secured</span><span>don't close the tab</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>
