@@ -135,6 +135,7 @@ footer b{color:var(--paper)}
     <a href="#tournament">Tournament</a>
     <a href="#mood">Inspo</a>
     <a href="#obs">OBS setup</a>
+    <a href="director.html">Director</a>
     <a class="cta" href="start.html?v=a" target="_blank" rel="noopener">Open a scene</a>
   </nav>
 </header>
@@ -165,7 +166,7 @@ footer b{color:var(--paper)}
 
 <section class="mood" id="mood">
   <h2>The inspo wall</h2>
-  <p class="sub">Thirty references pulled from across the web — Pinterest/Dribbble-grade stream scenes, studio sets, terminal walls — that seeded the six directions. The kit argues with them, not copies them.</p>
+  <p class="sub">Fifteen web references — Pinterest/Dribbble-grade stream scenes, studio sets, terminal walls — that seeded the six directions. The kit argues with them, not copies them.</p>
   <div class="rail" id="rail"></div>
 </section>
 
@@ -173,6 +174,7 @@ footer b{color:var(--paper)}
   <div class="pane">
     <h3>Use a scene in OBS</h3>
     <ul>
+      <li><b>0</b><span>Or skip the URL math — the <code>Director</code> console builds any scene URL for you: pick a scene, a lane, type a title, copy the link.</span></li>
       <li><b>1</b><span>Add a <code>Browser</code> source, 1920×1080, and paste the scene URL with <code>?v=a..f</code> (or press <span class="kbd">V</span> in the source preview).</span></li>
       <li><b>2</b><span>Append <code>&amp;obs=1</code> — the page turns transparent and drops all chrome, so only the scene composites over your webcam or capture.</span></li>
       <li><b>3</b><span>Control from the URL: <code>&amp;cd=300</code> countdown seconds · <code>&amp;t=frost|chameleon</code> material · <code>&amp;title=</code> <code>&amp;ep=07</code> text overrides · <code>&amp;wm=0|tl|tr|bl|br</code> watermark · <code>&amp;q=</code> the audience question on Q&amp;A · <code>&amp;win=@handle</code> on Giveaway.</span></li>
@@ -231,10 +233,10 @@ SCENES.forEach(function(sc,si){
    '<div class="lane-grid">';
   LANES.forEach(function(ln){
     html+='<div class="lane" data-sc="'+sc.id+'" data-ln="'+ln.k+'">'+
-     '<div class="prev" data-load="kit/'+sc.id+'.html?v='+ln.k+'&g=1"><div class="ph">'+ln.k.toUpperCase()+'</div></div>'+
+     '<div class="prev" data-load="'+sc.id+'.html?v='+ln.k+'&g=1"><div class="ph">'+ln.k.toUpperCase()+'</div></div>'+
      '<button class="vote" title="vote this design" aria-label="vote">○</button>'+
      '<div class="meta"><div class="nm"><span class="lt">'+ln.n+'</span><span class="ln">'+LANE_D[ln.k]+'</span></div>'+
-     '<a class="go" href="kit/'+sc.id+'.html?v='+ln.k+'" target="_blank" rel="noopener">open full ↗</a></div></div>';
+     '<a class="go" href="'+sc.id+'.html?v='+ln.k+'" target="_blank" rel="noopener">open full ↗</a></div></div>';
   });
   html+='</div></div>';
 });

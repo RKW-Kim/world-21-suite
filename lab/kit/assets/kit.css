@@ -111,8 +111,12 @@ body[data-v="f"] .scn[data-lane="f"]{display:grid}
 body.g .kit-hud{display:none}
 
 /* ── OBS transparent mode — html+body go clear, chrome hides ──── */
-body.obs, body.obs body{background:transparent}
+body.obs{background:transparent}
 body.obs .kit-hud{display:none}
+
+/* watermark sits above the ticker band on pages that have one */
+body.has-ticker .kit-wm[data-pos="bl"],body.has-ticker .kit-wm[data-pos="br"]{
+  bottom:calc(56*var(--u) + 12*var(--u))}
 
 /* keyboard focus — visible, on-palette */
 :focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
