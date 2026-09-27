@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · BRB — AMBER BREATH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ SMILE KIT3 · brb-breathe · AMBER BREATH v2 ============ */
+:root{
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900; --up:#0ECB81;
+  --paper:#FFF9E8; --panel:#141210; --card:#1C1914; --hair:#2A251C;
+  --text:#F5F1E6; --muted:#9C9484; --sand:#CBC0AA;
+  --glide:cubic-bezier(.2,.9,.25,1);
+  --snap:cubic-bezier(.85,0,.15,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --soft:cubic-bezier(.45,.05,.55,.95);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink)}
+body{font-family:'IBM Plex Mono',monospace;user-select:none;cursor:default}
+#fit{position:fixed;inset:0}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;
+  transform:translate(-50%,-50%);transform-origin:center;overflow:hidden;background:var(--ink)}
+body.obs{background:transparent}
+body.obs .bg{display:none}
+/* background scrim: flat ink field, ≤6% luminance warm ramp at center */
+.bg{position:absolute;inset:0;
+  background:radial-gradient(1200px 780px at 50% 44%, #0D0B03 0%, #0A0900 62%)}
+svg{display:block}
+
+/* ---------- entry keyframes ---------- */
+@keyframes chipIn{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+@keyframes snapIn{0%{opacity:0;transform:translateY(14px)}62%{opacity:1;transform:translateY(-2px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes faceIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+@keyframes arrNudge{0%,64%{transform:translateX(0)}72%{transform:translateX(4px)}82%{transform:translateX(2px)}90%,100%{transform:translateX(0)}}
+@keyframes dotPulse{0%,100%{opacity:.45}40%{opacity:1}62%{opacity:.8}}
+
+/* ---------- top HUD ---------- */
+.brand{position:absolute;left:48px;top:42px;display:flex;align-items:center;gap:14px;z-index:10;
+  animation:chipIn .6s var(--glide) .05s both}
+.brand svg{width:40px;height:40px}
+.brand .bname{font-family:'Archivo',sans-serif;font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--text)}
+.eat{position:absolute;right:48px;top:40px;display:flex;align-items:center;gap:16px;height:44px;padding:0 22px;
+  background:var(--panel);border:1px solid var(--hair);border-radius:999px;z-index:10;
+  animation:chipIn .6s var(--glide) .12s both}
+.eat .lab{font-size:12px;letter-spacing:.18em;color:var(--muted);white-space:nowrap}
+.eat .sep{width:1px;height:16px;background:var(--hair)}
+.eat .clk{font-size:13px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---------- left meta ledger (sand-grey) ---------- */
+.ledger{position:absolute;left:96px;top:376px;width:360px;z-index:10}
+.lhead{font-size:11px;letter-spacing:.24em;color:var(--muted);padding-bottom:14px;border-bottom:1px solid var(--hair);
+  animation:chipIn .6s var(--glide) .2s both}
+.lrow{display:flex;align-items:center;gap:18px;height:72px;border-bottom:1px solid var(--hair);
+  animation:snapIn .5s var(--snap) both}
+.lrow:nth-of-type(2){animation-delay:.28s}
+.lrow:nth-of-type(3){animation-delay:.36s}
+.lrow:nth-of-type(4){animation-delay:.44s}
+.lrow:nth-of-type(5){animation-delay:.52s}
+.lrow b{font-size:12px;font-weight:600;color:var(--yellow-hot);letter-spacing:.1em;font-variant-numeric:tabular-nums}
+.lrow span{flex:1;font-size:13px;letter-spacing:.18em;color:var(--sand);white-space:nowrap}
+.lrow i{font-style:normal;font-size:14px;color:var(--muted)}
+.lrow i.arr{animation:arrNudge 5.2s ease-in-out infinite}
+.lrow:nth-of-type(2) i.arr{animation-delay:.6s}
+.lrow:nth-of-type(3) i.arr{animation-delay:1.7s}
+.lrow:nth-of-type(4) i.arr{animation-delay:2.8s}
+.lrow i.ok{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.14em;color:var(--sand);white-space:nowrap}
+.lrow i.ok::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--up);
+  animation:dotPulse 2.8s ease-in-out infinite}
+
+/* ---------- hero: breathing face + halo ---------- */
+.hero{position:absolute;left:50%;top:512px;transform:translate(-50%,-50%);z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:26px}
+.kicker{display:flex;align-items:center;gap:12px;font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:15px;letter-spacing:.24em;color:var(--text);animation:chipIn .6s var(--glide) .15s both}
+.kicker .dia{font-style:normal;font-size:11px;color:var(--yellow-hot)}
+.breath{position:relative;width:220px;height:220px;animation:breathe 4s var(--soft) infinite}
+@keyframes breathe{
+  0%{transform:translateY(0) scale(1);animation-timing-function:cubic-bezier(.33,.66,.66,1)}
+  40%{transform:translateY(-4px) scale(1.045);animation-timing-function:var(--soft)}
+  60%{transform:translateY(-2.5px) scale(1.026);animation-timing-function:var(--soft)}
+  100%{transform:translateY(0) scale(1)}
+}
+.haloLoop{position:absolute;left:50%;top:50%;width:380px;height:380px;margin:-190px 0 0 -190px;
+  border-radius:50%;animation:halo 4s var(--soft) infinite}
+@keyframes halo{
+  0%{transform:scale(1);opacity:.10;animation-timing-function:cubic-bezier(.33,.66,.66,1)}
+  40%{transform:scale(1.18);opacity:.22;animation-timing-function:var(--soft)}
+  60%{transform:scale(1.12);opacity:.18;animation-timing-function:var(--soft)}
+  100%{transform:scale(1);opacity:.10}
+}
+.haloBloom{position:absolute;inset:0;border-radius:50%}
+.haloBloom.go{animation:bloom 1.1s var(--spring) 1}
+@keyframes bloom{0%{transform:scale(1)}45%{transform:scale(1.4)}100%{transform:scale(1)}}
+/* ONE flat warm halo ring — blur 0, no gradient */
+.haloRing{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,206,0,.88)}
+.faceEntry{position:relative;width:220px;height:220px;animation:faceIn .7s var(--spring) .18s both}
+.jump{width:100%;height:100%}
+.jump.go{animation:happyJump .72s var(--spring) 1}
+@keyframes happyJump{0%{transform:translateY(0)}38%{transform:translateY(-12px)}100%{transform:translateY(0)}}
+.faceEntry svg{width:220px;height:220px}
+
+/* ---------- amber slab chip (accent, no numerals — the ONE hero numeral lives in the dial) ---------- */
+.slab{display:flex;align-items:center;height:72px;padding:0 44px;border-radius:999px;
+  background:var(--yellow-hot);box-shadow:0 12px 24px rgba(232,168,0,.30);
+  animation:chipIn .6s var(--glide) .35s both;transition:background-color .2s ease}
+.slab.live{background:var(--yellow)}
+.slab.slam{animation:slam .5s var(--spring) 1}
+@keyframes slam{0%{transform:scale(1.15)}100%{transform:scale(1)}}
+.slabTxt{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.liveRow{display:none;align-items:center;font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:34px;letter-spacing:.1em;color:var(--ink);white-space:nowrap}
+.slab.live .slabTxt{display:none}
+.slab.live .liveRow{display:flex}
+
+/* ---------- right dial ring: hero mm:ss inside, arc = fraction elapsed ---------- */
+.dialWrap{position:absolute;right:232px;top:324px;width:320px;height:320px;z-index:10;
+  animation:chipIn .6s var(--glide) .5s both}
+.dial{width:320px;height:320px}
+.track{fill:none;stroke:var(--hair);stroke-width:3}
+.prog{fill:none;stroke:var(--yellow);stroke-width:3;stroke-linecap:round}
+.dialMid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.dTime{display:flex;align-items:center}
+.dcell{position:relative;width:52px;height:80px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.dcell b{font-family:'Archivo',sans-serif;font-weight:800;font-size:72px;line-height:1;color:var(--text);
+  font-variant-numeric:tabular-nums}
+#d0{display:none}
+.dcolon{font-family:'Archivo',sans-serif;font-weight:800;font-size:54px;color:var(--muted);height:80px;
+  display:flex;align-items:center;padding-bottom:10px}
+.plab{font-size:12px;letter-spacing:.26em;color:var(--muted);white-space:nowrap}
+.dcap{position:absolute;left:50%;top:calc(100% + 16px);transform:translateX(-50%);
+  font-size:11px;letter-spacing:.22em;color:var(--muted);white-space:nowrap}
+
+/* ---------- watermark / ticker / sweep / help ---------- */
+.wmark{position:absolute;right:60px;bottom:76px;opacity:.18;z-index:10;animation:fadeIn .8s var(--glide) .7s both}
+.wmark svg{width:42px;height:42px}
+body.nowm .wmark{display:none}
+.ticker{position:absolute;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;overflow:hidden;
+  background:#0D0B02;border-top:1px solid var(--hair);z-index:10;animation:fadeIn .6s var(--glide) .65s both}
+.tk{display:flex;width:max-content;animation:tick 30s linear infinite}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tk span{display:flex;align-items:center;white-space:nowrap}
+.tk b{font-weight:500;font-size:11px;letter-spacing:.2em;color:var(--muted);padding:0 18px}
+.tk i{font-style:normal;font-size:9px;color:var(--yellow-hot)}
+.sweep{position:absolute;left:0;top:640px;width:100%;height:3px;background:var(--yellow);z-index:40;
+  pointer-events:none;transform:translateX(-101%)}
+.sweep.go{animation:sweep .6s cubic-bezier(.65,0,.35,1) 1 forwards}
+@keyframes sweep{0%{transform:translateX(-101%)}100%{transform:translateX(101%)}}
+.help{position:absolute;left:48px;bottom:76px;display:none;z-index:60;background:var(--card);
+  border:1px solid var(--hair);border-radius:16px;padding:18px 22px;
+  font-size:11px;letter-spacing:.08em;color:var(--muted);line-height:2}
+.help.on{display:block}
+.help b{display:block;color:var(--sand);letter-spacing:.2em;font-weight:600}
+
+/* ---------- reduced motion: final composed state ---------- */
+@media (prefers-reduced-motion: reduce){
+  .breath,.haloLoop,.tk,.lrow i.arr,.lrow i.ok::before{animation:none !important}
+  .brand,.eat,.kicker,.lhead,.lrow,.dialWrap,.slab,.wmark,.ticker,
+  .faceEntry,.jump.go,.haloBloom.go,.slab.slam,.sweep.go{animation-duration:.001s !important;animation-delay:0s !important}
+}
+</style>
+</head>
+<body>
+<div id="fit">
+<div id="stage">
+  <div class="bg"></div>
+
+  <!-- top-left brand row -->
+  <div class="brand">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="bname">smile.co.ke</span>
+  </div>
+
+  <!-- top-right EAT chip -->
+  <div class="eat">
+    <span class="lab">EAT · NAIROBI DESK</span>
+    <span class="sep"></span>
+    <span class="clk" id="clk">--:--:--</span>
+  </div>
+
+  <!-- left meta ledger -->
+  <div class="ledger" id="ledger">
+    <div class="lhead">STATUS LEDGER</div>
+    <div class="lrow"><b>01</b><span>MICS MUTED</span><i class="arr">→</i></div>
+    <div class="lrow"><b>02</b><span>DESK AWAY</span><i class="arr">→</i></div>
+    <div class="lrow"><b>03</b><span>EPISODE <span data-ep>128</span> SAFE</span><i class="arr">→</i></div>
+    <div class="lrow"><b>04</b><span>CHAT WATCHER</span><i class="ok">ACTIVE</i></div>
+  </div>
+
+  <!-- hero: kicker / breathing face + halo / amber accent slab -->
+  <div class="hero">
+    <div class="kicker"><i class="dia">◆</i><span data-title>BE RIGHT BACK</span></div>
+    <div class="breath">
+      <div class="haloLoop"><div class="haloBloom" id="haloBloom"><div class="haloRing"></div></div></div>
+      <div class="faceEntry"><div class="jump" id="jump">
+        <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div></div>
+    </div>
+    <div class="slab" id="slab">
+      <span class="slabTxt" data-sub>Mics hot · coffee brewing · charts loading.</span>
+      <span class="liveRow">● WE'RE LIVE</span>
+    </div>
+  </div>
+
+  <!-- right dial ring: THE hero numeral (mm:ss) + fraction-elapsed arc -->
+  <div class="dialWrap">
+    <svg class="dial" viewBox="0 0 320 320">
+      <circle class="track" cx="160" cy="160" r="140"></circle>
+      <circle class="prog" id="prog" cx="160" cy="160" r="140" transform="rotate(-90 160 160)"></circle>
+    </svg>
+    <div class="dialMid">
+      <div class="dTime">
+        <span class="dcell" id="d0"><b>–</b></span><span class="dcell" id="d1"><b>–</b></span><span class="dcell" id="d2"><b>–</b></span><span class="dcolon">:</span><span class="dcell" id="d3"><b>–</b></span><span class="dcell" id="d4"><b>–</b></span>
+      </div>
+      <div class="plab" id="dLab">STAND BY</div>
+    </div>
+    <div class="dcap">SQUAD HELD · EP <span data-ep>128</span></div>
+  </div>
+
+  <!-- watermark -->
+  <div class="wmark">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <!-- bottom ticker -->
+  <div class="ticker"><div class="tk" id="tk"><span id="tA"></span><span id="tB"></span></div></div>
+
+  <div class="sweep" id="sweep"></div>
+
+  <div class="help" id="help">
+    <b>BRB — AMBER BREATH</b>
+    <span>?t=600 &nbsp;|&nbsp; ?t=2026-01-01T10:00:00Z — countdown target</span><br>
+    <span>?ep=128 · ?title= · ?sub= — content overrides</span><br>
+    <span>?obs=1 transparent bg · ?wm=0 hide watermark</span><br>
+    <span>H — help · V — variants (none)</span>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var q = new URLSearchParams(location.search);
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---- URL contract ---- */
+if (q.get('obs') === '1') document.body.classList.add('obs');
+if (q.get('wm') === '0') document.body.classList.add('nowm');
+if (q.get('title') !== null) document.querySelector('[data-title]').textContent = q.get('title');
+if (q.get('sub') !== null) document.querySelector('[data-sub]').textContent = q.get('sub');
+var ep = q.get('ep') || '128';
+document.querySelectorAll('[data-ep]').forEach(function(n){ n.textContent = ep; });
+
+/* ---- ticker: EPISODE No. <ep> ◆ @smileke ◆ smile.co.ke ◆ #SmileSquad looping ----
+   half must stay ≥ viewport (1920px) so the -50% marquee wraps with no dead gap */
+(function(){
+  var unit = '<b>EPISODE No. '+ep+'</b><i>◆</i><b>@smileke</b><i>◆</i><b>smile.co.ke</b><i>◆</i><b>#SmileSquad</b><i>◆</i>';
+  var seq = '';
+  for (var k=0;k<6;k++) seq += unit;
+  document.getElementById('tA').innerHTML = seq;
+  document.getElementById('tB').innerHTML = seq;
+})();
+
+/* ---- scale-to-fit ---- */
+var stage = document.getElementById('stage');
+function fit(){
+  var sc = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+  stage.style.transform = 'translate(-50%,-50%) scale(' + sc + ')';
+}
+window.addEventListener('resize', fit); fit();
+
+/* ---- live EAT clock ---- */
+var clk = document.getElementById('clk');
+var fmt;
+try { fmt = new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }
+catch(e){ fmt = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }
+function tickClk(){ clk.textContent = fmt.format(new Date()); }
+tickClk(); setInterval(tickClk,1000);
+
+/* ---- rolling digits: dial hero numeral (mm:ss, rolling seconds) ---- */
+var dcells = [document.getElementById('d0'), document.getElementById('d1'),
+              document.getElementById('d2'), document.getElementById('d3'),
+              document.getElementById('d4')];
+var dLab = document.getElementById('dLab');
+var d0on = false; /* 3-digit minutes when countdown > 99:59 */
+var ROLL = 420, ROLL_EASE = 'cubic-bezier(.2,.9,.25,1)';
+
+function pad2(n){ return (n<10?'0':'')+n; }
+function visCells(){ return d0on ? dcells : dcells.slice(1); }
+function syncD0(on){
+  if (d0on === on) return;
+  d0on = on;
+  dcells[0].style.display = on ? 'flex' : 'none';
+}
+function rollTo(cell, ch, idx){
+  var b = cell.querySelector('b');
+  if (!b || b.textContent === ch) return;
+  if (reduced){ b.textContent = ch; return; }
+  var nb = document.createElement('b');
+  nb.textContent = ch;
+  cell.appendChild(nb);
+  var delay = idx*55;
+  b.animate([{transform:'translateY(0)'},{transform:'translateY(-105%)'}],
+    {duration:ROLL, delay:delay, easing:ROLL_EASE, fill:'forwards'});
+  nb.animate([{transform:'translateY(105%)'},{transform:'translateY(0)'}],
+    {duration:ROLL, delay:delay, easing:ROLL_EASE, fill:'forwards'});
+  setTimeout(function(){
+    /* keep the newest glyph (last in DOM) — safe against overlapping rolls */
+    var bs = cell.querySelectorAll('b');
+    if (bs.length){
+      var keep = bs[bs.length-1];
+      Array.prototype.forEach.call(bs, function(x){ if (x !== keep) x.remove(); });
+      keep.getAnimations().forEach(function(a){ a.cancel(); });
+    }
+  }, ROLL + delay + 40);
+}
+function setDialImmediate(arr){
+  visCells().forEach(function(c,i){ var b=c.querySelector('b'); if (b) b.textContent = arr[i]; });
+}
+/* entry roll-up: glyphs slide in from below, staggered */
+function rollIn(){
+  if (reduced) return;
+  visCells().forEach(function(c,i){
+    var b = c.querySelector('b'); if (!b) return;
+    b.animate([{transform:'translateY(105%)'},{transform:'translateY(0)'}],
+      {duration:ROLL, delay:480+i*70, easing:ROLL_EASE, fill:'backwards'});
+  });
+}
+
+/* ---- countdown engine ---- */
+var DEFAULT_S = 600;
+var tParam = q.get('t');
+var mode = 'standby', target = null, total = 0, liveFired = false;
+
+function currentArr(){
+  var rem = Math.max(0, Math.round((target - Date.now())/1000));
+  var mm = Math.min(999, Math.floor(rem/60));
+  var three = mm >= 100;
+  var ms = three ? String(mm) : pad2(mm);
+  return { rem:rem, three:three, arr: ms.split('').concat(pad2(rem%60).split('')) };
+}
+/* no ?t: hold --:-- STAND BY for 3s, then animate into the 10:00 count */
+syncD0(false);
+setDialImmediate(['-','-','-','-']);
+dLab.textContent = 'STAND BY';
+
+if (tParam !== null){
+  var ms = null;
+  if (/^-?\d+(\.\d+)?$/.test(tParam)) ms = Date.now() + parseFloat(tParam)*1000;
+  else { var d = new Date(tParam); if (!isNaN(d.getTime())) ms = d.getTime(); }
+  if (ms !== null && ms > Date.now() - 1000){
+    target = Math.max(ms, Date.now());
+    total = Math.max(1, Math.round((target - Date.now())/1000));
+    mode = 'run';
+    dLab.textContent = 'BACK ON AIR';
+    var c0 = currentArr();
+    syncD0(c0.three);
+    setDialImmediate(c0.arr);
+  }
+}
+if (mode === 'standby'){
+  setTimeout(function(){
+    if (mode !== 'standby') return; /* a valid ?t landed meanwhile — never clobber */
+    mode = 'run'; total = DEFAULT_S; target = Date.now() + DEFAULT_S*1000;
+    dLab.textContent = 'BACK ON AIR';
+    if (!reduced) dLab.animate([{opacity:0},{opacity:1}],{duration:200,easing:'ease-out'});
+  }, 3000);
+}
+setTimeout(function(){
+  rollIn();
+  setTimeout(function(){ arcEntry(); }, 650);
+}, 60);
+var prog = document.getElementById('prog');
+var CIRC = 2*Math.PI*140;
+prog.style.strokeDasharray = CIRC;
+prog.style.strokeDashoffset = CIRC;
+var curFrac = 0, arcRaf = null;
+function arcTo(f, dur){
+  if (reduced){ curFrac = f; prog.style.strokeDashoffset = CIRC*(1-f); return; }
+  if (arcRaf) cancelAnimationFrame(arcRaf);
+  var from = curFrac, t0 = performance.now();
+  function step(now){
+    var p = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-p,3);
+    curFrac = from + (f-from)*e;
+    prog.style.strokeDashoffset = CIRC*(1-curFrac);
+    if (p < 1) arcRaf = requestAnimationFrame(step);
+  }
+  arcRaf = requestAnimationFrame(step);
+}
+function arcEntry(){
+  var f = 0;
+  if (mode === 'run' && total > 0){ f = Math.max(0, Math.min(1, 1 - (target-Date.now())/1000/total)); }
+  arcTo(f, 1300);
+}
+
+/* ---- render loop ---- */
+var slab = document.getElementById('slab');
+var jump = document.getElementById('jump');
+var haloBloom = document.getElementById('haloBloom');
+var sweep = document.getElementById('sweep');
+
+function fireLive(){
+  liveFired = true;
+  slab.classList.add('live','slam');
+  jump.classList.add('go');
+  haloBloom.classList.add('go');
+  sweep.classList.add('go');
+  dLab.textContent = 'ON AIR';
+  arcTo(1, 600);
+}
+function render(){
+  if (mode !== 'run' || liveFired) return;
+  var c = currentArr();
+  syncD0(c.three);
+  visCells().forEach(function(cell,i){ rollTo(cell, c.arr[i], i); });
+  if (total > 0) arcTo(Math.max(0, Math.min(1, 1 - c.rem/total)), 600);
+  if (c.rem === 0) fireLive();
+}
+setInterval(render, 250);
+
+/* ---- ledger baseline: last hairline sits on the amber slab's bottom edge ---- */
+var ledgerEl = document.getElementById('ledger');
+function alignLedger(){
+  if (!ledgerEl || !slab) return;
+  var st = stage.getBoundingClientRect();
+  var sc = st.width/1920 || 1;
+  var sb = (slab.getBoundingClientRect().bottom - st.top)/sc;
+  var lb = (ledgerEl.getBoundingClientRect().bottom - st.top)/sc;
+  var cur = parseFloat(getComputedStyle(ledgerEl).top);
+  if (isNaN(cur)) cur = 0;
+  ledgerEl.style.top = (cur + (sb - lb)) + 'px';
+}
+if (document.fonts && document.fonts.ready){
+  document.fonts.ready.then(function(){ setTimeout(alignLedger, 1500); });
+}
+setTimeout(alignLedger, 2400); /* belt & braces after entry settles */
+
+/* ---- keys: H toggles help (no internal variants -> V is a no-op) ---- */
+document.addEventListener('keydown', function(e){
+  var k = (e.key || '').toLowerCase();
+  if (k === 'h') document.getElementById('help').classList.toggle('on');
+});
+})();
+</script>
+</body>
+</html>

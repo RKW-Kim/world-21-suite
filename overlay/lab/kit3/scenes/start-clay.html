@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>smile.co.ke — STARTING SOON · CLAY YELLOW FIELD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   smile kit3 · start-clay — YELLOW FIELD (Clay q9_10 DNA)
+   Field = yellow. Ink = the accent. One huge organic ink blob
+   carries 3 ink bento cards; light-mode HUD lives on yellow.
+   ============================================================ */
+:root{
+  --yellow:#FFCE00;
+  --yellow-hot:#E8A800;
+  --ink:#0A0900;
+  --paper:#F5F1E6;
+  --muted:#9C9484;
+  --card:#1C1914;
+  --hair:#2A251C;
+  --glide:cubic-bezier(.2,.9,.25,1);
+  --snap:cubic-bezier(.85,0,.15,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--yellow);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body.obs{background:transparent}
+#wrap{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+#stage{position:relative;width:1920px;height:1080px;background:var(--yellow);overflow:hidden;transform-origin:center}
+
+/* ---------- blob (mid-ground field cut) ---------- */
+#blob{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block;
+  animation:blobIn .7s var(--snap) both}
+@keyframes blobIn{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:scale(1)}}
+
+/* ---------- foreground HUD (on yellow) ---------- */
+.hud{position:absolute;inset:0;z-index:30;pointer-events:none}
+#brand{position:absolute;left:40px;top:32px;display:flex;align-items:center;gap:14px;
+  animation:rise .55s var(--glide) both .08s}
+#brand svg{width:40px;height:40px;display:block}
+#brand .name{font-weight:900;font-size:25px;line-height:1;color:var(--ink);letter-spacing:.01em}
+#eatchip{position:absolute;right:40px;top:32px;height:44px;display:flex;align-items:center;gap:12px;
+  padding:0 18px;background:#FFFFFF;border:2px solid #0A0900;border-radius:20px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:500;
+  letter-spacing:.14em;color:var(--ink);animation:rise .55s var(--glide) both .16s}
+#eatchip .clock{font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.1em}
+#eatchip .vsep{width:1px;height:14px;background:rgba(10,9,0,.28)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---------- ink bento cards (on the blob) ---------- */
+.card{position:absolute;background:var(--card);border:1px solid var(--hair);border-radius:20px;z-index:10;
+  animation:snapIn .64s var(--snap) both}
+@keyframes snapIn{
+  0%{opacity:0;transform:translateY(30px) scale(.985)}
+  62%{opacity:1;transform:translateY(-3px) scale(1.002)}
+  82%{transform:translateY(2px)}
+  100%{opacity:1;transform:translateY(0)}}
+#hero{left:555px;top:409px;width:518px;height:306px;padding:24px 28px;display:flex;flex-direction:column;animation-delay:.30s}
+#queue{left:1112px;top:364px;width:320px;height:228px;padding:20px 24px;animation-delay:.38s}
+#signal{left:1112px;top:646px;width:320px;height:154px;padding:18px 24px;animation-delay:.46s}
+
+.krow{display:flex;justify-content:space-between;align-items:baseline}
+.kicker{font-weight:800;font-size:20px;line-height:1;letter-spacing:.18em;color:var(--paper)}
+#target{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.dwrap{flex:1;display:flex;align-items:center;justify-content:center}
+#digits{display:flex;align-items:center;font-weight:900;font-size:112px;line-height:1;color:var(--paper);
+  font-variant-numeric:tabular-nums;--cw:.62em}
+#digits .cell{width:var(--cw);height:1em;overflow:hidden;display:block;text-align:center;position:relative}
+#digits .cell + .cell{margin-left:.015em}
+#digits .strip{display:block;transition:transform 420ms var(--glide);will-change:transform}
+#digits .strip.noT{transition:none}
+#digits .gl{display:block;height:1em;line-height:1}
+#digits .drop{display:block;animation:dropIn .52s var(--glide) both}
+#digits .cell:nth-child(1) .drop{animation-delay:.50s}
+#digits .cell:nth-child(2) .drop{animation-delay:.54s}
+#digits .cell:nth-child(4) .drop{animation-delay:.58s}
+#digits .cell:nth-child(5) .drop{animation-delay:.62s}
+#digits .cell:nth-child(7) .drop{animation-delay:.66s}
+#digits .cell:nth-child(8) .drop{animation-delay:.70s}
+@keyframes dropIn{from{opacity:0;transform:translateY(.45em)}to{opacity:1;transform:translateY(0)}}
+#digits .colon{width:.34em;text-align:center;color:rgba(245,241,230,.55);animation:colonPulse 2.4s ease-in-out infinite}
+@keyframes colonPulse{0%,100%{opacity:.45}40%{opacity:1}60%{opacity:.85}}
+#digits .cell.st{display:block}
+.hrule{border-top:1px solid var(--hair)}
+.subrow{padding-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;color:var(--muted)}
+
+/* live chip — the ONE glow lives here */
+#livechip{position:absolute;top:-19px;right:26px;display:none;background:var(--yellow);color:var(--ink);
+  font-weight:800;font-size:18px;line-height:1;letter-spacing:.06em;padding:13px 18px;border-radius:20px;
+  transform:rotate(-3deg);z-index:6;box-shadow:0 0 22px rgba(255,206,0,.38)}
+#livechip .dot{display:inline-block;margin-right:9px;transform:translateY(-1px)}
+body.live #livechip{display:block;animation:slam .5s var(--spring) both}
+@keyframes slam{from{opacity:0;transform:rotate(-3deg) scale(1.15) translateY(6px)}to{opacity:1;transform:rotate(-3deg) scale(1) translateY(0)}}
+
+/* queue card */
+.qhead{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;color:var(--muted);
+  padding-bottom:12px;border-bottom:1px solid var(--hair)}
+.qrow{display:flex;align-items:center;gap:16px;height:50px}
+.qrow + .qrow{border-top:1px solid var(--hair)}
+.qidx{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--muted);width:24px}
+.qname{flex:1;font-weight:800;font-size:26px;line-height:1;letter-spacing:-.02em;color:var(--paper)}
+.qarrow{width:20px;height:20px;flex:none}
+.qarrow svg{display:block;width:100%;height:100%}
+.qrow.next .qarrow path{stroke:var(--yellow)}
+
+/* signal card */
+.srow{display:flex;align-items:baseline;gap:10px}
+.slabel{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;color:var(--muted)}
+.snum{font-weight:900;font-size:34px;line-height:1;letter-spacing:-.01em;color:var(--yellow);font-variant-numeric:tabular-nums}
+.strack{margin-top:14px;height:6px;background:var(--hair);border-radius:20px;position:relative;overflow:visible}
+.sfill{width:98%;height:100%;background:var(--yellow-hot);border-radius:20px;position:relative}
+.sfill::after{content:'';position:absolute;right:-1px;top:-2px;width:10px;height:10px;border-radius:50%;
+  background:var(--yellow-hot);animation:tipPulse 2.8s ease-in-out infinite}
+@keyframes tipPulse{0%,100%{opacity:.15;transform:scale(.8)}40%{opacity:.9;transform:scale(1)}60%{opacity:.8;transform:scale(1)}}
+.smeta{margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;color:rgba(245,241,230,.78)}
+
+/* ---------- mono status row (ink shelf under the hero card) ---------- */
+#statusrow{position:absolute;left:680px;top:758px;z-index:12;font-family:'IBM Plex Mono',monospace;
+  font-size:13px;font-weight:500;letter-spacing:.14em;color:rgba(245,241,230,.82);
+  white-space:nowrap;animation:snapIn .64s var(--snap) both .54s}
+#statusrow .chev{color:var(--yellow-hot);margin-right:10px}
+
+/* ---------- sticker face on blob edge ---------- */
+#sticker{position:absolute;left:342px;top:408px;width:184px;height:184px;z-index:20;border-radius:50%;
+  transform:rotate(-6deg);box-shadow:0 0 0 6px var(--ink),10px 10px 0 0 var(--ink);
+  animation:popIn .6s var(--spring) both .22s}
+@keyframes popIn{from{opacity:0;transform:rotate(-9deg) scale(.92)}to{opacity:1;transform:rotate(-6deg) scale(1)}}
+#sticker svg{width:100%;height:100%;display:block;border-radius:50%;
+  animation:breathe 3.4s ease-in-out infinite 1.4s;transform-origin:50% 50%}
+@keyframes breathe{0%{transform:scale(1)}38%{transform:scale(1.025)}62%{transform:scale(1.012)}100%{transform:scale(1)}}
+#sticker .mouth{transform-box:fill-box;transform-origin:50% 50%}
+#sticker .mouth.wink{animation:wink .42s ease both}
+@keyframes wink{0%{transform:scaleY(1)}42%{transform:scaleY(.14)}100%{transform:scaleY(1)}}
+
+/* ---------- ticker ---------- */
+#ticker{position:absolute;left:0;right:0;bottom:0;height:48px;background:var(--ink);overflow:hidden;
+  display:flex;align-items:center;z-index:40;animation:tkIn .6s var(--snap) both .52s}
+@keyframes tkIn{from{transform:translateY(102%)}to{transform:translateY(0)}}
+#tk{display:flex;width:max-content;animation:mq 36s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+#tk .half{display:flex;align-items:center;white-space:nowrap}
+#tk .ti{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13px;letter-spacing:.1em;color:var(--paper)}
+#tk .dia{font-style:normal;font-weight:400;font-size:11px;color:var(--yellow);margin:0 22px}
+
+/* ---------- watermark + help ---------- */
+#wm{position:absolute;left:30px;bottom:70px;width:42px;height:42px;opacity:.14;z-index:25;animation:fade .5s ease both 1.0s}
+#wm svg{display:block;width:100%;height:100%;filter:brightness(0)}
+#wm.off{display:none}
+#hint{position:absolute;right:30px;bottom:70px;z-index:45;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:.08em;color:rgba(10,9,0,.55);animation:fade .5s ease both .9s}
+#hint.off{display:none}
+@keyframes fade{from{opacity:0}to{opacity:.14}}
+#hint{animation-name:fadeH}
+@keyframes fadeH{from{opacity:0}to{opacity:1}}
+
+/* ---------- LIVE sweep (ink on yellow, inverted) ---------- */
+#sweep{position:absolute;top:-40px;left:0;width:230px;height:1160px;background:var(--ink);
+  outline:2px solid rgba(255,249,232,.5);transform:translateX(-420px) skewX(-14deg);
+  z-index:60;pointer-events:none;display:none}
+body.live #sweep{display:block}
+#sweep.go{animation:sweepGo .62s var(--snap) forwards}
+@keyframes sweepGo{from{transform:translateX(-420px) skewX(-14deg)}to{transform:translateX(2420px) skewX(-14deg)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- mid-ground: one huge asymmetric organic ink blob — 2 soft lobes + flat diagonal cut (smooth by JS) -->
+  <svg id="blob" viewBox="0 0 1920 1080" aria-hidden="true">
+    <path id="blobpath" fill="#0A0900" stroke="#E8A800" stroke-width="3"/>
+  </svg>
+
+  <!-- ink bento cards on the blob -->
+  <article class="card" id="hero">
+    <div class="krow">
+      <h1 class="kicker" data-title>ON AIR IN</h1>
+      <span id="target"></span>
+    </div>
+    <div class="dwrap"><div id="digits" aria-label="countdown"></div></div>
+    <div class="hrule"></div>
+    <div class="subrow" data-sub>MICS HOT · COFFEE BREWING · CHARTS LOADING.</div>
+    <div id="livechip"><span class="dot">●</span>WE'RE LIVE</div>
+  </article>
+
+  <article class="card" id="queue">
+    <div class="qhead">TODAY'S DESK</div>
+    <div class="qrow next">
+      <span class="qidx">01</span><span class="qname">MAILBAG</span>
+      <span class="qarrow"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4.5 16.5 10 11 15.5" stroke="#F5F1E6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="qrow">
+      <span class="qidx">02</span><span class="qname">HOT TAKES</span>
+      <span class="qarrow"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4.5 16.5 10 11 15.5" stroke="#F5F1E6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="qrow">
+      <span class="qidx">03</span><span class="qname">CHART DIVE</span>
+      <span class="qarrow"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10h13M11 4.5 16.5 10 11 15.5" stroke="#F5F1E6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </div>
+  </article>
+
+  <article class="card" id="signal">
+    <div class="srow">
+      <span class="slabel">SIGNAL</span><span class="snum">98%</span><span class="slabel">NOMINAL</span>
+    </div>
+    <div class="strack"><div class="sfill"></div></div>
+    <div class="smeta">PODCAST + SCREEN SHARE</div>
+  </article>
+
+  <!-- mono status row on the ink shelf under the hero -->
+  <div id="statusrow"><span class="chev">&gt;&gt;</span><span id="statustxt">STAND BY — DESK ARMS IN --:--</span></div>
+
+  <!-- brand sticker pinned on the blob edge (the one LARGE face) -->
+  <div id="sticker" aria-label="Smile mark">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><g class="mouth"><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+  </div>
+
+  <!-- foreground HUD on yellow -->
+  <header class="hud">
+    <div id="brand">
+      <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="name">SMILE.CO.KE</span>
+    </div>
+    <div id="eatchip">
+      <span>EAT · NAIROBI DESK</span>
+      <span class="vsep"></span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- bottom ticker -->
+  <footer id="ticker" aria-label="episode ticker"><div id="tk"></div></footer>
+
+  <!-- watermark + help -->
+  <div id="wm"><svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div id="hint" class="off">?t ?ep ?title ?sub ?obs ?wm · H HIDES</div>
+
+  <!-- LIVE beat sweep (ink on yellow) -->
+  <div id="sweep"></div>
+
+</div></div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+window.__errs = [];
+window.addEventListener('error', e => window.__errs.push(String(e.message || 'error')));
+window.addEventListener('unhandledrejection', () => window.__errs.push('unhandledrejection'));
+
+/* ---------- URL contract ---------- */
+const P = new URLSearchParams(location.search);
+if (P.get('obs') === '1') document.body.classList.add('obs');
+if (P.get('wm') === '0') $('#wm').classList.add('off');
+const ep = ((P.get('ep') || '').replace(/[^0-9]/g, '')) || '128';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (RM) document.body.classList.add('rm');
+const tOv = P.get('title'), sOv = P.get('sub');
+const labelEl = document.querySelector('[data-title]'), subEl = document.querySelector('[data-sub]');
+if (tOv) labelEl.textContent = tOv;
+if (sOv) subEl.textContent = sOv;
+
+/* ---------- blob: closed Catmull-Rom spline → smooth organic path ---------- */
+const ANCH = [[700,320],[1005,284],[1355,288],[1560,452],[1564,630],[1488,840],[1260,902],[1030,923],[872,921],[662,811],[450,700],[447,540],[495,408]];
+function crClosed(Pt){
+  const n = Pt.length; let d = `M ${Pt[0][0]} ${Pt[0][1]} `;
+  for (let i = 0; i < n; i++){
+    const p0 = Pt[(i-1+n)%n], p1 = Pt[i], p2 = Pt[(i+1)%n], p3 = Pt[(i+2)%n];
+    const c1 = [p1[0]+(p2[0]-p0[0])/6, p1[1]+(p2[1]-p0[1])/6];
+    const c2 = [p2[0]-(p3[0]-p1[0])/6, p2[1]-(p3[1]-p1[1])/6];
+    d += `C ${c1[0].toFixed(1)} ${c1[1].toFixed(1)}, ${c2[0].toFixed(1)} ${c2[1].toFixed(1)}, ${p2[0]} ${p2[1]} `;
+  }
+  return d + 'Z';
+}
+const BPATH = crClosed(ANCH);
+$('#blobpath').setAttribute('d', BPATH);
+/* sample the spline into a polygon for QA geometry */
+const PTS = [];
+for (let i = 0; i < ANCH.length; i++){
+  const p0 = ANCH[(i-1+ANCH.length)%ANCH.length], p1 = ANCH[i],
+        p2 = ANCH[(i+1)%ANCH.length], p3 = ANCH[(i+2)%ANCH.length];
+  const c1 = [p1[0]+(p2[0]-p0[0])/6, p1[1]+(p2[1]-p0[1])/6];
+  const c2 = [p2[0]-(p3[0]-p1[0])/6, p2[1]-(p3[1]-p1[1])/6];
+  for (let k = 1; k <= 32; k++){
+    const t = k/32, u = 1-t;
+    PTS.push([
+      u*u*u*p1[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*p2[0],
+      u*u*u*p1[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*p2[1]
+    ]);
+  }
+}
+function insideBlob(x, y){
+  let c = false;
+  for (let i = 0, j = PTS.length-1; i < PTS.length; j = i++){
+    const [xi, yi] = PTS[i], [xj, yj] = PTS[j];
+    if (((yi > y) !== (yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) c = !c;
+  }
+  return c;
+}
+function distSeg(px, py, ax, ay, bx, by){
+  const dx = bx-ax, dy = by-ay;
+  const L2 = dx*dx + dy*dy || 1;
+  let t = ((px-ax)*dx + (py-ay)*dy) / L2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+function blobMargin(x, y){
+  let m = 1e9;
+  for (let i = 0, j = PTS.length-1; i < PTS.length; j = i++)
+    m = Math.min(m, distSeg(x, y, PTS[j][0], PTS[j][1], PTS[i][0], PTS[i][1]));
+  return insideBlob(x, y) ? m : -m;
+}
+let blobFrac = 0;
+{
+  let a = 0;
+  for (let i = 0, j = PTS.length-1; i < PTS.length; j = i++)
+    a += PTS[j][0]*PTS[i][1] - PTS[i][0]*PTS[j][1];
+  blobFrac = Math.abs(a/2) / (1920*1080);
+}
+
+/* ---------- stage scale-to-fit ---------- */
+const stage = $('#stage');
+let curScale = 1;            /* shared with buildDigits so glyph measures divide out the fit scale */
+function fit(){
+  curScale = Math.min(innerWidth/1920, innerHeight/1080);
+  stage.style.transform = `scale(${curScale})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ---------- EAT clock (UTC+3) ---------- */
+const p2 = n => String(n).padStart(2, '0');
+function eatParts(ms){
+  const d = new Date(ms + 3*3600e3);
+  return [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(), d.getUTCMilliseconds()];
+}
+function clockTick(){
+  const [h, m, s] = eatParts(Date.now());
+  $('#clock').textContent = `${p2(h)}:${p2(m)}:${p2(s)}`;
+}
+setInterval(clockTick, 250); clockTick();
+function eatHM(ms){
+  const [h, m] = eatParts(ms);
+  return `${p2(h)}:${p2(m)}`;
+}
+
+/* ---------- ticker ---------- */
+const grp = [`EPISODE No. ${ep}`, '@smileke', 'smile.co.ke', '#SmileSquad'];
+const seq = grp.map(x => `<span class="ti">${x}</span><b class="dia" aria-hidden="true">◆</b>`).join('');
+$('#tk').innerHTML = `<span class="half">${seq.repeat(4)}</span><span class="half" aria-hidden="true">${seq.repeat(4)}</span>`;
+
+/* ---------- countdown engine ---------- */
+const digitsEl = $('#digits'), statusTxt = $('#statustxt');
+let cells = [], fmt = 0, target = null, mode = 'boot', liveFired = false;
+
+function measureCellW(){
+  if (!cells.length) return;
+  const meas = document.createElement('span');
+  meas.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit';
+  meas.textContent = '08';
+  digitsEl.appendChild(meas);
+  const w = (meas.getBoundingClientRect().width / curScale) / 2 + 1;
+  digitsEl.style.setProperty('--cw', w.toFixed(1) + 'px');
+  meas.remove();
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureCellW);
+
+function buildDigits(n){
+  fmt = n; digitsEl.innerHTML = ''; cells = [];
+  const pattern = n === 4 ? [0,0,':',0,0] : [0,0,':',0,0,':',0,0];
+  pattern.forEach(p => {
+    if (p === ':'){
+      const c = document.createElement('span');
+      c.className = 'colon'; c.textContent = ':';
+      digitsEl.appendChild(c);
+    } else {
+      const cell = document.createElement('span'); cell.className = 'cell';
+      const drop = document.createElement('span'); drop.className = 'drop';
+      const strip = document.createElement('span'); strip.className = 'strip noT';
+      for (let g = 0; g < 10; g++){
+        const gl = document.createElement('span'); gl.className = 'gl'; gl.textContent = g;
+        strip.appendChild(gl);
+      }
+      drop.appendChild(strip); cell.appendChild(drop); digitsEl.appendChild(cell);
+      cells.push({ strip, d: -1 });
+    }
+  });
+  /* measure true tabular digit advance → cell width var (re-run when webfonts land) */
+  measureCellW();
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    cells.forEach(c => c.strip.classList.remove('noT'))));
+}
+function setDigits(str){
+  const changed = [];
+  cells.forEach((c, i) => {
+    const v = +str[i];
+    if (c.d !== v){ c.d = v; changed.push([c, v]); }
+  });
+  changed.forEach(([c, v], k) => {
+    c.strip.style.transitionDelay = (RM ? 0 : k*45) + 'ms';
+    c.strip.style.transform = `translateY(${-v}em)`;
+  });
+}
+function showDash(){
+  digitsEl.innerHTML = '';
+  '--:--'.split('').forEach(ch => {
+    const s = document.createElement('span');
+    s.className = ch === ':' ? 'colon' : 'cell st';
+    s.textContent = ch;
+    digitsEl.appendChild(s);
+  });
+}
+function parseT(){
+  const raw = (P.get('t') || '').trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Date.now() + (+raw)*1000;
+  const m = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (m){
+    const [h, mi] = eatParts(Date.now());
+    const base = Date.now() - (h*3600 + mi*60)*1000;          /* EAT midnight → ms */
+    let ms = base + (+m[1])*3600e3 + (+m[2])*60e3 + (m[3] ? (+m[3])*1000 : 0) - 3*3600e3;
+    while (ms <= Date.now()) ms += 86400e3;
+    return ms;
+  }
+  const d = Date.parse(raw);
+  return isNaN(d) ? null : d;
+}
+function renderCount(remain){
+  const h = Math.floor(remain/3600), m = Math.floor(remain%3600/60), s = remain%60;
+  const need6 = h > 0;
+  if (fmt !== (need6 ? 6 : 4)) buildDigits(need6 ? 6 : 4);
+  const str = need6
+    ? p2(Math.min(h,99)) + p2(m) + p2(s)
+    : p2(m) + p2(s);
+  setDigits(str);
+  statusTxt.textContent = 'DESK ARMS IN ' + p2(Math.floor(remain/60)) + ':' + p2(remain%60);
+  $('#target').textContent = 'TARGET ' + eatHM(target) + ' EAT';
+  if (remain <= 0 && !liveFired){ liveFired = true; mode = 'live'; live(); }
+}
+function tick(){
+  if (mode !== 'count') return;
+  renderCount(Math.max(0, Math.ceil((target - Date.now())/1000)));
+}
+function live(){
+  document.body.classList.add('live');
+  $('#sweep').classList.add('go');
+  statusTxt.textContent = "DESK ARMS HOT — WE'RE LIVE";
+  const mouth = $('#sticker .mouth');
+  if (mouth && !RM){
+    mouth.classList.add('wink');
+    setTimeout(() => mouth.classList.remove('wink'), 480);
+  }
+  clearInterval(timer);
+}
+let timer = null;
+function startTimer(){ clearInterval(timer); timer = setInterval(tick, 200); }
+
+target = parseT();
+if (target == null){
+  mode = 'standby';
+  labelEl.textContent = 'STAND BY';
+  statusTxt.textContent = 'STAND BY — DESK ARMS IN --:--';
+  showDash();
+  setTimeout(() => {
+    target = Date.now() + 600000;
+    labelEl.textContent = tOv || 'ON AIR IN';
+    mode = 'count';
+    tick(); startTimer();
+  }, 3000);
+} else {
+  mode = 'count';
+  tick(); startTimer();
+}
+
+/* ---------- keys ---------- */
+addEventListener('keydown', e => {
+  if (e.key === 'h' || e.key === 'H') $('#hint').classList.toggle('off');
+  /* V reserved — no internal variants on this scene */
+});
+
+/* ---------- QA hooks ---------- */
+window.__qa = function(){
+  const r = el => { const b = el.getBoundingClientRect();
+    return [+b.x.toFixed(1), +b.y.toFixed(1), +b.width.toFixed(1), +b.height.toFixed(1)]; };
+  const ids = ['brand','eatchip','hero','queue','signal','sticker','wm','ticker','hint','digits','statusrow'];
+  const rects = {}; ids.forEach(id => { const el = document.getElementById(id); if (el) rects[id] = r(el); });
+  const outside = Object.entries(rects)
+    .filter(([k, v]) => k !== 'digits' && (v[0] < -0.6 || v[1] < -0.6 || v[0]+v[2] > 1920.6 || v[1]+v[3] > 1080.6))
+    .map(x => x[0]);
+  const of = [];
+  document.querySelectorAll('#stage *').forEach(el => {
+    if (el.offsetParent && el.clientWidth > 0 && el.children.length === 0 &&
+        el.textContent.trim() && el.scrollWidth > el.clientWidth + 1)
+      of.push(el.id || el.className || el.tagName);
+  });
+  const margins = {};
+  [['hero','#hero'],['queue','#queue'],['signal','#signal'],['statusrow','#statusrow']].forEach(([k, sel]) => {
+    const [x, y, w, h] = rects[k];
+    const pts = [[x,y],[x+w,y],[x,y+h],[x+w,y+h],[x+w/2,y],[x+w/2,y+h],[x,y+h/2],[x+w,y+h/2]];
+    margins[k] = Math.round(Math.min(...pts.map(p => blobMargin(p[0], p[1]))));
+  });
+  const kick = parseFloat(getComputedStyle($('.kicker')).fontSize);
+  const dig = parseFloat(getComputedStyle($('.cell') || digitsEl).fontSize);
+  return JSON.stringify({
+    errs: window.__errs, scale: stage.style.transform, rects, outside, overflow: of,
+    heroRatio: +(dig/kick).toFixed(2), blobMargins: margins,
+    blobFrac: +blobFrac.toFixed(4),
+    cd: { mode, live: liveFired, label: labelEl.textContent,
+          digits: digitsEl.textContent.replace(/(\r|\n)/g,''),
+          target: $('#target').textContent },
+    clock: $('#clock').textContent,
+    tkHasEp: $('#tk').textContent.includes('EPISODE No. ' + ep),
+    wmHidden: $('#wm').classList.contains('off'),
+    hintOff: $('#hint').classList.contains('off'),
+    cellW: getComputedStyle(digitsEl).getPropertyValue('--cw').trim()
+  });
+};
+})();
+</script>
+</body>
+</html>
