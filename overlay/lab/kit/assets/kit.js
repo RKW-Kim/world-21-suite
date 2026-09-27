@@ -11,19 +11,21 @@
      ?g=1              judge mode — HUD off
      ?obs=1            OBS: transparent page, HUD off, no chrome
      ?wm=0|tl|tr|bl|br watermark off / position (default tl)
-   Keys:  V next lane · 1-6 direct lane · G judge · C toggle chrome
+   Keys:  V next lane · 1-6 direct lane · G judge
    ═══════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
 var Q=new URLSearchParams(location.search);
 var LANES=['a','b','c','d','e','f'];
+var MATS=['obsidian','frost','chameleon'];
+var WMS=['0','off','tl','tr','bl','br'];
 
 /* ── state ── */
 var S={
   v: (LANES.indexOf(Q.get('v'))>=0?Q.get('v'):'a'),
   g: Q.get('g')==='1',
   obs: Q.get('obs')==='1',
-  wm: Q.get('wm')!==null?(Q.get('wm')||'tl'):'tl',
+  wm: (WMS.indexOf(Q.get('wm'))>=0?Q.get('wm'):'tl'),
   cd: Q.get('cd')||null
 };
 window.KIT=S;
@@ -60,7 +62,8 @@ addEventListener('keydown',function(e){
 });
 
 /* ── watermark positioning (kit.css renders tl/tr/bl/br) ── */
-addEventListener('DOMContentLoaded',function(){
+onReady(function(){
+  if(document.querySelector('.kit-ticker'))document.body.classList.add('has-ticker');
   var wms=document.querySelectorAll('.kit-wm');
   wms.forEach(function(w){
     if(S.wm==='0'||S.wm==='off'){w.style.display='none';return}
@@ -75,18 +78,25 @@ addEventListener('DOMContentLoaded',function(){
 });
 
 /* ── countdown engine — monotonic, tab-safe, no drift ── */
+var CD_MAX=359999; /* 99:59:59 — nothing longer is a countdown */
 function parseCD(v){
   if(v===null||v==='')return null;
-  if(/^\d+$/.test(v))return +v;
+  if(/^\d+$/.test(v))return Math.min(+v,CD_MAX);
+  if(!/^\d{1,3}(:\d{1,2}){0,2}$/.test(v))return null; /* rejects '5:' '1:2:3:4' */
   var p=v.split(':').map(Number);if(p.some(isNaN))return null;
-  return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1];
+  var s=p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1];
+  return Math.min(s,CD_MAX);
+}
+function onReady(fn){
+  if(document.readyState==='loading')addEventListener('DOMContentLoaded',fn);
+  else fn();
 }
 function fmt(t){
   var h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60,pp=function(n){return (n<10?'0':'')+n};
   return h>0? h+':'+pp(m)+':'+pp(s) : m+':'+pp(s);
 }
 var total=parseCD(S.cd);
-addEventListener('DOMContentLoaded',function(){
+onReady(function(){
   document.querySelectorAll('.cd').forEach(function(el){
     var base=total!==null?total:parseCD(el.dataset.cd||el.textContent.trim())||0;
     var t0=performance.now(),last=-1;
@@ -116,10 +126,10 @@ window.kitTicker=function(root,items){
   tr.innerHTML=html+html; /* double track → seamless -50% loop */
 };
 
-/* ── material helper for lane A pages that include liquid-glass ── */
-addEventListener('DOMContentLoaded',function(){
+/* ── material override for lane A glass — spine-level, all pages ── */
+onReady(function(){
   var t=Q.get('t');
-  if(t&&window.LG&&document.querySelector('.lg')){ /* pages opt in */
+  if(t&&MATS.indexOf(t)>=0&&document.querySelector('.lg')){ /* unknown t → keep authored default */
     document.querySelectorAll('.lg').forEach(function(el){
       el.classList.remove('lg--obsidian','lg--frost','lg--chameleon');
       el.classList.add('lg--'+t);
