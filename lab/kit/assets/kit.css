@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════
+   SMILE KIT — SCENE SUITE SPINE · v1
+   Shared design system for the livestream scene kit.
+   Committed world: smile.co.ke fintech brand · Inter body /
+   Space Grotesk display (existing suite voice) + lane display faces.
+   Logo law: assets/smile-logo.svg · smile-mark.svg · smile-face.svg
+   are used VERBATIM. Never restyled, recolored, or re-drawn.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Archivo:wght@500;600;700;800;900&display=swap');
+
+:root{
+  /* brand.json — the palette law */
+  --yellow:#FFC107; --yellow-hot:#F5A623;
+  --ink:#0a0a0a; --panel:#141414; --panel-2:#1b1b1b; --line:#2a2a2a;
+  --muted:#8c8c8c; --paper:#ffffff;
+  --up:#0ECB81; --down:#F6465D; --up-soft:#5BE9B0; --down-soft:#FF8A98;
+  --sky:#3FB6FF; --live:#F6465D;
+  /* suite voices */
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-disp:'Space Grotesk','Inter',sans-serif;
+  /* stage */
+  --u:1px; /* unit scale — set by kit.js to viewport-fit */
+  --safe:calc(48*var(--u)); /* broadcast-safe margin */
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font-body);
+  background:var(--ink); color:var(--paper);
+  overflow:hidden; -webkit-font-smoothing:antialiased;
+  user-select:none;
+}
+img{display:block}
+
+/* ── stage ─ the full-screen scene canvas ─────────────────────── */
+.stage{position:fixed;inset:0;width:100vw;height:100vh;overflow:hidden}
+
+/* variant visibility: body[data-v] gates section[data-lane] */
+.scn{display:none;position:absolute;inset:0}
+body[data-v="a"] .scn[data-lane="a"],
+body[data-v="b"] .scn[data-lane="b"],
+body[data-v="c"] .scn[data-lane="c"],
+body[data-v="d"] .scn[data-lane="d"],
+body[data-v="e"] .scn[data-lane="e"],
+body[data-v="f"] .scn[data-lane="f"]{display:grid}
+
+/* ── bare watermark — converged verdict: bare + L 72px ────────── */
+.kit-wm{position:absolute;z-index:60;display:flex;align-items:center;
+  gap:calc(72px*.20);padding:calc(72px*.14) calc(72px*.20);
+  pointer-events:none}
+.kit-wm img{height:72px;width:auto}
+.kit-wm .wm-word{font-family:var(--font-disp);font-weight:700;
+  font-size:calc(72px*.34);letter-spacing:-.01em;line-height:1}
+.kit-wm.on-dark .wm-word{text-shadow:0 2px 14px rgba(0,0,0,.65)}
+.kit-wm.on-dark img{filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+.kit-wm[data-pos="tl"]{top:var(--safe);left:var(--safe)}
+.kit-wm[data-pos="tr"]{top:var(--safe);right:var(--safe);flex-direction:row-reverse}
+.kit-wm[data-pos="bl"]{bottom:var(--safe);left:var(--safe)}
+.kit-wm[data-pos="br"]{bottom:var(--safe);right:var(--safe);flex-direction:row-reverse}
+
+/* ── logo lockups — verbatim svg, layout only ─────────────────── */
+.lockup{display:flex;align-items:center;gap:calc(var(--u)*14)}
+.lockup.mark-only img{height:calc(var(--u)*54)}
+.lockup.full img{height:calc(var(--u)*40)}
+.lockup .lk-sub{font-size:calc(var(--u)*13);font-weight:600;color:var(--muted);
+  letter-spacing:.02em}
+.lockup.big img{height:calc(var(--u)*96)}
+
+/* ── live / status dot — marks REAL state only, never decorative ─ */
+.kit-status{display:inline-flex;align-items:center;gap:calc(var(--u)*10);
+  font-family:var(--font-disp);font-weight:700;letter-spacing:.14em;
+  font-size:calc(var(--u)*13)}
+.kit-status .dot{width:calc(var(--u)*9);height:calc(var(--u)*9);
+  border-radius:50%;background:var(--live)}
+.kit-status.is-idle .dot{background:var(--muted)}
+.kit-status.is-wait .dot{background:var(--yellow)}
+
+/* ── bottom ticker — single full-width strip (merged-ticker law) ─ */
+.kit-ticker{position:absolute;left:0;right:0;bottom:0;z-index:55;
+  display:flex;align-items:center;overflow:hidden;
+  height:calc(var(--u)*56)}
+.kit-ticker .tk-track{display:flex;align-items:center;gap:calc(var(--u)*44);
+  white-space:nowrap;will-change:transform;animation:tk-marq 38s linear infinite}
+.kit-ticker .tk-track > *{flex:none}
+@keyframes tk-marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.kit-ticker:hover .tk-track,.kit-ticker.still .tk-track{animation-play-state:paused}
+.kit-ticker img{height:calc(var(--u)*26)}
+.tk-item{display:inline-flex;align-items:center;gap:calc(var(--u)*8);
+  font-size:calc(var(--u)*14);font-weight:600}
+.tk-item .k{color:var(--muted);font-weight:500}
+.tk-item.up .v{color:var(--up)}
+.tk-item.down .v{color:var(--down)}
+
+/* ── countdown — tab-safe engine (kit.js) writes here ─────────── */
+.cd{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
+  font-kerning:none}
+.cd .sep{opacity:.55}
+.cd[data-done="1"]{opacity:.35}
+
+/* ── judge chrome — off in ?g=1 / ?obs=1 ───────────────────────── */
+.kit-hud{position:fixed;top:calc(var(--u)*10);left:50%;transform:translateX(-50%);
+  z-index:90;display:flex;gap:calc(var(--u)*8);align-items:center;
+  font-size:11px;font-weight:600;color:#fff;background:rgba(10,10,10,.72);
+  border:1px solid rgba(255,255,255,.14);border-radius:999px;
+  padding:6px 14px;backdrop-filter:blur(8px)}
+.kit-hud .hud-v{color:var(--yellow);font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase}
+.kit-hud .hud-hint{opacity:.55}
+body.g .kit-hud{display:none}
+
+/* ── OBS transparent mode — html+body go clear, chrome hides ──── */
+body.obs, body.obs body{background:transparent}
+body.obs .kit-hud{display:none}
+
+/* keyboard focus — visible, on-palette */
+:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+::selection{background:rgba(255,193,7,.32);color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){
+  .kit-ticker .tk-track{animation:none}
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
