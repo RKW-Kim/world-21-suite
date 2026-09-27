@@ -1,0 +1,200 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · Q&A</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<script src="assets/core.js"></script>
+<style>
+  body{overflow:hidden}
+  [hidden]{display:none!important}
+  [data-cd]{font-variant-numeric:tabular-nums}
+  [data-done="1"]{opacity:.35;transition:opacity .4s var(--ease-out)}
+  .scn{position:absolute;inset:0;z-index:2;overflow:hidden}
+  body[data-v="a"] .scn[data-take="b"]{display:none}
+  body[data-v="b"] .scn[data-take="a"]{display:none}
+
+  /* ---------- shared furniture ---------- */
+  .topbar{position:absolute;top:60px;left:90px;right:90px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+  .topbar .brand{font-size:40px}.topbar .brand .dw{width:48px;height:48px}
+  .livechip .dot{width:9px;height:9px;border-radius:50%;background:var(--up);animation:dotPulse 1.7s ease-in-out infinite}
+  @keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
+  @keyframes spinCW{to{transform:rotate(360deg)}}
+  @keyframes spinCCW{to{transform:rotate(-360deg)}}
+  @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+  /* ============ TAKE A · rising bubbles ============ */
+  [data-take="a"] .head{position:absolute;top:148px;left:0;right:0;text-align:center;z-index:5}
+  [data-take="a"] h1{font-family:var(--font-display);font-weight:800;font-size:76px;letter-spacing:-.03em;line-height:1;color:var(--paper)}
+  [data-take="a"] h1 .y{color:var(--yellow)}
+  [data-take="a"] .row{margin-top:26px;display:flex;gap:14px;justify-content:center}
+  .hubA{position:absolute;top:366px;left:calc(50% - 180px);width:360px;height:360px;display:grid;place-items:center;z-index:3}
+  .hubA::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.45);border-radius:50%;animation:spinCW 24s linear infinite}
+  .hubA::after{content:"";position:absolute;inset:24px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
+  .hubA .face{width:260px;height:260px;animation:faceBob 5.6s ease-in-out infinite}
+
+  .bub{position:absolute;z-index:2;max-width:280px;background:rgba(20,20,20,.9);border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:13px 18px 15px;box-shadow:0 12px 34px rgba(0,0,0,.42);animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s)}
+  .bub::after{content:"";position:absolute;bottom:-7px;left:18px;width:13px;height:13px;background:rgba(20,20,20,.9);border-radius:2px;transform:rotate(45deg);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .bub.flip{border-radius:18px 18px 4px 18px}
+  .bub.flip::after{left:auto;right:18px;border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .bub .h{display:block;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--yellow);margin-bottom:5px;text-transform:uppercase}
+  .bub .q{font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper)}
+  @keyframes bubRise{
+    0%{transform:translateY(430px) rotate(var(--tilt,0deg));opacity:0}
+    10%{opacity:1}
+    80%{opacity:1}
+    100%{transform:translateY(-830px) rotate(var(--tilt,0deg));opacity:0}
+  }
+
+  /* ============ TAKE B · glyph rain ============ */
+  .qg{position:absolute;z-index:1;font-family:var(--font-display);font-weight:800;line-height:1;user-select:none;pointer-events:none;animation:qFall var(--fd,14s) linear infinite var(--fdel,0s)}
+  .qg.y8{color:rgba(255,193,7,.08)}
+  .qg.ink{color:#161616}
+  .qg.ol{color:transparent;-webkit-text-stroke:2.5px rgba(255,193,7,.32)}
+  .qg.olw{color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.1)}
+  @keyframes qFall{0%{transform:translateY(-46vh) rotate(var(--rr,0deg))}100%{transform:translateY(112vh) rotate(calc(var(--rr,0deg) + 22deg))}}
+
+  .hubB{position:absolute;top:298px;left:calc(50% - 190px);width:380px;height:380px;display:grid;place-items:center;z-index:3}
+  .hubB::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.42);border-radius:50%;animation:spinCCW 26s linear infinite}
+  .hubB::after{content:"";position:absolute;inset:26px;border:1px solid rgba(255,193,7,.13);border-radius:50%}
+  .hubB .face{width:280px;height:280px;animation:faceBob 5.2s ease-in-out infinite}
+  [data-take="b"] .headB{position:absolute;top:650px;left:0;right:0;text-align:center;z-index:5}
+  [data-take="b"] .headB h1{font-family:var(--font-display);font-weight:800;font-size:96px;letter-spacing:-.03em;line-height:1;color:var(--paper)}
+  [data-take="b"] .headB h1 .y{color:var(--yellow)}
+  .howto{margin-top:30px;display:flex;gap:14px;justify-content:center}
+  .howto .chip b{color:var(--yellow)}
+
+  /* ---------- reduced motion ---------- */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+    .rise{animation-delay:0s!important}
+    .bub{animation:none;opacity:1}
+    .qg{animation:none}
+    .spark{opacity:.7}
+    .tk{animation:none}
+  }
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ================= TAKE A · rising bubbles ================= -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:7%;top:20%;--d:0s"></span>
+    <span class="spark" style="left:40%;top:12%;--d:1.2s;background:var(--up)"></span>
+    <span class="spark" style="left:93%;top:22%;--d:.6s;background:var(--down)"></span>
+    <span class="spark" style="left:88%;top:62%;--d:2.4s"></span>
+    <span class="spark" style="left:30%;top:74%;--d:3.2s;background:var(--sky)"></span>
+    <span class="spark" style="left:63%;top:80%;--d:1.8s"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>Q&amp;A · FLOOR OPEN</span>
+    </div>
+
+    <div class="head">
+      <h1 class="rise" style="--rd:.1s">the floor is <span class="y">yours</span>.</h1>
+      <div class="row">
+        <span class="chip solid rise" style="--rd:.2s">drop questions in chat</span>
+        <span class="chip ghost rise" style="--rd:.3s">ep <span data-ep>128</span></span>
+      </div>
+    </div>
+
+    <div class="hubA rise" style="--rd:.25s"><div class="face" id="faceA"></div></div>
+
+    <div class="bub" style="left:110px;top:520px;--bd:14s;--bdel:-3s;--tilt:-2deg">
+      <span class="h">@wanjiku</span><span class="q">how did the show start?</span>
+    </div>
+    <div class="bub flip" style="left:330px;top:710px;--bd:17s;--bdel:-9s;--tilt:2deg">
+      <span class="h">@denno</span><span class="q">screen share setup tour?</span>
+    </div>
+    <div class="bub" style="left:524px;top:420px;--bd:11.5s;--bdel:-5s;--tilt:-1.5deg">
+      <span class="h">@kimanzi</span><span class="q">best part of today's ep?</span>
+    </div>
+    <div class="bub flip" style="left:1235px;top:440px;--bd:12.5s;--bdel:-1.5s;--tilt:1.5deg">
+      <span class="h">@achieng</span><span class="q">hot takes round when?</span>
+    </div>
+    <div class="bub" style="left:1465px;top:630px;--bd:16s;--bdel:-11s;--tilt:-2deg">
+      <span class="h">@biru</span><span class="q">what are you drinking?</span>
+    </div>
+    <div class="bub flip" style="left:1650px;top:450px;--bd:13s;--bdel:-7s;--tilt:2deg">
+      <span class="h">@njoro</span><span class="q">next guest?</span>
+    </div>
+  </section>
+
+  <!-- ================= TAKE B · glyph rain ================= -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:8%;top:18%;--d:0s"></span>
+    <span class="spark" style="left:50%;top:8%;--d:1.4s;background:var(--up)"></span>
+    <span class="spark" style="left:90%;top:26%;--d:.7s;background:var(--down)"></span>
+    <span class="spark" style="left:80%;top:70%;--d:2.6s"></span>
+    <span class="spark" style="left:16%;top:78%;--d:3.4s;background:var(--sky)"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>Q&amp;A · ANSWERING LIVE</span>
+    </div>
+
+    <span class="qg y8" style="left:3%;top:120px;font-size:220px;--fd:19s;--fdel:-4s;--rr:-8deg">?</span>
+    <span class="qg ink" style="left:23%;top:540px;font-size:150px;--fd:18s;--fdel:-12s;--rr:5deg">?</span>
+    <span class="qg ink" style="left:46%;top:30px;font-size:190px;--fd:20s;--fdel:-8s">?</span>
+    <span class="qg y8" style="left:69%;top:430px;font-size:160px;--fd:18.5s;--fdel:-15s;--rr:-5deg">?</span>
+    <span class="qg ink" style="left:87%;top:130px;font-size:200px;--fd:19.5s;--fdel:-2s;--rr:8deg">?</span>
+    <span class="qg y8" style="left:11%;top:690px;font-size:240px;--fd:13s;--fdel:-6s">?</span>
+    <span class="qg ink" style="left:36%;top:830px;font-size:130px;--fd:14s;--fdel:-3s;--rr:6deg">?</span>
+    <span class="qg y8" style="left:60%;top:750px;font-size:175px;--fd:12.5s;--fdel:-10s;--rr:-6deg">?</span>
+    <span class="qg ol" style="left:14%;top:290px;font-size:320px;--fd:9s;--fdel:-4s;--rr:6deg">?</span>
+    <span class="qg ol" style="left:73%;top:600px;font-size:340px;--fd:10s;--fdel:-7s;--rr:-7deg">?</span>
+    <span class="qg olw" style="left:52%;top:150px;font-size:120px;--fd:8s;--fdel:-1s">?</span>
+
+    <div class="hubB rise" style="--rd:.1s"><div class="face" id="faceB"></div></div>
+
+    <div class="headB">
+      <h1 class="rise" style="--rd:.2s">ask us <span class="y">anything</span>.</h1>
+      <div class="howto">
+        <span class="chip dark rise" style="--rd:.3s"><b>1</b>&nbsp;· follow</span>
+        <span class="chip dark rise" style="--rd:.4s"><b>2</b>&nbsp;· drop a question in chat</span>
+        <span class="chip dark rise" style="--rd:.5s"><b>3</b>&nbsp;· get answered on air</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" style="--tk-speed:46s">
+    <div class="tk"><span>✦ OPEN FLOOR</span><span>q&amp;a time — every question gets answered</span><span>drop questions in chat</span><span>best question wins a shoutout</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ OPEN FLOOR</span><span>q&amp;a time — every question gets answered</span><span>drop questions in chat</span><span>best question wins a shoutout</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  if(target===null){ return; }
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+  (function(){
+    var sky=document.getElementById('skyline'),cols=['#202020','#282828','#1c1c1c','#2e2e2e'];
+    for(var i=0;i<26;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';
+      c.style.height=(70+Math.random()*240)+'px';
+      c.style.background=cols[i%4];
+      c.style.setProperty('--d',(0.5+i*0.07)+'s');sky.appendChild(c);
+    }
+    var faceA=document.getElementById('faceA'),faceB=document.getElementById('faceB');
+    function look(){if(window.smileMood)window.smileMood('look',500,faceA);}
+    function smirk(){if(window.smileMood)window.smileMood('smirk',700,faceB);}
+    setTimeout(look,1200);setInterval(look,4000);
+    setTimeout(smirk,2400);setInterval(smirk,6500);
+  })();
+</script>
+</body></html>

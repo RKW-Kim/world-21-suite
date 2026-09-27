@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE · share</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+/* === R3-4 · share.html — "Now Sharing" (screen handoff) ===
+   Flip loop 3→2→1→GO every 5s (pure JS, 1s steps); with ?t= the canonical
+   engine drives a real countdown in the same digits instead.
+   TAKE A "handoff zoom": browser window springs in (.55→1, spring bezier),
+   220px face sticker rides the window's top-left corner, digits inside.
+   TAKE B "self-drawing frame": giant yellow outline draws itself around the
+   stage, blinking SCREEN INCOMING tag, 200px digits center, face in corner. */
+
+.scn{position:absolute;inset:0}
+body[data-v="a"] .scn[data-take="b"]{display:none}
+body[data-v="b"] .scn[data-take="a"]{display:none}
+[hidden]{display:none!important}
+[data-cd-wrap][data-done="1"]{opacity:.35;transition:opacity .5s}
+.y{color:var(--yellow)}
+
+.topbar{position:absolute;top:56px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+.topbar .brand{font-size:30px}
+.topbar .brand .dw{width:44px;height:44px}
+
+@keyframes flipIn{0%{transform:rotateX(92deg) scale(.72);opacity:0}60%{transform:rotateX(-10deg) scale(1.02);opacity:1}100%{transform:rotateX(0) scale(1)}}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+@keyframes blinkDot{50%{opacity:.15}}
+
+/* ---------- TAKE A · handoff zoom ---------- */
+.cap{position:absolute;left:120px;top:186px;z-index:5;max-width:490px}
+.cap h1{font-family:var(--font-display);font-weight:800;font-size:72px;line-height:1.02;letter-spacing:-.03em;margin-top:22px}
+.cap .sub{margin-top:20px;font-size:22px;font-weight:500;color:#a8a8a8;max-width:440px;line-height:1.5}
+.cap .chips{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+
+.bwin{position:absolute;left:34.4%;top:120px;width:62%;height:756px;border-radius:16px;border:2px solid var(--line);background:linear-gradient(180deg,#171717,#0f0f0f);box-shadow:0 44px 130px rgba(0,0,0,.6);z-index:3;overflow:hidden;animation:winIn 1s var(--ease-spring) both}
+@keyframes winIn{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+.wchrome{position:relative;height:62px;display:flex;align-items:center;gap:9px;padding:0 20px;border-bottom:1px solid var(--line);background:#1a1a1a}
+.tdot{width:13px;height:13px;border-radius:50%}
+.tdot.r{background:var(--down)}.tdot.y{background:var(--yellow)}.tdot.g{background:var(--up)}
+.urlbar{margin-left:14px;flex:1;max-width:500px;height:38px;border-radius:10px;background:#0c0c0c;border:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 16px;font-size:15px;font-weight:600;color:#d6d6d6}
+.lock{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 10px rgba(14,203,129,.8);animation:lockPulse 2s ease-in-out infinite}
+@keyframes lockPulse{50%{opacity:.4}}
+.wlive{margin-left:auto;display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--down)}
+.wlive i{width:9px;height:9px;border-radius:50%;background:var(--down);animation:blinkDot 1.1s steps(1) infinite}
+.wbody{position:absolute;inset:62px 0 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background-image:radial-gradient(rgba(255,255,255,.05) 1.5px,transparent 1.6px);background-size:36px 36px}
+.wkick{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.26em;color:var(--muted)}
+.flipWrapA{perspective:700px}
+.flipNum{font-family:var(--font-display);font-weight:800;font-size:150px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--paper)}
+.flipNum.go{color:var(--yellow)}
+.flipNum.flip{animation:flipIn .55s var(--ease-spring)}
+.hbar{width:340px;height:10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden}
+.hfill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--yellow-hot),var(--yellow));animation:hLoad 5s linear infinite}
+@keyframes hLoad{0%{width:0}86%{width:100%}100%{width:100%}}
+.ready{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.2em;color:var(--yellow)}
+.ready i{width:8px;height:8px;border-radius:50%;background:var(--yellow);box-shadow:0 0 10px rgba(255,193,7,.9);animation:lockPulse 1.4s ease-in-out infinite}
+
+.sticker{position:absolute;left:calc(34.4% - 74px);top:46px;width:220px;height:220px;z-index:5;animation:stickerFloat 4.2s ease-in-out infinite}
+@keyframes stickerFloat{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(-6deg) translateY(-10px)}}
+.sticker .face{width:220px;height:220px}
+.sticker::after{content:"";position:absolute;inset:-11px;border-radius:50%;border:2px dashed rgba(255,255,255,.22);animation:ringSpin 14s linear infinite}
+
+/* ---------- TAKE B · self-drawing frame ---------- */
+.frame{position:absolute;left:8%;top:9%;width:84%;height:76%;z-index:2;overflow:visible}
+.frame .base{fill:none;stroke:var(--yellow);stroke-width:3;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:drawIn 2.2s var(--ease-out) .25s forwards}
+@keyframes drawIn{to{stroke-dashoffset:0}}
+.frame .faint{fill:none;stroke:rgba(255,193,7,.16);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-dasharray:5 13;animation:dashMarch 26s linear infinite}
+@keyframes dashMarch{to{stroke-dashoffset:-180}}
+.tag{position:absolute;left:calc(8% + 2px);top:calc(9% - 21px);z-index:5;animation:tagBlink 1.15s linear infinite}
+@keyframes tagBlink{0%,49%{opacity:1}50%,100%{opacity:.14}}
+
+.flipBox{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);z-index:4;text-align:center}
+.flipBox .kick{display:flex;gap:12px;justify-content:center;margin-bottom:26px}
+.flipWrapB{perspective:800px}
+.flipNumB{font-family:var(--font-display);font-weight:800;font-size:200px;line-height:.95;letter-spacing:-.02em;font-variant-numeric:tabular-nums;min-height:190px;color:var(--paper)}
+.flipNumB.go{color:var(--yellow)}
+.flipNumB.flip{animation:flipIn .55s var(--ease-spring)}
+.fsub{margin-top:20px;font-size:24px;font-weight:500;color:#a8a8a8}
+.flipBox .chips{margin-top:24px;display:flex;gap:12px;justify-content:center}
+
+.faceB{position:absolute;left:196px;bottom:196px;width:240px;height:240px;z-index:4;animation:faceFloatB 4.4s ease-in-out infinite}
+@keyframes faceFloatB{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(-2deg)}}
+.socB{position:absolute;right:200px;top:170px;z-index:4;display:flex;gap:12px}
+.epB{position:absolute;right:200px;bottom:210px;z-index:4}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body data-v="a">
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ============ TAKE A · HANDOFF ZOOM ============ -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:6%;top:12%;--d:0s"></span>
+    <span class="spark" style="left:44%;top:9%;--d:1.2s;background:var(--up)"></span>
+    <span class="spark" style="left:95%;top:17%;--d:.6s;background:var(--down)"></span>
+    <span class="spark" style="left:31%;top:81%;--d:2.2s"></span>
+    <span class="spark" style="left:93%;top:76%;--d:3s;background:var(--sky)"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip ghost rise" style="--rd:.5s">EPISODE <span data-ep>128</span></span>
+    </header>
+
+    <div class="cap">
+      <span class="chip solid rise" style="--rd:.1s">● NOW SHARING</span>
+      <h1 class="rise" style="--rd:.2s">handing you<br>the <span class="y">screen.</span></h1>
+      <p class="sub rise" style="--rd:.32s">audio stays live — the show never stops.</p>
+      <div class="chips rise" style="--rd:.44s">
+        <span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span>
+      </div>
+    </div>
+
+    <div class="bwin">
+      <div class="wchrome">
+        <span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span>
+        <span class="urlbar"><i class="lock"></i>smile.co.ke/live</span>
+        <span class="wlive"><i></i>ON AIR</span>
+      </div>
+      <div class="wbody">
+        <span class="wkick">SCREEN HANDOFF</span>
+        <div class="flipWrapA" data-cd-wrap>
+          <div class="flipNum" id="flipA">3</div>
+        </div>
+        <div class="hbar"><div class="hfill"></div></div>
+        <span class="ready"><i></i>AUDIO STAYS LIVE</span>
+        <span class="chip solid" data-when-live hidden>● YOU'RE UP — SCREEN'S YOURS</span>
+      </div>
+    </div>
+
+    <div class="sticker rise" style="--rd:.35s"><div class="face"></div></div>
+
+    <div class="ticker" style="--tk-speed:42s">
+      <div class="tk"><span>✦ SCREEN HANDOFF</span><span>you're getting the wheel</span><span>audio stays live</span><span>the show never stops</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ SCREEN HANDOFF</span><span>you're getting the wheel</span><span>audio stays live</span><span>the show never stops</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE B · SELF-DRAWING FRAME ============ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:7.8%;top:8.5%;--d:0s"></span>
+    <span class="spark" style="left:9.7%;top:11.8%;--d:1.2s;background:var(--up)"></span>
+    <span class="spark" style="left:92.2%;top:8.3%;--d:.6s;background:var(--down)"></span>
+    <span class="spark" style="left:90.3%;top:11.6%;--d:2.1s"></span>
+    <span class="spark" style="left:7.7%;top:84.9%;--d:1.7s;background:var(--sky)"></span>
+    <span class="spark" style="left:9.6%;top:81.8%;--d:3s"></span>
+    <span class="spark" style="left:92.3%;top:85%;--d:.9s"></span>
+    <span class="spark" style="left:90.4%;top:82%;--d:2.6s;background:var(--up)"></span>
+
+    <span class="chip solid tag">SCREEN INCOMING</span>
+
+    <svg class="frame" viewBox="0 0 1612 820" preserveAspectRatio="none" aria-hidden="true">
+      <rect class="faint" x="16" y="16" width="1580" height="788" rx="40"></rect>
+      <rect class="base" x="1.5" y="1.5" width="1609" height="817" rx="46" pathLength="1"></rect>
+    </svg>
+
+    <div class="flipBox" data-cd-wrap>
+      <div class="kick rise" style="--rd:.4s"><span class="chip dark">EPISODE <span data-ep>128</span> · NEXT UP</span></div>
+      <div class="flipWrapB">
+        <div class="flipNumB" id="flipB">3</div>
+      </div>
+      <p class="fsub rise" style="--rd:.55s">get the screen ready — audio stays live.</p>
+      <div class="chips" data-when-live hidden><span class="chip solid">● YOU'RE LIVE — SHARE AWAY</span></div>
+    </div>
+
+    <div class="faceB rise" style="--rd:.3s"><div class="face"></div></div>
+
+    <div class="socB rise" style="--rd:.5s">
+      <span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span>
+    </div>
+
+    <div class="epB rise" style="--rd:.6s">
+      <span class="chip ghost">SMILE.CO.KE/LIVE</span>
+    </div>
+
+    <div class="ticker" style="--tk-speed:36s">
+      <div class="tk"><span>✦ SCREEN INCOMING</span><span>get the screen ready</span><span>audio stays live</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ SCREEN INCOMING</span><span>get the screen ready</span><span>audio stays live</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/core.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  if(target===null){ return; }
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+(function(){
+  function mood(m,ms){ if(window.smileMood) smileMood(m,ms); }
+
+  /* candle skyline */
+  var sky=document.getElementById('skyline');
+  if(sky){
+    var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#FFC107'];
+    for(var i=0;i<24;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*82+Math.random()*24)+'px';
+      c.style.width=(20+Math.random()*16)+'px';
+      c.style.height=(60+Math.random()*250)+'px';
+      c.style.background=cols[i%6];
+      c.style.setProperty('--d',(0.5+i*0.07).toFixed(2)+'s');
+      sky.appendChild(c);
+    }
+  }
+
+  /* flip loop 3→2→1→GO (5s cycle) — replaced by real countdown when ?t= is set */
+  var q=new URLSearchParams(location.search);
+  var fs=document.querySelectorAll('.flipNum,.flipNumB');
+  if(q.get('t')===null){
+    var st=['3','2','1','GO'],du=[1000,1000,1000,2000],i=0;
+    (function step(){
+      var s=st[i],d=du[i];
+      fs.forEach(function(e){
+        e.textContent=s;
+        e.classList.toggle('go',s==='GO');
+        e.classList.remove('flip');
+        void e.offsetWidth;
+        e.classList.add('flip');
+      });
+      if(s==='GO'){setTimeout(function(){mood('celebrate',900);},150);}
+      i=(i+1)%st.length;
+      setTimeout(step,d);
+    })();
+  }else{
+    document.body.classList.add('cdmode');
+    fs.forEach(function(e){e.setAttribute('data-cd','');e.classList.remove('flip','go');});
+  }
+
+  /* TAKE A — face sticker nods once the window lands, smirks now and then */
+  setTimeout(function(){mood('nod',900);},1150);
+  setInterval(function(){mood('smirk',700);},8200);
+
+  /* TAKE B — face bounces on every GO (celebrate covers it) */
+})();
+</script>
+</body>
+</html>

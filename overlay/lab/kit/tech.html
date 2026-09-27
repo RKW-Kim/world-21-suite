@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE · technical difficulties</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+/* === R3-4 · tech.html — "Technical Difficulties" ===
+   TAKE A "diagnostic orbit": 280px face hub, dashed orbit ring, MIC/CAM/SIGNAL
+   satellites riding the ring (spinning wrapper, counter-rotated labels), each
+   checking off "— OK" in a JS loop; radar sweep; typewriter status line.
+   TAKE B "meter clinic": three VU tracks at three rhythms, face embedded in the
+   middle meter, peak-tick dots light on new peaks, elapsed up-counter top-right. */
+
+.scn{position:absolute;inset:0}
+body[data-v="a"] .scn[data-take="b"]{display:none}
+body[data-v="b"] .scn[data-take="a"]{display:none}
+[hidden]{display:none!important}
+[data-cd-wrap][data-done="1"]{opacity:.35;transition:opacity .5s}
+.y{color:var(--yellow)}
+
+.topbar{position:absolute;top:56px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+.topbar .brand{font-size:30px}
+.topbar .brand .dw{width:44px;height:44px}
+.evt{font-variant-numeric:tabular-nums;color:var(--yellow)}
+
+/* ---------- TAKE A · diagnostic orbit ---------- */
+.lcol{position:absolute;left:120px;top:168px;z-index:5;max-width:620px}
+.lcol h1{font-family:var(--font-display);font-weight:800;font-size:64px;line-height:1.04;letter-spacing:-.03em;margin-top:22px}
+.lcol .chips{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
+
+.orbitWrap{position:absolute;left:calc(55% - 280px);top:calc(48% - 280px);width:560px;height:560px;z-index:4}
+.orbitStage{position:absolute;inset:0}
+.ring{position:absolute;inset:70px;border:2px dashed rgba(255,193,7,.42);border-radius:50%;animation:ringSpin 30s linear infinite}
+.ring2{position:absolute;inset:112px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
+.sweep{position:absolute;inset:71px;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,193,7,.15),transparent 85deg);animation:ringSpin 7s linear infinite;z-index:1}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.fA{position:absolute;left:50%;top:50%;width:280px;height:280px;z-index:2;transform:translate(-50%,-50%);animation:facePulse 4.6s ease-in-out infinite}
+@keyframes facePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.035)}}
+.spinner{position:absolute;inset:0;z-index:3;animation:ringSpin 18s linear infinite}
+.satPos{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(210px)}
+.satSpin{position:absolute;left:0;top:0;width:0;height:0;animation:satBack 18s linear infinite}
+@keyframes satBack{to{transform:rotate(-360deg)}}
+.satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
+.dchip{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:999px;background:rgba(18,18,18,.92);border:1.5px solid var(--line);font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.12em;color:#e3e3e3;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.45);transition:border-color .35s,color .35s,box-shadow .35s}
+.dchip em{font-style:normal;font-size:11px;color:var(--muted);letter-spacing:.18em;transition:color .35s}
+.dchip .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line);background:transparent;transition:background .35s,border-color .35s,box-shadow .35s}
+.dchip.ok{border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
+.dchip.ok em{color:rgba(255,193,7,.75)}
+.dchip.ok .dot{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,193,7,.95)}
+
+.status{position:absolute;left:calc(55% - 230px);top:calc(48% + 298px);width:460px;text-align:center;z-index:5;font-size:19px;font-weight:500;color:#c9c9c9;min-height:26px}
+.caret{display:inline-block;width:2px;height:1.05em;background:var(--yellow);margin-left:4px;vertical-align:-2px;animation:caretB 1s steps(1) infinite}
+@keyframes caretB{50%{opacity:0}}
+
+/* ---------- TAKE B · meter clinic ---------- */
+.bwrap{position:absolute;left:120px;top:150px;z-index:5;max-width:620px}
+.bwrap h1{font-family:var(--font-display);font-weight:800;font-size:64px;line-height:1.04;letter-spacing:-.03em;margin-top:22px}
+.bwrap .sub{margin-top:18px;font-size:22px;font-weight:500;color:#a8a8a8}
+.bwrap .chips{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+.bsoc{position:absolute;left:120px;bottom:168px;z-index:5;display:flex;gap:12px}
+
+.mWrap{position:absolute;left:54%;top:47%;transform:translate(-50%,-50%);z-index:4}
+.mrow{display:flex;gap:90px}
+.mcol{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px}
+.meter{position:relative;width:120px;height:380px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.meter::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 45px,rgba(255,255,255,.045) 45px 46px)}
+.mfill{position:absolute;left:0;right:0;bottom:0;height:26%;background:linear-gradient(180deg,var(--up) 0 14px,var(--yellow) 14px 100%);transition:height .5s cubic-bezier(.22,1,.36,1)}
+.mpeak{position:absolute;left:0;right:0;height:2px;background:rgba(255,255,255,.28);bottom:26%;transition:bottom .5s linear}
+.tick{position:absolute;top:-9px;left:50%;margin-left:-5px;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--line);background:#111;transition:background .25s,border-color .25s,box-shadow .25s,transform .25s;z-index:4}
+.tick.hot{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 14px rgba(255,193,7,.95);transform:scale(1.2)}
+.mlab{font-family:var(--font-body);font-weight:700;font-size:13px;letter-spacing:.24em;color:var(--muted)}
+.fB{position:absolute;left:50%;top:0;transform:translate(-50%,-58%);width:200px;height:200px;z-index:3;animation:facePulseB 5s ease-in-out infinite}
+@keyframes facePulseB{0%,100%{transform:translate(-50%,-58%) scale(1)}50%{transform:translate(-50%,-58%) scale(1.04)}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body data-v="a">
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ============ TAKE A · DIAGNOSTIC ORBIT ============ -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:38%;top:15%;--d:0s"></span>
+    <span class="spark" style="left:73%;top:12%;--d:1.3s;background:var(--up)"></span>
+    <span class="spark" style="left:91%;top:36%;--d:.7s;background:var(--down)"></span>
+    <span class="spark" style="left:87%;top:72%;--d:2.1s"></span>
+    <span class="spark" style="left:31%;top:79%;--d:2.9s;background:var(--sky)"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.55s">DOWN FOR&nbsp;<span class="evt" data-elapsed>00:00</span></span>
+    </header>
+
+    <div class="lcol">
+      <span class="chip solid rise" style="--rd:.1s">● SIGNAL TROUBLE</span>
+      <h1 class="rise" style="--rd:.2s">minor technical<br><span class="y">difficulties.</span></h1>
+      <div class="chips rise" style="--rd:.34s">
+        <span class="chip ghost">EPISODE <span data-ep>128</span> CONTINUES</span>
+      </div>
+      <div class="chips rise" style="--rd:.46s">
+        <span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span>
+      </div>
+      <div class="chips rise" style="--rd:.56s" data-when-live hidden><span class="chip solid">● WE'RE BACK — ROLLING</span></div>
+    </div>
+
+    <div class="orbitWrap rise" style="--rd:.28s">
+      <div class="orbitStage">
+        <div class="ring"></div>
+        <div class="ring2"></div>
+        <div class="sweep"></div>
+        <div class="face fA"></div>
+        <div class="spinner">
+          <div class="satPos" style="--a:0deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="MIC"><i class="dot"></i><em>01</em><span class="dlab">MIC</span></div></div></div></div>
+          <div class="satPos" style="--a:120deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="CAM"><i class="dot"></i><em>02</em><span class="dlab">CAM</span></div></div></div></div>
+          <div class="satPos" style="--a:240deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="SIGNAL"><i class="dot"></i><em>03</em><span class="dlab">SIGNAL</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status rise" style="--rd:.6s"><span id="typeTxt"></span><span class="caret"></span></div>
+
+    <div class="ticker" style="--tk-speed:46s">
+      <div class="tk"><span>✦ TECHNICAL DIFFICULTIES</span><span>hold on — fixing a wire</span><span>smile intact</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ TECHNICAL DIFFICULTIES</span><span>hold on — fixing a wire</span><span>smile intact</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE B · METER CLINIC ============ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:14%;top:20%;--d:0s"></span>
+    <span class="spark" style="left:8%;top:62%;--d:1.5s;background:var(--up)"></span>
+    <span class="spark" style="left:39%;top:82%;--d:.8s"></span>
+    <span class="spark" style="left:71%;top:14%;--d:2.2s;background:var(--down)"></span>
+    <span class="spark" style="left:93%;top:56%;--d:3s;background:var(--sky)"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.55s">DOWN FOR&nbsp;<span class="evt" data-elapsed>00:00</span></span>
+    </header>
+
+    <div class="bwrap">
+      <span class="chip solid rise" style="--rd:.1s">● LEVELS DESK</span>
+      <h1 class="rise" style="--rd:.2s">hold on —<br>adjusting <span class="y">levels.</span></h1>
+      <p class="sub rise" style="--rd:.32s">nothing broken, promise.</p>
+      <div class="chips rise" style="--rd:.44s">
+        <span class="chip ghost">EPISODE <span data-ep>128</span></span>
+      </div>
+      <div class="chips rise" style="--rd:.54s" data-when-live hidden><span class="chip solid">● SIGNAL RESTORED</span></div>
+    </div>
+
+    <div class="mWrap">
+      <div class="mrow rise" style="--rd:.3s">
+        <div class="mcol">
+          <span class="tick"></span>
+          <div class="meter"><div class="mfill"></div><div class="mpeak"></div></div>
+          <span class="mlab">MIC</span>
+        </div>
+        <div class="mcol">
+          <span class="tick"></span>
+          <div class="meter"><div class="mfill"></div><div class="mpeak"></div></div>
+          <span class="mlab">CAM</span>
+        </div>
+        <div class="mcol">
+          <span class="tick"></span>
+          <div class="meter"><div class="mfill"></div><div class="mpeak"></div></div>
+          <span class="mlab">AUDIO</span>
+        </div>
+      </div>
+      <div class="face fB rise" style="--rd:.42s"></div>
+    </div>
+
+    <div class="bsoc rise" style="--rd:.6s">
+      <span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span>
+    </div>
+
+    <div class="ticker" style="--tk-speed:38s">
+      <div class="tk"><span>✦ ADJUSTING LEVELS</span><span>mic check — one two</span><span>nothing broken, promise</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ ADJUSTING LEVELS</span><span>mic check — one two</span><span>nothing broken, promise</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/core.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  if(target===null){ return; }
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+(function(){
+  function P2(n){return String(n).padStart(2,'0')}
+
+  /* candle skyline */
+  var sky=document.getElementById('skyline');
+  if(sky){
+    var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#FFC107'];
+    for(var i=0;i<24;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*82+Math.random()*24)+'px';
+      c.style.width=(20+Math.random()*16)+'px';
+      c.style.height=(60+Math.random()*250)+'px';
+      c.style.background=cols[i%6];
+      c.style.setProperty('--d',(0.5+i*0.07).toFixed(2)+'s');
+      sky.appendChild(c);
+    }
+  }
+
+  /* elapsed up-counter (mm:ss) — starts at 0 or ?elapsed= seconds */
+  var qs=new URLSearchParams(location.search);
+  var e0=parseInt(qs.get('elapsed')||'0',10)||0;
+  var t0=Date.now()-e0*1000;
+  var els=document.querySelectorAll('[data-elapsed]');
+  if(els.length){
+    setInterval(function(){
+      var s=Math.max(0,Math.floor((Date.now()-t0)/1000));
+      var txt=P2(Math.floor(s/60))+':'+P2(s%60);
+      els.forEach(function(e){e.textContent=txt;});
+    },250);
+  }
+
+  /* TAKE A — diagnostic check loop: MIC → CAM → SIGNAL, hold, reset, loop */
+  var chips=document.querySelectorAll('.scn[data-take="a"] .dchip');
+  var idx=0;
+  function mood(m,ms){ if(window.smileMood) smileMood(m,ms); }
+  function resetAll(){
+    chips.forEach(function(ch){ch.classList.remove('ok');ch.querySelector('.dlab').textContent=ch.getAttribute('data-base');});
+    idx=0;
+    mood('bounce',800);
+    setTimeout(checkNext,700);
+  }
+  function checkNext(){
+    if(idx>=chips.length){setTimeout(resetAll,3000);return;}
+    var ch=chips[idx];
+    ch.classList.add('ok');
+    ch.querySelector('.dlab').textContent=ch.getAttribute('data-base')+' — OK';
+    mood('wink',650);
+    if(idx===chips.length-1){setTimeout(function(){mood('celebrate',950);},350);}
+    idx++;
+    if(idx>=chips.length){setTimeout(resetAll,3000);}else{setTimeout(checkNext,2200);}
+  }
+  if(chips.length){setTimeout(checkNext,1800);}
+
+  /* TAKE A — typewriter status line */
+  var lines=['everything is fine — hold on…','fixing a wire…','still here — smile intact.'];
+  var tt=document.getElementById('typeTxt');
+  if(tt){
+    (function type(li,ci,del){
+      var L=lines[li];
+      tt.textContent=L.slice(0,ci);
+      if(!del){
+        var nx=ci+1;
+        if(nx>L.length){setTimeout(function(){type(li,L.length,true)},1500);return;}
+        setTimeout(function(){type(li,nx,false)},36);
+      }else{
+        var dx=ci-1;
+        if(dx<0){setTimeout(function(){type((li+1)%lines.length,0,false)},420);return;}
+        setTimeout(function(){type(li,dx,true)},16);
+      }
+    })(0,0,false);
+  }
+
+  /* TAKE B — three VU meters, three rhythms, peak-tick dots */
+  var mets=document.querySelectorAll('.scn[data-take="b"] .meter');
+  var rhythms=[520,720,940];
+  mets.forEach(function(m,mi){
+    var fill=m.querySelector('.mfill'),peak=m.querySelector('.mpeak');
+    var tick=m.closest('.mcol').querySelector('.tick');
+    var pk=24,lastMood=0;
+    function beat(){
+      var lv=18+Math.random()*76;
+      if(Math.random()<.16){lv=Math.min(97,lv+18);}
+      fill.style.height=lv.toFixed(1)+'%';
+      if(lv>pk){
+        pk=lv;
+        tick.classList.add('hot');
+        setTimeout(function(){tick.classList.remove('hot')},450);
+        if(mi===1&&lv>80&&performance.now()-lastMood>2600){lastMood=performance.now();mood('bounce',750);}
+      }
+      pk=Math.max(14,pk-0.9);
+      peak.style.bottom=pk.toFixed(1)+'%';
+      setTimeout(beat,rhythms[mi]);
+    }
+    setTimeout(beat,400+mi*260);
+  });
+})();
+</script>
+</body>
+</html>

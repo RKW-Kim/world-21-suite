@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · starting soon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html{overflow:hidden}
+  html,body{scrollbar-width:none}
+  ::-webkit-scrollbar{display:none}
+
+  /* ---------- take gate ---------- */
+  .scn{position:absolute;inset:0;display:none;z-index:2}
+  body:not([data-v="b"]) .scn[data-take="a"]{display:block}
+  body[data-v="b"] .scn[data-take="b"]{display:block}
+  [data-cd-wrap][data-done="1"]{opacity:.35;transition:opacity .6s ease}
+  [data-when-live][hidden]{display:none}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  /* keeps orbiting satellite text level: cancels parent spin + static angle */
+  @keyframes lvl{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(-360deg - var(--a)))}}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.15}}
+  @keyframes faceFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  @keyframes mL{to{transform:translateX(-50%)}}
+
+  /* ================= TAKE A · ORBIT LAUNCH ================= */
+  .topbar{position:absolute;top:74px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+  .topbar .brand{font-size:42px}
+  .topbar .brand .dw{width:52px;height:52px}
+  .clock{font-size:20px}
+
+  .left{position:absolute;left:120px;top:206px;z-index:5;max-width:960px}
+  .left h1{font-family:var(--font-display);font-weight:800;font-size:126px;line-height:.94;letter-spacing:-.035em;margin-top:30px;color:var(--paper)}
+  .left h1 .y{color:var(--yellow)}
+  .left h1 .g{color:var(--up)}
+  .sub{margin-top:26px;max-width:680px;font-size:23px;font-weight:500;color:#a8a8a8;line-height:1.5}
+  .socials{margin-top:30px;display:flex;gap:14px}
+
+  .cdbox{position:relative;margin-top:38px;display:inline-flex;flex-direction:column;gap:12px;padding:24px 34px 26px;border:1px solid var(--line);border-radius:22px;background:rgba(20,20,20,.86);box-shadow:0 16px 48px rgba(0,0,0,.42)}
+  .cdbox .row1{display:flex;align-items:center;gap:18px}
+  .cdbox .lab{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.24em;color:var(--muted)}
+  .cdbox .wl{margin-left:auto}
+  .cdbox .num{font-family:var(--font-display);font-weight:800;font-size:76px;line-height:1;color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+
+  .right{position:absolute;right:170px;top:0;bottom:150px;display:grid;place-items:center;z-index:5}
+  .orbit{position:relative;width:500px;height:500px;display:grid;place-items:center}
+  .orbit::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.5);border-radius:50%;animation:spin 26s linear infinite}
+  .orbit::after{content:"";position:absolute;inset:36px;border:1.5px dashed rgba(255,193,7,.22);border-radius:50%;animation:spinRev 14s linear infinite}
+  .orbit .face{width:300px;height:300px;animation:faceFloat 5.2s ease-in-out infinite;z-index:2}
+  .sats{position:absolute;inset:0;animation:spin 26s linear infinite;z-index:3;pointer-events:none}
+  .sat{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateY(-250px)}
+  .sat .lvl{position:absolute;left:0;top:0;animation:lvl 26s linear infinite}
+  .sat .chip{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .rec{width:9px;height:9px;border-radius:50%;background:var(--down);display:inline-block;animation:blink 1.1s linear infinite}
+
+  /* ================= TAKE B · MARQUEE WALL ================= */
+  .mrow{position:absolute;left:0;right:0;overflow:hidden;z-index:2;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 150px,#000 calc(100% - 150px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 150px,#000 calc(100% - 150px),transparent)}
+  .mtrack{display:flex;width:max-content;animation:mL var(--ms) linear infinite;will-change:transform}
+  .mrow.rev .mtrack{animation-direction:reverse}
+  .mgrp{display:flex;align-items:baseline;flex:none}
+  .mgrp .w{font-family:var(--font-display);font-weight:800;font-size:150px;line-height:1.06;letter-spacing:-.02em;color:var(--paper);padding:0 30px;white-space:nowrap}
+  .mgrp .dash{font-family:var(--font-display);font-weight:800;font-size:150px;line-height:1.06;color:rgba(255,255,255,.24);padding:0 10px}
+  .mgrp .o{color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.85)}
+  .mgrp .y{color:var(--yellow)}
+
+  .fwrap{position:absolute;left:50%;top:535px;transform:translate(-50%,-50%);z-index:5}
+  .fwrap .face{width:300px;height:300px;animation:faceFloat 5s ease-in-out infinite}
+  .cdz{position:absolute;right:120px;bottom:150px;text-align:right;z-index:6}
+  .cdz .lab{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.26em;color:var(--yellow);margin-bottom:12px}
+  .cdz .num{display:inline-block;font-family:var(--font-display);font-weight:800;font-size:98px;line-height:1;color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:.02em;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.35)}
+  .cdz .wl{margin-top:14px}
+
+  .deplete{position:absolute;left:0;bottom:0;width:100%;height:2px;background:linear-gradient(90deg,var(--yellow-hot),var(--yellow));transform-origin:left center;transform:scaleX(1);z-index:9}
+
+  .tk b{color:var(--paper);font-weight:800}
+
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ============ TAKE A · ORBIT LAUNCH ============ -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:8%;top:16%;--d:0s"></span>
+    <span class="spark" style="left:44%;top:10%;--d:1.2s;background:var(--up)"></span>
+    <span class="spark" style="left:70%;top:13%;--d:.6s;background:var(--down)"></span>
+    <span class="spark" style="left:63%;top:78%;--d:2.1s"></span>
+    <span class="spark" style="left:30%;top:84%;--d:3s;background:var(--sky)"></span>
+    <span class="spark" style="left:93%;top:60%;--d:1.7s"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <div class="chip dark clock rise" style="--rd:.12s"><span id="clock">--:--</span>&nbsp;· LIVE DESK</div>
+    </div>
+
+    <div class="left">
+      <span class="chip solid rise" style="--rd:.15s">● PRE-SHOW · LOADING</span>
+      <h1 class="rise" style="--rd:.22s">the show<br>starts <span class="y">soon</span><span class="g">.</span></h1>
+      <p class="sub rise" style="--rd:.32s">Mics are hot and the coffee is brewing. Grab your seat — mailbag, hot takes and a screen-share deep dive are minutes away.</p>
+      <div class="socials rise" style="--rd:.42s"><span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span></div>
+      <div class="cdbox rise" style="--rd:.52s" data-cd-wrap>
+        <div class="row1"><span class="lab">ON AIR IN</span><span class="chip solid wl" data-when-live hidden>● WE'RE LIVE</span></div>
+        <div class="num" data-cd>10:00</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="orbit rise" style="--rd:.35s">
+        <div class="face"></div>
+        <div class="sats">
+          <div class="sat" style="--a:0deg"><div class="lvl"><span class="chip solid">EP <b data-ep>128</b></span></div></div>
+          <div class="sat" style="--a:120deg"><div class="lvl"><span class="chip dark"><i class="rec"></i>REC</span></div></div>
+          <div class="sat" style="--a:240deg"><div class="lvl"><span class="chip dark">PODCAST + SCREEN SHARE</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker" style="--tk-speed:44s">
+      <div class="tk"><span>✦ STARTING SOON</span><span>GRAB YOUR SEAT</span><span>MIC CHECK · ONE TWO</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>COFFEE IS BREWING</span></div>
+      <div class="tk"><span>✦ STARTING SOON</span><span>GRAB YOUR SEAT</span><span>MIC CHECK · ONE TWO</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>COFFEE IS BREWING</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE B · MARQUEE WALL ============ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:6%;top:12%;--d:0s"></span>
+    <span class="spark" style="left:38%;top:22%;--d:1.4s;background:var(--up)"></span>
+    <span class="spark" style="left:92%;top:16%;--d:.8s;background:var(--down)"></span>
+    <span class="spark" style="left:80%;top:74%;--d:2.2s"></span>
+    <span class="spark" style="left:14%;top:66%;--d:3.1s;background:var(--sky)"></span>
+    <span class="spark" style="left:58%;top:8%;--d:2.6s"></span>
+
+    <div class="mrow" style="top:96px;--ms:30s">
+      <div class="mtrack">
+        <div class="mgrp"><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span></div>
+        <div class="mgrp"><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span></div>
+      </div>
+    </div>
+    <div class="mrow rev" style="top:296px;--ms:36s">
+      <div class="mtrack">
+        <div class="mgrp"><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span></div>
+        <div class="mgrp"><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span></div>
+      </div>
+    </div>
+    <div class="mrow" style="top:616px;--ms:26s">
+      <div class="mtrack">
+        <div class="mgrp"><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span></div>
+        <div class="mgrp"><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w o">SOON</span><span class="dash">—</span><span class="w">STARTING</span><span class="w y">SOON</span><span class="dash">—</span></div>
+      </div>
+    </div>
+
+    <div class="fwrap"><div class="rise" style="--rd:.3s"><div class="face"></div></div></div>
+
+    <div class="cdz rise" style="--rd:.55s" data-cd-wrap>
+      <div class="lab">ON AIR IN</div>
+      <div class="num" data-cd>10:00</div>
+      <div><span class="chip solid wl" data-when-live hidden>● WE'RE LIVE</span></div>
+    </div>
+
+    <div class="deplete" id="deplete"></div>
+
+    <div class="ticker" style="--tk-speed:40s">
+      <div class="tk"><span>✦ COUNTDOWN RUNNING</span><span>DON'T TOUCH THAT DIAL</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>SEATS FILLING FAST</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ COUNTDOWN RUNNING</span><span>DON'T TOUCH THAT DIAL</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>SEATS FILLING FAST</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/core.js"></script>
+<script>
+(function(){
+  /* ---------- URL contract engine ---------- */
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  if(target===null){ target=Date.now()+600000; } /* default 10:00 */
+  var total=Math.max(1000, target-Date.now());
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){ e.textContent=eps; });
+  var dep=document.getElementById('deplete');
+  setInterval(function(){
+    var s=Math.max(0, Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(dep){ var f=Math.max(0, Math.min(1, (target-Date.now())/total)); dep.style.transform='scaleX('+f+')'; }
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){ e.removeAttribute('hidden'); });
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){ e.setAttribute('data-done','1'); });
+      if(dep){ dep.style.transform='scaleX(0)'; }
+    }
+  },250);
+
+  /* ---------- candle skyline ---------- */
+  var sky=document.getElementById('skyline'), cols=['#1f1f1f','#0ECB81','#262626','#F6465D','#232323','#FFC107'];
+  for(var i=0;i<26;i++){
+    var c=document.createElement('span'); c.className='cndl';
+    c.style.left=(i*76+Math.random()*20)+'px'; c.style.width=(22+Math.random()*14)+'px';
+    c.style.height=(70+Math.random()*240)+'px'; c.style.background=cols[i%6];
+    c.style.setProperty('--d',(0.6+i*0.06)+'s'); sky.appendChild(c);
+  }
+
+  /* ---------- Nairobi desk clock ---------- */
+  function tick(){ var el=document.getElementById('clock'); if(el) el.textContent=new Date().toLocaleTimeString('en-KE',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',hour12:false}); }
+  tick(); setInterval(tick,10000);
+
+  /* ---------- moods on top of core.js idle blink ---------- */
+  setTimeout(function(){ if(window.smileMood) window.smileMood('wink',900); },1700);
+  var moods=['wink','nod','bounce','smirk'];
+  setInterval(function(){ if(window.smileMood) window.smileMood(moods[Math.floor(Math.random()*moods.length)],900); },9000);
+})();
+</script>
+</body>
+</html>

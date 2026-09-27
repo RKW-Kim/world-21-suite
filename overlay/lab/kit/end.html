@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE · end</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html,body{width:100%;height:100%}
+  body{overflow:hidden}
+  [hidden]{display:none!important}
+
+  /* ---------- take gating ---------- */
+  .scn{position:absolute;inset:0;overflow:hidden}
+  body[data-v="a"] .scn[data-take="b"],
+  body[data-v="b"] .scn[data-take="a"]{display:none}
+
+  /* ---------- shared motion vocabulary ---------- */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes dotP{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}
+  @keyframes sheenX{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+  .y{color:var(--yellow)}
+  .g{color:var(--up);display:inline-block;animation:periodIn .9s var(--ease-spring) 1.15s backwards}
+  @keyframes periodIn{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+
+  .topbar{position:absolute;top:60px;left:110px;right:110px;display:flex;justify-content:space-between;align-items:center;z-index:7}
+  .topbar .brand{font-size:38px}
+  .topbar .brand .dw{width:46px;height:46px}
+  .chip .rdot{width:9px;height:9px;border-radius:50%;background:var(--down);box-shadow:0 0 10px rgba(246,70,93,.8);animation:dotP 1.6s ease-in-out infinite}
+
+  /* ================= TAKE A · EDITORIAL SIGN-OFF ================= */
+  .leftA{position:absolute;left:120px;top:196px;z-index:3;max-width:1010px}
+  .kicker{margin-bottom:30px}
+  .leftA h1{font:800 120px/.96 var(--font-display);letter-spacing:-.035em}
+  .subA{margin-top:28px;font:500 24px/1.45 var(--font-body);color:#a8a8a8;max-width:760px}
+  .socialsA{margin-top:32px;display:flex;gap:14px}
+  .replayrow{margin-top:16px}
+  .play{width:0;height:0;border-left:11px solid var(--yellow);border-top:7px solid transparent;border-bottom:7px solid transparent;display:inline-block;animation:playP 2s ease-in-out infinite}
+  @keyframes playP{0%,100%{opacity:.6;transform:translateX(0)}50%{opacity:1;transform:translateX(2px)}}
+
+  .orbcol{position:absolute;right:150px;top:0;bottom:176px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:42px;z-index:3}
+  .orbit{position:relative;width:360px;height:360px;display:grid;place-items:center}
+  .orbit::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.5);border-radius:50%;animation:spin 26s linear infinite}
+  .orbit::after{content:"";position:absolute;inset:24px;border:1px solid rgba(255,193,7,.16);border-radius:50%}
+  .sat{position:absolute;inset:0;animation:spin 9s linear infinite}
+  .sat::after{content:"";position:absolute;top:-8px;left:50%;width:15px;height:15px;margin-left:-7.5px;border-radius:50%;background:var(--yellow);box-shadow:0 0 18px rgba(255,193,7,.85)}
+  .orbit .face{width:220px;height:220px;animation:bob 5.6s ease-in-out infinite}
+  .orbcap{font:700 13px var(--font-display);letter-spacing:.3em;text-transform:uppercase;color:#9a9a9a}
+
+  /* ================= TAKE B · CREDITS ROLL ================= */
+  .bwrap{position:absolute;left:120px;top:0;bottom:180px;display:flex;align-items:center;gap:96px;z-index:3}
+  .orbitB{position:relative;width:430px;height:430px;flex:none;display:grid;place-items:center}
+  .orbitB::before{content:"";position:absolute;inset:0;border:2px dashed rgba(255,193,7,.45);border-radius:50%;animation:spin 24s linear infinite}
+  .orbitB::after{content:"";position:absolute;inset:26px;border:1.5px dashed rgba(255,193,7,.2);border-radius:50%;animation:spinRev 16s linear infinite}
+  .orbitB .face{width:260px;height:260px}
+  .btxt h1{font:800 96px/.98 var(--font-display);letter-spacing:-.03em}
+  .follow{margin-top:42px;position:relative;overflow:hidden}
+  .follow::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);transform:translateX(-130%);animation:sheenX 4.5s ease-in-out 2s infinite}
+
+  .credits{position:absolute;right:150px;top:158px;bottom:196px;width:520px;z-index:3}
+  .chead{display:flex;align-items:center;gap:16px;font:800 13px var(--font-display);letter-spacing:.26em;text-transform:uppercase;color:#d8d8d8}
+  .chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
+  .chead .ep{color:var(--muted);letter-spacing:.18em}
+  .clist{margin-top:20px;height:calc(100% - 54px);overflow:hidden;-webkit-mask-image:linear-gradient(180deg,transparent,#000 15%,#000 85%,transparent);mask-image:linear-gradient(180deg,transparent,#000 15%,#000 85%,transparent)}
+  .ctrack{display:flex;flex-direction:column;animation:roll 16s linear infinite}
+  @keyframes roll{to{transform:translateY(-50%)}}
+  .cr{flex:none;padding:26px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .cr i{display:block;font:700 12px var(--font-display);font-style:normal;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+  .cr b{display:block;margin-top:9px;font:800 34px/1.05 var(--font-display);letter-spacing:-.01em}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;animation-delay:0s!important}
+    .spark{opacity:.75;animation:none}
+  }
+</style>
+</head>
+<body data-v="a">
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ============================ TAKE A · EDITORIAL SIGN-OFF ============================ -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:12%;top:14%;--d:0s"></span>
+    <span class="spark" style="left:44%;top:9%;--d:1.4s;background:var(--up)"></span>
+    <span class="spark" style="left:60%;top:26%;--d:.8s;background:var(--down)"></span>
+    <span class="spark" style="left:79%;top:72%;--d:2.2s"></span>
+    <span class="spark" style="left:14%;top:80%;--d:3.1s;background:var(--sky)"></span>
+    <span class="spark" style="left:90%;top:40%;--d:4s"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.15s"><span class="rdot"></span>off air</span>
+    </header>
+
+    <div class="leftA">
+      <span class="chip solid kicker rise" style="--rd:.15s">● THAT'S THE SHOW</span>
+      <h1 class="rise" style="--rd:.25s">see you<br><span class="y">next week</span><span class="g">.</span></h1>
+      <p class="subA rise" style="--rd:.35s">thanks for hanging out — episode <span data-ep>128</span> is a wrap.</p>
+      <div class="socialsA rise" style="--rd:.45s">
+        <span class="chip ghost">@smileke</span>
+        <span class="chip ghost">smile.co.ke</span>
+        <span class="chip ghost">#SmileSquad</span>
+      </div>
+      <div class="replayrow rise" style="--rd:.55s">
+        <span class="chip ghost"><span class="play"></span>replay live on the channel</span>
+      </div>
+    </div>
+
+    <div class="orbcol">
+      <div class="orbit rise" style="--rd:.4s">
+        <div class="sat"></div>
+        <div class="face"></div>
+      </div>
+      <div class="orbcap rise" style="--rd:.6s">the smile squad · signing off</div>
+    </div>
+
+    <div class="ticker" style="--tk-speed:40s">
+      <div class="tk"><span>✦ OFF AIR — SEE YOU NEXT WEEK</span><span>episode <b data-ep>128</b> — that's a wrap</span><span>replay up in a few</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>notifications on = smile guaranteed</span></div>
+      <div class="tk"><span>✦ OFF AIR — SEE YOU NEXT WEEK</span><span>episode <b data-ep>128</b> — that's a wrap</span><span>replay up in a few</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>notifications on = smile guaranteed</span></div>
+    </div>
+  </section>
+
+  <!-- ============================ TAKE B · CREDITS ROLL ============================ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:10%;top:13%;--d:0s"></span>
+    <span class="spark" style="left:52%;top:8%;--d:1.5s;background:var(--up)"></span>
+    <span class="spark" style="left:86%;top:12%;--d:.8s;background:var(--down)"></span>
+    <span class="spark" style="left:92%;top:58%;--d:2.3s;background:var(--sky)"></span>
+    <span class="spark" style="left:8%;top:68%;--d:3s"></span>
+    <span class="spark" style="left:30%;top:84%;--d:4.1s"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.15s"><span class="rdot"></span>off air · credits rolling</span>
+    </header>
+
+    <div class="bwrap">
+      <div class="orbitB rise" style="--rd:.3s">
+        <div class="face"></div>
+      </div>
+      <div class="btxt">
+        <h1 class="rise" style="--rd:.4s">that's<br>the <span class="y">show</span><span class="g">.</span></h1>
+        <div class="rise" style="--rd:.55s"><span class="chip solid follow">follow so you don't miss the next one</span></div>
+      </div>
+    </div>
+
+    <div class="credits rise" style="--rd:.5s">
+      <div class="chead"><span>credits</span><i class="rule"></i><span class="ep">ep <b data-ep>128</b></span></div>
+      <div class="clist">
+        <div class="ctrack">
+          <div class="cr"><i>host</i><b>you</b></div>
+          <div class="cr"><i>production</i><b>smile crew</b></div>
+          <div class="cr"><i>music</i><b>licensed</b></div>
+          <div class="cr"><i>questions</i><b>the chat</b></div>
+          <div class="cr"><i>vibes</i><b>everyone</b></div>
+          <div class="cr"><i>host</i><b>you</b></div>
+          <div class="cr"><i>production</i><b>smile crew</b></div>
+          <div class="cr"><i>music</i><b>licensed</b></div>
+          <div class="cr"><i>questions</i><b>the chat</b></div>
+          <div class="cr"><i>vibes</i><b>everyone</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker" style="--tk-speed:42s">
+      <div class="tk"><span>✦ OFF AIR</span><span>that's the show</span><span>follow so you don't miss the next one</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>credits still rolling — stay a minute</span></div>
+      <div class="tk"><span>✦ OFF AIR</span><span>that's the show</span><span>follow so you don't miss the next one</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>credits still rolling — stay a minute</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/core.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  if(target===null){ return; }
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+  var sky=document.getElementById('skyline'),cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
+  for(var i=0;i<26;i++){var c=document.createElement('span');c.className='cndl';c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';c.style.height=(70+Math.random()*240)+'px';c.style.background=cols[i%6];c.style.setProperty('--d',(0.6+i*0.06)+'s');sky.appendChild(c);}
+  setTimeout(function(){ if(window.smileMood) window.smileMood('nod',900); },800);
+  setTimeout(function(){ if(window.smileMood) window.smileMood('celebrate',900); },5600);
+  var moods=['smirk','bounce'],mi=0;
+  setInterval(function(){ if(window.smileMood){ window.smileMood(moods[mi%2],900); mi++; } },11000);
+</script>
+</body>
+</html>

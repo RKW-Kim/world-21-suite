@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMILE DIRECTOR — scene URL console</title>
+<link rel="icon" href="../assets/smile-face.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* SMILE DIRECTOR · obsidian matte, one yellow, exact logos.
+   Job: build OBS browser-source URLs for the 10 scene pages — no URL math. */
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a; --panel:#141414;
+  --panel-2:#1b1b1b; --line:#2a2a2a; --muted:#a8a8a8; --paper:#fff;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--paper);
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+::selection{background:rgba(255,193,7,.3);color:var(--ink)}
+img{display:block} a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit}
+.disp{font-family:'Space Grotesk',sans-serif}
+
+.mast{display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:22px clamp(20px,4vw,56px);border-bottom:1px solid var(--line)}
+.mast .brand{display:flex;align-items:center;gap:14px}
+.mast .brand img{height:38px}
+.mast .brand b{font-family:'Space Grotesk';font-size:18px;letter-spacing:-.01em}
+.mast .brand span{font-size:12px;color:var(--muted);font-weight:600;display:block;margin-top:2px}
+.mast nav a{font-size:13px;font-weight:600;color:var(--muted);padding:8px 14px;
+  border-radius:999px;transition:.2s}
+.mast nav a:hover{color:var(--paper);background:var(--panel)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:34px clamp(20px,4vw,56px) 80px;
+  display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}}
+
+/* scene list */
+.scenes{border:1px solid var(--line);border-radius:16px;background:var(--panel);
+  overflow:hidden;position:sticky;top:22px}
+.scenes h2{font-family:'Space Grotesk';font-size:13px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);padding:16px 18px 10px}
+.scenes button{display:block;width:100%;text-align:left;background:none;border:0;
+  border-top:1px solid var(--line);padding:13px 18px;cursor:pointer;transition:.15s}
+.scenes button:hover{background:var(--panel-2)}
+.scenes button .n{display:block;font-weight:600;font-size:14px}
+.scenes button .d{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.scenes button.on{background:var(--panel-2);box-shadow:inset 3px 0 0 var(--yellow)}
+.scenes button.on .n{color:var(--yellow)}
+
+/* builder */
+.builder{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:24px}
+.builder h1{font-family:'Space Grotesk';font-size:22px;letter-spacing:-.02em;margin-bottom:4px}
+.builder p.lead{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;max-width:64ch}
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.fld input[type=text]{width:100%;background:var(--ink);border:1px solid var(--line);
+  border-radius:10px;padding:11px 13px;font-size:14px;outline:none;transition:border-color .15s}
+.fld input[type=text]:focus{border-color:var(--yellow)}
+.fld input[type=text].bad{border-color:#F6465D}
+.fld .hint{font-size:11.5px;color:var(--muted);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{background:var(--ink);border:1px solid var(--line);border-radius:999px;
+  padding:8px 15px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
+.chips button:hover{color:var(--paper);border-color:#3d3d3d}
+.chips button.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.chips button small{display:block;font-weight:500;font-size:10.5px;opacity:.75;margin-top:1px}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:var(--ink);border:0;border-right:1px solid var(--line);
+  padding:9px 14px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--panel-2);color:var(--yellow)}
+
+.out{margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--ink);padding:16px}
+.out .u{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.6;
+  color:var(--yellow);word-break:break-all}
+.out .row{display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--yellow);color:var(--ink);border:0;border-radius:999px;
+  padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--yellow-hot)}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--paper)}
+.btn.ghost:hover{border-color:var(--yellow);color:var(--yellow)}
+.out .copied{font-size:12.5px;font-weight:600;color:var(--muted)}
+
+.prev{margin-top:22px}
+.prev .frame{aspect-ratio:16/9;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:#000}
+.prev iframe{width:960px;height:540px;border:0;transform-origin:0 0}
+.prev .cap{font-size:11.5px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="brand">
+    <img src="../assets/smile-logo.svg" alt="smile">
+    <div><b>SMILE DIRECTOR</b><span>build any scene URL — paste it into OBS</span></div>
+  </div>
+  <nav><a href="index.html">← Tournament hub</a></nav>
+</header>
+
+<div class="wrap">
+  <aside class="scenes" id="scenes"><h2>Scenes</h2></aside>
+
+  <section class="builder">
+    <h1 class="disp" id="scName">Starting Soon</h1>
+    <p class="lead" id="scDesc">Pick a take, set the countdown, copy the URL into a 1920×1080 Browser source. Everything is optional — an empty field simply stays out of the URL.</p>
+
+    <div class="fld">
+      <label>Take</label>
+      <div class="chips" id="laneChips"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="fld"><label for="fTitle">Headline override</label>
+        <input type="text" id="fTitle" placeholder="scene default" maxlength="80"></div>
+      <div class="fld"><label for="fSub">Subline override</label>
+        <input type="text" id="fSub" placeholder="scene default" maxlength="90"></div>
+      <div class="fld" id="cdFld" hidden><label for="fCd">Countdown</label>
+        <input type="text" id="fCd" placeholder="e.g. 300 or 5:00" maxlength="12">
+        <div class="hint">seconds or mm:ss / hh:mm:ss</div></div>
+      <div class="fld"><label for="fEp">Episode tag</label>
+        <input type="text" id="fEp" placeholder="e.g. 07" maxlength="6"></div>
+      <div class="fld" id="qFld" hidden><label for="fQ">Audience question (Q&amp;A)</label>
+        <input type="text" id="fQ" placeholder="e.g. How do I open a Smile account?" maxlength="120"></div>
+      <div class="fld" id="winFld" hidden><label for="fWin">Winner handle (Giveaway)</label>
+        <input type="text" id="fWin" placeholder="e.g. @mjosh" maxlength="40"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="fld" id="matFld"><label>Glass material — obsidian lane only</label>
+        <div class="seg" id="matSeg"></div></div>
+      <div class="fld"><label>Watermark</label>
+        <div class="seg" id="wmSeg"></div></div>
+    </div>
+
+    <div class="fld"><label>Mode</label>
+      <div class="seg" id="modeSeg"></div>
+      <div class="hint">OBS transparent drops all chrome for compositing · Clean hides the lane HUD</div></div>
+
+    <div class="out">
+      <div class="u" id="urlOut"></div>
+      <div class="row">
+        <button class="btn" id="copyBtn" type="button">Copy URL</button>
+        <a class="btn ghost" id="openBtn" href="#" target="_blank" rel="noopener">Open full ↗</a>
+        <span class="copied" id="copyState" role="status"></span>
+      </div>
+    </div>
+
+    <div class="prev">
+      <div class="frame"><iframe id="prevFrame" title="scene preview" scrolling="no"></iframe></div>
+      <div class="cap" id="prevCap">live preview · clean mode</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SCENES=[
+ {id:'start',name:'Starting Soon',desc:'countdown opener — the hold before air',cd:true,cdv:'600'},
+ {id:'brb',name:'Be Right Back',desc:'the short break, kept warm',cd:true,cdv:'300'},
+ {id:'inter',name:'Intermission',desc:'mid-show break with the up-next rundown',cd:true,cdv:'600'},
+ {id:'tech',name:'Technical Difficulties',desc:'calm and honest, never panicked'},
+ {id:'share',name:'Now Sharing',desc:'screen-share handoff — audio stays live'},
+ {id:'live',name:'Live / Welcome',desc:'show open — episode, guest, rundown'},
+ {id:'qa',name:'Q&A',desc:'the audience floor, how to ask'},
+ {id:'ad',name:'Ad Break',desc:'the partner moment, honestly slotted',cd:true,cdv:'120'},
+ {id:'give',name:'Giveaway',desc:'entry window and a dignified reveal',cd:true,cdv:'180'},
+ {id:'end',name:'Ending',desc:'thanks, replay CTA, next-stream hook'}
+];
+var LANES=[
+ {k:'a',n:'Take A — signature'},{k:'b',n:'Take B — alt hero'}
+];
+var MATS=[];
+var WMS=[];
+var MODES=[];
+var CD_RE=/^\d+$|^\d{1,3}(:\d{1,2}){1,2}$/;
+
+var S={sc:'start',ln:'a',mat:'',wm:'tl',mode:''};
+var $=function(id){return document.getElementById(id)};
+
+/* scene list */
+var scBox=$('scenes');
+SCENES.forEach(function(sc){
+  var b=document.createElement('button');
+  b.type='button';b.dataset.id=sc.id;
+  b.innerHTML='<span class="n">'+sc.name+'</span><span class="d">'+sc.desc+'</span>';
+  b.addEventListener('click',function(){S.sc=sc.id;S.ln='a';
+    if(sc.cd)$('fCd').value=sc.cdv; else $('fCd').value='';
+    render()});
+  scBox.appendChild(b);
+});
+
+/* lane chips */
+var lc=$('laneChips');
+LANES.forEach(function(ln){
+  var b=document.createElement('button');
+  b.type='button';b.dataset.k=ln.k;b.textContent=ln.n;
+  b.addEventListener('click',function(){S.ln=ln.k;render()});
+  lc.appendChild(b);
+});
+
+/* segments */
+function seg(id,items,key,label){
+  var box=$(id);
+  items.forEach(function(it){
+    var b=document.createElement('button');
+    b.type='button';b.dataset.v=it[0];b.textContent=it[1];
+    b.addEventListener('click',function(){S[key]=it[0];render()});
+    box.appendChild(b);
+  });
+}
+seg('matSeg',MATS,'mat'); seg('wmSeg',WMS,'wm'); seg('modeSeg',MODES,'mode');
+
+/* url builder */
+function buildURL(clean){
+  var p=new URLSearchParams();
+  p.set('v',S.ln);
+  var ep=$('fEp').value.trim();
+  var sc=SCENES.find(function(s){return s.id===S.sc});
+  var cd=sc.cd?$('fCd').value.trim():'';
+  if(ep)p.set('ep',ep);
+  if(cd&&CD_RE.test(cd)){
+    if(/^\d+$/.test(cd)){ p.set('t',cd); }
+    else { var pt=cd.split(':').map(Number); p.set('t',String(pt[0]*3600+(pt[1]||0)*60+(pt[2]||0))); }
+  }
+  if(clean)p.set('g','1');
+  return S.sc+'.html?'+p.toString();
+}
+function render(){
+  var sc=SCENES.find(function(s){return s.id===S.sc});
+  $('scName').textContent=sc.name;
+  $('scDesc').textContent=sc.desc+' — pick a take, set the countdown, copy the URL into a 1920×1080 Browser source.';
+  scBox.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.id===S.sc)});
+  lc.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.k===S.ln)});
+  $('matSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.mat)});
+  $('wmSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.wm)});
+  $('modeSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.mode)});
+  $('qFld').hidden=true; $('winFld').hidden=true;
+  $('cdFld').hidden=!sc.cd;
+  $('matFld').hidden=true;
+  var tRow=$('fTitle')&&$('fTitle').closest('.fld'); if(tRow)tRow.hidden=true;
+  var sRow=$('fSub')&&$('fSub').closest('.fld'); if(sRow)sRow.hidden=true;
+  var cdBad=$('fCd').value.trim()&&!CD_RE.test($('fCd').value.trim());
+  $('fCd').classList.toggle('bad',cdBad);
+  var url=buildURL(false);
+  $('urlOut').textContent=url;
+  $('openBtn').href=url;
+  if(!cdBad){ /* debounce preview */
+    clearTimeout(render._t);
+    render._t=setTimeout(function(){
+      $('prevFrame').src=buildURL(true);
+      $('prevCap').textContent=sc.name+' · take '+S.ln.toUpperCase()+' · clean preview';
+    },450);
+  }
+}
+['fTitle','fSub','fCd','fEp','fQ','fWin'].forEach(function(id){
+  $(id).addEventListener('input',render);
+});
+
+/* copy */
+$('copyBtn').addEventListener('click',function(){
+  var url=location.href.replace(/director\.html.*$/,'')+buildURL(false);
+  var done=function(){$('copyState').textContent='Copied — paste into OBS';
+    setTimeout(function(){$('copyState').textContent=''},2400)};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done,function(){fallback(url,done)});
+  }else fallback(url,done);
+  function fallback(t,cb){
+    var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';
+    ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');cb()}catch(e){$('copyState').textContent='Copy failed — select the URL'}
+    document.body.removeChild(ta);
+  }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
