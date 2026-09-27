@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>smile · LIVE / WELCOME — scene kit</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23FFC107'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/liquid-glass.css">
+<link rel="stylesheet" href="assets/kit.css">
+<script src="assets/kit.js" defer></script>
+<style>
+/* === KIT-K3 · live.html — "LIVE / WELCOME" show-open scene ===
+   The Smile Show · EP badge (data-ep → ?ep=01) · tagline ·
+   honest guest slot (?sub= override) · 3-segment rundown. === */
+
+/* ── shared page bits ── */
+.noise{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:140px 140px}
+
+.ep-chip{display:inline-block;background:var(--yellow);color:var(--ink);
+  font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*15);
+  letter-spacing:.1em;padding:calc(var(--u)*6) calc(var(--u)*14);
+  border-radius:calc(var(--u)*6)}
+
+/* watermarks live inside each lane (spine ?wm= moves/hides them);
+   dark lanes carry the full logo on-dark, light lanes the bare mark */
+
+/* motion */
+@keyframes en-rise{from{opacity:0;transform:translateY(calc(var(--u)*26))}to{opacity:1;transform:translateY(0)}}
+@keyframes en-fade{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+@keyframes en-slam{0%{opacity:0;transform:scale(1.5)}55%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes kmA{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.km-track{animation:none!important}}
+
+/* ========= LANE A · OBSIDIAN — glass panel composition ========= */
+.scn[data-lane="a"]{place-items:center;background:
+  radial-gradient(120% 72% at 50% -12%,#1e2127 0%,rgba(30,33,39,0) 60%),
+  radial-gradient(80% 55% at 86% 112%,#16181d 0%,rgba(22,24,29,0) 55%),
+  var(--ink)}
+.scn[data-lane="a"]::after{content:"";position:absolute;left:0;right:0;top:70%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.05) 28%,rgba(255,255,255,.05) 72%,transparent)}
+.lv-a{display:flex;width:min(calc(var(--u)*1260),90vw);min-height:calc(var(--u)*720);
+  border-radius:calc(var(--u)*32);
+  padding:calc(var(--u)*76) calc(var(--u)*92);
+  animation:en-rise .52s cubic-bezier(.22,.8,.26,1) both;
+  --acc:var(--yellow);--acc-o:.55}
+/* layered matte body — top-lit swell + warm floor, never one flat box */
+.scn[data-lane="a"] .lg--obsidian .lg-tint{background:
+  radial-gradient(52% 34% at 50% -8%, rgba(255,255,255,.12), transparent 64%),
+  radial-gradient(90% 52% at 50% 118%, rgba(255,193,7,.06), transparent 62%),
+  linear-gradient(180deg, rgba(28,30,37,.34) 0%, rgba(10,11,15,.30) 48%, rgba(3,4,6,.55) 100%)}
+.lv-a .lg-content{display:grid;grid-template-columns:1.1fr .9fr;gap:calc(var(--u)*84);
+  flex:1;min-height:0}
+.lv-a .lg-backdrop{backdrop-filter:blur(24px) saturate(160%)}
+.lv-a-l{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0}
+.lv-a-meta{display:flex;align-items:center;gap:calc(var(--u)*16)}
+.lv-a-meta .kit-status{color:#f2f4f6;font-size:calc(var(--u)*15)}
+.lv-a-h{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*118);
+  line-height:1;letter-spacing:-.025em;margin-top:calc(var(--u)*30)}
+.lv-a-tag{margin-top:calc(var(--u)*20);font-size:calc(var(--u)*23);
+  color:rgba(255,255,255,.84)}
+.lv-a-guest{margin-top:calc(var(--u)*48);display:flex;align-items:baseline;
+  gap:calc(var(--u)*14);padding-top:calc(var(--u)*24);
+  border-top:1px solid rgba(255,255,255,.12);width:100%}
+.lv-a-guest .gk{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*14);
+  letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.74)}
+.lv-a-guest .gv{font-size:calc(var(--u)*25);font-weight:600;color:var(--paper)}
+.lv-a-hands{margin-top:calc(var(--u)*20);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*15);letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.74)}
+.lv-a-r{display:flex;flex-direction:column;justify-content:center;min-width:0;
+  border-left:1px solid rgba(255,255,255,.12);padding-left:calc(var(--u)*72)}
+.rd-h{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*14);
+  letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.74)}
+.rd-i{display:flex;gap:calc(var(--u)*22);align-items:baseline;
+  padding:calc(var(--u)*40) 0}
+.rd-i + .rd-i{border-top:1px solid rgba(255,255,255,.1)}
+.rd-n{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*16);
+  font-variant-numeric:tabular-nums;color:rgba(255,255,255,.72);letter-spacing:.06em}
+.rd-1 .rd-t{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*38);
+  line-height:1.2;color:var(--paper)}
+.rd-t2{font-size:calc(var(--u)*24);font-weight:600;line-height:1.4;
+  color:rgba(255,255,255,.86)}
+.rd-s{margin-top:calc(var(--u)*10);font-family:var(--font-disp);font-weight:700;
+  font-size:calc(var(--u)*14);letter-spacing:.2em;text-transform:uppercase;color:var(--up)}
+
+/* frost override keeps ink-on-glass contrast (t=frost seats a light panel) */
+.scn[data-lane="a"] .lg--frost .lv-a-h{color:var(--ink)}
+.scn[data-lane="a"] .lg--frost .lv-a-tag{color:#3f3f44}
+.scn[data-lane="a"] .lg--frost .lv-a-meta .kit-status{color:#3a3a3e}
+.scn[data-lane="a"] .lg--frost .lv-a-guest{border-top-color:rgba(10,10,10,.14)}
+.scn[data-lane="a"] .lg--frost .lv-a-guest .gk{color:#5a5a5f}
+.scn[data-lane="a"] .lg--frost .lv-a-guest .gv{color:var(--ink)}
+.scn[data-lane="a"] .lg--frost .lv-a-hands{color:#5a5a5f}
+.scn[data-lane="a"] .lg--frost .lv-a-r{border-left-color:rgba(10,10,10,.14)}
+.scn[data-lane="a"] .lg--frost .rd-h{color:#5a5a5f}
+.scn[data-lane="a"] .lg--frost .rd-i + .rd-i{border-top-color:rgba(10,10,10,.12)}
+.scn[data-lane="a"] .lg--frost .rd-n{color:#6b6b70}
+.scn[data-lane="a"] .lg--frost .rd-1 .rd-t{color:var(--ink)}
+.scn[data-lane="a"] .lg--frost .rd-t2{color:#2c2c30}
+.scn[data-lane="a"] .lg--frost .rd-s{color:#0A7D50}
+
+/* ========= LANE B · APPLE KEYNOTE — monumental open ========= */
+.scn[data-lane="b"]{place-items:center;background:var(--paper);color:var(--ink)}
+.lv-b{display:grid;justify-items:center;text-align:center;
+  animation:en-fade .5s cubic-bezier(.22,.8,.26,1) both}
+.lv-b-meta{display:flex;align-items:center;gap:calc(var(--u)*16)}
+.lv-b-meta .kit-status{color:#6f6f6f;font-size:calc(var(--u)*16)}
+.lv-b-h{font-family:var(--font-body);font-weight:800;font-size:calc(var(--u)*148);
+  line-height:.96;letter-spacing:-.05em;margin-top:calc(var(--u)*38);white-space:nowrap}
+.lv-b-tag{margin-top:calc(var(--u)*28);font-size:calc(var(--u)*26);font-weight:500;color:#3a3a3c}
+.lv-b-guest{margin-top:calc(var(--u)*16);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*16);letter-spacing:.2em;text-transform:uppercase;color:#6f6f6f}
+.lv-b-hands{margin-top:calc(var(--u)*14);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*16);letter-spacing:.22em;text-transform:uppercase;color:#6f6f6f}
+.lv-b-foot{position:absolute;left:calc(var(--safe)*1.4);right:calc(var(--safe)*1.4);
+  bottom:var(--safe);display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:calc(var(--u)*64);border-top:1px solid #D9D4C8;padding-top:calc(var(--u)*26);
+  text-align:left}
+.lv-b-foot .n{display:block;font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*16);letter-spacing:.22em;text-transform:uppercase;color:#6b6b6b}
+.lv-b-foot .t{display:block;margin-top:calc(var(--u)*10);font-size:calc(var(--u)*20);
+  font-weight:600;color:#1c1c1c}
+/* rundown hierarchy: the segment that is actually up next reads first */
+.lv-b-foot div:first-child .t{font-weight:700}
+
+/* ========= LANE C · TRADIFY TERMINAL — on air, run of show ======== */
+.scn[data-lane="c"]{grid-template-rows:auto 1fr auto;background:var(--ink);color:#f2f4f6}
+.tk-top{display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--u)*20) var(--safe);border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.015)}
+.tk-brand{display:flex;align-items:center;gap:calc(var(--u)*14)}
+.tk-brand img{height:calc(var(--u)*30);width:auto}
+.lv-c-t{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*15);
+  letter-spacing:.18em;text-transform:uppercase;color:#f2f4f6}
+.tk-right{display:flex;align-items:center;gap:calc(var(--u)*20)}
+.tk-right .kit-status{color:#f2f4f6;font-size:calc(var(--u)*14)}
+.tsep{width:1px;height:calc(var(--u)*26);background:rgba(255,255,255,.16)}
+.tclk{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
+  font-size:calc(var(--u)*17);font-weight:600;color:#f2f4f6;letter-spacing:.08em}
+.tclk-lb{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*13);
+  letter-spacing:.2em;color:#9aa3ad}
+.lv-c-main{display:grid;grid-template-columns:1.15fr 1fr;min-height:0;
+  animation:en-rise .5s cubic-bezier(.22,.8,.26,1) both}
+.lv-c-focus{border-right:1px solid var(--line);display:grid;align-content:center;
+  padding:calc(var(--u)*40) calc(var(--u)*72);min-width:0}
+.lv-c-k{font:700 calc(var(--u)*15)/1 var(--font-disp);letter-spacing:.2em;
+  text-transform:uppercase;color:var(--yellow);justify-self:start}
+.lv-c-h{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*104);
+  line-height:1;letter-spacing:-.025em;color:#f2f4f6;margin-top:calc(var(--u)*26)}
+.lv-c-sub{margin-top:calc(var(--u)*26);font-size:calc(var(--u)*23);font-weight:500;
+  color:rgba(255,255,255,.78);max-width:calc(var(--u)*640);line-height:1.5}
+.lv-c-sub b{color:var(--paper)}
+.lv-c-note{margin-top:calc(var(--u)*44);font-size:calc(var(--u)*16);font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:#9aa3ad}
+.lv-c-wall{display:flex;flex-direction:column;
+  padding:calc(var(--u)*38) calc(var(--u)*72) calc(var(--u)*30);min-width:0}
+.lv-c-wall-h{flex:none;display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:calc(var(--u)*18);border-bottom:1px solid var(--line);
+  font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*13);
+  letter-spacing:.2em;text-transform:uppercase;color:#9aa3ad}
+.cr{flex:1;display:grid;grid-template-columns:calc(var(--u)*64) 1fr auto;
+  align-items:center;gap:calc(var(--u)*24);padding:calc(var(--u)*10) 0}
+.cr + .cr{border-top:1px solid rgba(255,255,255,.07)}
+.cr-n{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*16);
+  font-variant-numeric:tabular-nums;color:#9aa3ad}
+.cr-t{min-width:0;font-size:calc(var(--u)*22);font-weight:600;
+  color:rgba(255,255,255,.86);line-height:1.35}
+.cr-1{position:relative}
+.cr-1::before{content:"";position:absolute;left:calc(var(--u)*-28);top:50%;
+  transform:translateY(-50%);width:calc(var(--u)*4);height:64%;
+  background:var(--yellow);border-radius:calc(var(--u)*2)}
+.cr-1 .cr-t{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*36);
+  color:#f2f4f6;line-height:1.2}
+.cr-s{font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*15);
+  letter-spacing:.18em;text-transform:uppercase;color:#9aa3ad;white-space:nowrap;
+  text-align:right}
+.cr-s.up{color:var(--yellow)}
+.kit-ticker.tk-c{background:rgba(8,8,8,.9);border-top:1px solid var(--line)}
+.tk-c .tk-item{color:#d9d9d9}
+.tk-c .tk-item .v{color:var(--paper)}
+
+/* ========= LANE D · BROADCAST — we're live slam ========= */
+.scn[data-lane="d"]{--ang:-8deg;place-items:center;background:var(--ink);overflow:hidden}
+.scn[data-lane="d"]::before{content:"";position:absolute;inset:-22%;
+  background:repeating-linear-gradient(var(--ang),
+    transparent 0 calc(var(--u)*200),rgba(255,255,255,.055) calc(var(--u)*200) calc(var(--u)*202))}
+.st-tr{position:absolute;top:calc(var(--u)*44);right:var(--safe);color:#ececec;z-index:5}
+/* layering: horizontal chrome, ONE rotated hero — same -8deg system */
+.lv-d{display:grid;justify-items:start;gap:calc(var(--u)*34);max-width:calc(var(--u)*1500)}
+.lv-d-slam{transform:rotate(var(--ang));display:grid;justify-items:start;
+  gap:calc(var(--u)*20);animation:en-slam .5s cubic-bezier(.2,.9,.3,1) both}
+/* K1 verdict: no yellow slab box — the words themselves are the slam */
+.slab{color:var(--yellow);font-family:'Archivo',var(--font-body);
+  font-weight:900;font-size:calc(var(--u)*148);line-height:.92;letter-spacing:-.03em;
+  text-transform:uppercase;white-space:nowrap}
+.lv-d-rule{width:100%;height:calc(var(--u)*10);background:var(--yellow)}
+.lv-d-l2{display:flex;align-items:center;gap:calc(var(--u)*18);
+  font-family:'Archivo',var(--font-body);font-weight:800;font-size:calc(var(--u)*28);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--paper)}
+.lv-d-l2 .dsep{color:rgba(255,255,255,.5)}
+.lv-d-l3{font-family:'Archivo',var(--font-body);font-weight:700;font-size:calc(var(--u)*18);
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.82)}
+.lv-d-l4{font-family:'Archivo',var(--font-body);font-weight:600;
+  font-size:calc(var(--u)*14);letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);max-width:calc(var(--u)*1200);text-align:left}
+.lv-d-hand{position:absolute;bottom:calc(var(--u)*44);right:var(--safe);
+  font-family:var(--font-disp);font-weight:600;font-size:calc(var(--u)*12);
+  letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.66)}
+
+/* ========= LANE E · EDITORIAL — edition masthead ========= */
+.scn[data-lane="e"]{background:#FAF8F4;color:var(--ink)}
+.lv-e{width:min(calc(var(--u)*1280),84%);height:100%;margin:0 auto;display:grid;
+  grid-template-rows:auto 1fr auto;padding:calc(var(--u)*72) 0 calc(var(--u)*60);
+  animation:en-rise .5s cubic-bezier(.22,.8,.26,1) both}
+.lv-e-top,.lv-e-bot{display:flex;justify-content:space-between;align-items:baseline;
+  gap:calc(var(--u)*32);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*12);letter-spacing:.22em;text-transform:uppercase;color:#6f6a62}
+.lv-e-top{border-bottom:1px solid #DDD6C8;padding-bottom:calc(var(--u)*18)}
+.lv-e-bot{border-top:1px solid #DDD6C8;padding-top:calc(var(--u)*18)}
+.lv-e-live{display:inline-flex;align-items:center;gap:calc(var(--u)*28)}
+.lv-e-live .kit-status{color:#6f6a62}
+.lv-e-mid{align-self:center;max-width:76%}
+.lv-e-rule{width:calc(var(--u)*96);height:calc(var(--u)*10);background:var(--yellow);
+  margin-bottom:calc(var(--u)*34)}
+.lv-e-kick{font-family:'Fraunces',serif;font-style:italic;font-weight:420;
+  font-size:calc(var(--u)*26);color:#6f6a62}
+.lv-e-h{font-family:'Fraunces',serif;font-weight:540;font-size:calc(var(--u)*116);
+  line-height:1;letter-spacing:-.015em;margin-top:calc(var(--u)*26)}
+.lv-e-tag{margin-top:calc(var(--u)*16);font-family:'Fraunces',serif;font-style:italic;
+  font-weight:400;font-size:calc(var(--u)*25);color:#57524a}
+.lv-e-rd{margin-top:calc(var(--u)*36);border-top:1px solid #DDD6C8;
+  padding-top:calc(var(--u)*26);display:grid;gap:calc(var(--u)*16)}
+.er{display:flex;align-items:baseline;gap:calc(var(--u)*18)}
+.ern{font-family:'Fraunces',serif;font-style:italic;font-size:calc(var(--u)*18);
+  color:#6f6a62;min-width:calc(var(--u)*42)}
+.ert{font-family:'Fraunces',serif;font-weight:460;font-size:calc(var(--u)*20);
+  color:#3f3a33}
+.er-1 .ert{font-weight:560;font-size:calc(var(--u)*30);color:var(--ink)}
+.ers{margin-left:auto;font-family:var(--font-disp);font-weight:700;font-size:calc(var(--u)*11);
+  letter-spacing:.2em;text-transform:uppercase;color:#0A7D50}
+.lv-e-guest{margin-top:calc(var(--u)*28);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*12);letter-spacing:.22em;text-transform:uppercase;color:#6f6a62}
+
+/* ========= LANE F · KINETIC — name wall =========
+   hierarchy: NAME row fills white + readable · supporting rows dim
+   outline w/ ONE gold word · EP + handles as one footer line */
+.scn[data-lane="f"]{background:var(--ink);grid-template-rows:1fr auto;color:#f2f2f2}
+.km-wall{align-self:center;width:100%;display:grid;gap:calc(var(--u)*44);
+  padding:calc(var(--u)*24) 0;animation:en-rise .5s cubic-bezier(.22,.8,.26,1) both}
+.km-row{overflow:hidden;white-space:nowrap;width:100%}
+.km-track{display:inline-flex;width:max-content;will-change:transform;animation:kmA 44s linear infinite}
+.km-row:nth-child(2) .km-track{animation-duration:56s;animation-direction:reverse}
+.km-row:nth-child(3) .km-track{animation-duration:36s}
+.km-set{display:inline-flex;gap:calc(var(--u)*72);padding-right:calc(var(--u)*72)}
+.km-w{font-family:'Archivo',var(--font-body);font-weight:900;font-size:calc(var(--u)*96);
+  line-height:1;letter-spacing:-.005em;text-transform:uppercase;
+  color:transparent;-webkit-text-stroke:calc(var(--u)*2) rgba(255,255,255,.32)}
+.km-w.fill{color:var(--paper);-webkit-text-stroke:0}
+.km-w.gold{color:var(--yellow);-webkit-text-stroke:0}
+.km-row:nth-child(1) .km-w{font-size:calc(var(--u)*168)}
+.km-row:nth-child(3) .km-w{font-size:calc(var(--u)*64);
+  -webkit-text-stroke:calc(var(--u)*1.5) rgba(255,255,255,.18)}
+.km-foot{display:flex;justify-content:space-between;align-items:center;gap:calc(var(--u)*40);
+  padding:0 max(calc(var(--u)*120),84px) max(calc(var(--u)*44),44px);font-family:var(--font-disp);font-weight:600;
+  font-size:calc(var(--u)*12);letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,255,255,.72)}
+
+/* OBS contract */
+body.obs .scn{background:transparent!important}
+body.obs .scn::before,body.obs .scn::after{display:none}
+body.obs .noise{display:none}
+</style>
+</head>
+<body data-v="a">
+<div class="stage">
+
+  <!-- ======= LANE A · OBSIDIAN ======= -->
+  <section class="scn" data-lane="a">
+    <div class="noise" aria-hidden="true"></div>
+    <div class="kit-wm on-dark" data-pos="tl"><img src="../assets/smile-logo.svg" alt="smile"></div>
+    <div class="lg lg--obsidian lv-a" style="--acc:var(--yellow);--acc-o:.9">
+      <div class="lg-backdrop"></div>
+      <div class="lg-tint"></div>
+      <div class="lg-rim"></div>
+      <div class="lg-grain"></div>
+      <div class="lg-content lv-a-in">
+        <div class="lv-a-l">
+          <div class="lv-a-meta">
+            <span class="kit-status is-live"><span class="dot"></span>LIVE</span>
+            <span class="ep-chip" data-ep>EP 01</span>
+          </div>
+          <h1 class="lv-a-h" data-t>The Smile Show</h1>
+          <p class="lv-a-tag">Kenya's all-in-one finance hub</p>
+          <div class="lv-a-guest">
+            <span class="gk">Guest</span>
+            <span class="gv" data-sub>to be announced</span>
+          </div>
+          <div class="lv-a-hands">@smileke · smile.co.ke · #SmileSquad</div>
+        </div>
+        <div class="lv-a-r">
+          <div class="rd-h">Tonight's rundown</div>
+          <div class="rd-i rd-1">
+            <span class="rd-n">01</span>
+            <div><div class="rd-t">Deep dive: cross-border payments</div>
+            <div class="rd-s">Up next</div></div>
+          </div>
+          <div class="rd-i"><span class="rd-n">02</span>
+            <div><div class="rd-t2">Guest: building for Kenya's informal traders</div></div></div>
+          <div class="rd-i"><span class="rd-n">03</span>
+            <div><div class="rd-t2">Audience Q&amp;A</div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= LANE B · APPLE KEYNOTE ======= -->
+  <section class="scn" data-lane="b">
+    <div class="kit-wm" data-pos="tl"><img src="../assets/smile-mark.svg" alt="smile"></div>
+    <div class="lv-b">
+      <div class="lv-b-meta">
+        <span class="kit-status is-live"><span class="dot"></span>LIVE</span>
+        <span class="ep-chip" data-ep>EP 01</span>
+      </div>
+      <h1 class="lv-b-h" data-t>The Smile Show.</h1>
+      <p class="lv-b-tag">Kenya's all-in-one finance hub</p>
+      <p class="lv-b-guest">Guest — <span data-sub>to be announced</span></p>
+      <p class="lv-b-hands">@smileke · smile.co.ke · #SmileSquad</p>
+    </div>
+    <footer class="lv-b-foot">
+      <div><span class="n">01 — Up next</span><span class="t">Deep dive: cross-border payments</span></div>
+      <div><span class="n">02</span><span class="t">Guest: building for Kenya's informal traders</span></div>
+      <div><span class="n">03</span><span class="t">Audience Q&amp;A</span></div>
+    </footer>
+  </section>
+
+  <!-- ======= LANE C · TRADIFY TERMINAL ======= -->
+  <section class="scn" data-lane="c">
+    <div class="tk-top">
+      <div class="tk-brand">
+        <img src="../assets/smile-mark.svg" alt="Smile">
+        <span class="lv-c-t">Smile live desk</span>
+      </div>
+      <div class="tk-right">
+        <span class="kit-status is-live"><span class="dot"></span>On air</span>
+        <span class="tsep"></span>
+        <span class="tclk-lb">EAT</span><span class="tclk" data-eat>--:--:--</span>
+      </div>
+    </div>
+    <div class="lv-c-main">
+      <div class="lv-c-focus">
+        <span class="lv-c-k" data-ep>EP 01</span>
+        <h1 class="lv-c-h" data-t>The Smile Show</h1>
+        <p class="lv-c-sub">Kenya's all-in-one finance hub — guest: <b data-sub>to be announced</b></p>
+        <p class="lv-c-note">All times EAT · rundown may flex live</p>
+      </div>
+      <aside class="lv-c-wall">
+        <div class="lv-c-wall-h"><span>Run of show</span><span>Live</span></div>
+        <div class="cr cr-1"><span class="cr-n">01</span><span class="cr-t">Deep dive: cross-border payments</span><span class="cr-s up">Up next</span></div>
+        <div class="cr"><span class="cr-n">02</span><span class="cr-t">Guest: building for Kenya's informal traders</span><span class="cr-s">On deck</span></div>
+        <div class="cr"><span class="cr-n">03</span><span class="cr-t">Audience Q&amp;A</span><span class="cr-s">Later</span></div>
+      </aside>
+    </div>
+    <div class="kit-ticker tk-c"><div class="tk-track"></div></div>
+  </section>
+
+  <!-- ======= LANE D · BROADCAST ======= -->
+  <section class="scn" data-lane="d">
+    <div class="kit-wm on-dark" data-pos="tl"><img src="../assets/smile-logo.svg" alt="smile"></div>
+    <div class="kit-status is-live st-tr"><span class="dot"></span>LIVE</div>
+    <div class="lv-d">
+      <div class="lv-d-l2"><span data-t>The Smile Show</span><span class="dsep">—</span><span class="ep-ghost" data-ep>EP 01</span></div>
+      <div class="lv-d-slam">
+        <div class="slab">We're live</div>
+        <div class="lv-d-rule" aria-hidden="true"></div>
+      </div>
+      <div class="lv-d-l3">Guest — <span data-sub>to be announced</span></div>
+      <div class="lv-d-l4">Deep dive: cross-border payments · Guest: building for Kenya's informal traders · Audience Q&amp;A</div>
+    </div>
+    <div class="lv-d-hand">@smileke · smile.co.ke</div>
+  </section>
+
+  <!-- ======= LANE E · EDITORIAL ======= -->
+  <section class="scn" data-lane="e">
+    <div class="kit-wm" data-pos="tl"><img src="../assets/smile-mark.svg" alt="smile"></div>
+    <div class="lv-e">
+      <header class="lv-e-top">
+        <span>The Smile Show · <span data-ep>EP 01</span></span>
+        <span class="lv-e-live">
+          <span class="kit-status is-live"><span class="dot"></span>Live</span>
+          <span>@smileke</span>
+        </span>
+      </header>
+      <div class="lv-e-mid">
+        <div class="lv-e-rule" aria-hidden="true"></div>
+        <div class="lv-e-kick">Edition <span data-epf>No. 01</span></div>
+        <h1 class="lv-e-h" data-t>The Smile Show</h1>
+        <p class="lv-e-tag">Kenya's all-in-one finance hub.</p>
+        <div class="lv-e-rd">
+          <div class="er er-1"><span class="ern">i.</span><span class="ert">Deep dive: cross-border payments</span><span class="ers">Up next</span></div>
+          <div class="er"><span class="ern">ii.</span><span class="ert">Guest: building for Kenya's informal traders</span></div>
+          <div class="er"><span class="ern">iii.</span><span class="ert">Audience Q&amp;A</span></div>
+        </div>
+        <div class="lv-e-guest">Guest — <span data-sub>to be announced</span></div>
+      </div>
+      <footer class="lv-e-bot"><span><span data-eatd>Friday 27 September</span> · Nairobi · EAT</span><span>#SmileSquad · smile.co.ke</span></footer>
+    </div>
+  </section>
+
+  <!-- ======= LANE F · KINETIC ======= -->
+  <section class="scn" data-lane="f">
+    <div class="kit-wm on-dark" data-pos="tl"><img src="../assets/smile-logo.svg" alt="smile"></div>
+    <div class="km-wall">
+      <div class="km-row" data-word="The Smile Show" data-fill><div class="km-track"></div></div>
+      <div class="km-row" data-word="The Smile Show" data-gold="Live"><div class="km-track"></div></div>
+      <div class="km-row" data-word="#SmileSquad"><div class="km-track"></div></div>
+    </div>
+    <footer class="km-foot">
+      <span><span data-ep>EP 01</span> · Kenya's all-in-one finance hub · @smileke · smile.co.ke</span>
+    </footer>
+  </section>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+var Q=new URLSearchParams(location.search);
+
+/* material override (?t=obsidian|frost|chameleon) — same contract as spine,
+   applied locally so pages that hand-author .lg layers need no extra JS lib */
+var mt=Q.get('t');
+if(mt){document.querySelectorAll('.lg').forEach(function(el){
+  el.classList.remove('lg--obsidian','lg--frost','lg--chameleon');
+  el.classList.add('lg--'+mt)});}
+
+/* real EAT clock + date (Africa/Nairobi) */
+function nrb(o){return new Intl.DateTimeFormat('en-GB',
+  Object.assign({timeZone:'Africa/Nairobi',hour12:false},o)).format(new Date())}
+function tick(){
+  var t=nrb({hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.querySelectorAll('[data-eat]').forEach(function(n){n.textContent=t});
+  document.querySelectorAll('[data-eatd]').forEach(function(n){
+    n.textContent=nrb({weekday:'long',day:'numeric',month:'long'})});
+  document.querySelectorAll('.tk-item').forEach(function(it){
+    var k=it.querySelector('.k');
+    if(k&&k.textContent==='EAT'){var v=it.querySelector('.v');if(v)v.textContent=t}
+  });
+}
+setInterval(tick,1000);tick();
+
+/* editorial edition formatter — "Edition No. 01" (?ep=07 → No. 07) */
+var ep=Q.get('ep');
+if(ep){var n=parseInt(ep.replace(/^ep/i,''),10);
+  if(!isNaN(n))document.querySelectorAll('[data-epf]').forEach(function(m){
+    m.textContent='No. '+(n<10?'0'+n:''+n)})}
+
+/* merged ticker law */
+var TICK=[
+  {logo:'../assets/smile-mark.svg'},
+  {k:'KES/USD',v:'129.24',dir:'up'},
+  {k:'NSE 20',v:'2,489.11',dir:'down'},
+  {k:'BTC',v:'97,420 +1.2%',dir:'up'},
+  {k:'EAT',v:'--:--:--'},
+  {gap:'@smileke'},{gap:'smile.co.ke'},{gap:'#SmileSquad'}
+];
+addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.kit-ticker').forEach(function(t){window.kitTicker(t,TICK)});
+  tick();
+  buildWalls();
+});
+
+/* kinetic wall — rows rebuilt so ?title= rides the marquee too;
+   data-alt rows alternate outline/fill so the wall reads at distance */
+function buildWalls(){
+  var ti=Q.get('title');
+  document.querySelectorAll('.km-row').forEach(function(r){
+    var word=(ti||r.dataset.word||'The Smile Show');
+    var gold=r.dataset.gold||null, fill=r.hasAttribute('data-fill'), alt=r.hasAttribute('data-alt');
+    var tr=r.querySelector('.km-track');if(!tr)return;tr.innerHTML='';
+    for(var s=0;s<2;s++){
+      var st=document.createElement('span');st.className='km-set';
+      for(var j=0;j<6;j++){
+        var solid=fill||(alt&&j%2===1);
+        var sp=document.createElement('span');
+        sp.className='km-w'+(solid?' fill':'');
+        sp.textContent=word;st.appendChild(sp);
+        if(gold){var g=document.createElement('span');
+          g.className='km-w gold';g.textContent=gold;st.appendChild(g)}
+      }
+      tr.appendChild(st);
+    }
+  });
+}
+})();
+</script>
+</body>
+</html>
