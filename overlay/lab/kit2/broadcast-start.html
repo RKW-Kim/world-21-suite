@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · start · broadcast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;border-radius:0;margin:0;padding:0}
+:root{--bg:#0A0E1A;--panel:#10182B;--line:#1E2A45;--red:#E4002B;--sky:#4DA3FF;--white:#FFFFFF}
+html,body{height:100%}
+body{background:var(--bg);color:var(--white);font-family:'Archivo',system-ui,sans-serif;overflow:hidden}
+[hidden]{display:none!important}
+img{display:block}
+
+/* ---------------- hero (left-anchored stack) ---------------- */
+.hero{position:absolute;left:5vw;top:50%;transform:translateY(-52%);z-index:10}
+.hero .w{display:block;font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(110px,15vw,220px);line-height:.88;letter-spacing:-.015em;text-transform:uppercase;transform:skewX(-6deg);white-space:nowrap}
+.hero .bar{display:block;height:24px;background:var(--red);transform:skewX(-12deg);margin:clamp(8px,1.4vh,16px) 0}
+.sub{margin-top:clamp(18px,3vh,30px);display:inline-flex;align-items:center;gap:14px;font-weight:600;font-size:17px;letter-spacing:.14em}
+.sub::before{content:"";width:30px;height:5px;background:var(--red);transform:skewX(-12deg);flex:none}
+
+/* ---------------- countdown (boxed digits, right side) ---------------- */
+.cd-zone{position:absolute;right:4.5vw;top:50%;transform:translateY(-50%);z-index:10}
+.lab{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.cd-row{display:flex;align-items:center;gap:12px;margin-top:16px}
+.cd-dig{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);transform:skewX(-12deg);padding:15px 11px 12px;min-width:clamp(58px,4.7vw,78px);text-align:center}
+.cd-dig .up{display:block;transform:skewX(12deg);font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(44px,4.4vw,70px);line-height:1;font-variant-numeric:tabular-nums}
+.cd-colon{font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(34px,3.2vw,52px);color:var(--red);transform:translateY(-.06em)}
+[data-cd-wrap][data-done="1"]{opacity:.35}
+.live-strap{display:inline-block;background:var(--red);transform:skewX(-12deg);padding:13px 28px;margin-top:26px}
+.live-strap .up{display:block;transform:skewX(12deg);font-weight:800;font-size:15px;letter-spacing:.12em}
+
+/* ---------------- LIVE bug ---------------- */
+.livebug{position:fixed;top:28px;left:28px;z-index:60;background:var(--red);transform:skewX(-12deg);padding:11px 20px;pointer-events:none}
+.livebug .up{display:flex;align-items:center;gap:9px;transform:skewX(12deg);font-weight:800;font-size:14px;letter-spacing:.16em}
+.dot{width:8px;height:8px;background:var(--white);animation:blink 1s steps(1,end) infinite}
+@keyframes blink{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+
+/* ---------------- red ticker strip ---------------- */
+.ticker{position:fixed;left:0;bottom:48px;width:100%;height:32px;z-index:50;pointer-events:none}
+.tk-skew{width:calc(100% + 120px);margin-left:-60px;height:100%;background:var(--red);transform:skewX(-12deg);overflow:hidden}
+.tk-move{display:flex;width:max-content;height:100%;align-items:center;transform:skewX(12deg);animation:slide 30s linear infinite}
+.tk-seq{white-space:nowrap;font-weight:700;font-size:13px;letter-spacing:.08em}
+@keyframes slide{from{transform:skewX(12deg) translateX(0)}to{transform:skewX(12deg) translateX(-50%)}}
+
+/* ---------------- score bug ---------------- */
+.bug{position:fixed;left:0;bottom:0;width:100%;height:48px;z-index:60;pointer-events:none}
+.bug-skew{width:calc(100% + 120px);margin-left:-60px;height:100%;background:var(--panel);transform:skewX(-12deg);display:flex;align-items:stretch}
+.bug-tab{width:10px;background:var(--red);flex:none}
+.seg{display:flex;align-items:center;padding:0 30px;border-right:1px solid var(--line)}
+.seg .up{transform:skewX(12deg);display:flex;align-items:center;gap:10px;font-weight:700;font-size:12.5px;letter-spacing:.08em}
+.seg-num{font-weight:800;font-size:20px;color:var(--sky);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.seg-mark{margin-left:auto;border-right:0;border-left:1px solid var(--line);padding-right:44px}
+.seg-mark img{width:28px;height:28px}
+
+@media (max-width:1500px){
+  .hero{top:42%}
+  .cd-zone{top:auto;bottom:140px;right:4vw;transform:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<main>
+  <section class="hero">
+    <h1><span class="w">STARTING</span><span class="bar" aria-hidden="true"></span><span class="w">SOON</span></h1>
+    <p class="sub"><span>live podcast + screen share</span></p>
+  </section>
+
+  <aside class="cd-zone">
+    <div data-cd-wrap>
+      <p class="lab">TO AIR</p>
+      <div class="cd-row" data-cd-boxes aria-label="countdown to air"></div>
+    </div>
+    <p class="live-strap" data-when-live hidden><span class="up">WE ARE LIVE</span></p>
+  </aside>
+</main>
+
+<div class="livebug"><span class="up"><i class="dot" aria-hidden="true"></i>LIVE</span></div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="tk-skew">
+    <div class="tk-move">
+      <span class="tk-seq">LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull;&nbsp;</span><span class="tk-seq" aria-hidden="true">LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull; LIVE PODCAST &bull; SCREEN SHARE &bull; Q&amp;A &bull; COMMUNITY &bull;&nbsp;</span>
+    </div>
+  </div>
+</div>
+
+<footer class="bug">
+  <div class="bug-skew">
+    <i class="bug-tab" aria-hidden="true"></i>
+    <div class="seg seg-ep"><span class="up"><span>EP</span><b class="seg-num" data-ep>128</b></span></div>
+    <div class="seg seg-show"><span class="up"><span>PODCAST + SCREEN SHARE</span></span></div>
+    <div class="seg seg-mark"><span class="up"><img src="../assets/smile-mark.svg" alt="SMILE mark" width="28" height="28"></span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var el0=q.get('elapsed')?parseInt(q.get('elapsed'),10):0, t0=Date.now();
+  function boxes(str){
+    document.querySelectorAll('[data-cd-boxes]').forEach(function(w){
+      if(w._last===str){return;}
+      w._last=str; w.textContent='';
+      for(var i=0;i<str.length;i++){
+        var c=str.charAt(i);
+        if(c===':'){var k=document.createElement('span');k.className='cd-colon';k.textContent=':';w.appendChild(k);}
+        else{var b=document.createElement('span');b.className='cd-dig';var u=document.createElement('span');u.className='up';u.textContent=c;b.appendChild(u);w.appendChild(b);}
+      }
+    });
+  }
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    var str=(h>0?P(h)+':':'')+P(m)+':'+P(x);
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=str; });
+    boxes(str);
+    var el=el0+Math.floor((Date.now()-t0)/1000);
+    document.querySelectorAll('[data-elapsed]').forEach(function(e){ e.textContent=P(Math.floor(el/60))+':'+P(el%60); });
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

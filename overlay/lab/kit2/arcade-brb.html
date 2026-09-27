@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · BRB · arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D14; --panel:rgba(15,20,32,.88); --line:#1E293B;
+    --cy:#22D3EE; --mg:#F43F8E; --wht:#F8FAFC; --slt:#94A3B8;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; overflow:hidden; background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size:64px 64px;
+    font-family:'Chakra Petch','Segoe UI',sans-serif; color:var(--wht);
+  }
+  [hidden]{display:none!important}
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+
+  .vignette{position:fixed; inset:0; z-index:60; pointer-events:none;
+    background:radial-gradient(120% 130% at 50% 50%, transparent 55%, rgba(0,0,0,.25) 100%)}
+  .scan{position:fixed; inset:0; z-index:61; pointer-events:none; opacity:.35;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0 1px, transparent 1px 3px)}
+
+  .brand{position:fixed; top:42px; left:48px; z-index:10; display:flex; align-items:center;
+    gap:18px}
+  .brand .t{font-weight:700; font-size:13px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--wht)}
+  .brand .t span{color:var(--slt); font-weight:500}
+  .brand .ep{border:2px solid var(--line); border-radius:4px; padding:7px 12px;
+    font-weight:600; font-size:12px; letter-spacing:.18em; color:var(--slt)}
+  .brand .ep b{color:var(--wht); font-weight:700}
+  .wm{position:fixed; bottom:44px; right:48px; width:72px; height:72px; z-index:12;
+    filter:drop-shadow(-4px 4px 0 rgba(0,0,0,.5))}
+
+  /* respawn core */
+  .core{position:fixed; inset:0; z-index:5; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:34px; padding:0 48px; text-align:center;
+    transition:opacity .5s}
+  .heart-wrap{width:126px; height:112px; flex:none; animation:beat 1.1s ease-in-out infinite;
+    transform-origin:50% 60%}
+  @keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+  .pxheart{width:14px; height:14px; background:transparent;
+    box-shadow:
+    14px 0px 0 0 #F43F8E,
+    28px 0px 0 0 #F43F8E,
+    84px 0px 0 0 #F43F8E,
+    98px 0px 0 0 #F43F8E,
+    0px 14px 0 0 #F43F8E,
+    14px 14px 0 0 rgba(248,250,252,.8),
+    28px 14px 0 0 rgba(248,250,252,.8),
+    42px 14px 0 0 #F43F8E,
+    56px 14px 0 0 #F43F8E,
+    70px 14px 0 0 #F43F8E,
+    84px 14px 0 0 #F43F8E,
+    98px 14px 0 0 #F43F8E,
+    112px 14px 0 0 #F43F8E,
+    0px 28px 0 0 #F43F8E,
+    14px 28px 0 0 #F43F8E,
+    28px 28px 0 0 #F43F8E,
+    42px 28px 0 0 #F43F8E,
+    56px 28px 0 0 #F43F8E,
+    70px 28px 0 0 #F43F8E,
+    84px 28px 0 0 #F43F8E,
+    98px 28px 0 0 #F43F8E,
+    112px 28px 0 0 #F43F8E,
+    0px 42px 0 0 #F43F8E,
+    14px 42px 0 0 #F43F8E,
+    28px 42px 0 0 #F43F8E,
+    42px 42px 0 0 #F43F8E,
+    56px 42px 0 0 #F43F8E,
+    70px 42px 0 0 #F43F8E,
+    84px 42px 0 0 #F43F8E,
+    98px 42px 0 0 #F43F8E,
+    112px 42px 0 0 #F43F8E,
+    14px 56px 0 0 #F43F8E,
+    28px 56px 0 0 #F43F8E,
+    42px 56px 0 0 #F43F8E,
+    56px 56px 0 0 #F43F8E,
+    70px 56px 0 0 #F43F8E,
+    84px 56px 0 0 #F43F8E,
+    98px 56px 0 0 #F43F8E,
+    28px 70px 0 0 #F43F8E,
+    42px 70px 0 0 #F43F8E,
+    56px 70px 0 0 #F43F8E,
+    70px 70px 0 0 #F43F8E,
+    84px 70px 0 0 #F43F8E,
+    42px 84px 0 0 #F43F8E,
+    56px 84px 0 0 #F43F8E,
+    70px 84px 0 0 #F43F8E,
+    56px 98px 0 0 #F43F8E;
+  }
+  .rl{font-family:'Unbounded','Chakra Petch',sans-serif; font-weight:700;
+    font-size:clamp(32px,4.7vw,54px); line-height:1; color:var(--wht);
+    text-shadow:4px 4px 0 rgba(34,211,238,.35), -4px -4px 0 rgba(244,63,142,.35)}
+  .cd{font-weight:700; font-size:clamp(64px,10.2vw,110px); line-height:1;
+    letter-spacing:.02em; color:var(--cy); font-variant-numeric:tabular-nums}
+  .save{font-weight:500; font-size:17px; letter-spacing:.04em; color:var(--slt)}
+  .ptrack{width:min(520px,72vw); height:8px; border-radius:2px; background:var(--line);
+    overflow:hidden}
+  .pfill{height:100%; background:var(--mg); transform-origin:left center;
+    transform:scaleX(0)}
+  .ready-chip{border:2px solid var(--mg); border-radius:4px; padding:10px 18px;
+    font-weight:700; font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--mg)}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+    .heart-wrap{animation:none;transform:scale(1)}
+  }
+</style>
+</head>
+<body>
+  <div class="vignette"></div>
+
+  <header class="brand">
+    <span class="t">SMILE <span>— live podcast + screen share</span></span>
+    <span class="ep">EP <b data-ep>128</b></span>
+  </header>
+  <img class="wm" src="../assets/smile-mark.svg" alt="SMILE">
+
+  <main class="core" data-cd-wrap>
+    <div class="heart-wrap"><div class="pxheart"></div></div>
+    <div class="rl">
+      <span data-hide-when-live>RESPAWN IN</span>
+      <span data-when-live hidden>RESPAWN READY</span>
+    </div>
+    <div class="cd" data-cd>05:00</div>
+    <div class="save">saving your spot…</div>
+    <div class="ptrack"><div class="pfill" id="brbFill"></div></div>
+  </main>
+
+  <div class="scan"></div>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+300000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var el0=q.get('elapsed')?parseInt(q.get('elapsed'),10):0, t0=Date.now();
+  var s0=Math.max(1,Math.round((target-t0)/1000)), fill=document.getElementById('brbFill');
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(fill){ fill.style.transform='scaleX('+(1-s/s0).toFixed(4)+')'; }
+    var el=el0+Math.floor((Date.now()-t0)/1000);
+    document.querySelectorAll('[data-elapsed]').forEach(function(e){ e.textContent=P(Math.floor(el/60))+':'+P(el%60); });
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-hide-when-live]').forEach(function(e){e.setAttribute('hidden','');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

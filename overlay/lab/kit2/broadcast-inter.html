@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · inter · broadcast</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;border-radius:0;margin:0;padding:0}
+:root{--bg:#0A0E1A;--panel:#10182B;--line:#1E2A45;--red:#E4002B;--sky:#4DA3FF;--white:#FFFFFF}
+html,body{height:100%}
+body{background:var(--bg);color:var(--white);font-family:'Archivo',system-ui,sans-serif;overflow:hidden}
+[hidden]{display:none!important}
+img{display:block}
+
+/* ---------------- split screen ---------------- */
+.split{position:fixed;inset:0 0 48px 0;display:flex;z-index:1}
+.left{width:55%;display:flex;align-items:center;padding:0 4vw}
+.right{width:45%;background:var(--panel);border-left:6px solid var(--red);display:flex;flex-direction:column;justify-content:center;padding:0 4.5vw}
+
+/* ---------------- left: INTERMISSION hero ---------------- */
+.hero .w{display:block;font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(84px,10vw,176px);line-height:.9;letter-spacing:-.015em;text-transform:uppercase;transform:skewX(-6deg);white-space:nowrap}
+.cd{margin-top:clamp(28px,5vh,48px)}
+.lab{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.cd-row{display:flex;align-items:center;gap:10px;margin-top:14px}
+.cd-dig{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);transform:skewX(-12deg);padding:12px 9px 10px;min-width:clamp(44px,3.4vw,58px);text-align:center}
+.cd-dig .up{display:block;transform:skewX(12deg);font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(30px,3vw,52px);line-height:1;font-variant-numeric:tabular-nums}
+.cd-colon{font-family:'Archivo Black','Archivo',sans-serif;font-weight:400;font-size:clamp(24px,2.3vw,40px);color:var(--red);transform:translateY(-.06em)}
+[data-cd-wrap][data-done="1"]{opacity:.35}
+.live-strap{display:inline-block;background:var(--red);transform:skewX(-12deg);padding:12px 26px;margin-top:24px}
+.live-strap .up{display:block;transform:skewX(12deg);font-weight:800;font-size:14px;letter-spacing:.12em}
+
+/* ---------------- right: UP NEXT panel ---------------- */
+.panel-head{display:flex;align-items:center;gap:12px}
+.panel-head .sq{width:12px;height:12px;background:var(--red);transform:skewX(-12deg);flex:none}
+.panel-head h2{font-weight:800;font-size:15px;letter-spacing:.2em;text-transform:uppercase}
+.next{list-style:none;margin-top:26px}
+.row{display:flex;align-items:center;gap:22px;padding:clamp(22px,4vh,38px) 0;font-weight:700;font-size:clamp(22px,2.1vw,34px);letter-spacing:.01em}
+.row + .row{border-top:1px solid var(--line)}
+.chev{width:0;height:0;border-top:11px solid transparent;border-bottom:11px solid transparent;border-left:16px solid var(--red);flex:none}
+
+/* ---------------- LIVE bug ---------------- */
+.livebug{position:fixed;top:28px;left:28px;z-index:60;background:var(--red);transform:skewX(-12deg);padding:11px 20px;pointer-events:none}
+.livebug .up{display:flex;align-items:center;gap:9px;transform:skewX(12deg);font-weight:800;font-size:14px;letter-spacing:.16em}
+.dot{width:8px;height:8px;background:var(--white);animation:blink 1s steps(1,end) infinite}
+@keyframes blink{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+
+/* ---------------- score bug ---------------- */
+.bug{position:fixed;left:0;bottom:0;width:100%;height:48px;z-index:60;pointer-events:none}
+.bug-skew{width:calc(100% + 120px);margin-left:-60px;height:100%;background:var(--panel);transform:skewX(-12deg);display:flex;align-items:stretch}
+.bug-tab{width:10px;background:var(--red);flex:none}
+.seg{display:flex;align-items:center;padding:0 30px;border-right:1px solid var(--line)}
+.seg .up{transform:skewX(12deg);display:flex;align-items:center;gap:10px;font-weight:700;font-size:12.5px;letter-spacing:.08em}
+.seg-num{font-weight:800;font-size:20px;color:var(--sky);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.seg-mark{margin-left:auto;border-right:0;border-left:1px solid var(--line);padding-right:44px}
+.seg-mark img{width:28px;height:28px}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="split">
+  <section class="left">
+    <div class="hero">
+      <h1><span class="w">INTER-</span><span class="w">MISSION</span></h1>
+      <div class="cd" data-cd-wrap>
+        <p class="lab">RESUMES IN</p>
+        <div class="cd-row" data-cd-boxes aria-label="countdown to part two"></div>
+      </div>
+      <p class="live-strap" data-when-live hidden><span class="up">PART TWO IS LIVE</span></p>
+    </div>
+  </section>
+
+  <aside class="right">
+    <div class="panel-head">
+      <i class="sq" aria-hidden="true"></i>
+      <h2>UP NEXT</h2>
+    </div>
+    <ul class="next">
+      <li class="row"><i class="chev" aria-hidden="true"></i><span>requests round</span></li>
+      <li class="row"><i class="chev" aria-hidden="true"></i><span>mailbag</span></li>
+      <li class="row"><i class="chev" aria-hidden="true"></i><span>part two</span></li>
+    </ul>
+  </aside>
+</main>
+
+<div class="livebug"><span class="up"><i class="dot" aria-hidden="true"></i>LIVE</span></div>
+
+<footer class="bug">
+  <div class="bug-skew">
+    <i class="bug-tab" aria-hidden="true"></i>
+    <div class="seg seg-ep"><span class="up"><span>EP</span><b class="seg-num" data-ep>128</b></span></div>
+    <div class="seg seg-show"><span class="up"><span>PODCAST + SCREEN SHARE</span></span></div>
+    <div class="seg seg-mark"><span class="up"><img src="../assets/smile-mark.svg" alt="SMILE mark" width="28" height="28"></span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var el0=q.get('elapsed')?parseInt(q.get('elapsed'),10):0, t0=Date.now();
+  function boxes(str){
+    document.querySelectorAll('[data-cd-boxes]').forEach(function(w){
+      if(w._last===str){return;}
+      w._last=str; w.textContent='';
+      for(var i=0;i<str.length;i++){
+        var c=str.charAt(i);
+        if(c===':'){var k=document.createElement('span');k.className='cd-colon';k.textContent=':';w.appendChild(k);}
+        else{var b=document.createElement('span');b.className='cd-dig';var u=document.createElement('span');u.className='up';u.textContent=c;b.appendChild(u);w.appendChild(b);}
+      }
+    });
+  }
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    var str=(h>0?P(h)+':':'')+P(m)+':'+P(x);
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=str; });
+    boxes(str);
+    var el=el0+Math.floor((Date.now()-t0)/1000);
+    document.querySelectorAll('[data-elapsed]').forEach(function(e){ e.textContent=P(Math.floor(el/60))+':'+P(el%60); });
+    if(s<=0){
+      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+      document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');});
+    }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

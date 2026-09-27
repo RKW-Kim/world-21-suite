@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE · start · zine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4EFE5;
+    --ink:#171310;
+    --blue:#2440F0;
+    --red:#FF4438;
+    --ink72:rgba(23,19,16,.72);
+    --ink40:rgba(23,19,16,.4);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Mono",Menlo,Consolas,monospace;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* paper grain */
+  body::after{
+    content:"";position:fixed;inset:0;z-index:90;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  /* registration crosshairs — print furniture, all four corners */
+  .reg{position:fixed;width:14px;height:14px;z-index:80;pointer-events:none}
+  .reg::before{content:"";position:absolute;top:50%;left:0;right:0;height:1px;background:var(--ink40)}
+  .reg::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--ink40)}
+  .reg.tl{top:16px;left:16px}.reg.tr{top:16px;right:16px}
+  .reg.bl{bottom:16px;left:16px}.reg.br{bottom:16px;right:16px}
+
+  .cover{position:fixed;inset:0;padding:clamp(30px,3vw,58px)}
+
+  /* masthead — top-left */
+  .mast{position:absolute;top:clamp(30px,3vw,58px);left:clamp(30px,3vw,58px);z-index:3}
+  .mast-word{
+    font-family:"Fraunces",Georgia,serif;font-weight:900;font-optical-sizing:auto;
+    font-size:clamp(58px,5.7vw,110px);line-height:.85;letter-spacing:-.04em;color:var(--ink);
+  }
+  .mast-word .dot{color:var(--red)}
+  .mast-rule{width:clamp(90px,7vw,140px);height:2px;background:var(--red);margin:16px 0 12px}
+  .mast-line{font-size:12px;font-weight:500;letter-spacing:.22em;color:var(--ink)}
+
+  /* issue block — top-right */
+  .issue{position:absolute;top:clamp(34px,3.2vw,62px);right:clamp(30px,3vw,58px);text-align:right;z-index:3}
+  .issue-no{font-size:14px;font-weight:700;letter-spacing:.2em}
+  .issue-sub{font-size:11px;letter-spacing:.14em;color:var(--ink72);margin-top:8px}
+
+  /* spine — left edge, rotated -90 */
+  .spine{
+    position:absolute;left:20px;top:50%;z-index:3;
+    writing-mode:vertical-rl;transform:translateY(-50%) rotate(180deg);
+    font-size:11px;letter-spacing:.34em;color:var(--ink72);white-space:nowrap;
+  }
+
+  /* hero coverline — misregistered */
+  .hero{position:absolute;left:50%;top:50%;transform:translate(-50%,-54%);z-index:2;text-align:left}
+  .halftone{
+    position:absolute;left:-6%;top:-10%;width:112%;height:120%;z-index:-1;
+    background-image:radial-gradient(circle, rgba(23,19,16,.12) 1.1px, transparent 1.3px);
+    background-size:3px 3px;
+  }
+  .hero-word{
+    font-family:"Fraunces",Georgia,serif;font-weight:900;font-optical-sizing:auto;
+    font-size:clamp(90px,12vw,180px);line-height:.88;letter-spacing:-.035em;color:var(--ink);
+    text-shadow:3px 0 0 rgba(36,64,240,.55), -3px 0 0 rgba(255,68,56,.55);
+  }
+
+  /* bottom band */
+  .foot{position:absolute;left:clamp(30px,3vw,58px);right:clamp(30px,3vw,58px);bottom:clamp(30px,3vw,58px);display:flex;justify-content:space-between;align-items:flex-end;z-index:3}
+  .stamp{
+    border:2px dashed var(--ink);padding:18px 26px 20px;background:var(--paper);
+    transition:opacity .4s ease;
+  }
+  .stamp-label{font-size:11px;font-weight:500;letter-spacing:.26em;color:var(--ink72)}
+  .stamp-time{
+    font-family:"Fraunces",Georgia,serif;font-weight:900;font-optical-sizing:auto;
+    font-size:clamp(40px,3.6vw,66px);line-height:1;letter-spacing:-.02em;margin-top:10px;
+  }
+  .live-chip{
+    display:inline-block;margin-top:14px;background:var(--red);color:var(--ink);
+    font-size:12px;font-weight:700;letter-spacing:.16em;padding:7px 12px;
+  }
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+  [data-when-live][hidden]{display:none!important}
+
+  .price{display:flex;align-items:center;gap:22px;margin-right:clamp(76px,7vw,116px)}
+  .free{
+    width:64px;height:64px;border:2px solid var(--red);border-radius:50%;
+    display:grid;place-items:center;transform:rotate(8deg);
+    font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--ink);flex:none;
+  }
+  .code{display:flex;flex-direction:column;gap:7px}
+  .barcode{
+    width:clamp(120px,10vw,172px);height:44px;
+    background:repeating-linear-gradient(90deg,
+      var(--ink) 0 2px, transparent 2px 5px,
+      var(--ink) 5px 6px, transparent 6px 8px,
+      var(--ink) 8px 12px, transparent 12px 14px,
+      var(--ink) 14px 15px, transparent 15px 19px);
+  }
+  .code-no{font-size:11px;letter-spacing:.3em;color:var(--ink72)}
+
+  .mark{position:fixed;right:36px;bottom:34px;width:72px;height:72px;z-index:50}
+
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <span class="reg tl" aria-hidden="true"></span>
+  <span class="reg tr" aria-hidden="true"></span>
+  <span class="reg bl" aria-hidden="true"></span>
+  <span class="reg br" aria-hidden="true"></span>
+
+  <main class="cover">
+    <header class="mast">
+      <h1 class="mast-word">SMILE<span class="dot">.</span></h1>
+      <div class="mast-rule" aria-hidden="true"></div>
+      <p class="mast-line">THE PODCAST ISSUE — LIVE + SCREEN SHARE</p>
+    </header>
+
+    <aside class="issue">
+      <p class="issue-no">ISSUE <span data-ep>128</span></p>
+      <p class="issue-sub">live podcast + screen share</p>
+    </aside>
+
+    <p class="spine">A SHOW ABOUT NOTHING IN PARTICULAR</p>
+
+    <section class="hero">
+      <div class="halftone" aria-hidden="true"></div>
+      <h2 class="hero-word">Starting<br>Soon</h2>
+    </section>
+
+    <footer class="foot">
+      <div class="stamp" data-cd-wrap>
+        <p class="stamp-label">DOORS OPEN IN</p>
+        <p class="stamp-time" data-cd>10:00</p>
+        <p class="live-chip" data-when-live hidden>WE'RE LIVE — COME IN</p>
+      </div>
+      <div class="price">
+        <span class="free">FREE</span>
+        <div class="code">
+          <div class="barcode" aria-hidden="true"></div>
+          <p class="code-no">8 41251 28073</p>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <img class="mark" src="../assets/smile-mark.svg" alt="SMILE">
+
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE · START · highvis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --field:#15161A; --ink:#101114; --paper:#FFFFFF; --orange:#FF5A00; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    overflow:hidden; background:var(--field); color:var(--ink);
+    font-family:'IBM Plex Mono','Courier New',monospace;
+    -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums;
+  }
+  /* hazard tape along the very top of the screen */
+  .hz-top{position:fixed;top:0;left:0;right:0;height:12px;z-index:9;
+    background:repeating-linear-gradient(45deg,var(--orange) 0 14px,var(--ink) 14px 28px);}
+  .stage{height:100%;display:flex;align-items:center;gap:clamp(24px,3vw,72px);
+    padding:clamp(36px,6vh,72px) clamp(20px,3vw,64px) clamp(24px,4vh,56px);}
+  /* ---- THE JOB TICKET ---- */
+  .ticket{position:relative;flex:0 0 auto;width:clamp(620px,68vw,1300px);
+    background:var(--paper);border:2px solid var(--ink);
+    box-shadow:6px 6px 0 rgba(0,0,0,.45);display:flex;flex-direction:column;}
+  .t-head{display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:var(--orange);border-bottom:2px solid var(--ink);
+    padding:clamp(12px,1.8vh,20px) clamp(20px,2.4vw,44px);}
+  .t-head h1{font-family:'Archivo Black','Arial Black',sans-serif;font-weight:400;
+    color:#fff;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;
+    font-size:clamp(24px,1.9vw,34px);}
+  .t-brand{color:var(--ink);font-weight:700;letter-spacing:.22em;
+    font-size:clamp(13px,1vw,17px);}
+  .t-rows{display:flex;flex-direction:column;gap:clamp(14px,2.4vh,26px);
+    padding:clamp(22px,3.6vh,44px) clamp(20px,2.4vw,44px);}
+  .row{display:flex;align-items:baseline;gap:clamp(10px,1vw,16px);min-width:0}
+  .lbl{font-weight:700;letter-spacing:.12em;font-size:clamp(14px,1.15vw,21px);white-space:nowrap}
+  .lead{flex:1;min-width:20px;border-bottom:2px dotted var(--ink);transform:translateY(-4px)}
+  .val{font-weight:600;font-size:clamp(14px,1.15vw,21px);letter-spacing:.04em;text-align:right}
+  /* perforated tear-off footer with punched notches */
+  .t-foot{position:relative;margin-top:auto;border-top:2px dashed var(--ink);
+    padding:clamp(14px,2vh,22px) clamp(20px,2.4vw,44px) clamp(16px,2.4vh,26px);}
+  .notch{position:absolute;top:-14px;width:26px;height:26px;border-radius:50%;background:var(--field)}
+  .notch.l{left:-15px}.notch.r{right:-15px}
+  .b-wrap{display:flex;flex-direction:column;gap:8px;width:fit-content}
+  .barcode{height:34px;width:clamp(220px,20vw,360px);
+    background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px);}
+  .b-cap{font-weight:600;letter-spacing:.18em;font-size:clamp(13px,.95vw,15px)}
+  /* stamped badge, overlapping the ticket's top-right corner */
+  .stamp{font-family:'Archivo Black','Arial Black',sans-serif;font-weight:400;
+    color:var(--orange);border:3px double var(--orange);text-transform:uppercase;
+    letter-spacing:.08em;line-height:1;background:transparent;
+    padding:clamp(10px,1.6vh,16px) clamp(16px,1.6vw,26px);}
+  .stamp-scheduled{position:absolute;top:-24px;right:-30px;z-index:3;
+    font-size:clamp(19px,1.7vw,30px);transform:rotate(-8deg);}
+  /* ---- countdown rail on the dark field ---- */
+  .rail{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;
+    gap:clamp(14px,2.2vh,24px);transition:opacity .3s linear;}
+  .cd-label{color:var(--orange);font-weight:700;letter-spacing:.32em;
+    font-size:clamp(13px,1.05vw,18px);}
+  .cd-row{display:flex;align-items:center;gap:clamp(5px,.5vw,10px);
+    font-size:clamp(34px,3.4vw,64px);line-height:1;width:100%;}
+  .dbox{flex:1 1 0;max-width:88px;aspect-ratio:5/7;display:grid;place-items:center;
+    background:var(--paper);border:2px solid var(--ink);color:var(--orange);font-weight:700;}
+  .dcolon{flex:0 0 auto;width:.42em;text-align:center;color:var(--orange);
+    font-weight:700;transform:translateY(-.06em);}
+  .cd-live{background:var(--orange);color:var(--ink);border:2px solid var(--ink);
+    font-weight:700;letter-spacing:.1em;font-size:clamp(13px,1.1vw,18px);padding:10px 16px;}
+  [data-cd-wrap][data-done="1"]{opacity:.35}
+  .wm{position:fixed;right:clamp(18px,2.4vw,44px);bottom:clamp(16px,3vh,34px);
+    width:72px;height:72px;z-index:9;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.45));}
+  .wm img{display:block;width:72px;height:72px}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;animation-delay:0s!important}
+  }
+</style>
+</head>
+<body>
+  <div class="hz-top" aria-hidden="true"></div>
+  <main class="stage">
+    <section class="ticket" aria-label="Job card">
+      <header class="t-head">
+        <h1>JOB CARD — TODAY</h1>
+        <span class="t-brand">SMILE</span>
+      </header>
+      <div class="t-rows">
+        <div class="row"><span class="lbl">CLIENT</span><span class="lead" aria-hidden="true"></span><span class="val">SMILE CREW</span></div>
+        <div class="row"><span class="lbl">JOB</span><span class="lead" aria-hidden="true"></span><span class="val">LIVE PODCAST + SCREEN SHARE</span></div>
+        <div class="row"><span class="lbl">CREW</span><span class="lead" aria-hidden="true"></span><span class="val">HOST + CO-HOST</span></div>
+        <div class="row"><span class="lbl">ISSUE TIME</span><span class="lead" aria-hidden="true"></span><span class="val" data-clock>--:--:--</span></div>
+      </div>
+      <footer class="t-foot">
+        <span class="notch l" aria-hidden="true"></span>
+        <span class="notch r" aria-hidden="true"></span>
+        <div class="b-wrap">
+          <div class="barcode" aria-hidden="true"></div>
+          <div class="b-cap">NO. EP-<span data-ep>128</span></div>
+        </div>
+      </footer>
+      <div class="stamp stamp-scheduled">SCHEDULED</div>
+    </section>
+    <aside class="rail" data-cd-wrap aria-label="Starts in">
+      <span data-cd hidden>10:00</span>
+      <div class="cd-label">STARTS IN</div>
+      <div class="cd-row" id="cdRow" aria-hidden="true"><span class="dbox">1</span><span class="dbox">0</span><span class="dcolon">:</span><span class="dbox">0</span><span class="dbox">0</span></div>
+      <div class="cd-live" data-when-live hidden>ON AIR — ROLL THE SHOW</div>
+    </aside>
+  </main>
+  <div class="wm"><img src="../assets/smile-mark.svg" alt="SMILE"></div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=Date.now()+600000, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  var el0=q.get('elapsed')?parseInt(q.get('elapsed'),10):0, t0=Date.now();
+  var cdRow=document.getElementById('cdRow');
+  function boxes(txt){
+    if(!cdRow) return;
+    while(cdRow.children.length>txt.length) cdRow.removeChild(cdRow.lastChild);
+    while(cdRow.children.length<txt.length){
+      var s=document.createElement('span');
+      s.className=(txt.charAt(cdRow.children.length)===':')?'dcolon':'dbox';
+      s.textContent='0'; cdRow.appendChild(s);
+    }
+    for(var i=0;i<txt.length;i++){
+      var el=cdRow.children[i], want=(txt.charAt(i)===':')?'dcolon':'dbox';
+      if(el.className!==want) el.className=want;
+      if(el.textContent!==txt.charAt(i)) el.textContent=txt.charAt(i);
+    }
+  }
+  function tick(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    var cd=(h>0?P(h)+':':'')+P(m)+':'+P(x);
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=cd; });
+    boxes(cd);
+    var now=new Date();
+    document.querySelectorAll('[data-clock]').forEach(function(e){ e.textContent=P(now.getHours())+':'+P(now.getMinutes())+':'+P(now.getSeconds()); });
+    var el=el0+Math.floor((Date.now()-t0)/1000);
+    document.querySelectorAll('[data-elapsed]').forEach(function(e){ e.textContent=P(Math.floor(el/60))+':'+P(el%60); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  }
+  tick(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
