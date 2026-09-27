@@ -1,215 +1,499 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · brb</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · be right back</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5 10.8 23.8 23.8'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,340..640;1,9..144,340..640&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/core.css">
 <style>
-  /* ---------- take gating ---------- */
-  .scn{position:absolute;inset:0;display:none}
-  body[data-v="a"] .scn[data-take="a"],body[data-v="b"] .scn[data-take="b"]{display:block}
+/* ================================================================
+   BE RIGHT BACK — 4 takes
+   a AUTOPILOT CONSOLE  (mecha / sazabi, centered bay)
+   b STRETCH BREAK      (kinetic tape + giant type)
+   c CONTROL-ROOM DOCK  (obsidian glass, bottom dock)
+   d INTERMISSION PLAYBILL (solar print, ceremonial)
+   ================================================================ */
+html{overflow:hidden}
+html,body{scrollbar-width:none}
+::-webkit-scrollbar{display:none}
 
-  /* ---------- shared scene bits ---------- */
-  .sky{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
-    -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-    -webkit-mask-composite:source-in;
-    mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-    mask-composite:intersect}
-  h1{font-family:var(--font-display);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--paper)}
-  h1 .y{color:var(--yellow)} h1 .g{color:var(--up)}
-  .sub{font-size:26px;font-weight:500;color:#a8a8a8;line-height:1.5}
-  .sub b{color:var(--yellow);font-weight:700;font-variant-numeric:tabular-nums}
-  [data-cd-wrap][data-done="1"]{opacity:.35;transition:opacity .5s var(--ease-out)}
-  .livechip{display:none;position:absolute;inset:0;margin:auto;width:max-content;height:max-content;z-index:6}
-  .livechip:not([hidden]){display:inline-flex;animation:popA .7s var(--ease-spring) both}
-  @keyframes popA{from{opacity:0;transform:scale(.45)}to{opacity:1;transform:scale(1)}}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @keyframes spinRev{to{transform:rotate(-360deg)}}
-  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.scn{position:absolute;inset:0;display:none;z-index:2}
+body:not([data-v="b"]):not([data-v="c"]):not([data-v="d"]) .scn[data-take="a"]{display:block}
+body[data-v="b"] .scn[data-take="b"]{display:block}
+body[data-v="c"] .scn[data-take="c"]{display:block}
+body[data-v="d"] .scn[data-take="d"]{display:block}
 
-  /* ---------- TAKE A · the buffer ---------- */
-  .brA-top{position:absolute;top:60px;left:96px;right:96px;display:flex;justify-content:space-between;align-items:center;z-index:5}
-  .brA-top .brand{font-size:30px}.brA-top .brand .dw{width:42px;height:42px}
-  .brA-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:96px;text-align:center;z-index:3}
-  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:42px}
-  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07);border-top-color:var(--yellow);animation:spin 1.5s cubic-bezier(.6,.15,.4,.85) infinite}
-  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
-  .buffer .sat{position:absolute;inset:-18px;animation:spin 6.5s linear infinite}
-  .buffer .sat i{position:absolute;left:50%;top:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--sky);box-shadow:0 0 16px rgba(63,182,255,.9)}
-  .buffer .face{width:216px;height:216px;animation:breathe 3.4s ease-in-out infinite}
-  .brA-center h1{font-size:118px}
-  .brA-center .sub{margin-top:22px}
-  .bnc{margin-top:32px;display:flex;gap:14px}
-  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:dots 1.2s ease-in-out infinite}
-  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
-  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
-  @keyframes dots{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
-  .cdwrap{position:relative;margin-top:34px}
-  .cd{gap:16px;padding:14px 30px;animation:cdGlow 2.4s ease-in-out infinite}
-  .cd .lb{color:var(--muted);font-size:13px;letter-spacing:.22em}
-  .cd .n{color:var(--yellow);font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.04em}
-  @keyframes cdGlow{50%{border-color:rgba(255,193,7,.5);box-shadow:0 10px 36px rgba(255,193,7,.16)}}
+[data-cd-wrap][data-done="1"] .cd-dim{opacity:.32;transition:opacity .6s ease}
+[data-when-live][hidden]{display:none}
 
-  /* ---------- TAKE B · the pause bar ---------- */
-  .brB-head{position:absolute;left:10%;top:17%;z-index:3;max-width:920px}
-  .brB-head h1{font-size:100px;margin-top:26px}
-  .brB-head .sub{margin-top:18px}
-  .brB-bar{position:absolute;left:10%;width:80%;top:calc(50% - 29px);height:58px;z-index:4}
-  .btrack{position:absolute;inset:0;border-radius:16px;background:#101010;border:1px solid var(--line);box-shadow:inset 0 2px 14px rgba(0,0,0,.5)}
-  .pfill{position:absolute;left:0;top:0;bottom:0;width:67%;border-radius:16px;overflow:hidden;
-    background:repeating-linear-gradient(45deg,var(--yellow) 0 16px,#111 16px 32px);
-    box-shadow:0 0 34px rgba(255,193,7,.14);
-    animation:pfillIn .9s var(--ease-out) .38s both,stripe 2.4s linear infinite}
-  .pfill::after{content:"";position:absolute;right:-3px;top:-7px;bottom:-7px;width:8px;border-radius:4px;background:var(--yellow-hot);box-shadow:0 0 18px rgba(255,193,7,.6)}
-  @keyframes pfillIn{from{opacity:0;width:0}to{opacity:1;width:67%}}
-  @keyframes stripe{to{background-position:45.25px 0}}
-  .ptag{position:absolute;left:67%;bottom:-56px;transform:translateX(-50%);white-space:nowrap;
-    background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
-    font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.14em;
-    padding:9px 18px;border-radius:999px;
-    animation:ptagIn .5s var(--ease-out) .6s both,ptagP 1.5s ease-in-out 1.1s infinite}
-  .ptag::before{content:"";position:absolute;left:50%;top:-5px;width:10px;height:10px;margin-left:-5px;background:var(--yellow);transform:rotate(45deg);border-radius:2px}
-  @keyframes ptagIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-  @keyframes ptagP{50%{transform:translateX(-50%) scale(1.09)}}
-  .pface{position:absolute;left:67%;bottom:calc(100% - 14px);width:240px;height:240px;margin-left:-120px;z-index:5;
-    animation:pfaceIn .8s var(--ease-spring) .5s both}
-  .pface::before{content:"";position:absolute;inset:-14px;border:2px dashed rgba(255,193,7,.3);border-radius:50%;animation:spin 10s linear infinite}
-  .pbody{position:absolute;inset:0;animation:bobY 4.2s ease-in-out infinite}
-  .pface .face{width:240px;height:240px;animation:breathe 4s ease-in-out infinite}
-  @keyframes pfaceIn{from{opacity:0;transform:translateY(-70px)}to{opacity:1;transform:translateY(0)}}
-  .fwrap{display:block}
-  .fwrap .chip{animation:floatY 4.6s ease-in-out infinite}
-  .fwrap:nth-child(2) .chip{animation-delay:.7s}
-  .fwrap:nth-child(3) .chip{animation-delay:1.4s}
-  .brB-chips{position:absolute;right:10%;top:23%;display:flex;flex-direction:column;align-items:flex-end;gap:16px;z-index:3}
-  .sdot{width:8px;height:8px;border-radius:50%;background:var(--up);animation:sdotB 1.8s ease-in-out infinite}
-  .sdot.q{background:var(--yellow)}
-  @keyframes sdotB{50%{opacity:.3}}
-  .livechipB{position:absolute;left:50%;top:50%;display:none;transform:translate(-50%,-50%);z-index:7}
-  .livechipB:not([hidden]){display:inline-flex;animation:popB .7s var(--ease-spring) both}
-  @keyframes popB{from{opacity:0;transform:translate(-50%,-50%) scale(.45)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-  body.is-done .pfill{width:100%;background:repeating-linear-gradient(45deg,var(--up) 0 16px,#0c2018 16px 32px);animation:stripe 1.6s linear infinite}
-  body.is-done .pfill::after{background:var(--up);box-shadow:0 0 18px rgba(14,203,129,.6)}
-  body.is-done .ptag{display:none}
-  body.is-done .pface::before{border-color:rgba(14,203,129,.5)}
+/* rolling digit cell — shared rules live in core.css */
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  /* ---------- reduced motion ---------- */
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
-    .rise{animation-delay:0s!important}}
-</style></head><body data-v="a">
+/* help chip */
+.kit-help{position:absolute;right:28px;bottom:20px;z-index:60;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:rgba(255,255,255,.34);background:rgba(15,15,15,.66);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 14px}
+.kit-noguide .kit-help{display:none}
+html.kit-obs .kit-help,html.kit-obs body{background:transparent}
+html.kit-obs .kit-help{display:none}
+
+/* ================= TAKE A · AUTOPILOT CONSOLE ================= */
+.ap-bg{position:absolute;inset:0;z-index:-2;background:
+  radial-gradient(1100px 660px at 50% 30%,rgba(255,206,0,.05),transparent 62%),
+  linear-gradient(180deg,#0d0c08 0%,#0A0900 72%)}
+.ap-bg::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);
+  background-size:88px 88px;
+  -webkit-mask-image:radial-gradient(920px 580px at 50% 40%,#000,transparent 82%);mask-image:radial-gradient(920px 580px at 50% 40%,#000,transparent 82%)}
+.ap-strip{position:absolute;top:0;left:0;right:0;height:66px;display:flex;align-items:center;justify-content:space-between;gap:26px;padding:0 52px;z-index:6;font-family:'Chakra Petch',var(--font-display);
+  background:rgba(10,9,0,.6);border-bottom:1px solid rgba(255,206,0,.26);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px))}
+.ap-unit{display:inline-flex;align-items:center;gap:13px;font-weight:700;font-size:19px;letter-spacing:.14em;color:var(--paper)}
+.ap-unit .dw{width:36px;height:36px}
+.ap-unit i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-weight:500;font-size:13px;letter-spacing:.2em;color:var(--muted);border-left:1px solid rgba(255,255,255,.14);padding-left:13px}
+.ap-mid{display:inline-flex;align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.22em;color:#cfc9b8}
+.ap-mid .rec{width:9px;height:9px;border-radius:50%;background:var(--down);animation:aprec 1.6s steps(2,jump-none) infinite}
+@keyframes aprec{0%,60%{opacity:1}61%,100%{opacity:.25}}
+.ap-clock{font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.16em;color:var(--muted)}
+.ap-clock b{color:var(--yellow);font-weight:600}
+
+.ap-console{position:absolute;left:50%;top:124px;transform:translateX(-50%);width:1430px;display:grid;grid-template-columns:330px 1fr 330px;gap:34px;align-items:stretch;z-index:4}
+.ap-viewport{height:500px}
+.ap-panel{display:flex;flex-direction:column;padding:20px 22px 18px;border:1px solid rgba(255,206,0,.22);background:linear-gradient(170deg,rgba(26,24,12,.66),rgba(12,11,5,.7));
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
+.ap-ph{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.26em;color:var(--yellow);padding-bottom:13px;border-bottom:1px solid rgba(255,255,255,.1)}
+.ap-ph .dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);animation:aprec 2.2s steps(2,jump-none) infinite}
+.ap-rows{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
+.sys-row{display:flex;align-items:center;justify-content:space-between;padding:14px 2px;border-bottom:1px dashed rgba(255,255,255,.09)}
+.sys-row:last-child{border-bottom:none}
+.sys-row b{font-family:'Chakra Petch',var(--font-display);font-weight:600;font-size:19px;letter-spacing:.06em;color:var(--paper)}
+.sys-row .st{display:inline-flex;align-items:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.14em;color:#a89f86}
+.sys-row .sdot{width:9px;height:9px;border-radius:50%}
+.sdot.y{background:var(--yellow)}
+.sdot.r{background:var(--down)}
+.sdot.s{background:var(--sky)}
+.ap-note{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.08em;line-height:1.5;color:#8f8a7a;padding-top:12px;border-top:1px dashed rgba(255,255,255,.09)}
+.rsm-row{display:flex;align-items:baseline;gap:16px;padding:16px 2px;border-bottom:1px solid rgba(255,255,255,.09)}
+.rsm-row:last-child{border-bottom:none}
+.rsm-row i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-weight:500;font-size:15px;color:var(--yellow);letter-spacing:.1em}
+.rsm-row b{font-family:'Chakra Petch',var(--font-display);font-weight:600;font-size:20px;letter-spacing:.04em;color:var(--paper)}
+.rsm-row em{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.08em;color:#8f8a7a;margin-left:auto}
+
+.ap-viewport{position:relative;display:flex;flex-direction:column;border:1px solid rgba(255,206,0,.3);background:linear-gradient(165deg,rgba(30,28,16,.5),rgba(12,11,6,.72));
+  clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,30px 100%,0 calc(100% - 30px))}
+.ap-vh{height:52px;display:flex;align-items:center;gap:12px;padding:0 22px;border-bottom:1px dashed rgba(255,206,0,.25);font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.26em;color:#d8d2c0}
+.ap-vh .rec{width:9px;height:9px;border-radius:50%;background:var(--down);animation:aprec 1.6s steps(2,jump-none) infinite}
+.ap-vh b{color:var(--yellow);font-weight:600}
+.ap-vb{flex:1;position:relative;display:grid;place-items:center}
+.ap-ring{position:absolute;inset:58px;border:2px dashed rgba(255,206,0,.38);border-radius:50%;animation:spin 46s steps(120,end) infinite}
+.ap-ring2{position:absolute;inset:92px;border:1px solid rgba(255,255,255,.1);border-radius:50%}
+.ap-brk{position:absolute;width:46px;height:46px;border:3px solid var(--yellow);z-index:3;animation:aplock 7s var(--snap) infinite}
+.ap-brk.tl{top:18px;left:18px;border-right:none;border-bottom:none}
+.ap-brk.tr{top:18px;right:18px;border-left:none;border-bottom:none}
+.ap-brk.bl{bottom:18px;left:18px;border-right:none;border-top:none}
+.ap-brk.br{bottom:18px;right:18px;border-left:none;border-top:none}
+@keyframes aplock{0%,84%,100%{transform:scale(1)}88%{transform:scale(1.26)}92%{transform:scale(.96)}96%{transform:scale(1.05)}}
+.ap-scan{position:absolute;left:18px;right:18px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,206,0,.55),transparent);animation:apscan 5.6s var(--glide) infinite;z-index:2}
+@keyframes apscan{0%,10%{top:56px;opacity:0}16%{opacity:1}72%{opacity:.85}84%,100%{top:calc(100% - 58px);opacity:0}}
+.ap-vb .face{width:256px;height:256px;z-index:2;animation:apfloat 6s ease-in-out infinite}
+@keyframes apfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.ap-vf{height:46px;display:flex;align-items:center;justify-content:center;gap:14px;border-top:1px dashed rgba(255,206,0,.25);font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.22em;color:#a89f86}
+.ap-vf b{color:var(--yellow);font-weight:600}
+
+.ap-cd{position:absolute;left:0;right:0;top:664px;margin:0 auto;width:max-content;display:inline-flex;align-items:center;gap:26px;padding:20px 30px;z-index:4;
+  background:rgba(22,20,10,.72);border:1px solid rgba(255,206,0,.28);
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,20px 100%,0 calc(100% - 20px))}
+.ap-glab{font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.3em;color:var(--yellow)}
+.ap-gauge{display:flex;gap:7px}
+.ap-gauge i{width:18px;height:54px;background:var(--yellow);opacity:.12}
+.ap-dg{display:flex;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:44px;line-height:1;color:var(--paper)}
+.ap-dg .dgt{padding:4px 2px}
+.ap-cd .wl{flex:none}
+.ap-tag{position:absolute;bottom:82px;z-index:3;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.2em;color:#8f8a7a}
+.ap-tag b{color:#a89f86;font-weight:500}
+.ap-tag.l{left:56px}
+.ap-tag.r{right:56px}
+
+.ap-tick{position:absolute;left:0;right:0;bottom:0;height:56px;display:flex;align-items:center;overflow:hidden;border-top:1px solid rgba(255,206,0,.22);background:rgba(8,7,2,.85);z-index:6}
+.ap-tk{flex:none;display:flex;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.2em;color:#a89f86;animation:tkMarch var(--tk-speed,44s) linear infinite}
+.ap-tk span{padding:0 28px}
+.ap-tk b{color:var(--yellow);font-weight:600}
+.ap-tk .arw{color:rgba(255,206,0,.6)}
+
+/* ================= TAKE B · STRETCH BREAK ================= */
+.sb-bg{position:absolute;inset:0;z-index:-2;background:radial-gradient(1000px 640px at 16% 8%,rgba(255,206,0,.06),transparent 60%),#0A0900}
+.sb-right{position:absolute;top:0;bottom:0;left:55%;right:0;z-index:1;background:radial-gradient(900px 620px at 84% 8%,rgba(255,206,0,.07),transparent 58%),#0C0B07}
+.sb-tape{position:absolute;top:-40px;bottom:-40px;left:calc(55% - 13px);width:26px;z-index:2;background:repeating-linear-gradient(-45deg,var(--yellow) 0 16px,#0A0900 16px 32px);box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.sb-brand{position:absolute;top:54px;left:64px;display:inline-flex;align-items:center;gap:12px;z-index:6;font-family:'Archivo',var(--font-display);font-weight:900;font-size:22px;letter-spacing:.04em;color:var(--paper)}
+.sb-brand .dw{width:40px;height:40px}
+.sb-h{position:absolute;top:196px;left:64px;z-index:5;font-family:'Archivo',var(--font-display);font-weight:900;font-size:176px;line-height:.9;letter-spacing:-.015em;color:var(--paper)}
+.sb-h .stroke{color:transparent;-webkit-text-stroke:3.5px var(--paper)}
+.sb-h .blkwrap{display:inline-block}
+.sb-h .blk{display:inline-block;background:var(--yellow);color:var(--ink);padding:0 24px 10px;transform:rotate(-2deg);box-shadow:0 18px 44px rgba(0,0,0,.4)}
+.sb-face{position:absolute;top:400px;left:730px;width:280px;height:280px;z-index:7}
+.sb-face .sticker{width:100%;height:100%;background:#fff;border-radius:50%;box-shadow:0 24px 60px rgba(0,0,0,.42);display:grid;place-items:center;animation:sqs 3.5s ease-in-out infinite}
+.sb-face .face{width:224px;height:224px}
+@keyframes sqs{0%{transform:rotate(-6deg) scale(1)}38%{transform:rotate(-6deg) scale(1.04)}72%{transform:rotate(-6deg) scale(.97)}100%{transform:rotate(-6deg) scale(1)}}
+.sb-chips{position:absolute;left:66px;top:718px;display:flex;gap:16px;z-index:5}
+.sb-chips .st{display:inline-block;background:#FDFBF4;color:var(--ink);font-family:'Archivo',var(--font-display);font-weight:800;font-size:17px;letter-spacing:.06em;padding:11px 24px;border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.35);transform:rotate(var(--rot,0deg))}
+.sb-cd{position:absolute;left:64px;top:798px;z-index:5}
+.sb-cd .slab{display:inline-block;background:#FDFBF4;color:var(--ink);padding:16px 26px 20px 30px;transform:rotate(-1.2deg);box-shadow:0 18px 40px rgba(0,0,0,.38)}
+.sb-cd .lab{display:block;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.3em;color:#57503e}
+.sb-cd .cv{margin-top:8px;display:flex;font-family:'Archivo',var(--font-display);font-weight:900;font-size:118px;line-height:1;letter-spacing:.01em}
+.sb-cd .cv .dgt.sep{transform:translateY(-.045em)}
+.sb-cd .wl{margin-top:16px}
+.sb-up{position:absolute;left:calc(55% + 62px);right:70px;top:336px;z-index:5}
+.sb-up h3{display:flex;align-items:baseline;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:14px;letter-spacing:.3em;color:#a8a291;padding-bottom:15px;border-bottom:2px solid var(--yellow)}
+.sb-up h3 i{font-style:normal;letter-spacing:.18em;color:#8f8a7a}
+.sb-row{display:grid;grid-template-columns:118px 1fr;gap:20px;padding:27px 0;border-bottom:1px solid rgba(255,255,255,.1);align-items:center}
+.sb-row i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-weight:500;font-size:56px;line-height:1;color:var(--yellow)}
+.sb-row b{display:block;font-family:'Manrope',var(--font-display);font-weight:800;font-size:30px;letter-spacing:-.01em;color:var(--paper)}
+.sb-row em{display:block;margin-top:6px;font-style:normal;font-size:15.5px;color:#a8a291;font-weight:500}
+.sb-note{position:absolute;left:calc(55% + 62px);top:812px;z-index:5;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.18em;color:#a8a291}
+.sb-note b{color:var(--yellow);font-weight:500}
+.sb-soc{position:absolute;left:calc(55% + 62px);top:858px;z-index:5;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.18em;color:#a8a291}
+.sb-soc b{color:var(--paper);font-weight:500}
+.sb-ghost{position:absolute;right:60px;bottom:80px;z-index:2;font-family:'Archivo',var(--font-display);font-weight:900;font-size:110px;line-height:1;letter-spacing:-.01em;color:transparent;-webkit-text-stroke:2px rgba(255,206,0,.22);pointer-events:none}
+
+/* ================= TAKE C · CONTROL-ROOM DOCK ================= */
+.ck-halo{position:absolute;inset:0;z-index:-1;background:radial-gradient(900px 560px at 50% 62%,rgba(255,206,0,.07),transparent 62%)}
+#skyline{position:absolute;left:0;right:0;bottom:0;height:640px;z-index:0;opacity:.55;-webkit-mask-image:linear-gradient(180deg,transparent,#000 48%);mask-image:linear-gradient(180deg,transparent,#000 48%)}
+.ck-ghost{position:absolute;left:50%;top:158px;transform:translateX(-50%);z-index:0;font-family:'Archivo',var(--font-display);font-weight:900;font-size:150px;line-height:1;letter-spacing:-.01em;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.11);white-space:nowrap;pointer-events:none}
+.ck-noise{position:absolute;inset:0;z-index:1;opacity:.05;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+.cndl{position:absolute;bottom:0;border-radius:4px;transform-origin:50% 100%}
+.cndl::before{content:"";position:absolute;left:50%;top:-16%;bottom:-9%;width:4px;transform:translateX(-50%);background:inherit;filter:brightness(.5);border-radius:2px}
+.ck-tag{position:absolute;top:44px;left:44px;z-index:5;display:inline-flex;align-items:center;gap:12px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.22em;color:#c9c4b4;background:rgba(16,17,22,.55);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:11px 22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ck-tag .dw{width:24px;height:24px}
+.ck-tag .dot{width:9px;height:9px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px rgba(14,203,129,.14)}
+.ck-tag b{color:var(--yellow);font-weight:500}
+.ck-pill{position:absolute;top:44px;right:44px;z-index:5;display:inline-flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.18em;color:#c9c4b4;background:rgba(16,17,22,.55);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:11px 22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ck-pill b{color:var(--yellow);font-weight:600}
+
+.dk{position:absolute;left:0;right:0;bottom:0;height:372px;z-index:3}
+.dk-body{position:absolute;inset:0;border-radius:38px 38px 0 0;overflow:hidden;
+  background:linear-gradient(158deg,rgba(32,34,42,.66),rgba(11,12,16,.58) 62%,rgba(16,17,22,.62));
+  border:1px solid rgba(255,255,255,.12);border-top:1px solid rgba(255,206,0,.38);border-bottom:none;
+  box-shadow:0 -30px 90px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.04);
+  backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3)}
+.dk-grain{position:absolute;inset:0;opacity:.05;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+.dk-sheen{position:absolute;top:-20%;bottom:-20%;left:0;width:240px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.08),transparent);transform:translateX(-300px) skewX(-16deg);animation:dksheen 9s var(--glide) infinite;pointer-events:none}
+@keyframes dksheen{0%,52%{transform:translateX(-300px) skewX(-16deg)}86%,100%{transform:translateX(2000px) skewX(-16deg)}}
+.dk-well{position:absolute;left:112px;top:-116px;width:262px;height:262px;border-radius:50%;z-index:4;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 36%,rgba(255,255,255,.12),rgba(0,0,0,.2));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 30px 70px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2),inset 0 -12px 26px rgba(0,0,0,.3)}
+.dk-well::before{content:"";position:absolute;inset:-16px;border:1.5px dashed rgba(255,206,0,.4);border-radius:50%;animation:spin 44s linear infinite}
+.dk-well .face{width:214px;height:214px;z-index:2}
+.dk-cap{position:absolute;left:53px;top:216px;width:380px;text-align:center;z-index:4;font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.16em;color:#98937f}
+.dk-cap b{color:#d8d2c0;font-weight:500}
+.dk-grid{position:absolute;left:430px;right:64px;top:0;bottom:0;display:grid;grid-template-columns:1.2fr .95fr .6fr;gap:0;align-items:center}
+.dk-title{padding-right:44px}
+.dk-rd{border-left:1px solid rgba(255,255,255,.08);padding:0 44px}
+.dk-cd{border-left:1px solid rgba(255,255,255,.08);padding-left:44px}
+.dk-title h1{font-family:var(--font-display);font-weight:800;font-size:62px;line-height:1.04;letter-spacing:-.025em;color:var(--paper)}
+.dk-title h1 em{font-style:normal;color:var(--yellow)}
+.dk-title p{margin-top:16px;max-width:470px;font-size:19px;line-height:1.6;font-weight:500;color:#c4bfb0}
+.dk-rd h4{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13.5px;letter-spacing:.28em;color:#a8a291;margin-bottom:4px}
+.dk-rd .row{display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:baseline;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.dk-rd .row i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:13.5px;color:var(--yellow);letter-spacing:.1em}
+.dk-rd .row b{font-family:var(--font-display);font-weight:800;font-size:22px;letter-spacing:-.01em;color:var(--paper)}
+.dk-rd .row span{font-size:15px;color:#c4bfb0;font-weight:500}
+.dk-cd .lab{font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.3em;color:#a8a291}
+.dk-cd .num{display:block;margin-top:10px;font-family:var(--font-display);font-weight:800;font-size:58px;line-height:1;color:var(--paper)}
+.dk-cd .wl{margin-top:16px}
+
+/* ================= TAKE D · INTERMISSION PLAYBILL ================= */
+.pl-bg{position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,#F8F3E8,#F3EDDF 60%,#EFE7D6)}
+.pl-bg::after{content:"";position:absolute;inset:0;opacity:.16;background-image:radial-gradient(rgba(10,9,0,.55) .8px,transparent .8px);background-size:9px 9px;-webkit-mask-image:radial-gradient(720px 480px at 86% -6%,#000,transparent 74%);mask-image:radial-gradient(720px 480px at 86% -6%,#000,transparent 74%)}
+.pl-grain{position:absolute;inset:0;opacity:.04;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+.pl-mast{position:absolute;top:52px;left:110px;right:110px;text-align:center;z-index:5}
+.pl-rule{height:3px;background:var(--ink)}
+.pl-rule.t{height:1.5px;margin-top:4px}
+.pl-pres{margin-top:15px;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.34em;color:#45402f}
+.pl-pres b{color:var(--ink);font-weight:600}
+.pl-title{margin-top:20px;font-family:'Fraunces',serif;font-weight:600;font-size:132px;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+.pl-title em{font-style:italic;font-weight:560;margin-left:.02em;color:#a1760a}
+.pl-resume{margin-top:22px;font-family:'Fraunces',serif;font-style:italic;font-size:30px;color:#3a3527}
+.pl-cv{margin-top:28px;display:flex;justify-content:center;gap:9px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:72px;line-height:1}
+.pl-cv .dgt{background:var(--ink);color:#F8F3E8;border-radius:12px;padding:16px 12px 13px;min-width:58px;justify-content:center;box-shadow:0 4px 0 rgba(10,9,0,.35)}
+.pl-cv .dgt.sep{background:transparent;color:var(--ink);box-shadow:none;min-width:auto;padding:16px 0 13px}
+.pl-ref{margin-top:34px;display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.18em;color:#45402f;border-top:1px solid rgba(10,9,0,.3);border-bottom:1px solid rgba(10,9,0,.3);padding:12px 26px}
+.pl-ref b{color:var(--ink);font-weight:600}
+.pl-wl{position:absolute;left:0;right:0;top:268px;margin:0 auto;width:max-content;z-index:8}
+.pl-orn{position:absolute;top:570px;left:0;right:0;margin:auto;width:420px;display:flex;align-items:center;gap:14px;z-index:4}
+.pl-orn::before,.pl-orn::after{content:"";flex:1;height:1px;background:rgba(10,9,0,.3)}
+.pl-orn i{color:#a1760a;font-size:13px;line-height:1}
+.pl-prog{position:absolute;top:626px;left:0;right:0;margin:auto;width:660px;z-index:4}
+.pl-prog h3{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:13.5px;letter-spacing:.3em;color:#45402f;text-align:center;margin-bottom:8px}
+.pl-prog .li{display:flex;justify-content:space-between;align-items:baseline;padding:13px 4px;border-bottom:1px solid rgba(10,9,0,.18);font-family:'Fraunces',serif;font-size:21px;color:var(--ink)}
+.pl-prog .li em{font-style:italic;color:#45402f}
+.pl-prog .li i{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.1em;color:var(--ink)}
+.pl-stamp{position:absolute;top:30px;right:250px;width:152px;z-index:6;--slap-rot:-7deg}
+.pl-stamp .card{background:#FDFBF4;border:2.5px dashed rgba(10,9,0,.7);border-radius:8px;padding:16px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:0 14px 34px rgba(10,9,0,.16);transform:rotate(2deg);animation:plsway 6s ease-in-out infinite}
+.pl-stamp .face{width:92px;height:92px}
+.pl-stamp i{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.22em;color:#45402f;white-space:nowrap}
+@keyframes plsway{0%,100%{transform:rotate(1.2deg)}50%{transform:rotate(3.2deg)}}
+.pl-foot{position:absolute;left:110px;right:110px;bottom:64px;z-index:5}
+.pl-foot .fr{height:1.5px;background:var(--ink);margin-bottom:3px}
+.pl-foot .fr.t{height:3px;margin-bottom:0}
+.pl-frow{display:flex;justify-content:space-between;align-items:center;padding-top:13px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;letter-spacing:.18em;color:#45402f}
+.pl-frow b{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
 <div class="stage">
 
-  <!-- ============ TAKE A · buffer ============ -->
+  <!-- ============ TAKE A · AUTOPILOT CONSOLE (mecha) ============ -->
   <section class="scn" data-take="a">
-    <div class="bg"></div>
-    <div class="sky"></div>
-    <span class="spark" style="left:12%;top:20%;--d:.4s"></span>
-    <span class="spark" style="left:86%;top:24%;--d:1.6s;background:var(--up)"></span>
-    <span class="spark" style="left:78%;top:74%;--d:2.8s"></span>
-    <span class="spark" style="left:20%;top:70%;--d:2.1s;background:var(--sky)"></span>
-    <span class="spark" style="left:50%;top:12%;--d:3.4s;background:var(--down)"></span>
-    <header class="brA-top">
-      <div class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></div>
-      <span class="chip ghost rise" style="--rd:.14s">#SmileSquad</span>
+    <div class="ap-bg"></div>
+
+    <header class="ap-strip rise" style="--rd:.02s">
+      <span class="ap-unit"><span class="dw"><svg class="disc" viewBox="0 0 100 100"></svg></span><b>SMILE</b><i>FLIGHT UNIT-01</i></span>
+      <span class="ap-mid"><i class="rec"></i>AUTOPILOT ACTIVE — HOLDING PATTERN</span>
+      <span class="ap-clock"><b data-clock>--:--</b>&nbsp;EAT · NAIROBI DESK</span>
     </header>
-    <div class="brA-center">
-      <div class="buffer rise" style="--rd:.2s">
-        <span class="sat"><i></i></span>
-        <div class="face"></div>
+
+    <div class="ap-console">
+      <div class="ap-panel rise" style="--rd:.18s">
+        <div class="ap-ph"><i class="dot"></i>SYSTEMS</div>
+        <div class="ap-rows">
+          <div class="sys-row"><b>CAM</b><span class="st"><i class="sdot y"></i>STANDBY</span></div>
+          <div class="sys-row"><b>MIC</b><span class="st"><i class="sdot r"></i>HOLD</span></div>
+          <div class="sys-row"><b>CHAT</b><span class="st"><i class="sdot s"></i>SLOW MODE</span></div>
+        </div>
+        <div class="ap-note">ALL FEEDS RESTING — NOTHING LOST</div>
       </div>
-      <h1 class="rise" style="--rd:.32s">away from the <span class="y">desk</span><span class="g">.</span></h1>
-      <p class="sub rise" style="--rd:.44s">stream paused — smile intact, episode <span data-ep>128</span> safe.</p>
-      <div class="bnc rise" style="--rd:.52s"><span></span><span></span><span></span></div>
-      <div class="cdwrap rise" style="--rd:.62s">
-        <div class="chip dark cd" data-cd-wrap><span class="lb">BACK IN</span><span class="n" data-cd>05:00</span></div>
-        <span class="chip solid livechip" data-when-live hidden>BACK NOW — HIT PLAY</span>
+
+      <div class="ap-viewport rise" style="--rd:.1s">
+        <div class="ap-vh"><i class="rec"></i>VIEWPORT · <b>AUTOPILOT ENGAGED</b></div>
+        <div class="ap-vb">
+          <div class="ap-ring"></div>
+          <div class="ap-ring2"></div>
+          <div class="ap-scan"></div>
+          <i class="ap-brk tl"></i><i class="ap-brk tr"></i><i class="ap-brk bl"></i><i class="ap-brk br"></i>
+          <div class="face" id="ap-face"></div>
+        </div>
+        <div class="ap-vf">PILOT: AFK · MOOD: <b id="ap-mood">AUTO</b></div>
+      </div>
+
+      <div class="ap-panel rise" style="--rd:.26s">
+        <div class="ap-ph"><i class="dot"></i>RESUME SEQUENCE</div>
+        <div class="ap-rows">
+          <div class="rsm-row"><i>01</i><b>screens rest</b></div>
+          <div class="rsm-row"><i>02</i><b>hydrate</b></div>
+          <div class="rsm-row"><i>03</i><b>back to the desk</b></div>
+        </div>
+        <div class="ap-note">AUTOPILOT RETURNS FOR PART II</div>
       </div>
     </div>
-    <div class="ticker" style="--tk-speed:38s">
-      <div class="tk"><span>✦ BE RIGHT BACK</span><span>desk vacated · snacks acquired</span><span>smile intact — episode <span data-ep>128</span> safe</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
-      <div class="tk"><span>✦ BE RIGHT BACK</span><span>desk vacated · snacks acquired</span><span>smile intact — episode <span data-ep>128</span> safe</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+
+    <div class="ap-cd rise" style="--rd:.4s" data-cd-wrap>
+      <span class="ap-glab cd-dim">BACK ON AIR</span>
+      <div class="ap-gauge cd-dim" id="ap-gauge"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="ap-dg cd-dim" data-cd data-digits>10:00</span>
+      <span class="chip solid wl" data-when-live hidden>● WE'RE LIVE</span>
+    </div>
+
+    <span class="ap-tag l rise" style="--rd:.5s">SESSION PAUSED · FRAME HELD</span>
+    <span class="ap-tag r rise" style="--rd:.5s">EP <b data-ep>128</b> · PART II QUEUED</span>
+
+    <div class="ap-tick" style="--tk-speed:44s">
+      <div class="ap-tk">
+        <span><b class="arw">&gt;&gt;</b> AUTOPILOT HOLD</span><span>BACK SOON</span><span>PART II LOADING</span><span>EP <b data-ep>128</b> · WE CONTINUE IN A MOMENT</span><span><b>@smileke</b></span><span><b>smile.co.ke</b></span><span><b>#SmileSquad</b></span><span>STRETCH · HYDRATE · COME BACK SMILING</span>
+        <span><b class="arw">&gt;&gt;</b> AUTOPILOT HOLD</span><span>BACK SOON</span><span>PART II LOADING</span><span>EP <b data-ep>128</b> · WE CONTINUE IN A MOMENT</span><span><b>@smileke</b></span><span><b>smile.co.ke</b></span><span><b>#SmileSquad</b></span><span>STRETCH · HYDRATE · COME BACK SMILING</span>
+      </div>
     </div>
   </section>
 
-  <!-- ============ TAKE B · the pause bar ============ -->
+  <!-- ============ TAKE B · STRETCH BREAK (kinetic) ============ -->
   <section class="scn" data-take="b">
-    <div class="bg"></div>
-    <div class="sky"></div>
-    <span class="spark" style="left:8%;top:26%;--d:.5s"></span>
-    <span class="spark" style="left:30%;top:14%;--d:1.5s;background:var(--up)"></span>
-    <span class="spark" style="left:55%;top:82%;--d:2.6s"></span>
-    <span class="spark" style="left:80%;top:15%;--d:1.9s;background:var(--sky)"></span>
-    <span class="spark" style="left:91%;top:60%;--d:3.2s;background:var(--down)"></span>
-    <div class="brB-head">
-      <span class="chip solid rise" style="--rd:.05s">BE RIGHT BACK</span>
-      <h1 class="rise" style="--rd:.15s">stream <span class="y">paused</span><span class="g">.</span></h1>
-      <p class="sub rise" style="--rd:.25s" data-cd-wrap>back in <b data-cd>05:00</b> — stretching our legs.</p>
+    <div class="sb-bg"></div>
+    <div class="sb-right"></div>
+    <div class="sb-tape"></div>
+
+    <div class="sb-brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"></svg></span>smile</div>
+
+    <h1 class="sb-h">
+      <span class="slap" style="--rd:.14s;display:block">BE</span>
+      <span class="stroke slap" style="--rd:.26s;display:block">RIGHT</span>
+      <span class="blkwrap slap" style="--rd:.38s;--slap-rot:-8deg;display:block"><span class="blk">BACK</span></span>
+    </h1>
+
+    <div class="sb-face rise" style="--rd:.3s">
+      <div class="sticker"><div class="face" id="sb-face"></div></div>
     </div>
-    <div class="brB-chips">
-      <span class="fwrap rise" style="--rd:.5s"><span class="chip ghost"><i class="sdot"></i>charts safe</span></span>
-      <span class="fwrap rise" style="--rd:.58s"><span class="chip ghost"><i class="sdot"></i>audio muted</span></span>
-      <span class="fwrap rise" style="--rd:.66s"><span class="chip ghost"><i class="sdot q"></i>ep <span data-ep>128</span> queued</span></span>
+
+    <div class="sb-chips">
+      <span class="slap" style="--rd:.56s"><i class="st" style="--rot:-2deg">stretch</i></span>
+      <span class="slap" style="--rd:.66s"><i class="st" style="--rot:1.5deg">hydrate</i></span>
+      <span class="slap" style="--rd:.76s"><i class="st" style="--rot:-1deg">coffee refill</i></span>
     </div>
-    <div class="brB-bar">
-      <div class="btrack"></div>
-      <div class="pfill"></div>
-      <div class="pface">
-        <span class="pbody"><div class="face"></div></span>
+
+    <div class="sb-cd rise" style="--rd:.86s" data-cd-wrap>
+      <div class="slab cd-dim">
+        <span class="lab">BACK IN</span>
+        <div class="cv" data-cd data-digits>10:00</div>
       </div>
-      <span class="ptag">PAUSED · 67%</span>
-      <span class="chip solid livechipB" data-when-live hidden>BACK NOW</span>
+      <span class="chip solid wl" data-when-live hidden>● WE'RE LIVE</span>
     </div>
-    <div class="ticker" style="--tk-speed:44s">
-      <div class="tk"><span>✦ BE RIGHT BACK</span><span>stretching legs · hydrating</span><span>charts safe — ep <span data-ep>128</span> queued</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
-      <div class="tk"><span>✦ BE RIGHT BACK</span><span>stretching legs · hydrating</span><span>charts safe — ep <span data-ep>128</span> queued</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+
+    <div class="sb-up">
+      <h3 class="rise" style="--rd:.3s">COMING UP <i>PART II</i></h3>
+      <div class="sb-row rise" style="--rd:.42s"><i>01</i><div><b>mailbag</b><em>your picks, our charts — the queue is open</em></div></div>
+      <div class="sb-row rise" style="--rd:.5s"><i>02</i><div><b>hot takes</b><em>the desk goes off script</em></div></div>
+      <div class="sb-row rise" style="--rd:.58s"><i>03</i><div><b>chart dive</b><em>screen-share deep dive</em></div></div>
     </div>
+
+    <div class="sb-note rise" style="--rd:.66s">QUEUE OPEN — DROP YOUR PICKS IN CHAT · EP <b data-ep>128</b></div>
+    <div class="sb-soc rise" style="--rd:.72s"><b>@smileke</b> · <b>smile.co.ke</b> · <b>#SmileSquad</b></div>
+    <div class="sb-ghost">PART II</div>
+  </section>
+
+  <!-- ============ TAKE C · CONTROL-ROOM DOCK (glass) ============ -->
+  <section class="scn" data-take="c">
+    <div class="bg"></div>
+    <div class="ck-halo"></div>
+    <div class="ck-ghost">BE RIGHT BACK</div>
+    <div id="skyline"></div>
+    <div class="ck-noise"></div>
+
+    <span class="ck-tag rise" style="--rd:.02s"><i class="dot"></i><span class="dw"><svg class="disc" viewBox="0 0 100 100"></svg></span>INTERMISSION · EP <b data-ep>128</b></span>
+    <span class="ck-pill rise" style="--rd:.08s"><b data-clock>--:--</b>&nbsp;EAT · NAIROBI</span>
+
+    <div class="dk">
+      <div class="dk-body cham-reveal" style="--rd:.1s">
+        <div class="dk-grain"></div>
+        <div class="dk-sheen"></div>
+        <div class="dk-grid">
+          <div class="dk-title rise" style="--rd:.3s">
+            <h1>PART ONE<br>WRAPPED<em>.</em></h1>
+            <p data-sub>we continue in a moment — stretch, hydrate, come back smiling</p>
+          </div>
+          <div class="dk-rd rise" style="--rd:.42s">
+            <h4>UP NEXT</h4>
+            <div class="row"><i>01</i><b>mailbag</b><span>your picks, our charts</span></div>
+            <div class="row"><i>02</i><b>hot takes</b><span>the desk goes off script</span></div>
+            <div class="row"><i>03</i><b>chart dive</b><span>screen-share deep dive</span></div>
+          </div>
+          <div class="dk-cd rise" style="--rd:.52s" data-cd-wrap>
+            <span class="lab cd-dim">BACK IN</span>
+            <span class="num cd-dim" data-cd>10:00</span>
+            <span class="chip solid wl" data-when-live hidden>● WE'RE LIVE</span>
+          </div>
+        </div>
+      </div>
+      <div class="dk-well rise" style="--rd:.22s">
+        <div class="face" id="dk-face"></div>
+      </div>
+      <div class="dk-cap rise" style="--rd:.6s"><b>@smileke</b> · smile.co.ke · #SmileSquad</div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE D · INTERMISSION PLAYBILL (solar print) ============ -->
+  <section class="scn" data-take="d">
+    <div class="pl-bg"></div>
+    <div class="pl-grain"></div>
+
+    <div class="pl-mast rise" style="--rd:.02s">
+      <div class="pl-rule"></div>
+      <div class="pl-rule t"></div>
+      <div class="pl-pres">SMILE PRESENTS · EPISODE <b data-ep>128</b></div>
+      <h1 class="pl-title">Inter<em>mission</em>.</h1>
+      <div data-cd-wrap>
+        <p class="pl-resume cd-dim">the show resumes in</p>
+        <div class="pl-cv cd-dim" data-cd data-digits>10:00</div>
+        <div class="pl-ref cd-dim"><b>REFRESHMENTS</b> — coffee · chai · good vibes, back before your cup is empty</div>
+      </div>
+    </div>
+
+    <span class="chip solid pl-wl" data-when-live hidden>● WE'RE LIVE</span>
+
+    <div class="pl-orn rise" style="--rd:.5s"><i>◆</i></div>
+    <div class="pl-prog rise" style="--rd:.58s">
+      <h3>TONIGHT'S PROGRAMME · PART II</h3>
+      <div class="li"><span>mailbag <em>— your picks, our charts</em></span><i>20:05</i></div>
+      <div class="li"><span>hot takes <em>— the desk goes off script</em></span><i>20:40</i></div>
+      <div class="li"><span>chart dive <em>— screen-share deep dive</em></span><i>21:10</i></div>
+    </div>
+
+    <div class="pl-stamp slap" style="--rd:.4s">
+      <div class="card">
+        <div class="face" id="pl-face"></div>
+        <i>SMILE POST</i>
+      </div>
+    </div>
+
+    <footer class="pl-foot rise" style="--rd:.68s">
+      <div class="fr t"></div>
+      <div class="fr"></div>
+      <div class="pl-frow">
+        <span><b>@smileke</b> · <b>smile.co.ke</b> · <b>#SmileSquad</b></span>
+        <span>SMILE THEATRE · NAIROBI · EAT <b data-clock>--:--</b></span>
+        <span>PROGRAMME CONTINUES SHORTLY</span>
+      </div>
+    </footer>
   </section>
 
 </div>
+
+<div class="kit-help">V next take · 1-4 direct · H help</div>
+
+<script src="assets/logo.js"></script>
 <script src="assets/core.js"></script>
+<script src="assets/engine.js"></script>
 <script>
-(function(){
-  var q=new URLSearchParams(location.search);
-  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
-  document.body.setAttribute('data-v',v);
-  function P(n){return String(n).padStart(2,'0')}
-  var target=null, tp=q.get('t');
-  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
-  if(target===null){ target=Date.now()+300000; }
-  var eps=q.get('ep')||'128';
-  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
-  window.__smileTarget=target;
-  setInterval(function(){
-    var s=Math.max(0,Math.round((target-Date.now())/1000));
-    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
-    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
-    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
-  },250);
+(function () {
+  /* ---- take A: mood board tracks the character ---- */
+  var moodEl = document.getElementById('ap-mood');
+  var apFace = document.getElementById('ap-face');
+  var MOODS = [['wink', 'CHEEKY'], ['look', 'SCANNING'], ['nod', 'AGREEABLE'], ['look-l', 'IDLE'], ['wink', 'CHEEKY']];
+  if (moodEl && apFace && window.smileMoodAt) {
+    var mi = 0;
+    setInterval(function () {
+      var m = MOODS[mi % MOODS.length]; mi++;
+      window.smileMoodAt(apFace, m[0], 900);
+      moodEl.textContent = m[1];
+    }, 7000);
+  }
+
+  /* ---- take A: segment gauge drains right-to-left with the countdown ---- */
+  var gauge = document.getElementById('ap-gauge');
+  if (gauge) setInterval(function () {
+    if (!window.kitFrac) return;
+    var n = gauge.children.length;
+    var f = window.kitFrac() * n;
+    for (var i = 0; i < n; i++) {
+      var o = f - i;
+      gauge.children[i].style.opacity = Math.max(.12, Math.min(1, o)).toFixed(3);
+    }
+  }, 400);
+
+  /* ---- take B: sticker face checks the clock ---- */
+  var sbFace = document.getElementById('sb-face');
+  setInterval(function () { if (sbFace && window.smileMoodAt) window.smileMoodAt(sbFace, 'wink', 700); }, 6200);
+
+  /* ---- take C: calm control-room nods ---- */
+  var dkFace = document.getElementById('dk-face');
+  setInterval(function () { if (dkFace && window.smileMoodAt) window.smileMoodAt(dkFace, Math.random() < .5 ? 'nod' : 'look', 900); }, 8400);
+
+  /* ---- take D: the stamp keeps an eye out ---- */
+  var plFace = document.getElementById('pl-face');
+  setInterval(function () { if (plFace && window.smileMoodAt) window.smileMoodAt(plFace, Math.random() < .5 ? 'wink' : 'look', 800); }, 9200);
+
+  /* ---- take C: candle skyline behind the dock ---- */
+  var sky = document.getElementById('skyline');
+  if (sky) {
+    var cols = ['#1f1f1f', '#0ECB81', '#262626', '#F6465D', '#232323', '#FFCE00'];
+    for (var i = 0; i < 26; i++) {
+      var c = document.createElement('span'); c.className = 'cndl';
+      c.style.left = (i * 76 + Math.random() * 20) + 'px'; c.style.width = (22 + Math.random() * 14) + 'px';
+      c.style.height = (240 + Math.random() * 360) + 'px'; c.style.background = cols[i % 6];
+      c.style.opacity = .6; sky.appendChild(c);
+    }
+  }
 })();
 </script>
-<script>
-(function(){
-  var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
-  document.querySelectorAll('.sky').forEach(function(sk){
-    for(var i=0;i<20;i++){
-      var c=document.createElement('span');c.className='cndl';
-      c.style.left=(i*84+Math.random()*18)+'px';
-      c.style.width=(20+Math.random()*14)+'px';
-      c.style.height=(60+Math.random()*230)+'px';
-      c.style.background=cols[i%6];
-      c.style.setProperty('--d',(0.5+i*0.07).toFixed(2)+'s');
-      sk.appendChild(c);
-    }
-  });
-  setTimeout(function(){ if(window.smileMood) smileMood('nod',900); },1900);
-  setInterval(function(){ if(window.smileMood) smileMood('wink',600); },7500);
-  var done=false;
-  setInterval(function(){
-    if(done||!window.__smileTarget)return;
-    if(Date.now()>=window.__smileTarget){
-      done=true;document.body.classList.add('is-done');
-      if(window.smileMood)smileMood('celebrate',1300);
-    }
-  },300);
-})();
-</script>
-</body></html>
+</body>
+</html>

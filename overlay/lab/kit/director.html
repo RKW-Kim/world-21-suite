@@ -8,15 +8,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* SMILE DIRECTOR · obsidian matte, one yellow, exact logos.
-   Job: build OBS browser-source URLs for the 10 scene pages — no URL math. */
+   Job: build OBS browser-source URLs for the 5 essential scene pages — no URL math. */
 :root{
-  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a; --panel:#141414;
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900; --panel:#141414;
   --panel-2:#1b1b1b; --line:#2a2a2a; --muted:#a8a8a8; --paper:#fff;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--paper);
   -webkit-font-smoothing:antialiased;min-height:100vh}
-::selection{background:rgba(255,193,7,.3);color:var(--ink)}
+::selection{background:rgba(255,206,0,.3);color:var(--ink)}
 img{display:block} a{color:inherit;text-decoration:none}
 button,input{font:inherit;color:inherit}
 .disp{font-family:'Space Grotesk',sans-serif}
@@ -126,22 +126,16 @@ button,input{font:inherit;color:inherit}
         <div class="hint">seconds or mm:ss / hh:mm:ss</div></div>
       <div class="fld"><label for="fEp">Episode tag</label>
         <input type="text" id="fEp" placeholder="e.g. 07" maxlength="6"></div>
-      <div class="fld" id="qFld" hidden><label for="fQ">Audience question (Q&amp;A)</label>
-        <input type="text" id="fQ" placeholder="e.g. How do I open a Smile account?" maxlength="120"></div>
-      <div class="fld" id="winFld" hidden><label for="fWin">Winner handle (Giveaway)</label>
-        <input type="text" id="fWin" placeholder="e.g. @mjosh" maxlength="40"></div>
-    </div>
-
-    <div class="grid2">
-      <div class="fld" id="matFld"><label>Glass material — obsidian lane only</label>
-        <div class="seg" id="matSeg"></div></div>
-      <div class="fld"><label>Watermark</label>
-        <div class="seg" id="wmSeg"></div></div>
+      <div class="fld" id="upFld" hidden><label for="fUp">Elapsed (Technical Difficulties)</label>
+        <input type="text" id="fUp" placeholder="seconds already down, e.g. 94" maxlength="6">
+        <div class="hint">the DOWN FOR timer starts from this</div></div>
+      <div class="fld" id="nextFld" hidden><label for="fNext">Next session (Ending)</label>
+        <input type="text" id="fNext" placeholder="e.g. thursday 20:00 EAT" maxlength="60"></div>
     </div>
 
     <div class="fld"><label>Mode</label>
       <div class="seg" id="modeSeg"></div>
-      <div class="hint">OBS transparent drops all chrome for compositing · Clean hides the lane HUD</div></div>
+      <div class="hint">Clean hides the help chip for a tidy output · OBS transparent reserved for overlay pages</div></div>
 
     <div class="out">
       <div class="u" id="urlOut"></div>
@@ -164,25 +158,19 @@ button,input{font:inherit;color:inherit}
 'use strict';
 var SCENES=[
  {id:'start',name:'Starting Soon',desc:'countdown opener — the hold before air',cd:true,cdv:'600'},
- {id:'brb',name:'Be Right Back',desc:'the short break, kept warm',cd:true,cdv:'300'},
- {id:'inter',name:'Intermission',desc:'mid-show break with the up-next rundown',cd:true,cdv:'600'},
- {id:'tech',name:'Technical Difficulties',desc:'calm and honest, never panicked'},
- {id:'share',name:'Now Sharing',desc:'screen-share handoff — audio stays live'},
- {id:'live',name:'Live / Welcome',desc:'show open — episode, guest, rundown'},
+ {id:'brb',name:'Be Right Back',desc:'the break, kept warm — intermission included',cd:true,cdv:'300'},
+ {id:'tech',name:'Technical Difficulties',desc:'calm and honest, never panicked',up:true},
  {id:'qa',name:'Q&A',desc:'the audience floor, how to ask'},
- {id:'ad',name:'Ad Break',desc:'the partner moment, honestly slotted',cd:true,cdv:'120'},
- {id:'give',name:'Giveaway',desc:'entry window and a dignified reveal',cd:true,cdv:'180'},
- {id:'end',name:'Ending',desc:'thanks, replay CTA, next-stream hook'}
+ {id:'end',name:'Ending',desc:'thanks, replay CTA, next-stream hook',next:true}
 ];
 var LANES=[
- {k:'a',n:'Take A — signature'},{k:'b',n:'Take B — alt hero'}
+ {k:'a',n:'Take A — mecha bay'},{k:'b',n:'Take B — kinetic'},
+ {k:'c',n:'Take C — obsidian glass'},{k:'d',n:'Take D — solar print'}
 ];
-var MATS=[];
-var WMS=[];
-var MODES=[];
+var MODES=[['','Clean'],['1','+ help chip']];
 var CD_RE=/^\d+$|^\d{1,3}(:\d{1,2}){1,2}$/;
 
-var S={sc:'start',ln:'a',mat:'',wm:'tl',mode:''};
+var S={sc:'start',ln:'a',mode:''};
 var $=function(id){return document.getElementById(id)};
 
 /* scene list */
@@ -216,7 +204,7 @@ function seg(id,items,key,label){
     box.appendChild(b);
   });
 }
-seg('matSeg',MATS,'mat'); seg('wmSeg',WMS,'wm'); seg('modeSeg',MODES,'mode');
+seg('modeSeg',MODES,'mode');
 
 /* url builder */
 function buildURL(clean){
@@ -230,6 +218,10 @@ function buildURL(clean){
     if(/^\d+$/.test(cd)){ p.set('t',cd); }
     else { var pt=cd.split(':').map(Number); p.set('t',String(pt[0]*3600+(pt[1]||0)*60+(pt[2]||0))); }
   }
+  if(sc.up){var up=$('fUp').value.trim(); if(/^\d+$/.test(up))p.set('up',up);}
+  if(sc.next){var nx=$('fNext').value.trim(); if(nx)p.set('next',nx);}
+  var tt=$('fTitle').value.trim(); if(tt)p.set('title',tt);
+  var sb=$('fSub').value.trim(); if(sb)p.set('sub',sb);
   if(clean)p.set('g','1');
   return S.sc+'.html?'+p.toString();
 }
@@ -239,14 +231,10 @@ function render(){
   $('scDesc').textContent=sc.desc+' — pick a take, set the countdown, copy the URL into a 1920×1080 Browser source.';
   scBox.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.id===S.sc)});
   lc.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.k===S.ln)});
-  $('matSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.mat)});
-  $('wmSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.wm)});
   $('modeSeg').querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.v===S.mode)});
-  $('qFld').hidden=true; $('winFld').hidden=true;
+  $('upFld').hidden=!sc.up;
+  $('nextFld').hidden=!sc.next;
   $('cdFld').hidden=!sc.cd;
-  $('matFld').hidden=true;
-  var tRow=$('fTitle')&&$('fTitle').closest('.fld'); if(tRow)tRow.hidden=true;
-  var sRow=$('fSub')&&$('fSub').closest('.fld'); if(sRow)sRow.hidden=true;
   var cdBad=$('fCd').value.trim()&&!CD_RE.test($('fCd').value.trim());
   $('fCd').classList.toggle('bad',cdBad);
   var url=buildURL(false);
@@ -260,7 +248,7 @@ function render(){
     },450);
   }
 }
-['fTitle','fSub','fCd','fEp','fQ','fWin'].forEach(function(id){
+['fTitle','fSub','fCd','fEp','fUp','fNext'].forEach(function(id){
   $(id).addEventListener('input',render);
 });
 

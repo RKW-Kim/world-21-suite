@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a; --panel:#141414;
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900; --panel:#141414;
   --panel-2:#1b1b1b; --line:#2a2a2a; --muted:#a8a8a8; --paper:#fff;
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
 }
@@ -18,7 +18,7 @@
 html{scroll-behavior:smooth}
 body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--paper);
   -webkit-font-smoothing:antialiased;min-height:100vh}
-::selection{background:rgba(255,193,7,.3);color:var(--ink)}
+::selection{background:rgba(255,206,0,.3);color:var(--ink)}
 img{display:block}
 a{color:inherit;text-decoration:none}
 .disp{font-family:'Space Grotesk',sans-serif}
@@ -140,13 +140,13 @@ footer b{color:var(--paper)}
 </header>
 
 <section class="hero">
-  <h1>Every scene your stream needs. <em>Two ways</em> to have it.</h1>
-  <p>Round 3 — rebuilt on the formula you pointed at: <b>one smile spine</b> (dark stage, sparks, ticker, the face as the hub) with a <b>completely different hero concept per scene</b> — never the same layout with swapped text. Ten scenes — <b>Starting Soon · BRB · Intermission · Technical Difficulties · Now Sharing · Live/Welcome · Q&amp;A · Ad Break · Giveaway · Ending</b> — each in two takes, both stuffed with motion: orbits, marquees, sonar rings, equalizer walls, gift pops, glyph rain. Vote per scene; winners get a third take next round.</p>
+  <h1>Five essential scenes. <em>Four takes</em> each. Twenty designs.</h1>
+  <p>The essentials only — <b>Starting Soon · Be Right Back · Technical Difficulties · Q&amp;A · Ending</b> — every other scene is shelved for later. Each scene now runs <b>four fully distinct design systems</b>: the mecha bay (sazabi-flavored HUD), the kinetic poster, the obsidian glass stage and the solar print edition — all speaking the same smile language: the exact logo face, the #FFCE00 yellow, the EAT clock, one yellow per composition. Same family, completely different heroes — pick a winner per scene.</p>
   <div class="law">
-    <span class="y">20 designs · 10 scenes × 2 takes</span>
-    <span>one spine — twenty different heroes</span>
-    <span>animations up the wazooo — 5+ systems per take</span>
-    <span>exact smile assets — untouched</span>
+    <span class="y">20 designs · 5 scenes × 4 takes</span>
+    <span>4 design systems — mecha / kinetic / glass / print</span>
+    <span>the real smile logo — verbatim, everywhere</span>
+    <span>sazabi-flavor motion — brackets, servo steps, lock-ons</span>
     <span>0 console errors · reduced-motion safe</span>
   </div>
 </section>
@@ -168,15 +168,15 @@ footer b{color:var(--paper)}
     <h3>Use a scene in OBS</h3>
     <ul>
       <li><b>0</b><span>Or skip the URL math — the <code>Director</code> console builds any scene URL for you: pick a scene, a take, set the countdown, copy the link.</span></li>
-      <li><b>1</b><span>Add a <code>Browser</code> source, 1920×1080, and paste the scene URL — pick the take with <code>?v=a</code> (signature) or <code>?v=b</code> (alt hero).</span></li>
-      <li><b>2</b><span>Control from the URL: <code>&amp;t=90</code> countdown seconds or <code>&amp;t=2026-01-05T19:00</code> absolute · <code>&amp;ep=07</code> episode number. At zero the countdown holds 00:00 and the reveal pops — no dead screens.</span></li>
-      <li><b>3</b><span>Every take runs 5+ animation systems at once — entrances, orbits, ticker, hero motion, sparks, face idle life — and respects <code>prefers-reduced-motion</code>.</span></li>
+      <li><b>1</b><span>Add a <code>Browser</code> source, 1920×1080, and paste the scene URL — pick the take with <code>?v=a</code> mecha · <code>?v=b</code> kinetic · <code>?v=c</code> glass · <code>?v=d</code> print.</span></li>
+      <li><b>2</b><span>Control from the URL: <code>&amp;t=90</code> countdown seconds or <code>&amp;t=2026-01-05T19:00</code> absolute · <code>&amp;ep=07</code> episode · <code>&amp;up=94</code> elapsed (tech) · <code>&amp;obs=1</code> clean output. At zero the countdown holds and the reveal pops — no dead screens.</span></li>
+      <li><b>3</b><span>Every take layers entrances + a hero motion system + ambient life (ticker, scan, face moods) and respects <code>prefers-reduced-motion</code>.</span></li>
     </ul>
   </div>
   <div class="pane">
     <h3>How this was built</h3>
     <ul>
-      <li><b>Reference</b><span>The formula you pointed at — the <b>core scenes on main</b>: one brand spine, a radically different hero per scene. Round 3 rebuilds all ten scenes on exactly that law.</span></li>
+      <li><b>Reference</b><span>Built from the references you named — the <b>sazabi</b> mecha flavor, lively niche-UI energy, dribbble-grade composition — translated into the smile language and QA'd frame by frame with the real logo.</span></li>
       <li><b>Gates</b><span>Every take ran headless probes: 0 console errors · zero overflow at 1920×1080 and 480×270 · ?v/?t/?ep contracts · zero-state reveals · reduced-motion safe.</span></li>
       <li><b>Skills</b><span>Installed and enforced: <b>impeccable</b>, <b>antislop + antislop-ui</b>, <b>taste</b> — the slop taxonomy applied to every composition choice.</span></li>
     </ul>
@@ -184,7 +184,7 @@ footer b{color:var(--paper)}
 </section>
 
 <footer>
-  <div><b>smile</b> · Kenya's all-in-one finance hub — the scene suite, prototype branch</div>
+  <div><b>smile</b> · Kenya's all-in-one finance hub — the essentials suite, prototype branch. Shelved for later: sharing · live · ad break · giveaway · intermission (still in <span style="color:var(--muted)">lab/kit/shelf/</span>).</div>
   <div>@smileke · smile.co.ke · #SmileSquad</div>
 </footer>
 
@@ -193,31 +193,23 @@ footer b{color:var(--paper)}
 'use strict';
 var SCENES=[
  {id:'start',name:'Starting Soon',desc:'countdown opener — the hold before air'},
- {id:'brb',name:'Be Right Back',desc:'the short break, kept warm'},
- {id:'inter',name:'Intermission',desc:'mid-show break with the up-next rundown'},
+ {id:'brb',name:'Be Right Back',desc:'the break, kept warm — intermission included'},
  {id:'tech',name:'Technical Difficulties',desc:'calm and honest, never panicked'},
- {id:'share',name:'Now Sharing',desc:'screen-share handoff — audio stays live'},
- {id:'live',name:'Live / Welcome',desc:'show open — episode, guest, rundown'},
  {id:'qa',name:'Q&A',desc:'the audience floor, how to ask'},
- {id:'ad',name:'Ad Break',desc:'the partner moment, honestly slotted'},
- {id:'give',name:'Giveaway',desc:'entry window and a dignified reveal'},
  {id:'end',name:'Ending',desc:'thanks, replay CTA, next-stream hook'}
 ];
 var LANES=[
- {k:'a',n:'Take A',d:'the signature hero'},
- {k:'b',n:'Take B',d:'a different concept, same law'}
+ {k:'a',n:'Take A',d:'mecha bay'},
+ {k:'b',n:'Take B',d:'kinetic poster'},
+ {k:'c',n:'Take C',d:'obsidian glass'},
+ {k:'d',n:'Take D',d:'solar print'}
 ];
 var TAKE_D={
- start:['orbit launch — editorial + satellite ring','marquee wall — type rows + floating face'],
- brb:['buffer — the spinner hold','pause bar — the face sits at 67%'],
- inter:['rundown gauge — part one wrapped','equalizer wall — vibe with us'],
- tech:['diagnostic orbit — checks flip OK','meter clinic — VU levels'],
- share:['handoff zoom — the window arrives','self-drawing frame — 3·2·1'],
- live:['type slam — WE ARE LIVE','sonar welcome — rings + wave'],
- qa:['rising bubbles — chat drift','glyph rain — parallax ?'],
- ad:['partner slide — honest slot card','ring timer — the draining ring'],
- give:['gift pop — shake + confetti','prize wheel — spin for the drop'],
- end:['editorial sign-off','credits roll — off air']
+ start:['launch bay — STANDBY spec sheet + target viewport','t-minus — yellow/ink split, sticker face, 196px digits','obsidian stage — glass slab + depleting ring','front page — masthead, flip cards, postmark'],
+ brb:['autopilot console — systems flanks + segment gauge','stretch break — sticker chips + tape divider','control-room dock — full-width glass, face straddles','intermission playbill — programme + split-flap'],
+ tech:['mayday console — fault log + recharge reservoir','hold on — face behind the door, self-repairing wire','blackout — one quiet glass slab, dimmed face','service notice — double border + rubber stamp'],
+ qa:['open comms — transmission feed cycling questions','drop it in chat — bubbles + ANYTHING sticker','town hall — the queue in glass, floor open','letters to the editor — washi-taped notes'],
+ end:['mission complete — flight log + final bracket lock',"that's a wrap — bow + swash underline",'end slate — cinematic glass card','colophon — credits, diary line, stamp']
 };
 
 /* build board */
@@ -228,10 +220,11 @@ SCENES.forEach(function(sc,si){
    '<span class="sc-d">'+sc.desc+'</span></div><span class="chev">▸</span></div>'+
    '<div class="lane-grid">';
   LANES.forEach(function(ln){
+    var ti={a:0,b:1,c:2,d:3}[ln.k];
     html+='<div class="lane" data-sc="'+sc.id+'" data-ln="'+ln.k+'">'+
      '<div class="prev" data-load="'+sc.id+'.html?v='+ln.k+'&g=1"><div class="ph">'+ln.k.toUpperCase()+'</div></div>'+
      '<button class="vote" title="vote this design" aria-label="vote">○</button>'+
-     '<div class="meta"><div class="nm"><span class="lt">'+ln.n+'</span><span class="ln">'+TAKE_D[sc.id][ln.k==='a'?0:1]+'</span></div>'+
+     '<div class="meta"><div class="nm"><span class="lt">'+ln.n+'</span><span class="ln">'+TAKE_D[sc.id][ti]+'</span></div>'+
      '<a class="go" href="'+sc.id+'.html?v='+ln.k+'" target="_blank" rel="noopener">open full ↗</a></div></div>';
   });
   html+='</div></div>';
@@ -285,7 +278,7 @@ function renderLB(){
   var el=document.getElementById('lbBody');
   if(!arr.length){el.innerHTML='<p class="empty">No votes yet. Open a scene family and crown your winners.</p>';return}
   arr.sort(function(a,b){return a.sc===b.sc?0:(SCENES.findIndex(function(s){return s.id===a.sc})-SCENES.findIndex(function(s){return s.id===b.sc}))});
-  var L={a:'Take A',b:'Take B'};
+  var L={a:'Take A · mecha',b:'Take B · kinetic',c:'Take C · glass',d:'Take D · print'};
   el.innerHTML='<ol>'+arr.map(function(v,i){
     var sc=SCENES.find(function(s){return s.id===v.sc});
     return '<li><span class="rk">'+(i+1)+'</span><span><b>'+sc.name+'</b> — '+L[v.ln]+'</span>'+
