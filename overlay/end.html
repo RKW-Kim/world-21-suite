@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · session closed</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  overflow:hidden;-webkit-font-smoothing:antialiased}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+.page{position:relative;display:flex;flex-direction:column;height:100%}
+
+.ambient{position:absolute;inset:0;pointer-events:none}
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 64% 44% at 50% -10%,rgba(255,255,255,.09),transparent 70%)}
+.aura{position:absolute;left:50%;top:42%;width:760px;height:500px;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 64%)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 56%,rgba(0,0,0,.5) 100%)}
+
+/* confetti — 18 pieces, transform/opacity only */
+.cf{position:absolute;top:-4%;border-radius:3px;opacity:0;animation:fall linear infinite}
+@keyframes fall{0%{opacity:0;transform:translate3d(0,-4vh,0) rotate(0)}8%{opacity:.9}
+  92%{opacity:.7}100%{opacity:0;transform:translate3d(var(--sx,0px),108vh,0) rotate(var(--rz,540deg))}}
+
+.topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  padding:22px clamp(18px,4vw,48px)}
+.brand{display:inline-flex;align-items:center}
+.brand svg{height:clamp(20px,2.6vh,28px);width:auto}
+.clockchip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;
+  font-family:var(--fm);font-size:11px;letter-spacing:.18em;color:var(--muted)}
+.clockchip b{color:var(--fg);font-weight:600}
+
+.wrap{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:clamp(12px,2.2vh,20px);text-align:center;padding:0 24px;min-height:0}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  border:1px solid rgba(14,203,129,.4);background:rgba(14,203,129,.07);color:var(--up);
+  padding:7px 16px;font-family:var(--fm);font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .05s both}
+.face{width:clamp(84px,13vh,122px);height:clamp(84px,13vh,122px);
+  filter:drop-shadow(0 14px 30px rgba(255,193,7,.18)) drop-shadow(0 10px 24px rgba(0,0,0,.5));
+  animation:rise .9s cubic-bezier(.2,.9,.3,1) .12s both}
+.face svg{width:100%;height:100%;animation:breathe 4s ease-in-out 1s infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+h1{font-family:var(--fd);font-weight:700;font-size:clamp(44px,10vh,96px);line-height:1.0;
+  letter-spacing:-.035em;animation:rise .9s cubic-bezier(.2,.9,.3,1) .2s both}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{max-width:620px;font-size:clamp(14px,2.3vh,19px);font-weight:500;color:var(--muted);
+  line-height:1.5;animation:rise .8s cubic-bezier(.2,.9,.3,1) .3s both}
+.sub b{color:var(--fg);font-weight:600}
+
+.socials{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .4s both}
+.soc{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:999px;
+  background:rgba(14,14,17,.72);padding:9px 16px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.soc svg{width:13px;height:13px;stroke:var(--faint);fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.soc b{color:var(--fg);font-weight:600}
+.next{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  background:linear-gradient(135deg,var(--yellow),var(--hot));color:var(--ink);
+  padding:10px 20px;font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;animation:rise .8s cubic-bezier(.2,.9,.3,1) .5s both}
+
+.ticker{position:relative;z-index:6;display:flex;align-items:stretch;height:clamp(48px,7vh,62px);
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border)}
+.cap{display:flex;align-items:center;gap:10px;padding:0 clamp(14px,2vw,26px);white-space:nowrap;
+  font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.18em}
+.cap.l{background:var(--up);color:var(--ink)}
+.cap.l svg{height:18px;width:auto}
+.cap.r{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--fm);font-weight:400;font-size:10px;letter-spacing:.2em}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center}
+.track{display:flex;width:max-content;animation:tk 32s linear infinite}
+.seq{display:flex;align-items:center}
+.item{display:inline-block;vertical-align:middle;white-space:nowrap;font-family:var(--fm);
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted)}
+.item::before{content:"✦";color:var(--yellow);margin-right:14px;font-size:10px}
+.item b{color:var(--fg);font-weight:600}
+@keyframes tk{to{transform:translateX(-50%)}}
+
+@media (max-width:720px){.cap.r{display:none}.soc span{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}
+  .cf{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="ambient" aria-hidden="true">
+    <div class="dots"></div><div class="spot"></div><div class="aura"></div><div class="vig"></div>
+    <div id="cfs"></div>
+  </div>
+
+  <header class="topbar">
+    <span class="brand" aria-label="smile">
+      <svg viewBox="5 7.4 118 28" xmlns="http://www.w3.org/2000/svg" role="img">
+        <style>.cls-0{fill:#E6E6E6}.cls-2{fill:#0A0900}</style>
+        <path class="cls-0" d="m46.9 18-6 0.7c-0.3-0.7-0.4-1.7-1.7-1.7-0.9 0-1.4 0.6-1.4 1.5s0.4 1.1 2.2 1.2c3.9 0.2 7.9 1.3 7.9 5.3 0 3.7-3.9 5.3-8.8 5.3-4.8 0-8.2-1.3-8.6-4.6l6.1-0.8c0.3 0.9 0.7 2.4 2.5 2.4 1.3 0 2.3-0.4 2.3-1.5 0-1.2-0.7-1.6-2.6-1.8-3.8-0.4-7.8-1.1-7.8-5.1 0-3.7 4.1-5 8.1-5 3.9 0 6.9 0.7 7.9 4"/>
+        <path class="cls-0" d="m70.7 14.6c0.9-0.4 1.9-0.6 3.1-0.6 3.2 0 5.5 1.5 5.5 5.6v10.7h-6.4v-10.4c-0.5-0.7-1-1.3-1.9-1.3-1.3 0-2.4 0.8-2.7 2.6v9.1h-6.3v-10.4c-0.4-0.6-1-1.2-1.9-1.3-1.3 0-2.4 0.7-2.7 2.6v9.1h-6.5v-16.3h5.9v2.2h0.2c1.4-1.4 3.2-2.2 5.7-2.3 1.9-0.1 3.9 0.7 4.9 2.3h0.4c0.9-0.7 1.7-1.3 2.7-1.6"/>
+        <path class="cls-0" d="m83.5 13.9h6.2v16.4h-6.2v-16.4zm0-6.4h6.2v4.1h-6.3l0.1-4.1z"/>
+        <polygon class="cls-0" points="93.8 7.5 100.4 7.5 100.4 30.3 93.8 30.3"/>
+        <path class="cls-0" d="m112.1 17.7c-1.7-0.1-2.9 1-3 2.5h6.2c-0.2-1.6-1.3-2.4-3.2-2.5m3.3 7.1 6.7 0.9c-1.3 2.5-3.7 4.6-9 4.6-4.8 0-9.5-1.7-9.5-8.1 0-3.2 1.8-8.3 9.2-8.2 7.8 0 9.3 4.4 9.3 9.1h-12.7c0 1.8 1.4 3.4 3.2 3.3 1.4 0 2.5-0.6 2.8-1.6"/>
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+        <path class="cls-2" d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z"/>
+        <path class="cls-2" d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z"/>
+        <path class="cls-2" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z"/>
+      </svg>
+    </span>
+    <span class="clockchip"><b class="num" id="clock">--:--</b> · SEE YOU NEXT SESSION · EAT</span>
+  </header>
+
+  <main class="wrap">
+    <span class="chip">✓ Market Closed</span>
+    <span class="face" aria-hidden="true">
+      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg>
+    </span>
+
+    <h1><span class="g">session</span> <span class="y">closed.</span></h1>
+    <p class="sub"><b>Asante</b> for trading with us today — books balanced, smile intact. Same desk, same energy, next time.</p>
+
+    <div class="socials">
+      <span class="soc"><svg viewBox="0 0 24 24"><path d="M21 12c0-2.2-.2-3.8-.5-4.6-.3-.8-1-1.4-1.8-1.6C16.9 5.5 12 5.5 12 5.5s-4.9 0-6.7.3c-.8.2-1.5.8-1.8 1.6C3.2 8.2 3 9.8 3 12s.2 3.8.5 4.6c.3.8 1 1.4 1.8 1.6 1.8.3 6.7.3 6.7.3s4.9 0 6.7-.3c-.8-.2 1.5-.8 1.8-1.6.3-.8.5-2.4.5-4.6z"/><path d="M10 9.5v5l4.5-2.5z"/></svg><b>YouTube</b><span>/smileke</span></span>
+      <span class="soc"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.4L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.6z"/></svg><b>Twitch</b><span>/smileke</span></span>
+      <span class="soc"><svg viewBox="0 0 24 24"><path d="M14 3v9.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2 4.2 4.5 4.5"/></svg><b>TikTok</b><span>@smileke</span></span>
+    </div>
+
+    <span class="next">Next Session · Friday 8PM EAT</span>
+  </main>
+
+  <footer class="ticker">
+    <div class="cap l">
+      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#0a0a0a"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#FFC107"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#FFC107"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#FFC107"/>
+      </svg>
+      <span>MARKET CLOSED</span>
+    </div>
+    <div class="mask">
+      <div class="track">
+        <span class="seq">
+          <span class="item"><b>asante squad</b></span>
+          <span class="item">replays on <b>youtube</b></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>asante squad</b></span>
+          <span class="item">replays on <b>youtube</b></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap r">NOT FINANCIAL ADVICE — JUST GOOD VIBES</div>
+  </footer>
+</div>
+
+<script>
+/* confetti: 18 pre-built pieces, pure CSS animation. one gated interval for the clock. */
+(function(){
+  var box=document.getElementById('cfs'),cols=['#FFC107','#0ECB81','#F6465D','#ffffff','#3FB6FF'];
+  for(var i=0;i<18;i++){
+    var s=document.createElement('span');s.className='cf';
+    s.style.left=(3+Math.random()*94)+'%';
+    s.style.background=cols[i%cols.length];
+    s.style.width=(7+Math.random()*7)+'px';
+    s.style.height=(14+Math.random()*10)+'px';
+    s.style.animationDuration=(6+Math.random()*5)+'s';
+    s.style.animationDelay=(Math.random()*6)+'s';
+    s.style.setProperty('--sx',(Math.random()*140-70)+'px');
+    s.style.setProperty('--rz',(360+Math.random()*480)+'deg');
+    box.appendChild(s);
+  }
+  var ck=document.getElementById('clock'),lastMin=-1;
+  function two(n){return String(n).padStart(2,'0')}
+  function tick(){
+    if(document.hidden)return;
+    var m=Math.floor((Date.now()/60000+180)%1440); /* EAT = UTC+3 */
+    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
+  }
+  tick();setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
+})();
+</script>
+</body>
+</html>
