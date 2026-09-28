@@ -10,6 +10,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+/* ── INTERMISSION, redone ───────────────────────────────────────────────
+   One idea: the face alone holds the room. The smile icon is the hero —
+   huge, centered, breathing — with quiet machinery around it: two slow
+   orbit rings, three satellite dots, a pulsing glow, and a ghost word
+   stamped behind everything. A break clock counts down and then holds at
+   BACK ANY MOMENT (same hold contract as starting-soon). Modules live
+   outside this page: the bottom 96px and corners stay clear. ────────── */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
   --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
@@ -33,8 +40,6 @@ svg{display:block}
   -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
 .spot{position:absolute;inset:0;background:radial-gradient(ellipse 64% 44% at 50% -10%,rgba(255,255,255,.09),transparent 70%)}
-.aura{position:absolute;left:24%;top:46%;width:640px;height:460px;transform:translate(-50%,-50%);
-  background:radial-gradient(ellipse,rgba(255,193,7,.07),transparent 64%)}
 .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 56%,rgba(0,0,0,.5) 100%)}
 
 .topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;
@@ -45,79 +50,88 @@ svg{display:block}
   font-family:var(--fm);font-size:11px;letter-spacing:.18em;color:var(--muted)}
 .clockchip b{color:var(--fg);font-weight:600}
 
-/* split stage — statement left, agenda right */
-.split{position:relative;z-index:4;flex:1;display:flex;align-items:center;
-  gap:clamp(28px,5vw,80px);padding:0 clamp(24px,6vw,96px) var(--safe-b);min-height:0}
-.left{flex:1.15;display:flex;flex-direction:column;gap:clamp(12px,2.4vh,22px);min-width:0}
+/* ── the stage: face + orbit machinery ── */
+.hero{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:clamp(14px,2.6vh,26px);padding:0 24px var(--safe-b);min-height:0}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.eyebrow{align-self:flex-start;display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
   border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);color:var(--yellow);
   padding:7px 16px;font-family:var(--fm);font-size:10px;letter-spacing:.32em;text-transform:uppercase;
   animation:rise .8s cubic-bezier(.2,.9,.3,1) .05s both}
 .dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow)}
 .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
-  animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
+  animation:ping 2.4s cubic-bezier(0,0,.2,1) infinite}
 @keyframes ping{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(2.6);opacity:0}}
-h1{font-family:var(--fd);font-weight:700;font-size:clamp(42px,9vh,88px);line-height:1.02;
-  letter-spacing:-.035em;animation:rise .9s cubic-bezier(.2,.9,.3,1) .15s both}
-h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{max-width:520px;font-size:clamp(14px,2.3vh,19px);font-weight:500;color:var(--muted);
-  line-height:1.5;animation:rise .8s cubic-bezier(.2,.9,.3,1) .25s both}
-.backat{display:flex;align-items:baseline;gap:14px;animation:rise .8s cubic-bezier(.2,.9,.3,1) .35s both}
-.backat .ba{font-family:var(--fm);font-size:10px;letter-spacing:.3em;color:var(--faint)}
-.backat .tm{font-family:var(--fm);font-weight:600;font-size:clamp(26px,5vh,44px);
-  letter-spacing:.04em;color:var(--yellow);font-variant-numeric:tabular-nums}
-.face-row{display:flex;align-items:center;gap:14px;margin-top:4px;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .42s both}
-.face-row .face{width:clamp(44px,7vh,58px);height:clamp(44px,7vh,58px);
-  filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));animation:breathe 3.6s ease-in-out infinite}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.face-row svg{width:100%;height:100%}
-.face-row .say{font-family:var(--fd);font-weight:500;font-size:clamp(13px,2vh,16px);color:var(--muted)}
-.face-row .say b{color:var(--fg);font-weight:700}
 
-/* right: agenda panel */
-.panel{flex:1;max-width:460px;border:1px solid var(--border);border-radius:20px;
-  background:rgba(14,14,17,.72);padding:clamp(20px,3.4vh,30px);
-  animation:rise .9s cubic-bezier(.2,.9,.3,1) .3s both}
-.panel .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.panel .ph b{font-family:var(--fm);font-weight:600;font-size:10.5px;letter-spacing:.28em;color:var(--muted)}
-.panel .ph .pill{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;color:var(--yellow);
-  border:1px solid rgba(255,193,7,.35);border-radius:999px;padding:5px 11px}
-.row{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid rgba(255,255,255,.06)}
-.row .ix{font-family:var(--fm);font-weight:600;font-size:11px;color:var(--yellow);width:22px}
-.row .tt{flex:1;min-width:0}
-.row .tt b{display:block;font-family:var(--fd);font-weight:500;font-size:14.5px;letter-spacing:.01em}
-.row .tt span{display:block;margin-top:3px;font-family:var(--fm);font-size:9.5px;
-  letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
-.row .st{display:flex;align-items:center;white-space:nowrap}
-.row .st i{width:7px;height:7px;border-radius:50%;background:var(--up)}
-.count{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);
-  display:flex;align-items:center;justify-content:space-between}
-.count .cl{font-family:var(--fm);font-size:9.5px;letter-spacing:.26em;color:var(--faint)}
-.count .cv{font-family:var(--fm);font-weight:600;font-size:clamp(24px,4.2vh,34px);
+.stage{position:relative;display:grid;place-items:center;animation:rise .9s cubic-bezier(.2,.9,.3,1) .12s both}
+.ghost{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:0;
+  font-family:var(--fd);font-weight:700;font-size:clamp(80px,16vw,210px);letter-spacing:.02em;
+  color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.07);white-space:nowrap;user-select:none}
+
+.orb{position:relative;z-index:2;width:clamp(240px,38vh,380px);height:clamp(240px,38vh,380px);
+  display:grid;place-items:center}
+.orb .glow{position:absolute;inset:-12%;border-radius:50%;z-index:0;
+  background:radial-gradient(circle,rgba(255,193,7,.14),transparent 62%);
+  animation:glow 4.6s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+.orb .ring{position:absolute;border-radius:50%;border:2px dashed rgba(255,255,255,.13)}
+.orb .ring.r1{inset:0;animation:spin 46s linear infinite}
+.orb .ring.r2{inset:20px;border-color:rgba(255,193,7,.24);animation:spinRev 32s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spinRev{to{transform:rotate(-360deg)}}
+.orb .sats{position:absolute;inset:0;animation:spin 46s linear infinite}
+.orb .sat{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--yellow);
+  box-shadow:0 0 12px rgba(255,193,7,.5)}
+.orb .sat.s1{left:50%;top:-5px;transform:translateX(-50%)}
+.orb .sat.s2{right:-2px;top:62%;background:var(--up);box-shadow:0 0 10px rgba(14,203,129,.45)}
+.orb .sat.s3{left:6%;bottom:8%;background:var(--down);box-shadow:0 0 10px rgba(246,70,93,.4)}
+.orb .face{position:relative;z-index:2;width:clamp(128px,20vh,196px);height:clamp(128px,20vh,196px);
+  filter:drop-shadow(0 16px 36px rgba(0,0,0,.55));animation:breathe 5.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.orb .face svg{width:100%;height:100%}
+/* the icon only — no wordmark on this stage; the face IS the message */
+
+/* ── break clock: counts down once, then holds at BACK ANY MOMENT ──
+   ?t=90 | ?t=MM:SS | ?t=H:MM:SS overrides the default 10:00 break. */
+.cdzone{display:grid;place-items:center;min-height:64px;width:100%}
+.cdzone>*{grid-area:1/1}
+.cdcol{display:flex;align-items:baseline;gap:14px;justify-content:center;
+  transition:opacity .7s cubic-bezier(.2,.9,.3,1),transform .7s cubic-bezier(.2,.9,.3,1)}
+.cdcol .ba{font-family:var(--fm);font-size:10px;letter-spacing:.3em;color:var(--faint)}
+.cdcol .cv{font-family:var(--fm);font-weight:600;font-size:clamp(26px,4.6vh,40px);
   font-variant-numeric:tabular-nums;color:var(--fg)}
+html[data-hold="1"] .cdcol{opacity:0;transform:scale(.92);pointer-events:none}
+.hold{display:inline-flex;align-items:center;gap:11px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.5);background:rgba(255,193,7,.1);
+  padding:11px 24px;font-family:var(--fm);font-weight:600;font-size:clamp(11px,1.8vh,14px);
+  letter-spacing:.3em;color:var(--yellow);text-transform:uppercase;
+  opacity:0;transform:scale(.92);transition:opacity .7s cubic-bezier(.2,.9,.3,1) .25s,transform .7s cubic-bezier(.2,.9,.3,1) .25s}
+.hold .dot{width:9px;height:9px}
+html[data-hold="1"] .hold{opacity:1;transform:none}
 
+.ag{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:rise .8s cubic-bezier(.2,.9,.3,1) .4s both}
+.agi{border:1px solid var(--border);border-radius:999px;background:rgba(14,14,17,.62);
+  padding:8px 15px;font-family:var(--fm);font-size:9.5px;letter-spacing:.24em;color:var(--muted);
+  text-transform:uppercase}
+.agi b{color:var(--yellow);font-weight:600}
 
-@media (max-width:860px){
-  .split{flex-direction:column;justify-content:center;gap:22px;padding-top:12px}
-  .panel{max-width:none;width:100%}
-  
+@media (max-width:720px){.agi:nth-child(3){display:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  html[data-hold="1"] .cdcol{display:none}
+  html:not([data-hold]) .hold{opacity:0}
 }
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
 <div class="page">
   <div class="ambient" aria-hidden="true">
-    <div class="dots"></div><div class="spot"></div><div class="aura"></div><div class="vig"></div>
+    <div class="dots"></div><div class="spot"></div><div class="vig"></div>
   </div>
 
   <header class="topbar">
     <span class="brand" aria-label="smile">
+      <!-- SMILE LOGO — verbatim from core/Smile-Logo.svg (zero redraw) -->
       <svg viewBox="5 7.4 118 28" xmlns="http://www.w3.org/2000/svg" role="img">
         <style>.cls-0{fill:#E6E6E6}.cls-2{fill:#0A0900}</style>
         <path class="cls-0" d="m46.9 18-6 0.7c-0.3-0.7-0.4-1.7-1.7-1.7-0.9 0-1.4 0.6-1.4 1.5s0.4 1.1 2.2 1.2c3.9 0.2 7.9 1.3 7.9 5.3 0 3.7-3.9 5.3-8.8 5.3-4.8 0-8.2-1.3-8.6-4.6l6.1-0.8c0.3 0.9 0.7 2.4 2.5 2.4 1.3 0 2.3-0.4 2.3-1.5 0-1.2-0.7-1.6-2.6-1.8-3.8-0.4-7.8-1.1-7.8-5.1 0-3.7 4.1-5 8.1-5 3.9 0 6.9 0.7 7.9 4"/>
@@ -134,14 +148,18 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <span class="clockchip"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
   </header>
 
-  <main class="split">
-    <section class="left">
-      <span class="eyebrow"><span class="dot"></span>Intermission</span>
-      <h1><span class="g">short</span> <span class="y">break.</span></h1>
-      <p class="sub">Desk takes five — hydration, posture, and one more glance at the charts. Stream resumes right after the bell.</p>
-      <div class="backat"><span class="ba">BACK AT</span><span class="tm" id="backAt">--:--</span><span class="ba">EAT</span></div>
-      <div class="face-row">
+  <main class="hero">
+    <span class="eyebrow"><span class="dot"></span>Intermission · The Desk Takes Five</span>
+
+    <div class="stage">
+      <span class="ghost" aria-hidden="true">INTERMISSION</span>
+      <div class="orb">
+        <span class="glow" aria-hidden="true"></span>
+        <i class="ring r1" aria-hidden="true"></i>
+        <i class="ring r2" aria-hidden="true"></i>
+        <span class="sats" aria-hidden="true"><i class="sat s1"></i><i class="sat s2"></i><i class="sat s3"></i></span>
         <span class="face" aria-hidden="true">
+          <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
           <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
             <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
             <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
@@ -149,59 +167,61 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
             <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
           </svg>
         </span>
-        <span class="say">stretch your shoulders. <b>we'll wait.</b></span>
       </div>
-    </section>
+    </div>
 
-    <aside class="panel">
-      <div class="ph"><b>WHILE YOU WAIT</b><span class="pill">5 MIN</span></div>
-      <div class="row">
-        <span class="ix">01</span>
-        <span class="tt"><b>Hydrate</b><span>water beats a third coffee</span></span>
-        <span class="st"><i></i></span>
-      </div>
-      <div class="row">
-        <span class="ix">02</span>
-        <span class="tt"><b>Drop your questions</b><span>Q&amp;A right after the break</span></span>
-        <span class="st"><i></i></span>
-      </div>
-      <div class="row">
-        <span class="ix">03</span>
-        <span class="tt"><b>Check the watchlist</b><span>BTC · ETH · USD/KES · XAU</span></span>
-        <span class="st"><i></i></span>
-      </div>
-      <div class="count">
-        <span class="cl">BACK IN</span>
+    <div class="cdzone">
+      <div class="cdcol" id="cdWrap">
+        <span class="ba">BACK IN</span>
         <span class="cv num" id="cd">10:00</span>
       </div>
-    </aside>
-  </main>
+      <div class="hold" id="hold"><span class="dot"></span>BACK ANY MOMENT</div>
+    </div>
 
+    <div class="ag">
+      <span class="agi"><b>01</b> HYDRATE</span>
+      <span class="agi"><b>02</b> STRETCH</span>
+      <span class="agi"><b>03</b> DROP Qs FOR Q&amp;A</span>
+    </div>
+  </main>
 </div>
 
 <script>
-/* one gated interval — break countdown + clock + back-at time */
+/* one gated interval — clock + break countdown → hold. no rAF, nothing else.
+   Contract: default break 10:00; ?t=90 | ?t=05:00 | ?t=1:05:00 overrides;
+   at zero the clock cross-fades into BACK ANY MOMENT and stays. */
 (function(){
-  var EAT=3*3600*1000;
+  var EAT=3*3600*1000; /* UTC+3 */
   function two(n){return String(n).padStart(2,'0')}
-  /* default break: 10 minutes from load; ?t=MM:SS overrides the length; ?at=HH:MM sets EAT return time */
-  var secs=600,mUrl=location.search.match(/[?&]t=(\d{1,3}):(\d{2})/);
-  if(mUrl)secs=(+mUrl[1])*60+(+mUrl[2]);
-  var END=Date.now()+secs*1000;
-  var backEl=document.getElementById('backAt'),cdEl=document.getElementById('cd'),
-      ck=document.getElementById('clock'),lastMin=-1;
 
-  function eatMins(){return Math.floor((Date.now()+EAT)/60000)%1440;}
-  function render(){
-    if(document.hidden)return;
-    backEl.textContent=two(Math.floor(eatMins()/60))+':'+two(eatMins()%60);
-    var left=Math.max(0,Math.round((END-Date.now())/1000));
-    cdEl.textContent=two(Math.floor(left/60))+':'+two(left%60);
-    var m=eatMins();
+  var ck=document.getElementById('clock'),lastMin=-1;
+  function tickClock(){
+    var m=Math.floor((Date.now()+EAT)/60000)%1440;
     if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
   }
-  render();setInterval(render,1000);
-  document.addEventListener('visibilitychange',render);
+
+  var raw=(location.search.match(/[?&]t=([\d:]+)/)||[])[1],secs=600;
+  if(raw){
+    var p=raw.split(':').map(Number);
+    secs=p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0];
+    if(!(secs>0))secs=600;
+  }
+  var END=Date.now()+secs*1000;
+  var cd=document.getElementById('cd');
+
+  function goHold(){
+    if(document.documentElement.dataset.hold!=='1')document.documentElement.dataset.hold='1';
+  }
+
+  function tick(){
+    if(document.hidden)return;
+    tickClock();
+    var left=Math.max(0,Math.round((END-Date.now())/1000));
+    cd.textContent=two(Math.floor(left/60))+':'+two(left%60);
+    if(left<=0)goHold();
+  }
+  tick();setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
 })();
 </script>
 </body>
