@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · intermission — take five</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ── INTERMISSION, variant B — "take five" ──────────────────────────────
+   A different structural answer from variant A's orbital machinery:
+   the face is the SUN over a calm horizon. Dusk paint (static), the icon
+   bobbing like something that floats, a mirrored reflection fading into
+   the ink, and a slow comfort marquee riding the horizon line. The break
+   drains along the horizon itself — a yellow hairline that shortens —
+   and the board holds at BACK ANY MOMENT (same hold contract as A).
+   Modules live outside this page: bottom 96px + corners stay clear. ──── */
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:96px; /* bottom module zone — the ticker module docks here */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  overflow:hidden;-webkit-font-smoothing:antialiased}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
+.page{position:relative;display:flex;flex-direction:column;height:100%}
+
+/* ── ambient: static dusk paint, zero filters ── */
+.ambient{position:absolute;inset:0;pointer-events:none}
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 84%);
+          mask-image:radial-gradient(ellipse at 50% 40%,#000 30%,transparent 84%)}
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 60% 42% at 50% -8%,rgba(255,255,255,.07),transparent 70%)}
+.dusk{position:absolute;inset:0;background:radial-gradient(ellipse 58% 34% at 50% 66%,rgba(255,163,7,.11),rgba(255,193,7,.035) 52%,transparent 74%)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 58%,rgba(0,0,0,.52) 100%)}
+
+.topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:flex-end;
+  padding:22px clamp(18px,4vw,48px)}
+.clockchip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;
+  font-family:var(--fm);font-size:11px;letter-spacing:.18em;color:var(--muted)}
+.clockchip b{color:var(--fg);font-weight:600}
+
+/* ── header group ── */
+.hero{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:clamp(12px,2.2vh,20px);padding:0 24px var(--safe-b);min-height:0}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);color:var(--yellow);
+  padding:7px 16px;font-family:var(--fm);font-size:10px;letter-spacing:.32em;text-transform:uppercase;
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .05s both}
+.dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow)}
+h1{font-family:var(--fd);font-weight:700;font-size:clamp(44px,8.4vh,84px);line-height:1;
+  letter-spacing:-.03em;animation:rise .8s cubic-bezier(.2,.9,.3,1) .12s both}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* break clock — same contract as variant A: ?t= overrides, holds at BACK ANY MOMENT */
+.cdzone{display:grid;place-items:center;min-height:46px;width:100%}
+.cdzone>*{grid-area:1/1}
+.cdcol{display:inline-flex;align-items:center;gap:12px;border:1px solid var(--border);
+  border-radius:999px;background:rgba(14,14,17,.62);padding:10px 20px;
+  transition:opacity .7s cubic-bezier(.2,.9,.3,1),transform .7s cubic-bezier(.2,.9,.3,1)}
+.cdcol .ba{font-family:var(--fm);font-size:10px;letter-spacing:.3em;color:var(--faint)}
+.cdcol .cv{font-family:var(--fm);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;color:var(--fg)}
+html[data-hold="1"] .cdcol{opacity:0;transform:scale(.92);pointer-events:none}
+.hold{display:inline-flex;align-items:center;gap:11px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.5);background:rgba(255,193,7,.1);
+  padding:11px 24px;font-family:var(--fm);font-weight:600;font-size:clamp(11px,1.8vh,14px);
+  letter-spacing:.3em;color:var(--yellow);text-transform:uppercase;
+  opacity:0;transform:scale(.92);transition:opacity .7s cubic-bezier(.2,.9,.3,1) .25s,transform .7s cubic-bezier(.2,.9,.3,1) .25s}
+.hold .dot{width:9px;height:9px}
+html[data-hold="1"] .hold{opacity:1;transform:none}
+
+/* ── the horizon stage ── */
+.stage{position:relative;width:100%;flex:1;min-height:220px;overflow:hidden;
+  animation:rise .9s cubic-bezier(.2,.9,.3,1) .2s both}
+.horizon{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.13)}
+/* the break drains along the horizon — one hairline, scaleX only */
+.deplete{position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-.5px;
+  background:linear-gradient(90deg,rgba(255,193,7,.05),rgba(255,193,7,.75),rgba(255,193,7,.05));
+  transform:scaleX(1);transform-origin:center;will-change:transform;transition:opacity .6s}
+html[data-hold="1"] .deplete{opacity:0}
+/* sun halo — static paint */
+.halo{position:absolute;left:50%;top:50%;width:clamp(300px,46vh,560px);height:clamp(300px,46vh,560px);
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,193,7,.16),rgba(255,193,7,.05) 46%,transparent 66%)}
+/* the face — the sun, gently afloat */
+.sun{position:absolute;left:50%;top:50%;width:clamp(150px,26vh,240px);height:clamp(150px,26vh,240px);
+  transform:translate(-50%,-50%);animation:afloat 7s ease-in-out infinite;z-index:3;
+  filter:drop-shadow(0 18px 44px rgba(0,0,0,.55))}
+@keyframes afloat{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% - 9px))}}
+.sun svg{width:100%;height:100%}
+/* mirrored reflection, fading into the ink — slow breath of opacity */
+.reflect{position:absolute;left:50%;top:50%;width:clamp(150px,26vh,240px);height:clamp(150px,26vh,240px);
+  transform:translate(-50%,0) scaleY(-1);opacity:.13;
+  -webkit-mask-image:linear-gradient(to top,transparent 12%,rgba(0,0,0,.55) 74%,#000);
+          mask-image:linear-gradient(to top,transparent 12%,rgba(0,0,0,.55) 74%,#000);
+  animation:shimmer 9s ease-in-out infinite}
+@keyframes shimmer{0%,100%{opacity:.10}50%{opacity:.17}}
+.reflect svg{width:100%;height:100%}
+
+/* comfort marquee riding the horizon — pure transform loop; the sun occludes it */
+.marq{position:absolute;left:0;right:0;top:50%;transform:translateY(calc(-100% - 14px));
+  overflow:hidden;pointer-events:none;z-index:2}
+.track{display:inline-flex;align-items:center;white-space:nowrap;will-change:transform;
+  animation:drift 42s linear infinite}
+@keyframes drift{to{transform:translateX(-50%)}}
+.track .mi{font-family:var(--fm);font-size:10px;letter-spacing:.34em;color:rgba(250,250,250,.30);padding:0 18px}
+.track i{width:4px;height:4px;border-radius:50%;background:rgba(255,193,7,.5);flex:none}
+
+/* plain-sight brand signature */
+.sig{font-family:var(--fm);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38);
+  text-align:center;animation:rise .8s cubic-bezier(.2,.9,.3,1) .5s both}
+.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  html[data-hold="1"] .cdcol{display:none}
+  html:not([data-hold]) .hold{opacity:0}
+  .deplete{opacity:.6}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="ambient" aria-hidden="true">
+    <div class="dots"></div><div class="spot"></div><div class="dusk"></div><div class="vig"></div>
+  </div>
+
+  <header class="topbar">
+    <span class="clockchip"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
+  </header>
+
+  <main class="hero">
+    <span class="eyebrow"><span class="dot"></span>Intermission · Back Soon, No Rush</span>
+    <h1><span class="g">take</span> <span class="y">five.</span></h1>
+
+    <div class="cdzone">
+      <div class="cdcol" id="cdWrap">
+        <span class="ba">BACK IN</span>
+        <span class="cv num" id="cd">10:00</span>
+      </div>
+      <div class="hold" id="hold"><span class="dot"></span>BACK ANY MOMENT</div>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <div class="halo"></div>
+      <span class="reflect">
+        <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+          <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+          <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+          <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+          <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+        </svg>
+      </span>
+      <div class="horizon"></div>
+      <div class="deplete" id="deplete"></div>
+      <span class="sun">
+        <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
+        <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+          <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+          <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+          <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+          <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+        </svg>
+      </span>
+      <div class="marq">
+        <span class="track">
+          <span class="mi">HYDRATE</span><i></i><span class="mi">STRETCH</span><i></i><span class="mi">BREATHE</span><i></i><span class="mi">DROP QUESTIONS FOR Q&amp;A</span><i></i><span class="mi">THE DESK IS ON A BREAK</span><i></i><span class="mi">BACK SOON — NO RUSH</span><i></i>
+          <span class="mi">HYDRATE</span><i></i><span class="mi">STRETCH</span><i></i><span class="mi">BREATHE</span><i></i><span class="mi">DROP QUESTIONS FOR Q&amp;A</span><i></i><span class="mi">THE DESK IS ON A BREAK</span><i></i><span class="mi">BACK SOON — NO RUSH</span><i></i>
+        </span>
+      </div>
+    </div>
+
+    <p class="sig">smile<b>.co.ke</b></p>
+  </main>
+</div>
+
+<script>
+/* one gated interval — clock + break countdown → hold + horizon drain.
+   no rAF, no canvas. Contract: default break 10:00; ?t=90 | ?t=05:00 |
+   ?t=1:05:00 overrides; ?t=0 holds immediately (pre-stage the hold in OBS);
+   at zero the chip cross-fades into BACK ANY MOMENT, the horizon hairline
+   has drained to nothing, and the board stays. */
+(function(){
+  var EAT=3*3600*1000; /* UTC+3 */
+  function two(n){return String(n).padStart(2,'0')}
+
+  var ck=document.getElementById('clock'),lastMin=-1;
+  function tickClock(){
+    var m=Math.floor((Date.now()+EAT)/60000)%1440;
+    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
+  }
+
+  var raw=(location.search.match(/[?&]t=([\d:]+)/)||[])[1],secs=600;
+  if(raw){
+    var p=raw.split(':').map(Number);
+    secs=p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0];
+    if(!(secs>=0))secs=600; /* junk -> default; 0 = hold immediately */
+  }
+  var TOTAL=secs,END=Date.now()+secs*1000;
+  var cd=document.getElementById('cd'),dep=document.getElementById('deplete');
+
+  function goHold(){
+    if(document.documentElement.dataset.hold!=='1')document.documentElement.dataset.hold='1';
+  }
+
+  function tick(){
+    if(document.hidden)return;
+    tickClock();
+    var left=Math.max(0,Math.round((END-Date.now())/1000));
+    cd.textContent=two(Math.floor(left/60))+':'+two(left%60);
+    dep.style.transform='scaleX('+(TOTAL?left/TOTAL:0).toFixed(4)+')';
+    if(left<=0)goHold();
+  }
+  tick();setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · the scene museum</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+::selection{background:var(--yellow);color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:60px 26px 90px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+.head{display:flex;align-items:center;justify-content:space-between;animation:rise .7s cubic-bezier(.2,.9,.3,1) both}
+.head .home{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--muted);
+  font-family:var(--fm);font-size:10px;letter-spacing:.22em;transition:color .25s}
+.head .home:hover{color:var(--yellow)}
+.tagchip{font-family:var(--fm);font-size:10px;letter-spacing:.24em;color:var(--muted);
+  border:1px solid var(--border);border-radius:999px;padding:8px 14px}
+h1{font-family:var(--fd);font-weight:700;font-size:clamp(34px,6vw,58px);line-height:1.04;
+  letter-spacing:-.03em;margin:26px 0 14px;animation:rise .7s cubic-bezier(.2,.9,.3,1) .08s both}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{max-width:720px;color:var(--muted);font-size:15.5px;line-height:1.65;margin-bottom:10px;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .16s both}
+.lede b{color:var(--fg);font-weight:600}
+.howto{margin:18px 0 8px;border:1px dashed rgba(255,193,7,.4);border-radius:12px;
+  background:rgba(255,193,7,.05);padding:16px 20px;color:var(--muted);font-size:13.5px;line-height:1.65;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .2s both}
+.howto b{color:var(--yellow);font-weight:600}
+
+.wing{margin-top:56px}
+.winghead{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .24s both}
+.winghead h2{font-family:var(--fd);font-weight:700;font-size:24px;letter-spacing:-.02em}
+.winghead .count{font-family:var(--fm);font-size:10px;letter-spacing:.24em;color:var(--yellow);
+  border:1px solid rgba(255,193,7,.35);border-radius:999px;padding:5px 12px}
+.winghead .verdict{font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;color:var(--faint)}
+.wingdesc{color:var(--faint);font-size:13px;line-height:1.6;margin-bottom:22px;max-width:720px}
+
+.era{display:flex;align-items:center;gap:14px;margin:30px 0 14px;
+  font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.24em;color:var(--muted);
+  text-transform:uppercase}
+.era::after{content:"";flex:1;height:1px;background:var(--border)}
+.era .c{color:var(--faint);letter-spacing:.1em;text-transform:none;font-weight:400}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:rgba(14,14,17,.55);
+  display:flex;flex-direction:column;transition:border-color .25s}
+.card:hover{border-color:rgba(255,193,7,.45)}
+.pv{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0c0c0f;border-bottom:1px solid var(--border)}
+.pv iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;
+  transform-origin:0 0;pointer-events:none;background:var(--bg)}
+.pv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pv .zoom{position:absolute;right:10px;top:10px;z-index:2;text-decoration:none;
+  font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.18em;color:var(--ink);
+  background:var(--yellow);border-radius:999px;padding:6px 12px;opacity:0;transition:opacity .25s}
+.card:hover .pv .zoom{opacity:1}
+.pv .still{position:absolute;left:10px;top:10px;z-index:2;font-family:var(--fm);font-size:8.5px;
+  letter-spacing:.16em;color:rgba(250,250,250,.55);border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;padding:4px 9px;background:rgba(9,9,11,.5)}
+.meta{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.meta .tag{flex:none;font-family:var(--fm);font-weight:600;font-size:8.5px;letter-spacing:.16em;
+  color:var(--yellow);border:1px solid rgba(255,193,7,.3);border-radius:999px;padding:5px 10px;
+  white-space:nowrap}
+.meta .nm{flex:1;min-width:0}
+.meta .nm b{display:block;font-family:var(--fd);font-weight:700;font-size:15.5px;letter-spacing:-.01em}
+.meta .nm span{display:block;color:var(--muted);font-size:12px;line-height:1.5;margin-top:3px}
+.meta .go{flex:none;font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;color:var(--faint);
+  text-decoration:none;white-space:nowrap;transition:color .25s}
+.meta .go:hover{color:var(--yellow)}
+.card.live .tag{color:var(--up);border-color:rgba(14,203,129,.4)}
+
+.foot{margin-top:56px;display:flex;gap:10px;flex-wrap:wrap;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .3s both}
+.foot .f{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;color:var(--faint);
+  border:1px solid var(--border);border-radius:999px;padding:6px 12px;text-transform:uppercase}
+.foot .f.y{color:var(--yellow);border-color:rgba(255,193,7,.3)}
+.note{margin-top:22px;color:var(--faint);font-size:12.5px;line-height:1.7;max-width:760px}
+.note b{color:var(--muted);font-weight:600}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <a class="home" href="../index.html">← SCENE KIT</a>
+    <span class="tagchip">THE SCENE MUSEUM · QA + TECH + INTERMISSION</span>
+  </header>
+
+  <h1><span class="g">every version</span><br><span class="y">we ever made.</span></h1>
+  <p class="lede">
+    Every <b>Q&amp;A</b> board and every <b>Technical Difficulties</b> board ever shipped —
+    <b>18 Q&amp;A takes</b> and <b>23 tech takes</b>, pulled from the live kit's git history and every
+    lab era since. Live previews render the real page; <b>OPEN ↗</b> gives you the full-screen board.
+    The <b>intermission</b> wing holds the two current candidates side by side.
+  </p>
+  <div class="howto">
+    <b>How to pick:</b> find the one you love, then answer with its name — e.g. <b>“Q&amp;A · take D”</b>
+    or <b>“Tech · kit2 keynote”</b> or <b>“Intermission · B”</b>. That version gets promoted to the
+    live lineup; everything else stays archived here in the museum.
+  </div>
+
+  <!-- ══════════════════════════ Q&A WING ══════════════════════════ -->
+  <section class="wing">
+    <div class="winghead">
+      <h2>Q&amp;A — the open floor</h2>
+      <span class="count">18 VERSIONS</span>
+      <span class="verdict">VERDICT PENDING — YOUR CALL</span>
+    </div>
+    <p class="wingdesc">From the original full-bleed board through every polish pass, the 60-design kit,
+      kit3, the five-hands executions and the spec wave. The currently-live floating-bubble take is
+      flagged <b style="color:var(--up)">LIVE</b>.</p>
+
+    <div class="era">The live kit — every revision <span class="c">git history of the current board</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="qa/kit-v1.html" loading="lazy" title="qa kit v1"></iframe><a class="zoom" href="qa/kit-v1.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">89031FB</span><span class="nm"><b>Kit v1 — the original</b><span>Stamp type, tape strip, sticker face — the first full-bleed board.</span></span><a class="go" href="qa/kit-v1.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="qa/kit-v2-stingers.html" loading="lazy" title="qa kit v2"></iframe><a class="zoom" href="qa/kit-v2-stingers.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">572C8C0</span><span class="nm"><b>Kit v2 — stingers polish</b><span>The stingers-era refine pass — quieter ink, tighter hierarchy.</span></span><a class="go" href="qa/kit-v2-stingers.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="qa/kit-v3-modules.html" loading="lazy" title="qa kit v3"></iframe><a class="zoom" href="qa/kit-v3-modules.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">1D62047</span><span class="nm"><b>Kit v3 — modules checkpoint</b><span>Ticker stripped for the module system — cleaner floor, same board.</span></span><a class="go" href="qa/kit-v3-modules.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card live">
+        <div class="pv"><iframe data-src="qa/kit-v4-bubbles.html" loading="lazy" title="qa kit v4"></iframe><a class="zoom" href="qa/kit-v4-bubbles.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">EC57C8D · LIVE</span><span class="nm"><b>Kit v4 — floating bubbles</b><span>Chat drifts up as floating bubbles — the one currently live (the “wrong” one).</span></span><a class="go" href="qa/kit-v4-bubbles.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The 60-design kit — four takes behind one file <span class="c">?v=a…d</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/qa.html?v=a" loading="lazy" title="qa take a"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/qa.html?v=a" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE A</span><span class="nm"><b>Open Comms · Channel 01</b><span>Transmission switchboard energy — MIC · EP 128 · on-air strip.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/qa.html?v=a" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/qa.html?v=b" loading="lazy" title="qa take b"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/qa.html?v=b" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE B</span><span class="nm"><b>Ask Us Anything</b><span>The big broadcast card — loud, direct, open floor.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/qa.html?v=b" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/qa.html?v=c" loading="lazy" title="qa take c"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/qa.html?v=c" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE C</span><span class="nm"><b>The Floor Is Yours</b><span>Questions-in-chat counter board — quiet utility.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/qa.html?v=c" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/qa.html?v=d" loading="lazy" title="qa take d"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/qa.html?v=d" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE D</span><span class="nm"><b>Vol. 07 — No. 128</b><span>The editorial print issue of the open floor.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/qa.html?v=d" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">Kit3 essentials <span class="c">studio style formulas</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit3/scenes/qa-brut.html" loading="lazy" title="qa brutalist"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit3/scenes/qa-brut.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">KIT3</span><span class="nm"><b>Brut Ask Wall</b><span>Raw concrete type — the brutalist ask wall.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit3/scenes/qa-brut.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit3/scenes/qa-wanna.html" loading="lazy" title="qa mono queue"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit3/scenes/qa-wanna.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">KIT3</span><span class="nm"><b>Mono Queue</b><span>Quiet monospace queue line — the anti-spectacle take.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit3/scenes/qa-wanna.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The executions — one design, five hands <span class="c">stills · open for motion</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/qa-e1.jpg" alt="qa refinery" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/qa-e1.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E1</span><span class="nm"><b>Refinery</b><span>The refinery hand — industrial structure, poured metal.</span></span><a class="go" href="../archive/2026-09-exec/execs/qa-e1.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/qa-e2.jpg" alt="qa mass and spring" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/qa-e2.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E2</span><span class="nm"><b>Mass &amp; Spring</b><span>Physics-forward hand — weight, bounce, settle.</span></span><a class="go" href="../archive/2026-09-exec/execs/qa-e2.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/qa-e3.jpg" alt="qa material study" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/qa-e3.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E3</span><span class="nm"><b>Material Study</b><span>Surface-first hand — glass, grain, light.</span></span><a class="go" href="../archive/2026-09-exec/execs/qa-e3.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/qa-e4.jpg" alt="qa type in motion" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/qa-e4.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E4</span><span class="nm"><b>Type in Motion</b><span>Kinetic-typography hand — the words are the show.</span></span><a class="go" href="../archive/2026-09-exec/execs/qa-e4.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/qa-e5.jpg" alt="qa ambient cinema" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/qa-e5.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E5</span><span class="nm"><b>Ambient Cinema</b><span>The cinematic hand — slow light, deep quiet.</span></span><a class="go" href="../archive/2026-09-exec/execs/qa-e5.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The M4 spec wave — three structural answers <span class="c">stills · open for motion</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/qa-a.jpg" alt="qa transmission feed" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/qa-a.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC A</span><span class="nm"><b>Transmission Feed</b><span>One spec, answer A — the feed structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/qa-a.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/qa-b.jpg" alt="qa town hall" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/qa-b.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC B</span><span class="nm"><b>Town Hall</b><span>One spec, answer B — the town-hall structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/qa-b.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/qa-c.jpg" alt="qa caller board" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/qa-c.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC C</span><span class="nm"><b>Caller Board</b><span>One spec, answer C — the caller-board structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/qa-c.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ TECH WING ══════════════════════════ -->
+  <section class="wing">
+    <div class="winghead">
+      <h2>Technical Difficulties — the incident board</h2>
+      <span class="count">23 VERSIONS</span>
+      <span class="verdict">VERDICT PENDING — YOUR CALL</span>
+    </div>
+    <p class="wingdesc">Every hold-the-room board we ever shipped, including the six kit2 worlds that
+      only existed in git history — extracted and put on display.</p>
+
+    <div class="era">The live kit — every revision <span class="c">git history of the current board</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit-v1.html" loading="lazy" title="tech kit v1"></iframe><a class="zoom" href="tech/kit-v1.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">89031FB</span><span class="nm"><b>Kit v1 — the original</b><span>Bench rig, scan bars, honest ETA — the first incident board.</span></span><a class="go" href="tech/kit-v1.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit-v2-stingers.html" loading="lazy" title="tech kit v2"></iframe><a class="zoom" href="tech/kit-v2-stingers.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">572C8C0</span><span class="nm"><b>Kit v2 — stingers polish</b><span>The stingers-era refine pass on the bench.</span></span><a class="go" href="tech/kit-v2-stingers.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit-v3-modules.html" loading="lazy" title="tech kit v3"></iframe><a class="zoom" href="tech/kit-v3-modules.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">1D62047</span><span class="nm"><b>Kit v3 — modules checkpoint</b><span>Ticker stripped, floor cleaned — the current live take.</span></span><a class="go" href="tech/kit-v3-modules.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The 60-design kit — four takes behind one file <span class="c">?v=a…d</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/tech.html?v=a" loading="lazy" title="tech take a"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/tech.html?v=a" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE A</span><span class="nm"><b>Maintenance Mode</b><span>Crew on the wire — down for maintenance.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/tech.html?v=a" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/tech.html?v=b" loading="lazy" title="tech take b"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/tech.html?v=b" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE B</span><span class="nm"><b>Audio Continues</b><span>“Hold on — the music plays on” — the calm hold.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/tech.html?v=b" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/tech.html?v=c" loading="lazy" title="tech take c"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/tech.html?v=c" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE C</span><span class="nm"><b>Episode 128 Standby</b><span>Broadcast standby card, clock top-left.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/tech.html?v=c" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit/tech.html?v=d" loading="lazy" title="tech take d"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit/tech.html?v=d" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">TAKE D</span><span class="nm"><b>Please Stand By</b><span>“Normal service resumes shortly” — the classic.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit/tech.html?v=d" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The six worlds (kit2) <span class="c">recovered from git history</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-arcade.html" loading="lazy" title="tech arcade"></iframe><a class="zoom" href="tech/kit2-arcade.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Arcade</b><span>CRT cabinet world — scanlines, coin-op glow.</span></span><a class="go" href="tech/kit2-arcade.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-broadcast.html" loading="lazy" title="tech broadcast"></iframe><a class="zoom" href="tech/kit2-broadcast.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Broadcast</b><span>Network sports desk world — lower thirds, authority.</span></span><a class="go" href="tech/kit2-broadcast.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-highvis.html" loading="lazy" title="tech highvis"></iframe><a class="zoom" href="tech/kit2-highvis.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Highvis</b><span>Safety-orange high-visibility world.</span></span><a class="go" href="tech/kit2-highvis.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-keynote.html" loading="lazy" title="tech keynote"></iframe><a class="zoom" href="tech/kit2-keynote.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Keynote</b><span>Apple-keynote minimal world — one line, huge type.</span></span><a class="go" href="tech/kit2-keynote.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-obsidian.html" loading="lazy" title="tech obsidian"></iframe><a class="zoom" href="tech/kit2-obsidian.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Obsidian</b><span>Black-glass world — deep matte, thin light.</span></span><a class="go" href="tech/kit2-obsidian.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="tech/kit2-zine.html" loading="lazy" title="tech zine"></iframe><a class="zoom" href="tech/kit2-zine.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">WORLD</span><span class="nm"><b>Zine</b><span>Cut-paper punk fanzine world — tape and toner.</span></span><a class="go" href="tech/kit2-zine.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">Kit3 essentials <span class="c">studio style formulas</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit3/scenes/tech-abyss.html" loading="lazy" title="tech abyss"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit3/scenes/tech-abyss.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">KIT3</span><span class="nm"><b>Abyss</b><span>Deep-dark take — slow signal in the depth.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit3/scenes/tech-abyss.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../archive/2026-09-lab/lab/kit3/scenes/tech-serv.html" loading="lazy" title="tech freeze wall"></iframe><a class="zoom" href="../archive/2026-09-lab/lab/kit3/scenes/tech-serv.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">KIT3</span><span class="nm"><b>Freeze Wall</b><span>Service freeze wall — the stalled-frame take.</span></span><a class="go" href="../archive/2026-09-lab/lab/kit3/scenes/tech-serv.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The executions — one design, five hands <span class="c">stills · open for motion</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/tech-e1.jpg" alt="tech refinery" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/tech-e1.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E1</span><span class="nm"><b>Refinery</b><span>The refinery hand — industrial structure.</span></span><a class="go" href="../archive/2026-09-exec/execs/tech-e1.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/tech-e2.jpg" alt="tech mass and spring" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/tech-e2.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E2</span><span class="nm"><b>Mass &amp; Spring</b><span>Physics-forward hand — weight and settle.</span></span><a class="go" href="../archive/2026-09-exec/execs/tech-e2.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/tech-e3.jpg" alt="tech material study" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/tech-e3.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E3</span><span class="nm"><b>Material Study</b><span>Surface-first hand — glass, grain, light.</span></span><a class="go" href="../archive/2026-09-exec/execs/tech-e3.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/tech-e4.jpg" alt="tech type in motion" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/tech-e4.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E4</span><span class="nm"><b>Type in Motion</b><span>Kinetic-typography hand — words first.</span></span><a class="go" href="../archive/2026-09-exec/execs/tech-e4.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-exec/execs/thumbs/tech-e5.jpg" alt="tech ambient cinema" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-exec/execs/tech-e5.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">E5</span><span class="nm"><b>Ambient Cinema</b><span>The cinematic hand — slow light, deep quiet.</span></span><a class="go" href="../archive/2026-09-exec/execs/tech-e5.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+
+    <div class="era">The M4 spec wave — three structural answers <span class="c">stills · open for motion</span></div>
+    <div class="grid">
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/tech-a.jpg" alt="tech status page" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/tech-a.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC A</span><span class="nm"><b>Status Page</b><span>One spec, answer A — the status-page structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/tech-a.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/tech-b.jpg" alt="tech reconnect lab" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/tech-b.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC B</span><span class="nm"><b>Reconnect Lab</b><span>One spec, answer B — the reconnect-lab structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/tech-b.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><img src="../archive/2026-09-spec-m4/spec/thumbs/tech-c.jpg" alt="tech workshop bench" loading="lazy"><span class="still">STILL</span><a class="zoom" href="../archive/2026-09-spec-m4/spec/tech-c.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">SPEC C</span><span class="nm"><b>Workshop Bench</b><span>One spec, answer C — the workbench structure.</span></span><a class="go" href="../archive/2026-09-spec-m4/spec/tech-c.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ INTERMISSION WING ══════════════════════════ -->
+  <section class="wing">
+    <div class="winghead">
+      <h2>Intermission — the break, two ways</h2>
+      <span class="count">2 CANDIDATES</span>
+      <span class="verdict">A IS LIVE — B IS NEW, PICK ONE</span>
+    </div>
+    <p class="wingdesc">Variant A holds the room with orbital machinery. Variant B (“Take Five”) turns the
+      face into the sun over a calm horizon — the break drains along the horizon line, then the board
+      holds at BACK ANY MOMENT. Same hold contract, same module safe zones.</p>
+    <div class="grid">
+      <article class="card live">
+        <div class="pv"><iframe data-src="../intermission.html" loading="lazy" title="intermission a"></iframe><a class="zoom" href="../intermission.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">A · LIVE</span><span class="nm"><b>The Orbit</b><span>Rings, satellites, ghost word, break clock — the machinery take.</span></span><a class="go" href="../intermission.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+      <article class="card">
+        <div class="pv"><iframe data-src="../intermission-b.html" loading="lazy" title="intermission b"></iframe><a class="zoom" href="../intermission-b.html" target="_blank" rel="noopener">OPEN ↗</a></div>
+        <div class="meta"><span class="tag">B · NEW</span><span class="nm"><b>Take Five — the Horizon</b><span>The face as the sun, mirrored reflection, comfort marquee, break drains along the horizon.</span></span><a class="go" href="../intermission-b.html" target="_blank" rel="noopener">OPEN →</a></div>
+      </article>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span class="f y">18 QA TAKES</span>
+    <span class="f y">23 TECH TAKES</span>
+    <span class="f">2 INTERMISSION CANDIDATES</span>
+    <span class="f">LIVE PREVIEWS · OPEN FOR FULL BOARD</span>
+    <span class="f">GIT-HISTORY RECOVERIES INCLUDED</span>
+  </div>
+  <p class="note">
+    <b>Notes:</b> stills are shown for the executions and spec-wave wings (the full boards open with
+    <b>OPEN ↗</b> for motion). Kit2's six worlds were deleted from the tree long ago — they are recovered
+    here straight from git history, with their original assets restored. The 60-design kit's takes live
+    behind <b>?v=a…d</b> in one file, exactly as built. Previews are iframes of the real pages, so what
+    you see is what would go live.
+  </p>
+</div>
+
+<script>
+/* fit each preview iframe's 1920×1080 stage into its card — event-driven
+   only (load + resize), zero timers, zero rAF. */
+(function(){
+  function fit(){
+    var list=document.querySelectorAll('.pv iframe');
+    for(var i=0;i<list.length;i++){
+      var w=list[i].parentElement.clientWidth;
+      if(w>0)list[i].style.transform='scale('+(w/1920)+')';
+    }
+  }
+  /* lazy iframes: set src from data-src only when the fit is known */
+  function arm(){
+    var list=document.querySelectorAll('iframe[data-src]');
+    for(var i=0;i<list.length;i++){
+      list[i].src=list[i].getAttribute('data-src');
+      list[i].removeAttribute('data-src');
+    }
+  }
+  arm();fit();
+  window.addEventListener('resize',fit);
+  window.addEventListener('load',fit);
+})();
+</script>
+</body>
+</html>
