@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · intermission — halftime board</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · INTERMISSION — candidate b · HALFTIME BOARD
+  scoreboard aesthetic: centered board panel (header strip + 4 count-up stat cells),
+  smile disc PERCHED on the board's top edge (bob + occasional smileMood tricks),
+  rotating "while you were away" note cards below, back-at countdown in header right.
+  ?t=90|ISO back-at · ?ep= · ?elapsed= uptime · file:// safe · OBS 1920×1080
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted-fg:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+#stage{position:relative;width:1920px;height:1080px;flex:none;background:var(--bg);overflow:hidden;}
+.num{font-variant-numeric:tabular-nums;}
+svg{display:block;}
+
+/* ═══ ambient: one system — hall spotlight + floor ═══ */
+.ambient{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.spot{position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 44% at 50% -8%,rgba(255,255,255,.09),transparent 70%);}
+.floor{position:absolute;left:50%;bottom:66px;transform:translateX(-50%);
+  width:1400px;height:300px;
+  background:radial-gradient(ellipse at 50% 100%,rgba(255,193,7,.07),transparent 62%);}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,transparent 50%,rgba(0,0,0,.55) 100%);}
+
+/* ═══ hall column ═══ */
+.hall{position:absolute;inset:0 0 66px 0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding-bottom:26px;}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+
+h1{font-family:var(--font-display);font-weight:700;font-size:76px;line-height:1;
+  letter-spacing:-.035em;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.6s both;}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.chips{display:flex;gap:9px;margin-top:18px;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.5s both;}
+.chipx{border-radius:999px;border:1px solid var(--border);background:rgba(9,9,11,.6);
+  padding:6px 13px;font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;
+  color:var(--muted-fg);text-transform:uppercase;}
+.chipx b{color:var(--fg);font-weight:600;}
+.chipx.y{border-color:rgba(255,193,7,.4);color:var(--yellow);}
+
+/* ═══ board ═══ */
+.boardwrap{position:relative;margin-top:48px;width:1240px;
+  animation:riseIn .9s cubic-bezier(.2,.9,.3,1) -.42s both;}
+
+/* smile perched on the board's top edge */
+.perch{position:absolute;top:-56px;left:420px;width:112px;height:112px;z-index:6;
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,193,7,.16));
+  animation:bob 4.6s ease-in-out 1s infinite;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+.perch .disc{width:112px;height:112px;}
+
+.board{position:relative;border:1px solid var(--border);border-radius:16px;
+  background:rgba(13,13,16,.72);box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden;}
+.bhead{display:flex;align-items:center;justify-content:space-between;gap:20px;
+  height:66px;padding:0 28px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent);}
+.bl{display:inline-flex;align-items:center;gap:12px;font-family:var(--font-display);font-weight:700;
+  font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--fg);}
+.bl::before{content:"";width:22px;height:3px;background:var(--yellow);flex:none;}
+.bl i{font-style:normal;color:var(--yellow);}
+.br{display:flex;align-items:center;gap:18px;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--faint);white-space:nowrap;}
+.br b{color:var(--muted-fg);font-weight:600;}
+.backcell{text-align:right;line-height:1;}
+.backcell .blab{display:block;font-size:9px;letter-spacing:.26em;color:var(--yellow);margin-bottom:5px;}
+.backcell .bval{font-family:var(--font-mono);font-weight:700;font-size:26px;letter-spacing:.02em;
+  color:var(--fg);}
+
+/* stat cells */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);}
+.cell{position:relative;padding:48px 34px 44px;border-left:1px solid var(--border);}
+.cell:first-child{border-left:none;}
+.cell .lab{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;
+  color:var(--faint);text-transform:uppercase;margin-bottom:18px;}
+.cell .val{display:block;font-family:var(--font-mono);font-weight:700;font-size:64px;
+  line-height:1;letter-spacing:.01em;color:var(--fg);}
+.cell.hot .val{color:var(--yellow);}
+.cell .cap{display:block;margin-top:16px;font-family:var(--font-mono);font-size:9.5px;
+  letter-spacing:.18em;color:var(--faint);text-transform:uppercase;}
+.vbar{display:block;margin-top:14px;height:3px;background:#1c1c20;border-radius:2px;overflow:hidden;}
+.vbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--yellow),var(--yellow-hot));
+  transform:scaleX(0);transform-origin:0 50%;}
+
+/* ═══ while you were away · rotating note cards ═══ */
+.notes{margin-top:38px;width:1240px;display:flex;align-items:center;gap:22px;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.3s both;}
+.nlab{flex:none;font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;
+  color:var(--faint);text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg);
+  border-left:1px solid var(--border);padding-left:10px;}
+.notestage{position:relative;flex:1;height:84px;}
+.note{position:absolute;left:0;right:0;top:0;height:84px;width:max-content;margin:0 auto;
+  display:inline-flex;align-items:center;gap:14px;
+  border:1px solid var(--border);border-radius:12px;background:rgba(13,13,16,.66);
+  box-shadow:0 16px 36px rgba(0,0,0,.4);padding:0 30px;
+  font-family:var(--font-mono);font-size:16px;letter-spacing:.04em;color:var(--muted-fg);
+  opacity:0;animation:noteCycle 24s linear infinite;}
+.note::before{content:"↳";color:var(--yellow);font-weight:700;font-size:17px;}
+.note b{color:var(--fg);font-weight:600;}
+@keyframes noteCycle{
+  0%{opacity:0;transform:translateY(16px);}
+  3.2%{opacity:1;transform:translateY(0);}
+  22.5%{opacity:1;transform:translateY(0);}
+  26.5%{opacity:0;transform:translateY(-12px);}
+  100%{opacity:0;transform:translateY(-12px);}
+}
+.note.n1{animation-delay:-1.2s;}
+.note.n2{animation-delay:-19.2s;}
+.note.n3{animation-delay:-13.2s;}
+.note.n4{animation-delay:-7.2s;}
+
+/* ═══ ticker ═══ */
+.ticker{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;align-items:stretch;height:66px;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 26px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.18em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;font-weight:500;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);font-weight:500;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted-fg);}
+.item::before{content:"✦";color:var(--yellow);margin-right:16px;font-size:10px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price{gap:9px;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.06em;}
+.item.price .pc{font-size:10px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(5px);opacity:.1;}100%{transform:none;opacity:1;}}
+
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;}
+  .note{opacity:1;}
+}
+</style>
+</head>
+
+<body>
+<div id="stage">
+
+  <div class="ambient" aria-hidden="true">
+    <div class="spot"></div>
+    <div class="floor"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <main class="hall">
+
+    <h1>intermission<span class="y">.</span></h1>
+    <div class="chips">
+      <span class="chipx"><b>@smileke</b></span>
+      <span class="chipx">smile.co.ke</span>
+      <span class="chipx y"><b>#SmileSquad</b></span>
+    </div>
+
+    <section class="boardwrap">
+      <!-- smile perched on the top edge -->
+      <div class="perch" aria-hidden="true">
+        <svg class="disc" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="board">
+        <div class="bhead">
+          <span class="bl">SMILE · INTERMISSION — <i data-ep>EP 128</i></span>
+          <span class="br num">EAT <b id="clockNow">--:--</b></span>
+          <span class="backcell">
+            <span class="blab">BACK AT <span id="backAt">--:--</span> EAT</span>
+            <span class="bval num" id="cd">10:00</span>
+          </span>
+        </div>
+
+        <div class="stats">
+          <div class="cell">
+            <span class="lab">UPTIME</span>
+            <b class="val num" id="up">00:00:00</b>
+            <span class="cap">session on air</span>
+          </div>
+          <div class="cell">
+            <span class="lab">TRADES CALLED</span>
+            <b class="val num" id="tr">0</b>
+            <span class="cap">since open bell</span>
+          </div>
+          <div class="cell">
+            <span class="lab">MARKETS WATCHED</span>
+            <b class="val num" id="mk">0</b>
+            <span class="cap">BTC · ETH · XAU · KES +</span>
+          </div>
+          <div class="cell hot">
+            <span class="lab">PEAK VIBES</span>
+            <b class="val num" id="pv">0%</b>
+            <span class="vbar"><i id="vbarFill"></i></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes">
+      <span class="nlab">WHILE YOU WERE AWAY</span>
+      <div class="notestage">
+        <div class="note n1"><span><b>BTC</b> decided to do a thing.</span></div>
+        <div class="note n2"><span>coffee refill in progress.</span></div>
+        <div class="note n3"><span><b>gold</b> took the stairs, not the lift.</span></div>
+        <div class="note n4"><span>the chat is still arguing about <b>segment 03</b>.</span></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ ticker ═══ -->
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+        <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>
+      <span>SMILE · HALFTIME</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>halftime board</b> — numbers don't lie</span>
+          <span class="item">back at <b class="bk num">--:--</b> EAT</span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>halftime board</b> — numbers don't lie</span>
+          <span class="item">back at <b class="bk num">--:--</b> EAT</span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">STRETCH · HYDRATE · SMILE</div>
+  </footer>
+</div>
+
+<script>window.BRAND = {};</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+'use strict';
+var REDUCED=false;
+try{REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+/* ── fit 1920×1080 stage to any window ── */
+var stage=document.getElementById('stage');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform='scale('+s+')';}
+addEventListener('resize',fit);fit();
+
+/* ── URL contract: ?ep= · ?t=90|ISO · ?elapsed= ── */
+var qs=new URLSearchParams(location.search);
+var EP=String(qs.get('ep')||'128').replace(/[^0-9A-Za-z]/g,'')||'128';
+var eps=document.querySelectorAll('[data-ep]');
+for(var i=0;i<eps.length;i++)eps[i].textContent='EP '+EP;
+
+function parseTarget(){
+  var t=qs.get('t');if(!t)return null;
+  if(/^\d+$/.test(t))return Date.now()+parseInt(t,10)*1000;
+  var d=Date.parse(t);return isNaN(d)?null:d;
+}
+var TARGET=parseTarget();
+if(!TARGET)TARGET=Date.now()+600000; /* zero-state: composed 10:00 frame */
+
+var EAT;
+try{EAT=new Intl.DateTimeFormat('en-GB',{timeZone:'Africa/Nairobi',hour:'2-digit',minute:'2-digit',hour12:false});}
+catch(e){EAT=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});}
+function eat(ms){try{var s=EAT.format(new Date(ms));return s==='24:00'?'00:00':s;}catch(e){return '--:--';}}
+
+var MAXR=99*3600+59*60+59;
+function p2(n){return n<10?'0'+n:''+n;}
+function remain(){return Math.max(0,Math.min(MAXR,Math.round((TARGET-Date.now())/1000)));}
+function fmtCd(s){var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return h>0?h+':'+p2(m)+':'+p2(x):p2(m)+':'+p2(x);}
+
+/* uptime: ?elapsed= seconds → paused-away aware live HH:MM:SS */
+var up0=Date.now();
+var el=parseFloat(qs.get('elapsed'));
+if(el>0&&isFinite(el))up0=Date.now()-el*1000;
+function fmtUp(){var s=Math.max(0,Math.floor((Date.now()-up0)/1000));
+  var h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return p2(h)+':'+p2(m)+':'+p2(x);}
+
+var clockEl=document.getElementById('clockNow'),
+    cdEl=document.getElementById('cd'),
+    backAtEl=document.getElementById('backAt'),
+    upEl=document.getElementById('up'),
+    bkEls=document.querySelectorAll('.bk');
+var lastClock='';
+function uiTick(){
+  var c=eat(Date.now());
+  if(c!==lastClock){lastClock=c;clockEl.textContent=c;}
+  cdEl.textContent=fmtCd(remain());
+  upEl.textContent=fmtUp();
+  var b=eat(TARGET);
+  backAtEl.textContent=b;
+  for(var i=0;i<bkEls.length;i++)bkEls[i].textContent=b;
+}
+uiTick();
+
+/* ── stat count-ups (eased, staggered with negative delays → composed frame one) ── */
+function easeOutCubic(k){return 1-Math.pow(1-k,3);}
+var counts=[
+  {el:document.getElementById('tr'),to:17,  dur:2000,at:-1150,fmt:function(v){return Math.round(v)+'';}},
+  {el:document.getElementById('mk'),to:6,   dur:1800,at:-950, fmt:function(v){return Math.round(v)+'';}},
+  {el:document.getElementById('pv'),to:100, dur:2300,at:-800, fmt:function(v){return Math.round(v)+'%';}}
+];
+var bar=document.getElementById('vbarFill');
+function runCounts(now){
+  for(var i=0;i<counts.length;i++){
+    var c=counts[i],k=(now-c.start)/c.dur;
+    k=Math.max(0,Math.min(1,k));
+    c.el.textContent=c.fmt(c.to*easeOutCubic(k));
+    if(c===counts[2])bar.style.transform='scaleX('+easeOutCubic(k).toFixed(4)+')';
+  }
+}
+var t0=performance.now();
+for(var j=0;j<counts.length;j++)counts[j].start=t0+counts[j].at;
+if(REDUCED){
+  for(var j2=0;j2<counts.length;j2++)counts[j2].el.textContent=counts[j2].fmt(counts[j2].to);
+  bar.style.transform='scaleX(1)';
+}
+
+/* ── ticker marquee (0.055px/ms, mid-drift at frame one) ── */
+var track=document.getElementById('tkTrack');
+var seqW=0,tx=-137,last=0,raf=0,acc=0,acc2=0;
+function measure(){seqW=track.children[0].getBoundingClientRect().width;}
+measure();
+addEventListener('resize',measure);
+addEventListener('load',measure);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(measure).catch(function(){});
+
+function frame(now){
+  raf=0;
+  var dt=Math.min(50,now-last);last=now;
+  tx-=dt*0.055;
+  if(seqW>0&&-tx>=seqW)tx+=seqW;
+  track.style.transform='translate3d('+tx+'px,0,0)';
+  acc+=dt;
+  if(acc>=500){acc=0;uiTick();}
+  acc2+=dt;
+  if(acc2>=80){acc2=0;runCounts(performance.now());}
+  raf=requestAnimationFrame(frame);
+}
+function start(){if(!raf&&!REDUCED){last=performance.now();raf=requestAnimationFrame(frame);}}
+function stop(){if(raf){cancelAnimationFrame(raf);raf=0;}}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden)stop();else{measure();start();}
+});
+if(REDUCED){track.style.transform='translate3d('+tx+'px,0,0)';}
+start();
+
+/* ── live prices — Binance catch → random walk fallback ── */
+var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+function setPrice(key,val,pct){
+  var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+  var list=document.querySelectorAll('[data-sym="'+key+'"]');
+  for(var i=0;i<list.length;i++){
+    var pv=list[i].querySelector('.pv'),pc=list[i].querySelector('.pc');
+    pv.textContent=fmtP(val);
+    if(pct!=null){
+      pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+      pc.className='pc num '+(pct>=0?'up':'down');
+    }
+    if(changed&&!REDUCED){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+  }
+}
+function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+function walkAll(){
+  setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+  setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+  setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+  kesWalk();
+}
+function prices(){
+  if(document.hidden)return;
+  fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+    encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+    .then(function(r){return r.json();})
+    .then(function(list){
+      for(var i=0;i<list.length;i++){
+        var t=list[i],
+            key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+      }
+      kesWalk();
+    })
+    .catch(walkAll);
+}
+setInterval(prices,5000);prices();
+
+/* ── perched smile: occasional tricks via smile-mark.js ── */
+var TRICKS=['nod','spin','look','bounce','wink'],ti=1;
+setInterval(function(){
+  if(document.hidden||REDUCED)return;
+  var svg=document.querySelector('.perch svg.disc');
+  if(svg&&window.smileMood){
+    smileMood(TRICKS[ti%TRICKS.length],950,svg);ti++;
+  }
+},7200);
+})();
+</script>
+</body>
+</html>

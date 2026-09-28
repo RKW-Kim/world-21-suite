@@ -4,6 +4,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="smile-core.css">
 <style>
+  /* hub override — smile-core.css is OBS-scene-grade (body overflow:hidden, 100vh stage);
+     the catalog is a scrolling page, so unlock scrolling here only */
+  body{overflow-y:auto;overflow-x:hidden}
+  .stage{height:auto;min-height:100vh;overflow:visible}
   .page{position:relative;min-height:100vh;padding:72px 64px 120px}
   .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:64px}
   .top .brand{font-size:34px}.top .brand .dw{width:42px;height:42px}

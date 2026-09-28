@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · session closed — closing bell</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · END / CLOSING BELL
+  · t≈1.05s: brass bell (official disc geometry, engraved smile) swings in from a top pivot
+  · strike: 8° recoil + radial shockwave rings + ~50-piece confetti burst (real physics:
+    gravity, terminal velocity, sway) + 2px decaying camera shake
+  · settle cascade: eyebrow → h1 → sub → socials rows → NEXT SESSION chip
+  · bell keeps a slow pendulum sway; burst confetti quietly converts to eternal drift
+  · bottom tape: closing print (BTC/ETH/XAU live w/ fallback) + Nairobi EAT clock
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a; --bg:#09090b;
+  --border:#27272a; --border2:#3f3f46; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk','Inter',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-family:var(--fb);color:var(--fg);-webkit-font-smoothing:antialiased;user-select:none}
+.num{font-variant-numeric:tabular-nums}
+svg{display:block}
+
+.stage{position:relative;flex:none;width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+.shake{position:absolute;inset:0;animation:camshake .55s linear 1.05s 1 both}
+@keyframes camshake{
+  0%,100%{transform:translate(0,0)}
+  12%{transform:translate(-2px,1.4px)}
+  26%{transform:translate(1.8px,-1px)}
+  42%{transform:translate(-1.3px,.7px)}
+  58%{transform:translate(.9px,-.5px)}
+  78%{transform:translate(-.4px,.25px)}}
+
+/* ambient light */
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 62% 50% at 50% 28%,rgba(255,255,255,.075),transparent 70%)}
+.floorglow{position:absolute;left:50%;top:60px;transform:translateX(-50%);width:980px;height:560px;
+  background:radial-gradient(ellipse,rgba(255,193,7,.09),transparent 64%);filter:blur(10px)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 52%,rgba(0,0,0,.55) 100%)}
+
+/* ═══ pendulum bell ═══ */
+.pend{position:absolute;left:50%;top:8px;width:340px;margin-left:-170px;z-index:4;
+  transform-origin:50% 0;animation:swingIn 1.05s cubic-bezier(.32,.9,.35,1) .05s both}
+@keyframes swingIn{from{transform:rotate(-42deg)}to{transform:rotate(0deg)}}
+.rope{position:absolute;left:50%;top:0;width:3px;height:66px;margin-left:-1.5px;
+  background:linear-gradient(180deg,#3f3f46,#52525b)}
+.sway{position:absolute;inset:0;transform-origin:50% 0;animation:pendSway 6.5s ease-in-out 1.15s infinite alternate}
+@keyframes pendSway{from{transform:rotate(-1.7deg)}to{transform:rotate(1.7deg)}}
+.recoil{position:absolute;left:0;top:72px;width:340px;transform-origin:50% 0;
+  animation:recoil 1.3s cubic-bezier(.25,.8,.35,1) 1.06s both}
+@keyframes recoil{
+  0%{transform:rotate(0)}
+  16%{transform:rotate(-7.4deg)}
+  42%{transform:rotate(3.6deg)}
+  66%{transform:rotate(-1.7deg)}
+  100%{transform:rotate(0)}}
+.bell-frame{position:relative;width:340px;height:340px;border-radius:50%;padding:11px;
+  background:conic-gradient(from 215deg,#6e5518,#c99a2e 12%,#f7dc82 22%,#a97f1c 38%,#ffeaa6 52%,#8a6a1f 66%,#e9c25a 80%,#6e5518);
+  box-shadow:0 34px 70px rgba(0,0,0,.6),0 0 60px rgba(255,193,7,.14),
+             inset 0 2px 5px rgba(255,255,255,.5),inset 0 -3px 8px rgba(0,0,0,.55)}
+.bell-frame svg.disc{width:100%;height:100%;border-radius:50%}
+.bell-frame .engrave{position:absolute;inset:11px;border-radius:50%;pointer-events:none;
+  box-shadow:inset 0 12px 26px rgba(0,0,0,.30),inset 0 -8px 20px rgba(255,255,255,.16),inset 0 0 0 2px rgba(122,90,20,.35)}
+.mount{position:absolute;left:50%;top:0;width:150px;height:12px;margin-left:-75px;border-radius:3px;z-index:5;
+  background:linear-gradient(180deg,#3f3f46,#1c1c1f);box-shadow:0 4px 10px rgba(0,0,0,.5)}
+.mount::before,.mount::after{content:"";position:absolute;top:3.5px;width:5px;height:5px;border-radius:50%;background:#71717a}
+.mount::before{left:11px}.mount::after{right:11px}
+
+/* strike fx */
+.ring{position:absolute;left:960px;top:250px;width:60px;height:60px;margin:-30px 0 0 -30px;z-index:3;
+  border-radius:50%;border:2px solid rgba(255,193,7,.5);opacity:0;
+  animation:shock 1.15s cubic-bezier(.15,.65,.35,1) both}
+.ring.r1{border-color:rgba(255,255,255,.8);animation-delay:1.05s}
+.ring.r2{animation-delay:1.17s}
+.ring.r3{border-color:rgba(255,222,122,.35);animation-delay:1.31s}
+.ring.r4{border-color:rgba(63,182,255,.3);animation-delay:1.51s}
+@keyframes shock{0%{transform:scale(.3);opacity:.9}100%{transform:scale(9.5);opacity:0}}
+.flash{position:absolute;left:960px;top:250px;width:360px;height:360px;margin:-180px 0 0 -180px;z-index:5;
+  border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,236,170,.55),rgba(255,193,7,.14) 45%,transparent 70%);
+  animation:flashk .6s ease-out 1.05s both}
+@keyframes flashk{0%{opacity:0;transform:scale(.5)}16%{opacity:1}100%{opacity:0;transform:scale(1.65)}}
+
+/* ═══ settle cascade ═══ */
+.results{position:absolute;left:50%;top:478px;transform:translateX(-50%);z-index:6;
+  display:flex;flex-direction:column;align-items:center;text-align:center;width:900px}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.07);backdrop-filter:blur(8px);
+  color:var(--yellow);padding:7px 16px;font-family:var(--fm);font-size:10.5px;letter-spacing:.3em;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) 1.2s both}
+h1{margin-top:20px;font-family:var(--fd);font-weight:700;font-size:96px;line-height:1.02;letter-spacing:-.035em}
+h1 .wp{display:inline-block;animation:wordup .9s cubic-bezier(.2,.9,.3,1) both}
+@keyframes wordup{from{opacity:0;transform:translateY(52px)}to{opacity:1;transform:none}}
+h1 .w1{animation-delay:1.32s;background:linear-gradient(180deg,#fafafa 22%,#86868e 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .w2{animation-delay:1.44s;background:linear-gradient(180deg,#FFDE7A 8%,#FFC107 52%,#F5A623 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+.sub{margin-top:16px;max-width:780px;font-size:21px;line-height:1.5;color:var(--muted);
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) 1.55s both}
+.socials{margin-top:26px;width:620px}
+.srow{display:flex;align-items:center;gap:13px;padding:10px 8px;font-family:var(--fm);font-size:13px;
+  letter-spacing:.06em;border-bottom:1px solid var(--border);
+  animation:riseIn .7s cubic-bezier(.2,.9,.3,1) both}
+.srow:first-child{border-top:1px solid var(--border)}
+.srow .g{color:var(--yellow);width:20px;text-align:center;font-size:12px}
+.srow .nm{color:var(--fg);font-weight:600;letter-spacing:.16em}
+.srow .sep{color:var(--faint)}
+.srow .hd{color:var(--muted)}
+.srow:nth-child(1){animation-delay:1.68s}
+.srow:nth-child(2){animation-delay:1.8s}
+.srow:nth-child(3){animation-delay:1.92s}
+.next{margin-top:26px;display:inline-flex;align-items:center;gap:10px;background:var(--yellow);color:var(--ink);
+  border-radius:999px;padding:11px 22px;font-family:var(--fm);font-weight:700;font-size:12px;letter-spacing:.2em;
+  box-shadow:0 10px 30px rgba(255,193,7,.18);
+  animation:chipIn .7s cubic-bezier(.3,1.4,.4,1) 2.04s both}
+@keyframes chipIn{from{opacity:0;transform:translateY(26px) scale(.9)}to{opacity:1;transform:none}}
+
+/* ═══ closing tape ═══ */
+.tape{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:7;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);
+  animation:riseIn .7s cubic-bezier(.2,.9,.3,1) 2.15s both}
+.tcap{display:flex;align-items:center;padding:0 22px;font-family:var(--fm);font-size:10.5px;
+  letter-spacing:.22em;white-space:nowrap}
+.tcap.left{color:var(--yellow);border-right:1px solid var(--border)}
+.tcap.right{margin-left:auto;color:var(--faint);border-left:1px solid var(--border)}
+.titem{display:flex;align-items:center;gap:8px;margin-left:36px;font-family:var(--fm);font-size:11.5px;
+  letter-spacing:.08em;color:var(--faint);white-space:nowrap}
+.titem b{color:var(--fg);font-weight:600}
+.titem .lbl{color:var(--yellow);opacity:.85}
+.titem .pc{font-size:10px;letter-spacing:.04em}
+.pc.up{color:var(--up)}.pc.down{color:var(--down)}
+
+/* confetti */
+.fx{position:absolute;inset:0;z-index:8;pointer-events:none;overflow:hidden}
+.fx i{position:absolute;left:0;top:0;display:block;opacity:0}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+  <div class="shake">
+
+    <div class="spot" aria-hidden="true"></div>
+    <div class="floorglow" aria-hidden="true"></div>
+
+    <!-- strike fx -->
+    <span class="ring r1" aria-hidden="true"></span>
+    <span class="ring r2" aria-hidden="true"></span>
+    <span class="ring r3" aria-hidden="true"></span>
+    <span class="ring r4" aria-hidden="true"></span>
+    <span class="flash" aria-hidden="true"></span>
+
+    <!-- pendulum bell -->
+    <div class="mount" aria-hidden="true"></div>
+    <div class="pend" aria-hidden="true">
+      <div class="rope"></div>
+      <div class="sway">
+        <div class="recoil">
+          <div class="bell-frame">
+            <svg class="disc" viewBox="0 0 100 100" width="100%" height="100%">
+              <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+              <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+              <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+              <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                    stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="engrave"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- results cascade -->
+    <main class="results">
+      <span class="eyebrow">✓ MARKET CLOSED</span>
+      <h1><span class="wp w1">session</span> <span class="wp w2">closed.</span></h1>
+      <p class="sub">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+      <div class="socials">
+        <div class="srow"><span class="g">▶</span><span class="nm">YouTube</span><span class="sep">·</span><span class="hd">/smileke</span></div>
+        <div class="srow"><span class="g">◉</span><span class="nm">Twitch</span><span class="sep">·</span><span class="hd">/smileke</span></div>
+        <div class="srow"><span class="g">♪</span><span class="nm">TikTok</span><span class="sep">·</span><span class="hd">@smileke</span></div>
+      </div>
+      <span class="next">NEXT SESSION · FRIDAY 8PM EAT</span>
+    </main>
+
+    <!-- closing print tape -->
+    <footer class="tape">
+      <div class="tcap left" id="tapeEp">EP 128 · CLOSING PRINT</div>
+      <span class="titem"><span class="lbl">BTC</span><b class="num" id="pBTC">67,240</b><span class="pc num" id="cBTC">▲0.8%</span></span>
+      <span class="titem"><span class="lbl">ETH</span><b class="num" id="pETH">3,512</b><span class="pc num" id="cETH">▼0.4%</span></span>
+      <span class="titem"><span class="lbl">XAU</span><b class="num" id="pXAU">2,384</b><span class="pc num" id="cXAU">▲0.2%</span></span>
+      <span class="titem"><span class="lbl">USD/KES</span><b class="num" id="pKES">129.20</b><span class="pc num">ref</span></span>
+      <div class="tcap right">NAIROBI · <span class="num" id="tclock">--:--:--</span> EAT</div>
+    </footer>
+
+    <div class="vig" aria-hidden="true"></div>
+  </div>
+  <div class="fx" id="fx" aria-hidden="true"></div>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  'use strict';
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── fit 1920×1080 to any window ── */
+  var stage=document.getElementById('stage');
+  function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+
+  /* ── URL contract (graceful) ── */
+  var ep='128';
+  try{var q=new URLSearchParams(location.search).get('ep');
+    if(q&&/^\d{1,4}$/.test(q))ep=q;}catch(e){}
+  document.getElementById('tapeEp').textContent='EP '+ep+' · CLOSING PRINT';
+
+  /* ── EAT clock ── */
+  function eatFmt(o){try{return new Intl.DateTimeFormat('en-GB',
+    Object.assign({timeZone:'Africa/Nairobi',hourCycle:'h23'},o)).format(new Date());}catch(e){return '';}}
+  var clockEl=document.getElementById('tclock');
+  function tick(){clockEl.textContent=eatFmt({hour:'2-digit',minute:'2-digit',second:'2-digit'})||'--:--:--';}
+  tick();setInterval(tick,1000);
+
+  /* ── market pulse: closing print (Binance w/ fallback, silent on file://) ── */
+  var P={BTC:67240,ETH:3512,XAU:2384,KES:129.20};
+  var D={BTC:.8,ETH:-.4,XAU:.2};
+  var elP={BTC:document.getElementById('pBTC'),ETH:document.getElementById('pETH'),
+           XAU:document.getElementById('pXAU'),KES:document.getElementById('pKES')};
+  var elC={BTC:document.getElementById('cBTC'),ETH:document.getElementById('cETH'),
+           XAU:document.getElementById('cXAU')};
+  function fmt(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function paint(k){
+    if(elP[k])elP[k].textContent=fmt(P[k]);
+    var c=elC[k];
+    if(c){var up=D[k]>=0;c.textContent=(up?'▲':'▼')+Math.abs(D[k]).toFixed(1)+'%';
+      c.className='pc num '+(up?'up':'down');}}
+  function allPaint(){['BTC','ETH','XAU','KES'].forEach(paint);}
+  function kesWalk(){P.KES=Math.max(120,P.KES+(Math.random()-.5)*.08);paint('KES');}
+  function walk(){['BTC','ETH','XAU'].forEach(function(k){
+    P[k]*=1+(Math.random()-.5)*.004;D[k]+=(Math.random()-.5)*.06;paint(k);});kesWalk();}
+  function pull(){
+    if(location.protocol.indexOf('http')!==0){walk();return;}
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){list.forEach(function(t){
+        var k=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(k){P[k]=parseFloat(t.lastPrice);D[k]=parseFloat(t.priceChangePercent);paint(k);}});
+        kesWalk();})
+      .catch(walk);
+  }
+  allPaint();setInterval(pull,5000);pull();
+
+  /* ── confetti: burst → eternal drift (DOM particles, wall clock, hidden-safe) ── */
+  var COLORS=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'];
+  var fx=document.getElementById('fx'),pool=[],i;
+  for(i=0;i<50;i++){
+    var d=document.createElement('i'),c=COLORS[i%COLORS.length],round=Math.random()<.3;
+    var w=round?6+Math.random()*5:5+Math.random()*5,h=round?w:8+Math.random()*7;
+    d.style.width=w.toFixed(1)+'px';d.style.height=h.toFixed(1)+'px';
+    d.style.background=c;d.style.borderRadius=round?'50%':'1.5px';
+    fx.appendChild(d);
+    pool.push({el:d,mode:'wait',x:0,y:0,vx:0,vy:0,vt:0,rot:Math.random()*360,vr:0,
+               fw:1,ph:0,sw:0,life:0,alpha:0,dr:0});
+  }
+  function toDrift(p){p.mode='drift';p.x=Math.random()*1920;p.y=-30-Math.random()*260;p.vx=0;
+    p.vy=30+Math.random()*40;p.fw=.5+Math.random()*1.1;p.ph=Math.random()*6.2832;
+    p.sw=18+Math.random()*30;p.vr=(Math.random()-.5)*90;p.dr=.38+Math.random()*.24;p.alpha=0;}
+  function burst(p){p.mode='burst';p.x=960+(Math.random()-.5)*36;p.y=250+(Math.random()-.5)*24;
+    var a=(-90+(Math.random()-.5)*150)*Math.PI/180,v=240+Math.random()*430;
+    p.vx=Math.cos(a)*v;p.vy=Math.sin(a)*v;p.vt=300+Math.random()*180;
+    p.vr=(Math.random()-.5)*860;p.fw=1+Math.random()*2;p.ph=Math.random()*6.2832;
+    p.sw=22+Math.random()*40;p.life=0;p.alpha=1;}
+  var last=performance.now(),tG=0;
+  (function step(now){
+    var dt=Math.min(.05,(now-last)/1000);last=now;
+    if(!document.hidden){
+      tG+=dt;
+      for(var j=0;j<pool.length;j++){var p=pool[j];
+        if(p.mode==='wait')continue;
+        if(p.mode==='burst'){
+          p.vy=Math.min(p.vy+980*dt,p.vt);
+          p.vx*=(1-.4*dt);
+          p.x+=p.vx*dt;p.y+=p.vy*dt;
+          p.x+=Math.sin(tG*p.fw+p.ph)*p.sw*dt;p.rot+=p.vr*dt;p.life+=dt;
+          if(p.life>4.6)p.alpha=Math.max(0,1-(p.life-4.6)/1.5);
+          if(p.life>6.4||p.y>1140)toDrift(p);
+        }else{
+          p.vy=Math.min(p.vy+26*dt,90);
+          p.y+=p.vy*dt;
+          p.x+=Math.sin(tG*p.fw+p.ph)*p.sw*dt;p.rot+=p.vr*dt;
+          if(p.alpha<p.dr)p.alpha=Math.min(p.dr,p.alpha+dt*.5);
+          if(p.y>1140)toDrift(p);
+        }
+        p.el.style.opacity=p.alpha.toFixed(2);
+        p.el.style.transform='translate3d('+p.x.toFixed(1)+'px,'+p.y.toFixed(1)+'px,0) rotate('+p.rot.toFixed(1)+'deg)';
+      }
+    }
+    requestAnimationFrame(step);
+  })(last);
+
+  /* ── the strike: confetti + bell mood, then a wink after settle ── */
+  function bellSvg(){return document.querySelector('.bell-frame svg');}
+  if(!RM){
+    setTimeout(function(){
+      pool.forEach(burst);
+      var s=bellSvg();if(s&&window.smileMood)smileMood('celebrate',950,s);
+    },1050);
+    setTimeout(function(){var s=bellSvg();if(s&&window.smileMood)smileMood('wink',700,s);},6800);
+  }
+})();
+</script>
+</body>
+</html>

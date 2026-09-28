@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · brb — ticket booth</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · BRB — c · TICKET BOOTH
+  · the scene as a physical ticket: zinc dark material, yellow accents,
+    rotated ~2°, desk shadow, perforated notches + dashed tear line
+  · giant BE RIGHT BACK re-stamps every cycle (scale 2.6→1 + rotate, ink-bleed opacity)
+  · animated marching barcode + sheen · smile disc as the corner face stamp
+  · stub: ?ep= badge, EAT clock, seat: front row, smile.co.ke · ETA chip via ?t= else "shortly"
+  · ambient: one slow diagonal beam sweep · bottom marquee chips band (Binance → walk)
+  · document.hidden pauses rAF · prefers-reduced-motion → composed static frame
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --surface:#141417; --border:#27272a; --border2:#3f3f46; --fg:#fafafa;
+  --muted-fg:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.page{position:relative;display:flex;flex-direction:column;height:100vh;}
+.num{font-variant-numeric:tabular-nums;}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+/* ═══ AMBIENT — one system: slow diagonal beam sweep ═══ */
+.ambient{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.beam{position:absolute;top:-30%;left:0;width:320px;height:160%;filter:blur(30px);opacity:.75;
+  background:linear-gradient(90deg,transparent,rgba(255,193,7,.05) 44%,rgba(255,255,255,.04) 56%,transparent);
+  transform:rotate(16deg) translateX(-420px);
+  animation:sweep 30s ease-in-out infinite alternate;will-change:transform;}
+@keyframes sweep{to{transform:rotate(16deg) translateX(1980px);}}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 50%,rgba(0,0,0,.58) 100%);}
+
+/* ═══ DESK + TICKET ═══ */
+.desk{position:relative;flex:1;display:flex;align-items:center;justify-content:center;padding-bottom:34px;}
+.float{position:relative;animation:bob 7.5s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.shadow{position:absolute;left:6%;right:6%;bottom:-40px;height:58px;
+  background:radial-gradient(ellipse,rgba(0,0,0,.66),transparent 68%);filter:blur(9px);
+  animation:shpulse 7.5s ease-in-out infinite;}
+@keyframes shpulse{0%,100%{transform:scaleX(1);opacity:.95;}50%{transform:scaleX(.972);opacity:.72;}}
+
+.ticket{position:relative;width:1080px;max-width:92vw;--cut:calc(100% - 300px);
+  animation:ticketIn .95s cubic-bezier(.2,.9,.3,1) -.6s both;transform:rotate(-1.7deg);will-change:transform;}
+@keyframes ticketIn{from{opacity:0;transform:rotate(-4.6deg) translateY(-52px);}to{opacity:1;transform:rotate(-1.7deg) translateY(0);}}
+.tk1,.tk2{width:100%;height:100%;}
+.tk1{-webkit-mask-image:radial-gradient(circle 15px at var(--cut) 0,transparent 14px,#000 14.5px);
+            mask-image:radial-gradient(circle 15px at var(--cut) 0,transparent 14px,#000 14.5px);}
+.tk2{-webkit-mask-image:radial-gradient(circle 15px at var(--cut) 100%,transparent 14px,#000 14.5px);
+            mask-image:radial-gradient(circle 15px at var(--cut) 100%,transparent 14px,#000 14.5px);}
+.tinner{display:flex;min-height:540px;border-radius:22px;border:1px solid var(--border);
+  background:linear-gradient(160deg,#17171b 0%,#121215 58%,#0e0e11 100%);
+  box-shadow:0 34px 80px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.055);}
+
+/* ── main stub ── */
+.main{flex:1;position:relative;padding:40px 46px 34px;display:flex;flex-direction:column;}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.eyebrow{font-family:var(--font-mono);font-size:11.5px;font-weight:600;letter-spacing:.44em;
+  text-transform:uppercase;color:var(--yellow);}
+.eyebrow::before{content:"— ";color:var(--border2);}
+.eyebrow::after{content:" —";color:var(--border2);}
+.eta{display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.07);
+  padding:7px 14px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;
+  color:var(--yellow);text-transform:uppercase;white-space:nowrap;
+  margin-right:112px; /* clear the 88px facestamp seal — text must never slide under it */}
+.eta b{color:var(--fg);font-weight:600;letter-spacing:.08em;}
+.stamp{margin:26px 0 0;font-family:var(--font-display);font-weight:700;font-size:clamp(64px,5.4vw,102px);
+  line-height:.94;letter-spacing:-.025em;text-transform:uppercase;transform:rotate(-1.2deg);
+  transform-origin:50% 32%;animation:stampIn .62s cubic-bezier(.2,1.35,.32,1) both;will-change:transform,opacity;}
+@keyframes stampIn{
+  0%{opacity:0;transform:scale(2.6) rotate(3.5deg);}
+  55%{opacity:.88;transform:scale(.94) rotate(-1.9deg);}
+  76%{transform:scale(1.035) rotate(-.6deg);}
+  100%{opacity:1;transform:scale(1) rotate(-1.2deg);}}
+.stamp span{display:block;
+  background:linear-gradient(180deg,#fafafa 22%,#8e8e96 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.stamp span.yb{background:linear-gradient(180deg,#FFDE7A 8%,var(--yellow) 52%,var(--yellow-hot) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,193,7,.22));}
+.tsub{margin-top:18px;font-size:15.5px;color:var(--muted-fg);}
+.bcpanel{margin-top:auto;padding-top:26px;}
+.barcode{position:relative;height:54px;border-radius:10px;border:1px solid var(--border);
+  background:rgba(9,9,11,.55);overflow:hidden;}
+.btrack{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:stretch;width:max-content;
+  animation:march 16s linear infinite;will-change:transform;}
+@keyframes march{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.btrack i{flex:none;background:#d4d4d8;margin-right:3px;border-radius:.5px;}
+.sheen{position:absolute;top:0;bottom:0;left:0;width:26%;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,193,7,.35),transparent);
+  animation:shmv 3.4s ease-in-out infinite;will-change:transform;}
+@keyframes shmv{0%{transform:translateX(-120%);}55%,100%{transform:translateX(520%);}}
+.bcaption{margin-top:9px;display:flex;justify-content:space-between;font-family:var(--font-mono);
+  font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint);}
+.bcaption b{color:var(--muted-fg);font-weight:500;}
+
+/* face stamp — the smile as the ticket's seal */
+.facestamp{position:absolute;top:26px;right:34px;width:88px;height:88px;border-radius:50%;
+  border:2px dashed rgba(255,193,7,.42);display:flex;align-items:center;justify-content:center;
+  transform:rotate(7deg);background:rgba(255,193,7,.04);}
+.facestamp .disc{width:60px;height:60px;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.45)) drop-shadow(0 0 10px rgba(255,193,7,.18));}
+
+/* ── session stub ── */
+.stubside{flex:none;width:300px;border-left:2px dashed var(--border2);
+  background:rgba(9,9,11,.42);padding:34px 28px 28px;display:flex;flex-direction:column;gap:0;
+  border-radius:0 22px 22px 0;}
+.epbadge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.08);
+  padding:7px 14px;font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.24em;
+  color:var(--yellow);text-transform:uppercase;}
+.eatblock{margin-top:24px;}
+.eatlabel{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--faint);}
+.eatclock{margin-top:6px;font-family:var(--font-mono);font-weight:600;font-size:27px;color:var(--fg);
+  letter-spacing:.01em;font-variant-numeric:tabular-nums;}
+.srow{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted-fg);padding:13px 0;}
+.srow b{color:var(--fg);font-weight:500;}
+.srow.y b{color:var(--yellow);}
+.sepd{border:none;border-top:1px dashed var(--border2);margin:0;}
+.stubnum{margin-top:auto;font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--faint);}
+.stubnum b{color:var(--muted-fg);font-weight:500;}
+
+/* ═══ MARQUEE CHIPS BAND ═══ */
+.band{position:relative;z-index:3;display:flex;align-items:center;height:64px;
+  background:rgba(9,9,11,.92);border-top:1px solid var(--border);overflow:hidden;}
+.bmask{flex:1;overflow:hidden;display:flex;align-items:center;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);}
+.btrack2{display:flex;align-items:center;width:max-content;will-change:transform;}
+.bseq{display:flex;align-items:center;}
+.mchip{display:inline-flex;align-items:center;white-space:nowrap;border-radius:999px;
+  border:1px solid var(--border);background:rgba(20,20,23,.7);
+  padding:8px 15px;margin-right:14px;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted-fg);}
+.mchip b{color:var(--fg);font-weight:600;}
+.mchip.y{border-color:rgba(255,193,7,.42);color:var(--yellow);}
+.mprice{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;margin-right:26px;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+.mprice::before{content:"✦";color:var(--yellow);font-size:9px;margin-right:6px;}
+.mprice b{color:var(--fg);font-weight:700;letter-spacing:.05em;}
+.mprice .pc{font-size:9.5px;color:var(--faint);}
+.mprice .pc.up{color:var(--up);} .mprice .pc.down{color:var(--down);}
+.mprice .pv{display:inline-block;}
+.mprice .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(4px);opacity:.1;}100%{transform:none;opacity:1;}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <div class="desk">
+    <div class="ambient" aria-hidden="true">
+      <div class="beam"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <div class="float">
+      <div class="shadow" aria-hidden="true"></div>
+      <div class="ticket" id="ticket">
+        <div class="tk1"><div class="tk2">
+          <div class="tinner">
+
+            <section class="main">
+              <div class="toprow">
+                <span class="eyebrow">Admit One</span>
+                <span class="eta" id="etaChip">BACK <b id="etaT">shortly</b></span>
+              </div>
+
+              <div class="stamp" id="stamp">
+                <span>BE RIGHT</span>
+                <span class="yb">BACK</span>
+              </div>
+
+              <p class="tsub">Trader stepped away — charts secured, smile intact.</p>
+
+              <div class="bcpanel">
+                <div class="barcode" aria-hidden="true">
+                  <div class="btrack" id="bars"></div>
+                  <div class="sheen"></div>
+                </div>
+                <div class="bcaption"><span>№ BRB · <b id="bcEp">—</b></span><span>SCAN AT RE-ENTRY</span></div>
+              </div>
+
+              <div class="facestamp" aria-hidden="true">
+                <svg class="disc" id="faceDisc" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+                  <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+                  <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+                  <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                        stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </section>
+
+            <aside class="stubside">
+              <span class="epbadge">EP <b class="num" id="epNum">—</b></span>
+              <div class="eatblock">
+                <div class="eatlabel">Nairobi · EAT</div>
+                <div class="eatclock num" id="eatT">--:--:--</div>
+              </div>
+              <hr class="sepd" style="margin-top:22px">
+              <div class="srow">seat: <b>front row</b></div>
+              <hr class="sepd">
+              <div class="srow">gate: <b>smile desk</b></div>
+              <hr class="sepd">
+              <div class="srow y">smile.co.ke</div>
+              <div class="stubnum">TICKET <b class="num" id="tkNum">№ BRB-000</b></div>
+            </aside>
+
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="band">
+    <div class="bmask">
+      <div class="btrack2" id="tkTrack">
+        <span class="bseq" id="tkSeq">
+          <span class="mchip y">✦ BE RIGHT BACK</span>
+          <span class="mchip">positions <b>secured</b></span>
+          <span class="mchip">don't close the tab</span>
+          <span class="mprice" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="mchip">say hi <b>@smileke</b></span>
+          <span class="mchip"><b>smile.co.ke</b></span>
+          <span class="mchip"><b>#SmileSquad</b></span>
+        </span>
+        <span class="bseq" aria-hidden="true">
+          <span class="mchip y">✦ BE RIGHT BACK</span>
+          <span class="mchip">positions <b>secured</b></span>
+          <span class="mchip">don't close the tab</span>
+          <span class="mprice" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="mprice" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="mchip">say hi <b>@smileke</b></span>
+          <span class="mchip"><b>smile.co.ke</b></span>
+          <span class="mchip"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>window.BRAND={};</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── URL contract: ?ep= badge · ?t= ETA (seconds or ISO) else "shortly" ── */
+  function strictInt(v){v=parseInt(v,10);return isNaN(v)||v<0?0:v;}
+  var CAP=359999,qs=new URLSearchParams(location.search),bootAt=Date.now();
+  var ep=qs.get('ep');
+  if(ep!==null&&ep!==''){
+    ep=String(strictInt(ep));
+    document.getElementById('epNum').textContent=ep;
+    document.getElementById('bcEp').textContent=ep;
+    document.getElementById('tkNum').textContent='№ BRB-'+('000'+ep).slice(-3);
+  }
+  var etaAbs=0,etaDur=0;
+  (function(){
+    var t=qs.get('t');if(!t)return;
+    if(/T|\:/.test(t)){var ms=Date.parse(t);if(!isNaN(ms))etaAbs=ms;}
+    else{var s=strictInt(t);if(s>0)etaDur=Math.min(CAP,s);}
+  })();
+  var etaEl=document.getElementById('etaT');
+  function two(n){return n<10?'0'+n:''+n;}
+  function fmtElapsed(sec){
+    sec=Math.min(CAP,Math.max(0,Math.floor(sec)));
+    var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    return h>0?two(h)+':'+two(m)+':'+two(s):two(m)+':'+two(s);
+  }
+  function renderEta(){
+    if(!etaAbs&&!etaDur){etaEl.textContent='shortly';return;}
+    var sec=etaAbs?(etaAbs-Date.now())/1000:etaDur-(Date.now()-bootAt)/1000;
+    etaEl.textContent=sec<=0?'now':'~ '+fmtElapsed(sec);
+  }
+
+  /* EAT clock */
+  var eatEl=document.getElementById('eatT'),lastEat=-1;
+  function renderEat(){
+    var d=new Date(),utc=d.getTime()+d.getTimezoneOffset()*60000,eat=new Date(utc+3*3600000);
+    var key=eat.getHours()*3600+eat.getMinutes()*60+eat.getSeconds();
+    if(key===lastEat)return;lastEat=key;
+    eatEl.textContent=two(eat.getHours())+':'+two(eat.getMinutes())+':'+two(eat.getSeconds());
+  }
+
+  /* ── marching barcode — two identical groups, seamless -50% loop ── */
+  (function(){
+    var pat=[3,1.5,2.5,1.5,4,2,1.5,5,2,3,1.5,2.5,4,1.5,2,3.5,1.5,2.5,5,1.5,3,2,4,1.5,2.5,3,1.5,2,4.5,2,1.5,3.5,2.5,1.5,4,2,3,1.5,2.5,1.5];
+    var track=document.getElementById('bars');
+    for(var g=0;g<2;g++){
+      var grp=document.createElement('span');
+      grp.style.cssText='display:flex;align-items:stretch;';
+      for(var i=0;i<40;i++){
+        var b=document.createElement('i');
+        b.style.width=pat[i%pat.length]+'px';
+        b.style.height=((i*37)%13===0)?'72%':'100%';
+        b.style.marginTop=((i*37)%13===0)?'14%':'0';
+        if((i*29)%17===0)b.style.background='#FFC107';
+        grp.appendChild(b);
+      }
+      track.appendChild(grp);
+    }
+  })();
+
+  /* ── stamp re-trigger every cycle ── */
+  var stamp=document.getElementById('stamp');
+  function restamp(){
+    if(document.hidden)return;
+    stamp.style.animation='none';void stamp.offsetWidth;stamp.style.animation='';
+  }
+  if(!RM)setInterval(restamp,12000);
+
+  /* face stamp moods */
+  var faceDisc=document.getElementById('faceDisc');
+  if(!RM)setInterval(function(){
+    if(document.hidden||!window.smileMood)return;
+    smileMood(Math.random()<.6?'wink':'nod',750,faceDisc);
+  },9000+Math.random()*4000);
+
+  /* ── marquee ── */
+  var track=document.getElementById('tkTrack'),seq=document.getElementById('tkSeq'),tkW=0,tkX=0;
+  function measure(){tkW=seq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',measure);
+
+  /* ── live prices ── */
+  var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2},netFail=0;
+  function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function setPrice(key,val,pct){
+    var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+    document.querySelectorAll('[data-sym="'+key+'"]').forEach(function(el){
+      var pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+      pv.textContent=fmtP(val);
+      if(pct!=null){
+        pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+        pc.className='pc num '+(pct>=0?'up':'down');
+      }
+      if(changed&&!RM){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+    });
+  }
+  function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+  function walkAll(){
+    setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+    setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+    setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+    kesWalk();
+  }
+  function prices(){
+    var now=Date.now();
+    if(netFail&&now-netFail<45000){walkAll();return;}
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){
+        netFail=0;
+        list.forEach(function(t){
+          var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+          if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+        });
+        kesWalk();
+      })
+      .catch(function(){netFail=now;walkAll();});
+  }
+  if(!RM){setInterval(prices,5000);setTimeout(prices,1200);}
+
+  /* ── master rAF ── */
+  var raf=null,last=0,secT=0;
+  function loop(now){
+    var dt=Math.min(50,now-last);last=now;
+    if(tkW>0){tkX-=dt*.055;if(-tkX>=tkW)tkX+=tkW;track.style.transform='translateX('+tkX+'px)';}
+    if(now-secT>480){secT=now;renderEat();renderEta();}
+    raf=requestAnimationFrame(loop);
+  }
+  function start(){if(raf==null){last=performance.now();raf=requestAnimationFrame(loop);}}
+  function stop(){if(raf!=null){cancelAnimationFrame(raf);raf=null;}}
+  document.addEventListener('visibilitychange',function(){document.hidden?stop():start();});
+
+  if(!RM){
+    start();
+    setTimeout(measure,1200);setTimeout(measure,3000);
+  }else{
+    renderEat();renderEta();
+  }
+})();
+</script>
+</body>
+</html>

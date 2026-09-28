@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · technical difficulties — status page</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · TECHNICAL DIFFICULTIES — candidate A · "STATUS PAGE"
+  incident-page layout: yellow banner → header (smile avatar / wordmark / EAT + downtime clocks)
+  → component status list (FEED SOCKETS CHARTS ALERTS) with staggered spinner→DEGRADED→✓
+  recovery cycles, heartbeat dots, latency sparklines → footer chips → thin status-bar ticker.
+  URL contract: ?elapsed= seconds → downtime mm:ss count-up (zero-state holds 04:12).
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.num{font-variant-numeric:tabular-nums;}
+.stage{position:relative;width:1920px;height:1080px;flex:none;background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;transform-origin:center center;}
+
+/* ═══ INCIDENT BANNER ═══ */
+.banner{position:relative;height:54px;flex:none;display:flex;align-items:center;gap:16px;
+  padding:0 44px;background:var(--yellow);color:var(--ink);overflow:hidden;}
+.banner::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(-55deg,rgba(10,10,10,.13) 0 9px,transparent 9px 22px);}
+.b-live{font-family:var(--font-mono);font-weight:700;font-size:15px;position:relative;
+  animation:blive 1.6s ease-in-out infinite;}
+@keyframes blive{0%,100%{opacity:1;}50%{opacity:.35;}}
+.b-txt{position:relative;font-family:var(--font-mono);font-weight:600;font-size:12.5px;
+  letter-spacing:.24em;text-transform:uppercase;}
+.b-ref{position:relative;margin-left:auto;font-family:var(--font-mono);font-weight:600;
+  font-size:10.5px;letter-spacing:.28em;opacity:.62;}
+
+/* ═══ HEADER ═══ */
+.head{flex:none;height:112px;display:flex;align-items:center;padding:0 44px;
+  border-bottom:1px solid var(--border);}
+.spot{position:absolute;left:0;right:0;top:0;height:340px;pointer-events:none;
+  background:radial-gradient(ellipse 58% 90% at 30% -20%,rgba(255,255,255,.05),transparent 70%);}
+.id{display:flex;align-items:center;gap:18px;animation:rise .7s cubic-bezier(.2,.9,.3,1) both;}
+.avatar{width:66px;height:66px;filter:drop-shadow(0 5px 14px rgba(0,0,0,.5));}
+.wordmark{display:flex;flex-direction:column;gap:4px;}
+.wordmark b{font-family:var(--font-display);font-weight:700;font-size:23px;letter-spacing:.12em;}
+.wordmark b i{font-style:normal;color:var(--faint);font-weight:500;padding:0 6px;}
+.wordmark b em{font-style:normal;color:var(--yellow);}
+.wordmark small{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.34em;
+  color:var(--faint);text-transform:uppercase;}
+.clocks{margin-left:auto;display:flex;align-items:center;gap:44px;}
+.clock{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+.clock label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.32em;color:var(--faint);
+  text-transform:uppercase;}
+.clock .v{font-family:var(--font-mono);font-weight:600;font-size:21px;letter-spacing:.06em;}
+.clock.downw .v{font-size:33px;color:var(--yellow);font-weight:700;}
+.clock .sep{width:1px;align-self:stretch;background:var(--border);}
+
+/* ═══ BOARD ═══ */
+.board{position:relative;flex:1;display:flex;flex-direction:column;padding:6px 150px 10px;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .08s both;}
+@keyframes rise{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
+.cols{flex:none;display:grid;grid-template-columns:26px 290px 1fr 150px 236px;gap:28px;
+  align-items:center;padding:16px 0 12px;border-bottom:1px solid var(--border);}
+.cols span{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.3em;color:var(--faint);
+  text-transform:uppercase;}
+.row{flex:1;display:grid;grid-template-columns:26px 290px 1fr 150px 236px;gap:28px;
+  align-items:center;border-bottom:1px solid var(--border);min-height:0;}
+.row:last-child{border-bottom:none;}
+.beat{position:relative;width:9px;height:9px;border-radius:50%;background:var(--faint);
+  transition:background-color .6s ease;justify-self:center;}
+.beat::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.9s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.65;}80%,100%{transform:scale(3);opacity:0;}}
+.row[data-state="deg"] .beat{background:var(--yellow);}
+.row[data-state="ok"] .beat{background:var(--up);}
+.row[data-state="spin"] .beat{background:var(--muted);}
+.cname{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.cname b{font-family:var(--font-display);font-weight:600;font-size:21px;letter-spacing:.14em;}
+.cname small{font-family:var(--font-body);font-size:12.5px;color:var(--faint);letter-spacing:.01em;}
+.spark{position:relative;height:64px;}
+.spark svg{width:100%;height:100%;}
+.spark .base{fill:none;stroke:var(--border2);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;}
+.spark .sweep{fill:none;stroke:var(--yellow);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;
+  stroke-dasharray:44 956;stroke-dashoffset:0;animation:sweep 3s linear infinite;}
+@keyframes sweep{to{stroke-dashoffset:-1000;}}
+.up{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+.up b{font-family:var(--font-mono);font-weight:600;font-size:16px;letter-spacing:.04em;color:var(--muted);}
+.up small{font-family:var(--font-mono);font-size:9px;letter-spacing:.24em;color:var(--faint);}
+.badge{position:relative;height:44px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(14,14,17,.7);justify-self:end;width:236px;}
+.st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-mono);font-weight:600;font-size:12px;letter-spacing:.22em;
+  text-transform:uppercase;opacity:0;}
+[data-state="spin"] .st-spin{opacity:1;}
+[data-state="deg"]  .st-deg{opacity:1;}
+[data-state="ok"]   .st-ok{opacity:1;}
+.st-spin{color:var(--muted);}
+.st-deg{color:var(--yellow-hot);}
+.st-ok{color:var(--up);}
+.sp{width:15px;height:15px;animation:rot 1s linear infinite;}
+@keyframes rot{to{transform:rotate(360deg);}}
+
+/* ═══ FOOT ═══ */
+.foot{flex:none;height:86px;display:flex;align-items:center;justify-content:center;gap:24px;
+  border-top:1px solid var(--border);animation:rise .7s cubic-bezier(.2,.9,.3,1) .16s both;}
+.chip{display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:9px 18px;
+  font-family:var(--font-mono);font-weight:600;font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;}
+.chip-y{border:1px solid rgba(255,193,7,.42);background:rgba(255,193,7,.07);color:var(--yellow);}
+.chip .d{width:6px;height:6px;border-radius:50%;background:currentColor;
+  animation:blive 1.8s ease-in-out infinite;}
+.chip-ghost{border:1px solid var(--border);color:var(--muted);font-weight:500;}
+.note{font-family:var(--font-display);font-weight:500;font-size:16px;color:var(--muted);
+  letter-spacing:.01em;}
+.note b{color:var(--fg);font-weight:600;}
+.eta{color:var(--faint);}
+.eta b{color:var(--yellow);font-weight:600;}
+
+/* ═══ THIN TICKER ═══ */
+.tk{position:relative;flex:none;height:42px;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);z-index:5;}
+.cap{display:flex;align-items:center;gap:9px;padding:0 20px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.2em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
+.cap.right{margin-left:auto;border-left:1px solid var(--border);color:var(--faint);
+  font-family:var(--font-mono);font-weight:500;font-size:9.5px;letter-spacing:.26em;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);
+  font-weight:500;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  margin-right:40px;color:var(--faint);}
+.item::before{content:"✦";color:var(--yellow);margin-right:13px;font-size:9px;}
+.item b{color:var(--muted);font-weight:600;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.05em;}
+.item.price .pc{font-size:9px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(4px);opacity:.1;}100%{transform:none;opacity:1;}}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;animation-delay:0s !important;}
+}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+
+  <!-- incident banner -->
+  <div class="banner">
+    <span class="b-live">●</span>
+    <span class="b-txt">INCIDENT #047 — FEED DEGRADED · investigate in progress</span>
+    <span class="b-ref">SMILE.CO.KE/STATUS</span>
+  </div>
+
+  <!-- header row -->
+  <header class="head">
+    <div class="spot" aria-hidden="true"></div>
+    <div class="id">
+      <svg class="disc avatar" viewBox="0 0 100 100" width="66" height="66" aria-hidden="true">
+        <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+        <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+              stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="wordmark">
+        <b>SMILE<i>·</i><em>STATUS</em></b>
+        <small>live service health</small>
+      </div>
+    </div>
+    <div class="clocks">
+      <div class="clock">
+        <label>EAT</label>
+        <span class="v num" id="eat">--:--:--</span>
+      </div>
+      <div class="clock downw">
+        <label>DOWNTIME</label>
+        <span class="v num" id="down">04:12</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- component status list -->
+  <main class="board">
+    <div class="cols">
+      <span></span><span>Component</span><span>Latency · 5 min</span>
+      <span style="text-align:right">Uptime · 30d</span><span style="text-align:right">Status</span>
+    </div>
+
+    <div class="row" data-state="spin">
+      <span class="beat"></span>
+      <div class="cname"><b>FEED</b><small>market data · order routing</small></div>
+      <div class="spark"><svg viewBox="0 0 240 36" preserveAspectRatio="none">
+        <polyline class="base" points=""/><polyline class="sweep" points=""/></svg></div>
+      <div class="up"><b class="num">99.97%</b><small>30-day</small></div>
+      <div class="badge">
+        <span class="st st-spin"><svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"
+          fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+          stroke-linecap="round"/></svg>RECOVERING</span>
+        <span class="st st-deg">DEGRADED</span>
+        <span class="st st-ok">✓ OPERATIONAL</span>
+      </div>
+    </div>
+
+    <div class="row" data-state="deg">
+      <span class="beat"></span>
+      <div class="cname"><b>SOCKETS</b><small>websocket cluster · us-east</small></div>
+      <div class="spark"><svg viewBox="0 0 240 36" preserveAspectRatio="none">
+        <polyline class="base" points=""/><polyline class="sweep" points=""/></svg></div>
+      <div class="up"><b class="num">99.99%</b><small>30-day</small></div>
+      <div class="badge">
+        <span class="st st-spin"><svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"
+          fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+          stroke-linecap="round"/></svg>RECOVERING</span>
+        <span class="st st-deg">DEGRADED</span>
+        <span class="st st-ok">✓ OPERATIONAL</span>
+      </div>
+    </div>
+
+    <div class="row" data-state="ok">
+      <span class="beat"></span>
+      <div class="cname"><b>CHARTS</b><small>renderer · candle cache</small></div>
+      <div class="spark"><svg viewBox="0 0 240 36" preserveAspectRatio="none">
+        <polyline class="base" points=""/><polyline class="sweep" points=""/></svg></div>
+      <div class="up"><b class="num">100.00%</b><small>30-day</small></div>
+      <div class="badge">
+        <span class="st st-spin"><svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"
+          fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+          stroke-linecap="round"/></svg>RECOVERING</span>
+        <span class="st st-deg">DEGRADED</span>
+        <span class="st st-ok">✓ OPERATIONAL</span>
+      </div>
+    </div>
+
+    <div class="row" data-state="ok">
+      <span class="beat"></span>
+      <div class="cname"><b>ALERTS</b><small>price alerts · push pipeline</small></div>
+      <div class="spark"><svg viewBox="0 0 240 36" preserveAspectRatio="none">
+        <polyline class="base" points=""/><polyline class="sweep" points=""/></svg></div>
+      <div class="up"><b class="num">99.98%</b><small>30-day</small></div>
+      <div class="badge">
+        <span class="st st-spin"><svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"
+          fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+          stroke-linecap="round"/></svg>RECOVERING</span>
+        <span class="st st-deg">DEGRADED</span>
+        <span class="st st-ok">✓ OPERATIONAL</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- footer chips -->
+  <footer class="foot">
+    <span class="chip chip-y"><span class="d"></span>SYSTEMS NOMINAL SOON</span>
+    <span class="note">markets paused — <b>our desk is on it.</b></span>
+    <span class="chip chip-ghost eta num">NEXT UPDATE · <b id="eta">60s</b></span>
+  </footer>
+
+  <!-- thin status-bar ticker -->
+  <div class="tk">
+    <div class="cap left brand">
+      <span class="dw" style="width:20px;height:20px" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <circle cx="50" cy="50" r="50" fill="#0a0a0a"/>
+          <circle cx="41" cy="40" r="6.5" fill="#FFC107"/><circle cx="59" cy="40" r="6.5" fill="#FFC107"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#FFC107" stroke-width="10.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>
+      <span>SMILE · STATUS</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>incident #047</b> feed degraded</span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">our desk is on it</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>incident #047</b> feed degraded</span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">our desk is on it</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">MARKETS PAUSED</div>
+  </div>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+'use strict';
+var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── scale 1920×1080 to any window ── */
+var stage=document.getElementById('stage');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform='scale('+s+')';}
+addEventListener('resize',fit);fit();
+
+/* ── EAT clock + downtime clock (?elapsed= → mm:ss count-up, zero-state 04:12) ── */
+var eatEl=document.getElementById('eat'),downEl=document.getElementById('down');
+var qe=new URLSearchParams(location.search).get('elapsed');
+var live=/^\d+$/.test(qe||'');
+var base=live?Math.min(86399,parseInt(qe,10)):252; /* zero-state composes 04:12 */
+function two(n){return n<10?'0'+n:''+n;}
+function fmtDown(s){s=Math.min(5999,s|0);return two((s/60)|0)+':'+two(s%60);}
+function clocks(){
+  downEl.textContent=fmtDown(base);
+  var d=new Date(Date.now()+3*3600*1000);
+  eatEl.textContent=two(d.getUTCHours())+':'+two(d.getUTCMinutes())+':'+two(d.getUTCSeconds());
+}
+clocks();
+setInterval(function(){if(live)base++;clocks();},1000);
+
+/* ── marquee (stolen JS pattern) ── */
+var track=document.getElementById('tkTrack');
+(function(){
+  var seq=track.children[0],W=0,x=0,last=performance.now();
+  function measure(){W=seq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',measure);
+  if(RM)return;
+  (function step(now){
+    var dt=Math.min(50,now-last);last=now;
+    if(W>0){x-=dt*0.045;if(-x>=W)x+=W;track.style.transform='translateX('+x+'px)';}
+    requestAnimationFrame(step);
+  })(last);
+})();
+
+/* ── live prices (Binance, fallback walk) ── */
+var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+function setPrice(key,val,pct){
+  var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+  var els=document.querySelectorAll('[data-sym="'+key+'"]');
+  for(var i=0;i<els.length;i++){
+    var el=els[i],pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+    pv.textContent=fmtP(val);
+    if(pct!=null){
+      pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+      pc.className='pc num '+(pct>=0?'up':'down');
+    }
+    if(changed){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+  }
+}
+function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+function prices(){
+  fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+    encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+    .then(function(r){return r.json();})
+    .then(function(list){
+      list.forEach(function(t){
+        var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+      });
+      kesWalk();
+    })
+    .catch(function(){
+      setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+      setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+      setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+      kesWalk();
+    });
+}
+setInterval(prices,5000);prices();
+
+/* ── component recovery engine — staggered 12.6s cycle, soft resets ──
+   τ map: spin 0–3.2 · DEGRADED 3.2–5.7 · ✓ OPERATIONAL 5.7–10.4 · soft re-arm 10.8–12.6 */
+var CY=12.6,STAG=[0,3.15,6.3,9.45];
+var rowEls=[].slice.call(document.querySelectorAll('.row'));
+var rows=rowEls.map(function(rowEl){
+  var sts=[].slice.call(rowEl.querySelectorAll('.st'));
+  var svgs=rowEl.querySelectorAll('.spark polyline');
+  return {el:rowEl,sts:sts,base:svgs[0],sweep:svgs[1],
+          pts:[],state:'',acc:Math.random()*0.8,
+          v:12+Math.random()*10};
+});
+function seg(t,a,b){if(t<=a)return 0;if(t>=b)return 1;var s=(t-a)/(b-a);return s*s*(3-2*s);}
+function opac(t){
+  var spin=t<2.9?1:(t<3.5?1-seg(t,2.9,3.5):0);
+  if(t>=10.8)spin=Math.max(spin,seg(t,10.8,11.6));
+  var deg=t<2.9?0:(t<3.5?seg(t,2.9,3.5):(t<5.4?1:(t<6?1-seg(t,5.4,6):0)));
+  var ok=t<5.4?0:(t<6?seg(t,5.4,6):(t<10?1:(t<10.8?1-seg(t,10,10.8):0)));
+  return [spin,deg,ok];
+}
+function sparkPts(r){
+  var s='';
+  for(var j=0;j<26;j++){var x=j*(240/25),y=34-r.pts[j];s+=x.toFixed(1)+','+y.toFixed(1)+' ';}
+  r.base.setAttribute('points',s);r.sweep.setAttribute('points',s);
+}
+function sparkSeed(r){
+  r.pts.length=0;var v=r.v;
+  for(var j=0;j<26;j++){v=Math.max(2,Math.min(31,v+(Math.random()-.5)*5));r.pts.push(v);}
+  r.v=v;sparkPts(r);
+}
+function amp(state){return state==='ok'?1.7:(state==='deg'?3.6:5.4);}
+rows.forEach(sparkSeed);
+
+var clk=0,lastT=performance.now();
+function frame(now){
+  var dt=Math.min(.1,(now-lastT)/1000);lastT=now;
+  clk=(clk+dt)%CY;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i],t=(clk+STAG[i])%CY,o=opac(t);
+    for(var j=0;j<3;j++)r.sts[j].style.opacity=o[j].toFixed(3);
+    var st=o[2]>=.5?'ok':(o[1]>=.5?'deg':'spin');
+    if(st!==r.state){r.state=st;r.el.setAttribute('data-state',st);}
+    r.acc+=dt;
+    if(r.acc>0.8){r.acc=0;
+      var nv=Math.max(2,Math.min(31,r.pts[r.pts.length-1]+(Math.random()-.5)*2*amp(st)));
+      r.pts.shift();r.pts.push(nv);r.v=nv;sparkPts(r);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+if(!RM)requestAnimationFrame(frame);
+else rows.forEach(function(r){ /* composed static frame */
+  var st=r.el.getAttribute('data-state')||'ok',o=st==='ok'?[0,0,1]:(st==='deg'?[0,1,0]:[1,0,0]);
+  for(var j=0;j<3;j++)r.sts[j].style.opacity=o[j];r.state=st;
+});
+
+/* ── ETA countdown chip ── */
+var etaEl=document.getElementById('eta');
+if(RM){etaEl.textContent='60s';}
+else{var eta=60;
+  setInterval(function(){eta--;if(eta<0)eta=60;etaEl.textContent=eta+'s';},1000);
+}
+
+/* ── smile avatar: occasional nod (smile-mark.js handles idle blinks) ── */
+var avatar=document.querySelector('.avatar');
+if(!RM&&window.smileMood){
+  (function nod(){
+    setTimeout(function(){
+      if(!document.hidden&&avatar&&avatar.isConnected)window.smileMood('nod',760,avatar);
+      nod();
+    },5200+Math.random()*5200);
+  })();
+}
+})();
+</script>
+</body>
+</html>

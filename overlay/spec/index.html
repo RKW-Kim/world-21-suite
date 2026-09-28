@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · the spec — one brief, many guns</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --panel:rgba(14,14,17,.62); --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk',system-ui,sans-serif; --fm:'IBM Plex Mono',ui-monospace,monospace; --fb:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.9,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--fb);overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.num{font-variant-numeric:tabular-nums}
+
+/* ambient */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0}
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 24%,#000 20%,transparent 72%);
+          mask-image:radial-gradient(ellipse at 50% 24%,#000 20%,transparent 72%)}
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 62% 42% at 50% -8%,rgba(255,255,255,.07),transparent 70%)}
+.aura{position:absolute;left:50%;top:230px;transform:translateX(-50%);width:900px;height:480px;
+  background:radial-gradient(ellipse,rgba(255,193,7,.07),transparent 65%);filter:blur(14px)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,transparent 58%,rgba(0,0,0,.44) 100%)}
+
+.page{position:relative;z-index:1;max-width:1620px;margin:0 auto;padding:64px 56px 140px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:70px}
+.brand{display:inline-flex;align-items:center;gap:13px;font-family:var(--fd);font-weight:700;font-size:26px;letter-spacing:-.02em}
+.brand .dw{width:38px;height:38px;display:inline-block}
+.brand .dw svg{width:100%;height:100%}
+.navlinks{display:flex;gap:12px}
+.navlinks a{font-family:var(--fm);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:9px 16px;
+  transition:color .3s,border-color .3s}
+.navlinks a:hover{color:var(--yellow);border-color:rgba(255,193,7,.45)}
+
+h1{font-family:var(--fd);font-weight:700;font-size:96px;line-height:1.0;letter-spacing:-.035em;max-width:1240px}
+h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--ease) both}
+h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
+@keyframes wordup{to{opacity:1;transform:none}}
+h1 .grad{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .yel{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+.sub{margin-top:22px;font-size:20px;color:var(--muted);max-width:880px;line-height:1.55;
+  opacity:0;animation:riseIn .8s var(--ease) .3s both}
+.sub b{color:var(--fg);font-weight:600}
+@keyframes riseIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px;opacity:0;animation:riseIn .8s var(--ease) .42s both}
+.lchip{font-family:var(--fm);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+  border:1px solid var(--border);background:rgba(9,9,11,.6);border-radius:999px;padding:8px 15px}
+.lchip b{color:var(--fg);font-weight:600}
+.lchip.y{border-color:rgba(255,193,7,.4);color:var(--yellow)}
+
+.scene{margin-top:96px;opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.scene.in{opacity:1;transform:none}
+.shead{display:flex;align-items:baseline;gap:22px;border-bottom:1px solid var(--border);padding-bottom:15px;margin-bottom:24px}
+.shead .idx{font-family:var(--fm);font-size:11px;letter-spacing:.3em;color:var(--yellow)}
+.shead h2{font-family:var(--fd);font-weight:700;font-size:31px;letter-spacing:-.015em}
+.shead p{color:var(--faint);font-size:13.5px;margin-left:auto;text-align:right}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:22px}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+  backdrop-filter:blur(12px);
+  box-shadow:0 14px 36px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .5s var(--ease),border-color .5s var(--ease),box-shadow .5s var(--ease)}
+.card:hover{transform:translateY(-4px);border-color:rgba(255,193,7,.45);
+  box-shadow:0 18px 44px rgba(0,0,0,.5),0 0 24px rgba(255,193,7,.07),inset 0 1px 0 rgba(255,255,255,.05)}
+.shot{position:relative;aspect-ratio:16/9;background:#0d0d0d;cursor:pointer;overflow:hidden}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot iframe{position:absolute;inset:0;width:1920px;height:1080px;border:0;transform-origin:0 0;pointer-events:none}
+.veil{position:absolute;inset:0;display:grid;place-items:center;
+  background:linear-gradient(180deg,transparent 40%,rgba(10,10,10,.74));opacity:0;transition:opacity .45s var(--ease)}
+.shot:hover .veil{opacity:1}
+.play{font-family:var(--fd);font-weight:700;font-size:12.5px;letter-spacing:.14em;
+  background:rgba(20,20,20,.92);border:1px solid rgba(255,193,7,.55);color:var(--yellow);
+  border-radius:999px;padding:10px 20px}
+.meta{padding:16px 18px 18px}
+.lane{display:flex;align-items:baseline;gap:10px}
+.lane b{font-family:var(--fd);font-weight:700;font-size:16.5px;letter-spacing:.01em}
+.lane i{font-style:normal;font-family:var(--fm);font-size:9.5px;letter-spacing:.26em;color:var(--ink);
+  background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));border-radius:6px;padding:3px 8px;vertical-align:2px}
+.lane .tag{margin-left:auto;font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase}
+.desc{margin-top:7px;color:var(--muted);font-size:13.5px;line-height:1.5;min-height:40px}
+.acts{margin-top:13px;display:flex;gap:10px}
+.go,.open{font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.1em;border-radius:999px;
+  padding:8px 17px;cursor:pointer;text-decoration:none;transition:border-color .3s,color .3s}
+.go{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));border:0;color:var(--ink)}
+.open{border:1px solid var(--border);color:var(--fg);background:rgba(20,20,20,.86)}
+.open:hover{border-color:rgba(255,193,7,.55);color:var(--yellow)}
+
+.note{margin-top:96px;border-top:1px solid var(--border);padding-top:26px;color:var(--faint);
+  font-size:13px;line-height:1.75;max-width:980px}
+.note b{color:var(--fg)}
+.note .fm{font-family:var(--fm)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}h1 .w,.sub,.legend,.scene{opacity:1;transform:none}}
+</style></head>
+<body>
+<div class="ambient" aria-hidden="true"><div class="dots"></div><div class="spot"></div><div class="aura"></div><div class="vig"></div></div>
+<div class="page">
+  <div class="top">
+    <span class="brand"><span class="dw"><img src="smile-mark.svg" alt="smile" style="width:100%;height:100%"></span>smile<span style="color:var(--faint);font-weight:500">/spec</span></span>
+    <nav class="navlinks"><a href="../execs/">← execs wave</a><a href="SPEC.md">the brief ↗</a></nav>
+  </div>
+
+  <h1><span class="w w1 grad">one spec,</span> <span class="w w2 yel">many guns.</span></h1>
+  <p class="sub">The <b>M4 program</b>: one brief goes out, every vendor answers it their own way.
+  Six scenes × three structural answers each — same brand, same copy, same smoothness law,
+  <b>zero shared skeletons</b>. Bento desk, terminal boot, side rail · DVD physics, away console, ticket booth ·
+  rundown sheet, halftime board, filmstrip · status page, reconnect lab, repair bench ·
+  transmission feed, town hall, caller board · closing bell, receipt print, credits crawl.</p>
+  <div class="legend">
+    <span class="lchip y"><b>6</b> scenes</span><span class="lchip"><b>3</b> vendors each</span>
+    <span class="lchip"><b>18</b> pages</span><span class="lchip">shadcn-zinc × smile-yellow</span>
+    <span class="lchip">OBS 1920×1080 · file:// safe</span>
+  </div>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">01</span><h2>STARTING SOON</h2><p>?t=90|ISO · ?ep= — hold the room before the bell</p></div>
+  <div class="grid">
+    <div class="card" data-live="soon-a.html"><div class="shot"><img src="thumbs/soon-a.jpg" alt="BENTO DESK"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>BENTO DESK</b><span class="tag">asymmetric mosaic</span></div>
+      <div class="desc">Live zinc cards around one hero: odometer countdown, candle feed, skeleton loaders, EAT clock.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="soon-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="soon-b.html"><div class="shot"><img src="thumbs/soon-b.jpg" alt="TERMINAL BOOT"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>TERMINAL BOOT</b><span class="tag">macOS chrome · mono</span></div>
+      <div class="desc">Boot log types itself, progress fills, giant odometer countdown as terminal output. ENTER steps.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="soon-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="soon-c.html"><div class="shot"><img src="thumbs/soon-c.jpg" alt="SIDE RAIL STAGE"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>SIDE RAIL STAGE</b><span class="tag">rail + spotlight hero</span></div>
+      <div class="desc">Shadcn sidebar with live ✓ cascade and session meta; huge gradient hero with the trick-engine smile.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="soon-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">02</span><h2>BE RIGHT BACK</h2><p>?elapsed= — positions paused, room kept alive</p></div>
+  <div class="grid">
+    <div class="card" data-live="brb-a.html"><div class="shot"><img src="thumbs/brb-a.jpg" alt="STANDBY SAVER"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>STANDBY SAVER</b><span class="tag">DVD physics</span></div>
+      <div class="desc">The smile bounces across the stage with real velocity — wall-hit glow pulses, tricks every 4th hit.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="brb-b.html"><div class="shot"><img src="thumbs/brb-b.jpg" alt="AWAY CONSOLE"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>AWAY CONSOLE</b><span class="tag">dialog + ring + checklist</span></div>
+      <div class="desc">One centered console: away clock in the ring, checklist settling to ✓, what's-next queue.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="brb-c.html"><div class="shot"><img src="thumbs/brb-c.jpg" alt="TICKET BOOTH"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>TICKET BOOTH</b><span class="tag">perforated material</span></div>
+      <div class="desc">The scene as a physical ticket: stamp thunk, marching barcode, smile seal, torn stub with session meta.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">03</span><h2>INTERMISSION</h2><p>?t= back-at countdown · ?ep= — the longer break</p></div>
+  <div class="grid">
+    <div class="card" data-live="inter-a.html"><div class="shot"><img src="thumbs/inter-a.jpg" alt="PROGRAMME RUNDOWN"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>PROGRAMME RUNDOWN</b><span class="tag">editorial split</span></div>
+      <div class="desc">Giant stacked INTERMISSION type beside a live rundown table — done / on deck / queued markers.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="inter-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="inter-b.html"><div class="shot"><img src="thumbs/inter-b.jpg" alt="HALFTIME BOARD"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>HALFTIME BOARD</b><span class="tag">scoreboard counters</span></div>
+      <div class="desc">Stat cells count up while the smile perches on the board's edge; rotating while-you-were-away notes.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="inter-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="inter-c.html"><div class="shot"><img src="thumbs/inter-c.jpg" alt="FILMSTRIP GALLERY"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>FILMSTRIP GALLERY</b><span class="tag">drifting band + walker</span></div>
+      <div class="desc">Seamless filmstrip of upcoming segments; the smile hops along its edge card-to-card.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="inter-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">04</span><h2>TECHNICAL DIFFICULTIES</h2><p>?elapsed= — feed hiccup, desk on it</p></div>
+  <div class="grid">
+    <div class="card" data-live="tech-a.html"><div class="shot"><img src="thumbs/tech-a.jpg" alt="STATUS PAGE"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>STATUS PAGE</b><span class="tag">incident layout</span></div>
+      <div class="desc">Incident banner, component rows cycling degraded → operational, sparklines, heartbeats, downtime clock.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="tech-b.html"><div class="shot"><img src="thumbs/tech-b.jpg" alt="RECONNECT LAB"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>RECONNECT LAB</b><span class="tag">ring + typed log</span></div>
+      <div class="desc">Big progress ring with the loader-eyes smile inside; timestamped reconnect log typing beneath.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="tech-c.html"><div class="shot"><img src="thumbs/tech-c.jpg" alt="WORKSHOP BENCH"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>WORKSHOP BENCH</b><span class="tag">repair narrative</span></div>
+      <div class="desc">Broken chart on the left, wrench-smile repairing it on the right — candles reignite, feed restored, loop.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">05</span><h2>Q&amp;A · OPEN FLOOR</h2><p>?ep= — comms open, channel 01</p></div>
+  <div class="grid">
+    <div class="card" data-live="qa-a.html"><div class="shot"><img src="thumbs/qa-a.jpg" alt="TRANSMISSION FEED"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>TRANSMISSION FEED</b><span class="tag">TX card cycle</span></div>
+      <div class="desc">Keynote ASK ME ANYTHING beside cycling TX·0x question cards with live signal bars. ?q= injects one.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="qa-b.html"><div class="shot"><img src="thumbs/qa-b.jpg" alt="TOWN HALL"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>TOWN HALL</b><span class="tag">built environment</span></div>
+      <div class="desc">Podium desk, nameplate, mic, ON AIR lamp; the host smile peeks over the edge while ?s drift behind.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="qa-c.html"><div class="shot"><img src="thumbs/qa-c.jpg" alt="CALLER BOARD"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>CALLER BOARD</b><span class="tag">broadcast rows + VU</span></div>
+      <div class="desc">ON AIR / NEXT / QUEUED rows with animated VU meters and a hold-music equalizer strip.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <section class="scene" data-scene><div class="shead"><span class="idx">06</span><h2>SESSION CLOSED</h2><p>the sign-off — three ceremonies</p></div>
+  <div class="grid">
+    <div class="card" data-live="end-a.html"><div class="shot"><img src="thumbs/end-a.jpg" alt="CLOSING BELL"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>A</i><b>CLOSING BELL</b><span class="tag">strike choreography</span></div>
+      <div class="desc">The engraved bell swings in and rings once — shockwave, confetti burst, then the sign-off settles.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-a.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="end-b.html"><div class="shot"><img src="thumbs/end-b.jpg" alt="RECEIPT PRINT"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>B</i><b>RECEIPT PRINT</b><span class="tag">thermal print reveal</span></div>
+      <div class="desc">The session prints as a receipt — line items, barcode, MARKET CLOSED stamp, torn edge, desk ledgers.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-b.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+    <div class="card" data-live="end-c.html"><div class="shot"><img src="thumbs/end-c.jpg" alt="CREDITS CRAWL"><div class="veil"><span class="play">▶ LIVE PREVIEW</span></div></div>
+      <div class="meta"><div class="lane"><i>C</i><b>CREDITS CRAWL</b><span class="tag">keynote thank-you</span></div>
+      <div class="desc">Giant trick-loop smile, thank you. in keynote gradient, auto-scrolling credits, confetti depth planes.</div>
+      <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-c.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div></div>
+  </div></section>
+
+  <div class="note"><b>The spec (same for all 18):</b> brand tokens <span class="fm">yellow #FFC107 · zinc #09090b · border #27272a</span>,
+  Space Grotesk / IBM Plex Mono / Inter, official <span class="fm">smile-mark.svg</span> verbatim, frozen scene copy,
+  live Binance pulse with offline fallback, EAT clock, URL contract, everything eases home — no snaps, transform/opacity only,
+  <span class="fm">document.hidden</span> pauses, reduced-motion composed frame. What varies: the <b>grid</b>, the <b>signature move</b>,
+  the <b>type voice</b>, where the <b>smile lives</b> and what it does. That's the whole game.</div>
+</div>
+<script>window.BRAND={};</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  /* scroll-reveal sections */
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('in')})},{threshold:.08});
+  document.querySelectorAll('.scene').forEach(function(s){io.observe(s)});
+
+  /* click-to-load live preview (execs-hub pattern) */
+  document.querySelectorAll('.card').forEach(function(c){
+    var shot=c.querySelector('.shot'), url=c.dataset.live, live=false;
+    function mount(){
+      if(live)return; live=true;
+      var f=document.createElement('iframe'); f.src=url; f.loading='eager';
+      f.style.transform='scale('+(shot.clientWidth/1920)+')';
+      shot.appendChild(f);
+    }
+    shot.addEventListener('click',mount);
+    c.querySelector('.go').addEventListener('click',function(e){e.stopPropagation();mount();});
+    window.addEventListener('resize',function(){
+      var f=shot.querySelector('iframe'); if(f) f.style.transform='scale('+(shot.clientWidth/1920)+')';
+    });
+  });
+})();
+</script>
+</body></html>
