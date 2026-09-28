@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>smile.co.ke — END REEL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0900; --panel:#141210; --card:#1C1914; --hair:#2A251C;
+  --paper:#F5F1E6; --muted:#9C9484; --sienna:#A66541;
+  --yellow:#FFCE00; --yellow-hot:#E8A800;
+  --glide:cubic-bezier(.2,.9,.25,1);
+  --snap:cubic-bezier(.85,0,.15,1);
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--ink);overflow:hidden;color:var(--paper);font-family:'Archivo',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;user-select:none;cursor:default}
+.fit{position:fixed;inset:0;display:grid;place-items:center}
+.stage{position:relative;width:1920px;height:1080px;overflow:hidden;transform-origin:center center}
+
+/* ---------- field: scrim + vignette + grain ---------- */
+.scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:
+  linear-gradient(180deg, rgba(245,241,230,.05) 0%, rgba(245,241,230,0) 260px),
+  radial-gradient(130% 100% at 50% 42%, rgba(0,0,0,0) 58%, rgba(0,0,0,.24) 100%)}
+.grain{position:absolute;inset:0;z-index:60;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ---------- HUD: brand + off-air chip ---------- */
+.hud{position:absolute;top:48px;left:48px;right:48px;z-index:30;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:14px;animation:rise .5s var(--glide) .1s both}
+.brand svg{width:40px;height:40px;display:block}
+.brand .bn{font-weight:800;font-size:18px;line-height:1;letter-spacing:-.01em}
+.chip{display:flex;align-items:center;gap:10px;height:40px;padding:0 16px;line-height:1;
+  background:var(--card);border:1px solid var(--hair);border-radius:var(--r);
+  animation:rise .5s var(--glide) .18s both}
+.chip .sq{width:6px;height:6px;background:var(--sienna);animation:pulse 3.2s ease-in-out infinite}
+.chip .lab{font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.18em}
+.chip .sep{color:var(--muted);font-weight:400}
+.chip .clock{display:inline-flex;align-items:center;font:500 13px/1 'IBM Plex Mono',monospace;
+  letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.chip .tz{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:var(--muted)}
+.csep{display:block}
+.dcell{display:block;width:1ch;height:1em;overflow:hidden}
+.dcol{display:flex;flex-direction:column;transition:transform .42s var(--glide);will-change:transform}
+.dg{display:block;height:1em;line-height:1;text-align:center}
+
+/* ---------- hero: two-tone display + statement + meta ---------- */
+.hero{position:absolute;left:48px;top:144px;width:1000px;z-index:20}
+.display{font-weight:900;font-size:150px;line-height:.96;letter-spacing:-.03em}
+.line{display:block}
+.line .txt{display:inline-block;clip-path:inset(-12% 102% -12% -2%);animation:clipIn .7s var(--snap) both}
+.l1 .txt{color:var(--paper);animation-delay:0s}
+.l2 .txt{color:var(--yellow-hot);animation-delay:.15s}
+.statement{margin-top:32px;max-width:34ch;font-size:20px;line-height:1.5;font-weight:500;color:var(--muted);
+  animation:rise .5s var(--glide) .42s both}
+.statement b{font-weight:700;color:var(--paper)}
+.meta{margin-top:24px;display:flex;align-items:center;gap:14px;
+  font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  animation:rise .5s var(--glide) .5s both}
+.meta .dash{width:24px;height:1px;background:var(--sienna)}
+.meta .epnum{color:var(--yellow-hot)}
+.meta .dot{color:var(--sienna)}
+
+/* ---------- right rail: next-episode slabs ---------- */
+.slabs{position:absolute;right:48px;top:144px;z-index:20;display:flex;gap:24px}
+.slab{width:122px;height:424px;padding:24px 20px;display:flex;flex-direction:column;
+  border:1px solid var(--hair);border-radius:var(--r);
+  animation:slam .55s var(--snap) both}
+.slab:nth-child(1){animation-delay:.5s}
+.slab:nth-child(2){animation-delay:.59s}
+.slab:nth-child(3){animation-delay:.68s}
+.slab.filled{background:var(--yellow);border-color:var(--yellow);color:var(--ink);
+  box-shadow:0 14px 20px -6px rgba(255,206,0,.26)}
+.snum{font-weight:900;font-size:60px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.snum.sm{font-size:42px;letter-spacing:-.05em}
+.slab:not(.filled) .snum{color:transparent;-webkit-text-stroke:1.5px rgba(245,241,230,.85)}
+.srule{width:24px;height:2px;background:var(--sienna);margin-top:20px}
+.slab.filled .srule{background:var(--ink)}
+.slabel{margin-top:auto;font:500 11px/1.8 'IBM Plex Mono',monospace;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--paper)}
+.slab.filled .slabel{color:var(--ink)}
+
+/* ---------- mid-ground: filmstrip reel ---------- */
+.strip{position:absolute;left:0;top:624px;width:1920px;height:236px;z-index:10;overflow:hidden;
+  animation:stripIn .7s var(--glide) .08s both}
+.track{display:flex;width:max-content;animation:reel 60s linear infinite;will-change:transform}
+.track.hold{animation-play-state:paused}
+.half{display:flex;flex-direction:column;gap:16px;width:2268px;flex:0 0 2268px}
+.perf{height:8px;background-image:linear-gradient(90deg, rgba(245,241,230,.22) 0 8px, transparent 8px 28px);
+  background-size:28px 8px;background-repeat:repeat-x}
+.tiles{display:flex}
+.tile{position:relative;flex:0 0 300px;height:188px;margin-right:24px;border-radius:var(--r);
+  background:var(--panel);border:1px solid var(--hair);display:grid;place-items:center;
+  transition:transform .3s var(--glide), border-color .3s var(--glide)}
+.tile svg{width:72px;height:72px;display:block}
+.tile .no{position:absolute;top:10px;left:14px;font:500 11px/1 'IBM Plex Mono',monospace;
+  letter-spacing:.14em;color:rgba(245,241,230,.38)}
+.tile.yt{background:var(--yellow);border-color:var(--yellow)}
+.tile.yt svg{width:112px;height:112px}
+.tile.yt .no{color:rgba(10,9,0,.55)}
+.tile.focus{transform:scale(1.03);border-color:rgba(245,241,230,.28)}
+.tile.yt.focus{border-color:var(--yellow)}
+
+/* ---------- replay queue + footer / watermark / help ---------- */
+.queue{position:absolute;left:48px;top:908px;z-index:30;
+  font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--muted);
+  animation:fadeIn .6s var(--glide) .72s both}
+.foot{position:absolute;left:48px;right:48px;top:968px;z-index:30;padding-top:18px;
+  border-top:1px solid var(--hair);display:flex;justify-content:space-between;align-items:center;
+  animation:fadeIn .6s var(--glide) .75s both}
+.fleft{font:500 12px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:var(--muted)}
+.fleft .d{color:var(--sienna)}
+.fright{display:flex;align-items:center;gap:10px;font-weight:700;font-size:12px;line-height:1;
+  letter-spacing:.22em}
+.ast{width:12px;height:12px;display:block}
+.wm{position:absolute;right:48px;top:908px;width:42px;height:42px;z-index:40;opacity:.18}
+.wm svg{width:42px;height:42px;display:block}
+.help{position:absolute;left:48px;top:946px;z-index:40;display:none;font:400 10px/1.6 'IBM Plex Mono',monospace;
+  letter-spacing:.08em;color:rgba(245,241,230,.32)}
+
+/* ---------- motion ---------- */
+@keyframes reel{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes clipIn{from{clip-path:inset(-12% 102% -12% -2%)}to{clip-path:inset(-12% -2% -12% -2%)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes slam{0%{opacity:0;transform:translateY(18px) scale(.96)}
+  70%{opacity:1;transform:translateY(-2px) scale(1.004)}100%{opacity:1;transform:none}}
+@keyframes stripIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%{opacity:.9;transform:scale(1)}40%{opacity:.3;transform:scale(.75)}100%{opacity:.9;transform:scale(1)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  .line .txt{clip-path:none !important}
+}
+
+/* ---------- OBS mode ---------- */
+body.obs{background:transparent}
+body.obs .scrim,body.obs .grain,body.obs .help{display:none}
+</style>
+</head>
+<body>
+<div class="fit">
+<div class="stage" id="stage">
+
+  <div class="scrim" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bn">smile.co.ke</span>
+    </div>
+    <div class="chip">
+      <span class="sq" aria-hidden="true"></span>
+      <span class="lab">OFF AIR</span>
+      <span class="sep">—</span>
+      <span class="clock" id="clock" aria-label="East Africa Time"></span>
+      <span class="tz">EAT</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 class="display">
+      <span class="line l1"><span class="txt" data-title>THAT&rsquo;S</span></span>
+      <span class="line l2"><span class="txt" data-sub>THE SHOW.</span></span>
+    </h1>
+    <p class="statement"><b>Another episode in the books.</b> Mailbag answered, charts read, squad fed.</p>
+    <div class="meta">
+      <span class="dash" aria-hidden="true"></span>
+      <span>EP&nbsp;<span class="epnum" data-ep>128</span></span>
+      <span class="dot">·</span>
+      <span>RECORDED LIVE</span>
+      <span class="dot">·</span>
+      <span>NAIROBI</span>
+    </div>
+  </section>
+
+  <aside class="slabs" aria-label="Next episodes">
+    <div class="slab filled">
+      <div class="snum" id="n1">129</div>
+      <div class="srule" aria-hidden="true"></div>
+      <div class="slabel">NEXT EP — FRIDAY 1900 EAT</div>
+    </div>
+    <div class="slab">
+      <div class="snum" id="n2">130</div>
+      <div class="srule" aria-hidden="true"></div>
+      <div class="slabel">MAILBAG OPEN</div>
+    </div>
+    <div class="slab">
+      <div class="snum" id="n3">131</div>
+      <div class="srule" aria-hidden="true"></div>
+      <div class="slabel">STAY DANGEROUS</div>
+    </div>
+  </aside>
+
+  <div class="strip" aria-hidden="true">
+    <div class="track" id="track">
+      <div class="half">
+        <div class="perf"></div>
+        <div class="tiles">
+          <div class="tile"><span class="no">01</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#B9B2A2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 78 H80"/><path d="M18 78 V18"/><path d="M24 62 L40 44 L52 52 L70 28"/><circle cx="70" cy="28" r="3.5" fill="#B9B2A2" stroke="none"/></svg>
+          </div>
+          <div class="tile"><span class="no">02</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#B9B2A2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="18" y="28" width="60" height="42" rx="4"/><path d="M20 32 L48 54 L76 32"/></svg>
+          </div>
+          <div class="tile yt"><span class="no">03</span>
+            <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="tile"><span class="no">04</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#FFCE00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="38" y="14" width="20" height="42" rx="10"/><path d="M26 44 a22 22 0 0 0 44 0"/><path d="M48 66 V80"/><path d="M36 82 H60"/></svg>
+          </div>
+          <div class="tile"><span class="no">05</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#B9B2A2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 80 H80"/><rect x="26" y="52" width="11" height="28" rx="2"/><rect x="43" y="38" width="11" height="42" rx="2"/><rect x="60" y="26" width="11" height="54" rx="2"/></svg>
+          </div>
+          <div class="tile"><span class="no">06</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#B9B2A2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 40 L48 20 L78 40 V70 H18 Z"/><path d="M18 40 L48 58 L78 40"/></svg>
+          </div>
+          <div class="tile"><span class="no">07</span>
+            <svg viewBox="0 0 96 96" fill="none" stroke="#B9B2A2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="48" cy="48" r="27"/><path d="M48 48 V21"/><path d="M48 48 L69 64"/><circle cx="48" cy="48" r="3" fill="#B9B2A2" stroke="none"/></svg>
+          </div>
+        </div>
+        <div class="perf"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="queue" id="queue">REPLAY QUEUE — EP <span id="q1">127</span> · EP <span id="q2">126</span> · EP <span id="q3">125</span> → smile.co.ke/replay</div>
+
+  <footer class="foot">
+    <div class="fleft">@smileke <span class="d">◆</span> smile.co.ke <span class="d">◆</span> #SmileSquad</div>
+    <div class="fright">
+      <svg class="ast" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#FFCE00" stroke-width="2.6" stroke-linecap="round"><path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9L4.9 19.1"/></g></svg>
+      <span>SEE YOU THURSDAY.</span>
+    </div>
+  </footer>
+
+  <div class="wm" id="wm">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="help" id="help">END REEL · kit3 · ?ep= ?title= ?sub= ?obs=1 ?wm=0 · H toggles help</div>
+
+  <div class="grain" aria-hidden="true"></div>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var qs = new URLSearchParams(location.search);
+var RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var OBS = qs.get('obs') === '1';
+if (OBS) document.body.classList.add('obs');
+if (qs.get('wm') === '0') document.getElementById('wm').style.display = 'none';
+var help = document.getElementById('help');
+help.style.display = 'none'; /* hidden by default — H toggles; OBS keeps it hidden via CSS */
+
+/* scale-to-fit */
+var stage = document.getElementById('stage');
+function fit(){
+  var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  stage.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+/* URL contract: ?ep shifts numbering (default 128 → meta EP 128, slabs 129/130/131) */
+var ep = parseInt(qs.get('ep'), 10);
+if (!isFinite(ep) || ep < 1) ep = 128;
+if (ep > 9998) ep = 9998;
+function p2(n){ return String(n).padStart(2, '0'); }
+var nodes = document.querySelectorAll('[data-ep]');
+for (var i = 0; i < nodes.length; i++) nodes[i].textContent = p2(ep);
+document.getElementById('n1').textContent = p2(ep + 1);
+document.getElementById('n2').textContent = p2(ep + 2);
+document.getElementById('n3').textContent = p2(ep + 3);
+/* 3-digit episode numbers: shrink slab numerals so they never overflow the 122px slab */
+if (String(ep + 3).length > 2){
+  var sns = document.querySelectorAll('.snum');
+  for (i = 0; i < sns.length; i++) sns[i].classList.add('sm');
+}
+/* replay queue: previous three episodes */
+document.getElementById('q1').textContent = p2(Math.max(1, ep - 1));
+document.getElementById('q2').textContent = p2(Math.max(1, ep - 2));
+document.getElementById('q3').textContent = p2(Math.max(1, ep - 3));
+
+/* ?title / ?sub override the two headline lines */
+var tv = qs.get('title'), sv = qs.get('sub');
+if (tv) document.querySelector('[data-title]').textContent = tv;
+if (sv) document.querySelector('[data-sub]').textContent = sv;
+
+/* duplicate reel content for a seamless 60s loop */
+var track = document.getElementById('track');
+track.appendChild(track.querySelector('.half').cloneNode(true));
+
+/* scrub: centered tile scales 1.03; reel gates to a hold as frames cross center */
+var tiles = Array.prototype.slice.call(track.querySelectorAll('.tile'));
+var lastHold = 0, holding = false, focusEl = null;
+function setFocus(el){
+  if (focusEl === el) return;
+  if (focusEl) focusEl.classList.remove('focus');
+  focusEl = el;
+  if (el) el.classList.add('focus');
+}
+function nearest(){
+  var best = null, bd = 1e9;
+  for (var j = 0; j < tiles.length; j++){
+    var r = tiles[j].getBoundingClientRect();
+    var d = Math.abs(r.left + r.width / 2 - 960);
+    if (d < bd){ bd = d; best = tiles[j]; }
+  }
+  return { t: best, d: bd };
+}
+if (!RM){
+  window.setInterval(function(){
+    if (holding) return;
+    var n = nearest();
+    if (n.t && n.d < 12 && performance.now() - lastHold > 5200){
+      holding = true;
+      setFocus(n.t);
+      track.classList.add('hold');
+      window.setTimeout(function(){
+        track.classList.remove('hold');
+        lastHold = performance.now();
+        holding = false;
+      }, 900);
+    } else {
+      setFocus(n.d < 175 ? n.t : null);
+    }
+  }, 110);
+}
+
+/* OFF AIR clock — EAT (UTC+3), rolling split-flap digits (kit signature) */
+var clock = document.getElementById('clock');
+var cells = [];
+function buildClock(){
+  clock.textContent = '';
+  var seq = 'HH:MM:SS', ci = 0;
+  for (var i = 0; i < seq.length; i++){
+    if (seq[i] === ':'){
+      var sep = document.createElement('span');
+      sep.className = 'csep'; sep.textContent = ':';
+      clock.appendChild(sep);
+      continue;
+    }
+    var cell = document.createElement('span'); cell.className = 'dcell';
+    var col = document.createElement('span'); col.className = 'dcol';
+    for (var d = 0; d < 10; d++){
+      var dg = document.createElement('span');
+      dg.className = 'dg'; dg.textContent = String(d);
+      col.appendChild(dg);
+    }
+    col.style.transitionDelay = (ci * 45) + 'ms';
+    cell.appendChild(col); clock.appendChild(cell);
+    cells.push({ col: col, cur: -1 });
+    ci++;
+  }
+}
+function eatNow(){
+  var now = new Date();
+  var t = new Date(now.getTime() + (now.getTimezoneOffset() + 180) * 60000);
+  function p(n){ return String(n).padStart(2, '0'); }
+  return p(t.getHours()) + ':' + p(t.getMinutes()) + ':' + p(t.getSeconds());
+}
+function setClock(str, animate){
+  var ci = 0;
+  for (var i = 0; i < str.length; i++){
+    var ch = str[i];
+    if (ch === ':') continue;
+    var n = +ch, c = cells[ci++];
+    if (!c || c.cur === n) continue;
+    if (!animate || RM){
+      c.col.style.transition = 'none';
+      c.col.style.transform = 'translateY(-' + n + 'em)';
+      void c.col.offsetHeight;
+      c.col.style.transition = '';
+    } else {
+      c.col.style.transform = 'translateY(-' + n + 'em)';
+    }
+    c.cur = n;
+  }
+}
+buildClock();
+setClock(eatNow(), false);
+window.setInterval(function(){ setClock(eatNow(), true); }, 200);
+
+/* keys: H toggles help · V no-op (no internal variants in this scene) */
+window.addEventListener('keydown', function(e){
+  if (String(e.key).toLowerCase() === 'h' && help){
+    help.style.display = (help.style.display === 'block') ? 'none' : 'block';
+  }
+});
+})();
+</script>
+</body>
+</html>

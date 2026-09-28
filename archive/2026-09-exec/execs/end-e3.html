@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · end · MATERIAL STUDY</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= MATERIAL STUDY — finish swap, geometry untouched =================
+       Motion curves stay close to the original. The difference is in the SURFACES:
+       the disc becomes glass/energy (bloom halo, glass top-light, travelling sheen,
+       wandering specular ring), chips get glassy inner strokes, confetti pieces get
+       gradient metallic finishes, and a soft vignette light closes the frame. */
+
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+    h1{font-family:var(--font-display);font-weight:800;font-size:148px;letter-spacing:-.035em;line-height:.95}
+    h1 .y{color:var(--yellow)}
+    .sub{font-size:26px;font-weight:500;color:#a8a8a8;max-width:760px;line-height:1.45}
+    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:15px;margin-top:6px}
+
+    /* ---- the disc, re-materialised (same 150px slot, same svg) ---- */
+    .disc-slot{position:relative;width:150px;height:150px;margin:2px 0 4px}
+    .disc-slot svg{display:block;width:100%;height:100%;
+      filter:drop-shadow(0 22px 55px rgba(255,193,7,.36)) drop-shadow(0 0 26px rgba(255,193,7,.2))}
+    .glass{position:absolute;inset:0;border-radius:50%;overflow:hidden;pointer-events:none;
+      box-shadow:inset 0 2px 16px rgba(255,255,255,.38),inset 0 -10px 26px rgba(120,74,0,.18)}
+    .glass i{position:absolute;top:-32%;bottom:-32%;left:0;width:52%;will-change:transform;
+      transform:translateX(-190%) rotate(16deg);
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.36) 45%,rgba(255,255,255,.1) 60%,transparent);
+      animation:glSweep 5.6s ease-in-out infinite}
+    @keyframes glSweep{0%{transform:translateX(-190%) rotate(16deg)}46%{transform:translateX(310%) rotate(16deg)}100%{transform:translateX(310%) rotate(16deg)}}
+    .spec{position:absolute;inset:-13px;border-radius:50%;pointer-events:none;will-change:transform;
+      background:conic-gradient(from 0deg,transparent 0deg 34deg,rgba(255,255,255,.42) 47deg,rgba(255,255,255,.07) 62deg,transparent 74deg 360deg);
+      -webkit-mask:radial-gradient(closest-side,transparent 74%,#000 80%,#000 91%,transparent 96%);
+      mask:radial-gradient(closest-side,transparent 74%,#000 80%,#000 91%,transparent 96%);
+      animation:specSwing 8.5s ease-in-out infinite}
+    @keyframes specSwing{0%,100%{transform:rotate(-150deg)}50%{transform:rotate(150deg)}}
+
+    /* let the mood-spin land after the disc does (original fires it half-invisible) */
+    svg.disc.smile-anim.spin{animation-delay:.35s}
+
+    /* ---- chips: glassy inner strokes ---- */
+    .chip.dark{background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,0) 42%),rgba(20,20,20,.86);
+      border-color:rgba(255,255,255,.17);
+      box-shadow:0 6px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.15),inset 0 -1px 0 rgba(0,0,0,.55),inset 0 0 24px rgba(255,255,255,.04)}
+    .chip.ghost{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -10px 20px rgba(255,193,7,.08),0 0 24px rgba(255,193,7,.07)}
+    .chip.solid{box-shadow:0 10px 30px rgba(255,193,7,.3),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -3px 10px rgba(140,92,0,.38)}
+
+    /* ---- confetti: metallic gradient finishes (same palette hues) ---- */
+    .cf{position:absolute;top:-60px;width:12px;height:22px;border-radius:4px;animation:fall linear infinite;
+      box-shadow:0 0 8px rgba(255,255,255,.14);will-change:transform}
+    @keyframes fall{to{transform:translate(var(--sx,0px),1200px) rotate(560deg)}}
+
+    /* ---- soft vignette light ---- */
+    .stage::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;
+      background:radial-gradient(125% 95% at 50% 42%,transparent 56%,rgba(0,0,0,.4) 100%)}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div><div id="confetti"></div>
+  <div class="wrap">
+    <span class="chip ghost rise" style="--rd:.05s">✓ MARKET CLOSED</span>
+    <h1 class="rise" style="--rd:.15s">session <span class="y">closed</span>.</h1>
+    <div class="rise disc-slot" style="--rd:.25s"><svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+      <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+    </svg><span class="glass" aria-hidden="true"><i></i></span><span class="spec" aria-hidden="true"></span></div>
+    <p class="sub rise" style="--rd:.35s">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+    <div class="socials rise" style="--rd:.45s"><span class="chip dark">▶ YouTube · /smileke</span><span class="chip dark">◉ Twitch · /smileke</span><span class="chip dark">♪ TikTok · @smileke</span></div>
+    <span class="chip solid next rise" style="--rd:.55s">NEXT SESSION · FRIDAY 8PM EAT</span>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  /* confetti: identical count/palette — each piece finished as brushed metal (hi/base/lo of the same hue) */
+  const cols=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'],box=document.getElementById('confetti');
+  const metal={'#FFC107':['#FFE082','#C79100'],'#0ECB81':['#7BE8B8','#00915A'],'#F6465D':['#FF8FA0','#B71F37'],'#FFFFFF':['#FFFFFF','#B9C4CE'],'#3FB6FF':['#9AD9FF','#0E86CC']};
+  for(let i=0;i<42;i++){
+    const c=cols[i%cols.length],m=metal[c],s=document.createElement('span');
+    s.className='cf';
+    s.style.left=Math.random()*100+'%';
+    s.style.background='linear-gradient(135deg,'+m[0]+' 0%,'+c+' 46%,'+m[1]+' 100%)';
+    s.style.animationDuration=(4+Math.random()*3.5)+'s';
+    s.style.animationDelay=-(Math.random()*7.5)+'s';
+    s.style.width=(9+Math.random()*9)+'px';
+    s.style.height=(18+Math.random()*10)+'px';
+    s.style.setProperty('--sx',(Math.random()*160-80)+'px');
+    s.style.opacity=(.55+Math.random()*.45).toFixed(2);
+    box.appendChild(s);
+  }
+</script>
+</body>
+</html>

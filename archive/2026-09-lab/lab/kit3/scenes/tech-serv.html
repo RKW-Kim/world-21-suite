@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE — TECHNICAL DIFFICULTY · FREEZE WALL</title>
+<!-- kit3 slot: tech-serv · DNA: s58 "serv" Swiss trade-finance brand wall (D2 #14) → Swiss freeze wall -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900; --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
+  --page:#0A0900; --panel:#141210; --card:#1C1914; --line:#2A251C; --text:#F5F1E6; --mut:#9C9484;
+  --spring:cubic-bezier(.34,1.56,.64,1); --snap:cubic-bezier(.85,0,.15,1); --glide:cubic-bezier(.2,.9,.25,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--page);overflow:hidden;font-family:'Archivo',sans-serif;color:var(--text)}
+body.obs, body.obs #stage{background:transparent}
+#fit{position:fixed;inset:0;overflow:hidden}
+#stage{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:50% 50%;
+  background:var(--page);padding:33px 48px;display:flex;flex-direction:column;gap:24px}
+
+/* ---------- type utilities ---------- */
+.caps{font:700 11px/1.3 'Archivo',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.mono{font-family:'IBM Plex Mono',monospace}
+.micro{font:500 11px/1 'IBM Plex Mono',monospace;color:var(--mut);letter-spacing:.08em}
+
+/* ---------- rolling digit cells ---------- */
+.rc{display:inline-block;overflow:hidden;height:1em;min-width:.58em;text-align:center}
+.rc.thin{min-width:.34em}
+.rc.wide{min-width:.9em}
+.rc.let{min-width:.64em}
+.rci{display:block;will-change:transform}
+.rg{display:block;height:1em;line-height:1}
+
+/* ---------- top strip ---------- */
+.strip{position:relative;flex:none;height:72px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--line);animation:stripIn .6s var(--glide) both}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .bface{width:26px;height:26px;flex:none}
+.brand .bmark{height:18px;width:auto;display:block}
+.brand .div{width:1px;height:18px;background:var(--line)}
+.strip-title{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;
+  font:800 13px/1 'Archivo',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--text)}
+.strip-right{display:flex;align-items:center;gap:18px}
+.help{font-size:11px;color:var(--mut);opacity:.9;letter-spacing:.02em}
+.help.off{display:none}
+.hud{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:10px 16px}
+.hud .caps{font-size:10px;letter-spacing:.16em}
+.hud-val{font:600 15px/1 'IBM Plex Mono',monospace;color:var(--text)}
+.tk-wm{width:42px;height:42px;opacity:.18;flex:none;margin:0 14px 0 4px}
+.tk-wm svg{width:100%;height:100%;display:block}
+.tk-rule{flex:none;width:1px;height:20px;background:var(--line);margin-right:20px}
+
+/* ---------- bento ---------- */
+.bento{flex:none;height:846px;display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(3,1fr);gap:24px}
+.tile{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  animation:snapIn .5s var(--snap) both;animation-delay:calc(120ms + var(--i)*75ms)}
+.status{overflow:visible;background:var(--card)}
+
+/* hero stat slab */
+.slab{grid-area:1/1/3/7;padding:34px 44px 38px;display:flex;flex-direction:column;justify-content:space-between}
+.slab-top{display:flex;justify-content:space-between;align-items:center}
+.num-wrap{position:relative;flex:1;min-height:0;overflow:hidden;margin:4px 0}
+.num{position:absolute;left:0;bottom:4px;font:800 280px/1 'Archivo',sans-serif;letter-spacing:-.02em;
+  color:var(--yellow);font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap;
+  transition:transform .5s var(--snap)}
+.num-live{position:absolute;left:0;bottom:34px;font:800 112px/1 'Archivo',sans-serif;letter-spacing:-.02em;
+  color:var(--yellow);white-space:nowrap;transform:translateY(200%);transition:transform .55s var(--snap);
+  text-shadow:0 0 22px rgba(255,206,0,.38)}
+.ldot{font-size:.4em;display:inline-block;margin-right:22px;vertical-align:middle;position:relative;top:-.08em}
+.on-live .num{transform:translateY(-115%)}
+.on-live .num-live{transform:translateY(0)}
+.slab-bottom .lab-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.slab-bottom [data-sub]{color:var(--text);font-size:13px;letter-spacing:.2em}
+.track{height:2px;background:var(--line)}
+.bar{display:block;width:67%;height:2px;background:var(--yellow)}
+
+/* face tile */
+.face-tile{grid-area:1/7/2/9;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.face-tile .bigface{width:150px;height:150px;animation:faceIn .7s var(--spring) .3s both}
+
+/* frozen status panels */
+.st-audio{grid-area:1/9/2/11}
+.st-feed{grid-area:2/7/3/9}
+.st-bitrate{grid-area:2/9/3/11}
+.status{display:flex;flex-direction:column;justify-content:space-between;padding:22px 24px 20px}
+.st-top{display:flex;justify-content:space-between;align-items:center}
+.st-val{font:800 46px/1 'Archivo',sans-serif;letter-spacing:-.01em;color:var(--text);font-variant-numeric:tabular-nums}
+.st-sub{font-size:11px;color:var(--mut);letter-spacing:.06em}
+.acc{flex:none;width:8px;height:8px;border-radius:50%}
+.acc-up{background:var(--up)}
+.acc-down{background:var(--down)}
+.acc-tick{width:16px;height:3px;border-radius:2px;background:var(--yellow)}
+
+/* wave tile */
+.wave{grid-area:3/7/4/11;padding:20px 24px}
+.wv-top{display:flex;justify-content:space-between;align-items:center}
+.wv-dots{position:absolute;left:24px;right:24px;bottom:18px;height:150px}
+
+/* spec sheet tile */
+.spec{grid-area:3/1/4/7;padding:8px 32px;display:flex;flex-direction:column;justify-content:center}
+.spec .row{display:flex;justify-content:space-between;align-items:center;height:55px}
+.spec .row + .row{border-top:1px solid var(--line)}
+.spec .val{font:500 20px/1 'IBM Plex Mono',monospace;color:var(--text);letter-spacing:.02em}
+
+/* dot-matrix art tile */
+.art{grid-area:1/11/4/13;padding:20px}
+.art-dots{position:absolute;inset:20px}
+.dot{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(156,148,132,.4);
+  transition:background .35s linear,opacity .35s linear}
+.dot.y{background:rgba(255,206,0,.92)}
+.dot.lit{background:#F5F1E6;opacity:1}
+
+/* vertical scanline: one grid row of bright dots sweeping down the art column (~6s) */
+.vscan{position:absolute;left:20px;top:20px;width:243px;height:3px;opacity:0;pointer-events:none;
+  animation:vfade 6s var(--glide) 1.8s infinite}
+.vscan-in{position:absolute;inset:0;animation:vmove 6s var(--glide) 1.8s infinite;will-change:transform}
+.vscan-in i{position:absolute;top:0;width:3px;height:3px;border-radius:50%;background:#F5F1E6}
+@keyframes vfade{0%{opacity:0}10%{opacity:.5}84%{opacity:.45}100%{opacity:0}}
+@keyframes vmove{0%{transform:translateY(0)}100%{transform:translateY(803px)}}
+
+/* floating label chips */
+.chip{position:absolute;z-index:6;background:var(--yellow);color:var(--ink);white-space:nowrap;
+  font:800 13px/1 'Archivo',sans-serif;letter-spacing:.1em;padding:10px 16px;border-radius:999px;
+  box-shadow:4px 4px 0 var(--ink);opacity:0;transform:rotate(var(--rot)) scale(0);
+  transition:transform .55s var(--spring),opacity .2s linear}
+.chip.in{opacity:1;transform:rotate(var(--rot)) scale(1)}
+.chip.bump{animation:bump .5s var(--spring)}
+/* chip centers ride the card border line (top/bottom edge), never the labels */
+.st-feed  .chip{top:-18px;left:-14px;--rot:-2deg}
+.st-audio .chip{top:-18px;right:-14px;--rot:1.5deg}
+.st-bitrate .chip{bottom:-18px;right:-14px;--rot:-2deg}
+
+/* live sweep */
+.sweep{position:absolute;top:0;bottom:0;left:-4px;width:4px;background:var(--yellow);opacity:0;z-index:40;pointer-events:none}
+.sweep.go{animation:sweepx .6s var(--snap) forwards}
+
+/* ticker */
+.ticker{flex:none;height:48px;border-top:1px solid var(--line);display:flex;align-items:center;overflow:hidden}
+.tk-track{display:flex;width:max-content;flex:none;animation:tick 30s linear infinite}
+.tk-half{display:flex;align-items:center;white-space:nowrap}
+.tki{font:700 13px/1 'Archivo',sans-serif;letter-spacing:.14em;color:var(--mut)}
+.tkd{color:var(--yellow);font-size:10px;margin:0 22px}
+
+/* ---------- keyframes ---------- */
+@keyframes stripIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes snapIn{0%{opacity:0;transform:translateY(16px) scale(.985)}62%{opacity:1;transform:translateY(-2px) scale(1)}100%{opacity:1;transform:none}}
+@keyframes faceIn{from{transform:scale(.92)}to{transform:scale(1)}}
+@keyframes bump{0%{transform:rotate(var(--rot)) scale(1)}45%{transform:rotate(var(--rot)) scale(1.14)}100%{transform:rotate(var(--rot)) scale(1)}}
+@keyframes mwait{0%{opacity:0}7%{opacity:1}38%{opacity:1}45%{opacity:0}100%{opacity:0}}
+.m-wait{opacity:0;animation:mwait 8s linear 1.2s infinite}
+@keyframes tick{to{transform:translateX(-50%)}}
+@keyframes sweepx{0%{opacity:.85;transform:translateX(0)}100%{opacity:0;transform:translateX(1928px)}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+  .chip{opacity:1;transform:rotate(var(--rot)) scale(1)}
+  .num{transform:none}
+  .vscan,.vscan-in{animation:none}
+  .vscan{opacity:0}
+}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+
+  <header class="strip" style="--i:0">
+    <div class="brand">
+      <span class="bface"><svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <svg class="bmark" viewBox="5 7.4 118 28" aria-label="smile wordmark"><style>.cls-0{fill:#E6E6E6}.cls-1{fill:#FFCE00}.cls-2{fill:#0A0900}</style><path class="cls-0" d="m46.9 18-6 0.7c-0.3-0.7-0.4-1.7-1.7-1.7-0.9 0-1.4 0.6-1.4 1.5s0.4 1.1 2.2 1.2c3.9 0.2 7.9 1.3 7.9 5.3 0 3.7-3.9 5.3-8.8 5.3-4.8 0-8.2-1.3-8.6-4.6l6.1-0.8c0.3 0.9 0.7 2.4 2.5 2.4 1.3 0 2.3-0.4 2.3-1.5 0-1.2-0.7-1.6-2.6-1.8-3.8-0.4-7.8-1.1-7.8-5.1 0-3.7 4.1-5 8.1-5 3.9 0 6.9 0.7 7.9 4"/><path class="cls-0" d="m70.7 14.6c0.9-0.4 1.9-0.6 3.1-0.6 3.2 0 5.5 1.5 5.5 5.6v10.7h-6.4v-10.4c-0.5-0.7-1-1.3-1.9-1.3-1.3 0-2.4 0.8-2.7 2.6v9.1h-6.3v-10.4c-0.4-0.6-1-1.2-1.9-1.3-1.3 0-2.4 0.7-2.7 2.6v9.1h-6.5v-16.3h5.9v2.2h0.2c1.4-1.4 3.2-2.2 5.7-2.3 1.9-0.1 3.9 0.7 4.9 2.3h0.4c0.9-0.7 1.7-1.3 2.7-1.6"/><path class="cls-0" d="m83.5 13.9h6.2v16.4h-6.2v-16.4zm0-6.4h6.2v4.1h-6.3l0.1-4.1z"/><polygon class="cls-0" points="93.8 7.5 100.4 7.5 100.4 30.3 93.8 30.3"/><path class="cls-0" d="m112.1 17.7c-1.7-0.1-2.9 1-3 2.5h6.2c-0.2-1.6-1.3-2.4-3.2-2.5m3.3 7.1 6.7 0.9c-1.3 2.5-3.7 4.6-9 4.6-4.8 0-9.5-1.7-9.5-8.1 0-3.2 1.8-8.3 9.2-8.2 7.8 0 9.3 4.4 9.3 9.1h-12.7c0 1.8 1.4 3.4 3.2 3.3 1.4 0 2.5-0.6 2.8-1.6"/><path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/><path class="cls-2" d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z"/><path class="cls-2" d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z"/><path class="cls-2" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z"/></svg>
+      <i class="div"></i>
+      <span class="caps">PODCAST + SCREEN SHARE</span>
+    </div>
+    <h1 class="strip-title" data-title>TECHNICAL DIFFICULTY — NOT YOUR FAULT</h1>
+    <div class="strip-right">
+      <span class="help mono off" id="help">V ART &middot; H HIDE</span>
+      <div class="hud"><span class="caps" data-hud-label>BACK IN</span><span class="hud-val" data-hud>--:--</span></div>
+    </div>
+  </header>
+
+  <main class="bento">
+    <section class="tile slab" style="--i:1">
+      <div class="slab-top"><span class="caps">SIGNAL RECOVERY</span><span class="micro">SIG/REC</span></div>
+      <div class="num-wrap">
+        <div class="num" data-num></div>
+        <div class="num-live"><span class="ldot">&#9679;</span>WE'RE LIVE</div>
+      </div>
+      <div class="slab-bottom">
+        <div class="lab-row"><span data-sub>RECONNECTING — SIGNAL</span><span class="micro" data-pctread>067/100</span></div>
+        <div class="track"><i class="bar" data-bar></i></div>
+      </div>
+    </section>
+
+    <section class="tile face-tile" style="--i:2">
+      <svg class="bigface" viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/><path class="m-wait" d="M 34 62 L 66 62" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="caps">STILL SMILING</span>
+    </section>
+
+    <section class="tile status st-audio" style="--i:3">
+      <span class="chip" data-chip="audio">RECONNECT <span data-chip-pct>67%</span></span>
+      <div class="st-top"><span class="caps">AUDIO</span><i class="acc acc-up"></i></div>
+      <div class="st-val">OK</div>
+      <div class="st-sub mono">MICS HOT</div>
+    </section>
+
+    <section class="tile status st-feed" style="--i:4">
+      <span class="chip" data-chip="feed"><span data-chip-feed>FEED PAUSED</span></span>
+      <div class="st-top"><span class="caps">FEED</span><i class="acc acc-tick"></i></div>
+      <div class="st-val">PAUSED</div>
+      <div class="st-sub mono">FRAME HOLD</div>
+    </section>
+
+    <section class="tile status st-bitrate" style="--i:5">
+      <span class="chip" data-chip="bitrate">HOLDING</span>
+      <div class="st-top"><span class="caps">BITRATE</span><i class="acc acc-down"></i></div>
+      <div class="st-val">0 KBPS</div>
+      <div class="st-sub mono">UPLINK IDLE</div>
+    </section>
+
+    <section class="tile wave" style="--i:6">
+      <div class="wv-top"><span class="caps">INPUT — FROZEN</span><span class="micro">CH-01</span></div>
+      <div class="wv-dots" data-wave></div>
+    </section>
+
+    <section class="tile spec" style="--i:7">
+      <div class="row"><span class="caps">EP</span><span class="val" data-ep>128</span></div>
+      <div class="row"><span class="caps">EAT</span><span class="val" data-eat>--:--:--</span></div>
+      <div class="row"><span class="caps">UNIT</span><span class="val">SMILE-01</span></div>
+      <div class="row"><span class="caps">MOOD</span><span class="val">PATIENT</span></div>
+    </section>
+
+    <section class="tile art" style="--i:8"><div class="art-dots" data-art></div><div class="vscan" data-vscan aria-hidden="true"><div class="vscan-in"></div></div></section>
+  </main>
+
+  <footer class="ticker">
+    <span class="tk-wm" id="wm"><svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <i class="tk-rule"></i>
+    <div class="tk-track"><div class="tk-half" data-tk></div><div class="tk-half" data-tk></div></div>
+  </footer>
+
+  <div class="sweep" data-sweep></div>
+
+</div></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)},$$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var qs=new URLSearchParams(location.search);
+
+/* ---------- params ---------- */
+var ep=parseInt(qs.get('ep'),10); if(!isFinite(ep)||ep<=0)ep=128;
+var titleOv=qs.get('title'),subOv=qs.get('sub');
+if(titleOv)$('[data-title]').textContent=titleOv.toUpperCase();
+if(subOv)$('[data-sub]').textContent=subOv.toUpperCase();
+$$('[data-ep]').forEach(function(n){n.textContent=String(ep)});
+if(qs.get('obs')==='1')document.body.classList.add('obs');
+if(qs.get('wm')==='0')$('#wm').style.display='none';
+
+/* ---------- roller (slide-up roll 420ms, staggered per cell) ---------- */
+function classify(ch){if(':. '.indexOf(ch)>=0)return' thin';if(ch==='%')return' wide';if(/[0-9]/.test(ch))return'';return' let'}
+function roll(el,txt,stag,dur){
+  txt=String(txt);stag=stag||45;dur=dur||420;
+  var prev=el.dataset.val;
+  if(prev===txt)return;
+  el.dataset.val=txt;
+  var ease='cubic-bezier(.2,.9,.25,1)';
+  if(RM||prev==null||prev.length!==txt.length){
+    el.textContent='';
+    Array.prototype.forEach.call(txt,function(ch,i){
+      var c=document.createElement('span');c.className='rc'+classify(ch);c.dataset.ch=ch;
+      var inn=document.createElement('span');inn.className='rci';
+      var g=document.createElement('span');g.className='rg';g.textContent=ch;
+      inn.appendChild(g);c.appendChild(inn);el.appendChild(c);
+      if(RM)return;
+      inn.style.transform='translateY(.55em)';inn.style.opacity='0';
+      requestAnimationFrame(function(){requestAnimationFrame(function(){
+        inn.style.transition='transform '+dur+'ms '+ease+' '+(i*stag)+'ms, opacity 240ms linear '+(i*stag)+'ms';
+        inn.style.transform='translateY(0)';inn.style.opacity='1';
+      })});
+    });
+    return;
+  }
+  Array.prototype.forEach.call(txt,function(ch,i){
+    var c=el.children[i]; if(!c)return;
+    var old=c.dataset.ch;
+    if(old===ch)return;
+    c.dataset.ch=ch;c.textContent='';
+    var inn=document.createElement('span');inn.className='rci';
+    var a=document.createElement('span');a.className='rg';a.textContent=old;
+    var b=document.createElement('span');b.className='rg';b.textContent=ch;
+    inn.appendChild(a);inn.appendChild(b);inn.style.transform='translateY(0)';
+    c.appendChild(inn);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      inn.style.transition='transform '+dur+'ms '+ease+' '+(i*stag)+'ms';
+      inn.style.transform='translateY(-1em)';
+    })});
+    setTimeout(function(){
+      if(c.dataset.ch!==ch)return;
+      c.textContent='';
+      var ni=document.createElement('span');ni.className='rci';
+      var g=document.createElement('span');g.className='rg';g.textContent=ch;
+      ni.appendChild(g);c.appendChild(ni);
+    },dur+i*stag+60);
+  });
+}
+
+/* ---------- countdown target: ?t=<seconds|ISO> ---------- */
+var target=null,startMs=null;
+var tRaw=qs.get('t');
+if(tRaw){
+  var ms=NaN;
+  if(/^\d{4}-\d{2}-\d{2}/.test(tRaw)){var d=new Date(tRaw);if(!isNaN(d.getTime()))ms=d.getTime()}
+  else{var n=Number(tRaw);if(isFinite(n))ms=Date.now()+Math.max(0,Math.round(n*1000))}
+  if(isFinite(ms))target=Math.max(ms,Date.now());
+}
+var STANDBY=(target===null);
+if(!STANDBY)startMs=Date.now();
+
+/* ---------- live state ---------- */
+var live=false;
+
+/* ---------- HUD chip ---------- */
+var hudVal=$('[data-hud]'),hudLab=$('[data-hud-label]'),lastHud='';
+function fmt(ms){
+  var s=Math.max(0,Math.ceil(ms/1000));
+  var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60,p=function(x){return String(x).padStart(2,'0')};
+  return h>0?h+':'+p(m)+':'+p(ss):p(m)+':'+p(ss);
+}
+function tickHud(){
+  if(live)return;
+  var v='--:--';
+  if(target!==null)v=fmt(target-Date.now());
+  if(v!==lastHud){lastHud=v;roll(hudVal,v,40,380)}
+  if(target!==null&&Date.now()>=target)goLive();
+}
+
+/* ---------- hero % engine ---------- */
+var numEl=$('[data-num]'),bar=$('[data-bar]'),chipPct=$('[data-chip-pct]'),pctRead=$('[data-pctread]');
+var START=67,pct=START;
+function targetPct(){
+  if(target===null)return START;
+  var total=target-startMs;
+  if(total<=0)return 100;
+  return START+(100-START)*Math.min(1,(Date.now()-startMs)/total);
+}
+function renderPct(){
+  roll(numEl,pct+'%',60,460);
+  roll(chipPct,pct+'%',40,380);
+  bar.style.width=Math.round(bar.parentNode.clientWidth*pct/100)+'px';
+  pctRead.textContent=String(pct).padStart(3,'0')+'/100';
+}
+function stepPct(){
+  if(live)return;
+  var fl=Math.floor(targetPct());
+  if(fl>pct){pct=Math.min(100,fl);renderPct()}
+  if(pct>=100&&target!==null&&Date.now()>=target-40){goLive();return}
+  setTimeout(stepPct,1100+Math.random()*900);
+}
+
+/* ---------- LIVE beat ---------- */
+var sweep=$('[data-sweep]');
+var chipFeed=$('[data-chip="feed"]'),chipAudio=$('[data-chip="audio"]'),chipBit=$('[data-chip="bitrate"]');
+var feedTxt=$('[data-chip-feed]');
+function goLive(){
+  if(live)return;live=true;
+  pct=100;renderPct();
+  document.body.classList.add('live');
+  setTimeout(function(){
+    $('.slab').classList.add('on-live');
+    if(!subOv)$('[data-sub]').textContent='SIGNAL 100% NOMINAL';
+  },420);
+  setTimeout(function(){
+    roll(feedTxt,'BACK',50,420);
+    chipFeed.classList.add('bump');
+    chipAudio.classList.remove('in');
+    chipBit.classList.remove('in');
+  },700);
+  sweep.classList.add('go');
+  hudLab.textContent='SIGNAL';
+  lastHud='';roll(hudVal,'NOMINAL',40,380);
+}
+
+/* ---------- EAT clock (UTC+3) ---------- */
+var eatEl=$('[data-eat]'),lastEat='';
+function eat(){
+  var d=new Date(Date.now()+3*3600e3),p=function(x){return String(x).padStart(2,'0')};
+  var v=p(d.getUTCHours())+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds());
+  if(v!==lastEat){lastEat=v;roll(eatEl,v,35,360)}
+}
+
+/* ---------- dot-matrix art tile ---------- */
+var artBox=$('[data-art]'),COLS=27,ROWS=89,PITCH=9;
+var colDots=[],scanIdx=0,artMode=0;
+function mb(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function buildArt(mode){
+  artBox.textContent='';colDots=[];for(var ci=0;ci<COLS;ci++)colDots.push([]);scanIdx=0;
+  var rnd=mb(20250921);
+  var cx=(COLS-1)/2,cy=(ROWS-1)/2;
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<COLS;i++)for(var j=0;j<ROWS;j++){
+    var dx=i-cx,dy=j-cy,r=Math.hypot(dx,dy),on=false;
+    if(mode===0){
+      if(r<=11.3){
+        on=true;
+        if(Math.hypot(Math.abs(dx)-4.3,dy+3.4)<=1.75)on=false;
+        else{var sy=Math.hypot(dx,dy-2.5);if(dy>=2.5&&sy>=5.6&&sy<=7.3)on=false}
+      }
+      if(!on&&r>11.3){
+        /* dotted signal bands above + below the glyph */
+        var bt=Math.round(ROWS*0.135),bb=Math.round(ROWS*0.865);
+        var ht=2+Math.round(2.4*Math.abs(Math.sin(i*0.5))+1.2*Math.abs(Math.sin(i*0.21+1)));
+        if(j<=bt&&bt-j<ht)on=true;
+        if(!on&&j>=bb&&j-bb<ht)on=true;
+        if(!on&&rnd()<0.02)on=true;
+      }
+    }else{
+      var rb=Math.round(ROWS*0.60);
+      var h=2+((i*13)%7===0?1:0)+((i*29)%11===0?1:0);
+      if(i>=12&&i<=14)h+=(i===13?8:4);
+      if(i>=40&&i<=41)h+=3;
+      on=(rb-j)>=0&&(rb-j)<h;
+    }
+    if(on){
+      var dd=document.createElement('i');
+      dd.className='dot'+(rnd()<0.10?' y':'');
+      dd.style.left=(i*PITCH)+'px';dd.style.top=(j*PITCH)+'px';
+      frag.appendChild(dd);colDots[i].push(dd);
+    }
+  }
+  artBox.appendChild(frag);
+}
+function scanTick(){
+  if(!colDots.length)return;
+  var pr=colDots[scanIdx];for(var k=0;k<pr.length;k++)pr[k].classList.remove('lit');
+  scanIdx=(scanIdx+1)%COLS;
+  var cur=colDots[scanIdx];for(var k2=0;k2<cur.length;k2++)cur[k2].classList.add('lit');
+}
+
+/* ---------- vertical scanline build (one bright dot-row, sweeps down ~6s) ---------- */
+(function buildVScan(){
+  var vs=$('[data-vscan]');if(!vs)return;
+  var row=vs.querySelector('.vscan-in')||vs;
+  var f=document.createDocumentFragment();
+  for(var i=0;i<COLS;i++){var d=document.createElement('i');d.style.left=(i*PITCH)+'px';f.appendChild(d)}
+  row.appendChild(f);
+})();
+
+/* ---------- frozen waveform tile (deterministic dot-matrix, CH-01) ---------- */
+(function buildWave(){
+  var box=$('[data-wave]'),frag=document.createDocumentFragment(),MID=72;
+  for(var i=0;i<88;i++){
+    var env=0.35+0.65*Math.abs(Math.sin(i*0.09+0.7));
+    var wob=Math.sin(i*0.53+1.1)*0.5+Math.sin(i*1.31)*0.28+Math.sin(i*2.7+2)*0.22;
+    var h=2+Math.round(env*(wob*0.5+0.5)*10);
+    for(var k=0;k<h;k++){
+      var d=document.createElement('i');
+      d.className='dot'+((h>=10&&(k===0||k===h-1))?' y':'');
+      d.style.left=(i*6.2)+'px';d.style.bottom=(MID-(h*6.2)/2+k*6.2)+'px';
+      frag.appendChild(d);
+    }
+  }
+  box.appendChild(frag);
+})();
+
+/* ---------- ticker ---------- */
+(function(){
+  var halves=$$('[data-tk]'),html='',r,i2;
+  var items=['EPISODE No. '+ep,'@smileke','smile.co.ke','#SmileSquad'];
+  for(r=0;r<4;r++)for(i2=0;i2<items.length;i2++)html+='<span class="tki">'+items[i2]+'</span><span class="tkd">&#9670;</span>';
+  halves.forEach(function(n){n.innerHTML=html});
+})();
+
+/* ---------- entry choreography ---------- */
+setTimeout(function(){renderPct()},420);                 /* hero numeral roll-up */
+setTimeout(function(){chipFeed.classList.add('in')},1000); /* chips spring-pop stagger */
+setTimeout(function(){chipAudio.classList.add('in')},1150);
+setTimeout(function(){chipBit.classList.add('in')},1300);
+setTimeout(stepPct,1400);
+eat();setInterval(eat,1000);
+tickHud();setInterval(tickHud,250);
+buildArt(0);
+if(!RM)setInterval(scanTick,220);                        /* scan sweep ≈ 6s period */
+if(STANDBY){
+  hudLab.textContent='STAND BY';
+  setTimeout(function(){
+    target=Date.now()+600000;startMs=Date.now();
+    hudLab.textContent='BACK IN';lastHud='';tickHud();
+  },3000);
+}
+
+/* ---------- keys: V art variant · H help ---------- */
+addEventListener('keydown',function(e){
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  var k=e.key.toLowerCase();
+  if(k==='h'){$('#help').classList.toggle('off')}
+  else if(k==='v'){artMode=(artMode+1)%2;buildArt(artMode)}
+});
+
+/* ---------- scale-to-fit ---------- */
+var stage=$('#stage');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='translate(-50%,-50%) scale('+s+')'}
+addEventListener('resize',fit);fit();
+})();
+</script>
+</body>
+</html>

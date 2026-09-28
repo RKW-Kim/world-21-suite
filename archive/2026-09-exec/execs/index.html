@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · executions — one design, five hands</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* hub override — smile-core.css is OBS-scene-grade (body overflow:hidden, 100vh stage);
+     the catalog is a scrolling page, so unlock scrolling here only */
+  body{overflow-y:auto;overflow-x:hidden}
+  .stage{height:auto;min-height:100vh;overflow:visible}
+  .page{position:relative;min-height:100vh;padding:72px 64px 120px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:64px}
+  .top .brand{font-size:34px}.top .brand .dw{width:42px;height:42px}
+  h1{font-family:var(--font-display);font-weight:800;font-size:88px;letter-spacing:-.035em;line-height:.96;max-width:1100px}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:20px;font-size:22px;color:#a8a8a8;max-width:760px;line-height:1.5}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+  .scene{margin-top:88px}
+  .shead{display:flex;align-items:baseline;gap:26px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:26px}
+  .shead h2{font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:-.01em}
+  .shead h2::before{content:"✦ ";color:var(--yellow)}
+  .shead p{color:var(--muted);font-size:14.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:22px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform .5s var(--ease-out),border-color .5s var(--ease-out)}
+  .card:hover{transform:translateY(-4px);border-color:rgba(255,193,7,.45)}
+  .shot{position:relative;aspect-ratio:16/9;background:#0d0d0d;cursor:pointer}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .shot iframe{position:absolute;inset:0;width:1920px;height:1080px;border:0;transform-origin:0 0;pointer-events:none}
+  .veil{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,transparent 40%,rgba(10,10,10,.72));opacity:0;transition:opacity .45s var(--ease-out)}
+  .shot:hover .veil{opacity:1}
+  .play{font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.14em;background:rgba(20,20,20,.9);border:1px solid rgba(255,193,7,.55);color:var(--yellow);border-radius:999px;padding:10px 20px}
+  .meta{padding:16px 18px 18px}
+  .lane{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.02em}
+  .lane i{font-style:normal;color:var(--ink);background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));border-radius:6px;padding:2px 7px;font-size:11px;letter-spacing:.12em;margin-right:8px;vertical-align:2px}
+  .desc{margin-top:6px;color:var(--muted);font-size:13.5px;line-height:1.45;min-height:38px}
+  .acts{margin-top:12px;display:flex;gap:10px}
+  .go,.open{font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.1em;border-radius:999px;padding:8px 16px;cursor:pointer;text-decoration:none}
+  .go{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));border:0;color:var(--ink)}
+  .open{border:1px solid var(--line);color:var(--paper);background:rgba(20,20,20,.86)}
+  .open:hover{border-color:rgba(255,193,7,.55);color:var(--yellow)}
+  .missing{display:grid;place-items:center;height:100%;color:var(--muted);font-size:13px}
+  .note{margin-top:80px;border-top:1px solid var(--line);padding-top:24px;color:var(--muted);font-size:13px;line-height:1.7;max-width:900px}
+  .note b{color:var(--paper)}
+</style></head>
+<body><div class="stage"><div class="bg"></div>
+  <span class="spark" style="left:8%;top:6%;--d:0s"></span><span class="spark" style="left:92%;top:12%;--d:1.4s;background:var(--up)"></span><span class="spark" style="left:84%;top:52%;--d:2.4s"></span><span class="spark" style="left:16%;top:78%;--d:3.2s;background:var(--sky)"></span>
+  <div class="page">
+    <div class="top">
+      <span class="brand"><span class="dw"><img src="smile-mark.svg" alt="smile" style="width:100%;height:100%"></span><b>smile</b></span>
+      <div class="chip dark">6 SCENES × 5 EXECUTIONS · 30 PAGES</div>
+    </div>
+    <h1 class="rise" style="--rd:.05s">one design,<br><span class="y">five hands</span>.</h1>
+    <p class="sub rise" style="--rd:.2s">Every scene keeps the original layout, copy and behavior — only the execution changes.
+    Pick a lane per scene, mix freely. 1911/2011: same gun, different grip, barrel and finish.</p>
+    <div class="legend rise" style="--rd:.35s"><span class="chip ghost">E1 · REFINERY</span><span class="chip ghost">E2 · MASS & SPRING</span><span class="chip ghost">E3 · MATERIAL STUDY</span><span class="chip ghost">E4 · TYPE IN MOTION</span><span class="chip ghost">E5 · AMBIENT CINEMA</span></div>
+    
+    <section class="scene">
+      <div class="shead"><h2>STARTING SOON</h2><p>Pre-market loading desk — orbit face, load bar, skyline.</p></div>
+      <div class="grid">
+      <div class="card" data-live="start-e1.html">
+        <div class="shot"><img src='thumbs/start-e1.jpg' alt='STARTING SOON — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="start-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="start-e2.html">
+        <div class="shot"><img src='thumbs/start-e2.jpg' alt='STARTING SOON — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="start-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="start-e3.html">
+        <div class="shot"><img src='thumbs/start-e3.jpg' alt='STARTING SOON — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="start-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="start-e4.html">
+        <div class="shot"><img src='thumbs/start-e4.jpg' alt='STARTING SOON — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="start-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="start-e5.html">
+        <div class="shot"><img src='thumbs/start-e5.jpg' alt='STARTING SOON — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="start-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <section class="scene">
+      <div class="shead"><h2>OPENING BELL</h2><p>Ring + tickmarks + 292px number. ?from=N, beeps, flash & endlogo at zero.</p></div>
+      <div class="grid">
+      <div class="card" data-live="countdown-e1.html">
+        <div class="shot"><img src='thumbs/countdown-e1.jpg' alt='OPENING BELL — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="countdown-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="countdown-e2.html">
+        <div class="shot"><img src='thumbs/countdown-e2.jpg' alt='OPENING BELL — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="countdown-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="countdown-e3.html">
+        <div class="shot"><img src='thumbs/countdown-e3.jpg' alt='OPENING BELL — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="countdown-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="countdown-e4.html">
+        <div class="shot"><img src='thumbs/countdown-e4.jpg' alt='OPENING BELL — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="countdown-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="countdown-e5.html">
+        <div class="shot"><img src='thumbs/countdown-e5.jpg' alt='OPENING BELL — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="countdown-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <section class="scene">
+      <div class="shead"><h2>BE RIGHT BACK</h2><p>Positions paused — buffer ring, breathing face, bounce dots.</p></div>
+      <div class="grid">
+      <div class="card" data-live="brb-e1.html">
+        <div class="shot"><img src='thumbs/brb-e1.jpg' alt='BE RIGHT BACK — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="brb-e2.html">
+        <div class="shot"><img src='thumbs/brb-e2.jpg' alt='BE RIGHT BACK — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="brb-e3.html">
+        <div class="shot"><img src='thumbs/brb-e3.jpg' alt='BE RIGHT BACK — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="brb-e4.html">
+        <div class="shot"><img src='thumbs/brb-e4.jpg' alt='BE RIGHT BACK — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="brb-e5.html">
+        <div class="shot"><img src='thumbs/brb-e5.jpg' alt='BE RIGHT BACK — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="brb-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <section class="scene">
+      <div class="shead"><h2>TECHNICAL DIFFICULTIES</h2><p>We're on it — reconnect ring, status chips (derived from BRB DNA).</p></div>
+      <div class="grid">
+      <div class="card" data-live="tech-e1.html">
+        <div class="shot"><img src='thumbs/tech-e1.jpg' alt='TECHNICAL DIFFICULTIES — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="tech-e2.html">
+        <div class="shot"><img src='thumbs/tech-e2.jpg' alt='TECHNICAL DIFFICULTIES — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="tech-e3.html">
+        <div class="shot"><img src='thumbs/tech-e3.jpg' alt='TECHNICAL DIFFICULTIES — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="tech-e4.html">
+        <div class="shot"><img src='thumbs/tech-e4.jpg' alt='TECHNICAL DIFFICULTIES — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="tech-e5.html">
+        <div class="shot"><img src='thumbs/tech-e5.jpg' alt='TECHNICAL DIFFICULTIES — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="tech-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <section class="scene">
+      <div class="shead"><h2>LIVE Q&A</h2><p>Ask us anything — editorial column, orbit mic meter (derived from START DNA).</p></div>
+      <div class="grid">
+      <div class="card" data-live="qa-e1.html">
+        <div class="shot"><img src='thumbs/qa-e1.jpg' alt='LIVE Q&amp;A — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="qa-e2.html">
+        <div class="shot"><img src='thumbs/qa-e2.jpg' alt='LIVE Q&amp;A — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="qa-e3.html">
+        <div class="shot"><img src='thumbs/qa-e3.jpg' alt='LIVE Q&amp;A — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="qa-e4.html">
+        <div class="shot"><img src='thumbs/qa-e4.jpg' alt='LIVE Q&amp;A — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="qa-e5.html">
+        <div class="shot"><img src='thumbs/qa-e5.jpg' alt='LIVE Q&amp;A — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="qa-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <section class="scene">
+      <div class="shead"><h2>SESSION CLOSED</h2><p>Asante for trading — confetti, disc spin, NEXT SESSION chip.</p></div>
+      <div class="grid">
+      <div class="card" data-live="end-e1.html">
+        <div class="shot"><img src='thumbs/end-e1.jpg' alt='SESSION CLOSED — REFINERY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E1</i> REFINERY</div><div class="desc">The original, retimed to its absolute ceiling. Zero structural change.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-e1.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="end-e2.html">
+        <div class="shot"><img src='thumbs/end-e2.jpg' alt='SESSION CLOSED — MASS & SPRING'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E2</i> MASS & SPRING</div><div class="desc">Hand-rolled rAF spring physics — every entrance settles like it has mass.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-e2.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="end-e3.html">
+        <div class="shot"><img src='thumbs/end-e3.jpg' alt='SESSION CLOSED — MATERIAL STUDY'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E3</i> MATERIAL STUDY</div><div class="desc">Same motion, different finish: glass, specular highlights, bloom, energy fills.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-e3.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="end-e4.html">
+        <div class="shot"><img src='thumbs/end-e4.jpg' alt='SESSION CLOSED — TYPE IN MOTION'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E4</i> TYPE IN MOTION</div><div class="desc">Kinetic typography — mask wipes, self-typing chips, odometer rolls.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-e4.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div>
+      <div class="card" data-live="end-e5.html">
+        <div class="shot"><img src='thumbs/end-e5.jpg' alt='SESSION CLOSED — AMBIENT CINEMA'>
+          <div class="veil"><span class="play">▶ LIVE PREVIEW</span></div>
+        </div>
+        <div class="meta"><div class="lane"><i>E5</i> AMBIENT CINEMA</div><div class="desc">The premium idle — parallax depth, light sweeps, glow tides. Always alive.</div>
+        <div class="acts"><button class="go">LOAD LIVE</button><a class="open" href="end-e5.html" target="_blank" rel="noopener">OPEN 1080p ↗</a></div></div>
+      </div></div>
+    </section>
+    <div class="note"><b>OBS:</b> add any page as a 1920×1080 Browser Source (works over file:// or Pages URL). Countdown supports <b>?from=N</b> seconds.
+    Shared spine: <b>smile-core.css</b> + <b>smile-mark.js</b> · official mark <b>smile-mark.svg</b> (verbatim crop of Smile-Logo.svg).<br>
+    Lanes: <b>E1 REFINERY</b> retimed original · <b>E2 MASS &amp; SPRING</b> physics entrances · <b>E3 MATERIAL STUDY</b> surface finishes · <b>E4 TYPE IN MOTION</b> kinetic type · <b>E5 AMBIENT CINEMA</b> living idle. Mesh any scene with any lane — the design never changes, the hand does.</div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.card').forEach(function(c){
+    var shot=c.querySelector('.shot'), url=c.dataset.live, live=false;
+    function mount(){
+      if(live)return; live=true;
+      var f=document.createElement('iframe'); f.src=url; f.loading='eager';
+      f.style.transform='scale('+ (shot.clientWidth/1920) +')';
+      shot.appendChild(f); shot.classList.add('is-live');
+    }
+    shot.addEventListener('click', mount);
+    c.querySelector('.go').addEventListener('click', function(e){e.stopPropagation();mount();});
+    window.addEventListener('resize', function(){
+      var f=shot.querySelector('iframe'); if(f) f.style.transform='scale('+ (shot.clientWidth/1920) +')';
+    });
+  });
+</script>
+</body></html>

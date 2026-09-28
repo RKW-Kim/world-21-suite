@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMILE · intermission</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html,body{width:100%;height:100%}
+  body{overflow:hidden}
+  [hidden]{display:none!important}
+
+  /* ---------- take gating ---------- */
+  .scn{position:absolute;inset:0;overflow:hidden}
+  body[data-v="a"] .scn[data-take="b"],
+  body[data-v="b"] .scn[data-take="a"]{display:none}
+
+  /* ---------- shared motion vocabulary ---------- */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+  @keyframes dotP{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}
+  @keyframes sheenX{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+  .y{color:var(--yellow)}
+  .g{color:var(--up);display:inline-block;animation:periodIn .9s var(--ease-spring) 1.15s backwards}
+  @keyframes periodIn{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+
+  .topbar{position:absolute;top:60px;left:110px;right:110px;display:flex;justify-content:space-between;align-items:center;z-index:7}
+  .topbar .brand{font-size:38px}
+  .topbar .brand .dw{width:46px;height:46px}
+  .chip .rdot{width:9px;height:9px;border-radius:50%;background:var(--down);box-shadow:0 0 10px rgba(246,70,93,.8);animation:dotP 1.6s ease-in-out infinite}
+  .chip .ydot{width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 10px rgba(255,193,7,.8);animation:dotP 1.6s ease-in-out infinite}
+
+  [data-cd-wrap] b{font-variant-numeric:tabular-nums;font-weight:800}
+  .chip[data-cd-wrap][data-done="1"]{opacity:.35}
+  [data-when-live] .chip{animation:popIn .55s var(--ease-spring) both}
+  @keyframes popIn{from{opacity:0;transform:translateY(16px) scale(.82)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+  /* ================= TAKE A · RUNDOWN GAUGE ================= */
+  .gaugewrap{position:absolute;left:290px;top:126px;width:380px;height:380px;z-index:3}
+  .gspin{position:absolute;inset:-26px;border:2px dashed rgba(255,193,7,.26);border-radius:50%;animation:spin 26s linear infinite}
+  .gauge{position:absolute;inset:0;width:100%;height:100%}
+  .gauge .track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:6}
+  .gauge .arc{fill:none;stroke:var(--yellow);stroke-width:10;stroke-linecap:round;stroke-dasharray:640.9 1068.2;stroke-dashoffset:0;transform:rotate(-90deg);transform-origin:190px 190px;filter:drop-shadow(0 0 10px rgba(255,193,7,.45));animation:arcDraw 1.4s var(--ease-out) .5s backwards}
+  @keyframes arcDraw{from{stroke-dashoffset:640.9}to{stroke-dashoffset:0}}
+  .gaugewrap .face{position:absolute;left:50%;top:50%;width:260px;height:260px;margin:-130px 0 0 -130px;animation:bob 5.4s ease-in-out infinite}
+  .gchip{position:absolute;left:90px;top:327px;transform:translate(-50%,-50%);padding:7px 15px;font-size:13px;animation:gFloat 3.4s ease-in-out infinite;z-index:4}
+  @keyframes gFloat{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-58%)}}
+
+  .glabel{position:absolute;left:110px;top:556px;width:740px;text-align:center;z-index:3}
+  .glabel h1{font:800 72px/1.02 var(--font-display);letter-spacing:-.03em}
+  .glabel .sub{margin-top:18px;font:500 24px/1.45 var(--font-body);color:#a8a8a8}
+  .glabel .socials{margin-top:26px;display:flex;justify-content:center;gap:12px}
+
+  .dq{position:absolute;left:1010px;right:110px;top:0;bottom:184px;display:flex;flex-direction:column;justify-content:center;z-index:3}
+  .dqhead{display:flex;align-items:center;gap:14px;font:800 15px var(--font-display);letter-spacing:.26em;text-transform:uppercase;color:#ececec;margin-bottom:6px}
+  .dqhead .dot{width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px rgba(255,193,7,.8);animation:dotP 1.6s ease-in-out infinite}
+  .dqhead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.18),transparent)}
+  .row{position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;padding:24px 28px;border-radius:20px;background:rgba(20,20,20,.66);border:1px solid var(--line);margin-top:16px}
+  .row.active{border-color:rgba(255,193,7,.55);background:linear-gradient(90deg,rgba(255,193,7,.10),rgba(20,20,20,.55) 62%)}
+  .row.active::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 32%,rgba(255,255,255,.08) 47%,transparent 62%);transform:translateX(-130%);animation:sheenX 5.5s ease-in-out 2.2s infinite}
+  .idx{width:54px;height:54px;flex:none;display:grid;place-items:center;border-radius:50%;font:800 18px var(--font-display);background:var(--panel-2);border:1px solid var(--line);color:var(--muted);animation:idxIdle 4.5s ease-in-out infinite}
+  @keyframes idxIdle{0%,100%{border-color:var(--line)}50%{border-color:rgba(255,193,7,.4)}}
+  .idx.on{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);border-color:transparent;animation:chipPulse 1.9s ease-in-out infinite}
+  @keyframes chipPulse{0%,100%{transform:scale(1);box-shadow:0 6px 24px rgba(255,193,7,.35)}50%{transform:scale(1.08);box-shadow:0 12px 36px rgba(255,193,7,.55)}}
+  .rt{flex:1;min-width:0}
+  .rt b{display:block;font:800 28px/1.1 var(--font-display);letter-spacing:-.015em}
+  .rt i{display:block;font:500 15px/1.4 var(--font-body);font-style:normal;color:#a8a8a8;margin-top:6px}
+  .tag{flex:none;font:800 11px var(--font-display);letter-spacing:.22em;text-transform:uppercase;color:var(--yellow);border:1px solid rgba(255,193,7,.55);background:rgba(255,193,7,.08);padding:8px 14px;border-radius:999px}
+  .tag.dim{color:var(--muted);border-color:var(--line);background:transparent}
+  .cdrow{position:absolute;right:0;bottom:0}
+  .wl-r{position:absolute;right:0;bottom:74px}
+  .chip.cd{font-size:18px;padding:12px 24px;gap:10px}
+
+  /* ================= TAKE B · EQUALIZER WALL ================= */
+  .topbar.b{top:40px;left:80px;right:80px}
+  .bheadline{position:absolute;left:0;right:0;top:122px;text-align:center;font:800 64px/1.05 var(--font-display);letter-spacing:-.03em;z-index:6}
+  .wallwrap{position:absolute;left:0;right:0;bottom:290px;z-index:2}
+  .wall{display:flex;justify-content:center;align-items:flex-end;gap:14px;height:580px}
+  .barw{position:relative;width:46px;height:var(--h);opacity:0;animation:barIn .7s var(--ease-out) forwards var(--bd,0s)}
+  @keyframes barIn{from{opacity:0;transform:scaleY(.05)}to{opacity:1;transform:scaleY(1)}}
+  .barw span{position:absolute;inset:0;border-radius:10px 10px 4px 4px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);transform-origin:50% 100%;animation:eq var(--bdur,1.8s) ease-in-out infinite}
+  @keyframes eq{0%,100%{transform:scaleY(1)}50%{transform:scaleY(var(--amp,.62))}}
+  .barw span::after{content:"";position:absolute;left:0;right:0;top:0;height:8px;border-radius:10px 10px 0 0;background:rgba(255,255,255,.16)}
+  .barw.hot span{box-shadow:0 0 36px rgba(255,193,7,.5)}
+  .floor{position:absolute;left:120px;right:120px;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,193,7,.45) 16%,rgba(255,193,7,.45) 84%,transparent);animation:floorG 4s ease-in-out infinite}
+  @keyframes floorG{0%,100%{opacity:1}50%{opacity:.55}}
+  .fl{position:absolute;bottom:-42px;font:600 12px var(--font-body);letter-spacing:.24em;text-transform:uppercase;color:#9a9a9a;white-space:nowrap}
+  .fl b{font-weight:inherit}
+  .fl-l{left:8vw}
+  .fl-r{right:8vw}
+
+  .hero{position:absolute;left:50%;top:505px;width:0;height:0;z-index:5}
+  .bob2{position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:280px;height:280px;animation:bobC 5s ease-in-out infinite}
+  @keyframes bobC{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% - 13px))}}
+  .halo{position:absolute;left:50%;top:50%;width:620px;height:620px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(8,8,8,.9) 0%,rgba(8,8,8,.5) 40%,rgba(8,8,8,0) 68%);animation:haloB 6s ease-in-out infinite}
+  @keyframes haloB{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.07);opacity:.82}}
+  .ring2{position:absolute;left:50%;top:50%;width:396px;height:396px;margin:-198px 0 0 -198px;border:2px dashed rgba(255,193,7,.3);border-radius:50%;animation:spin 30s linear infinite}
+  .hero .face{position:absolute;inset:0;width:280px;height:280px}
+
+  .eqd{display:inline-flex;align-items:flex-end;gap:3px;height:14px}
+  .eqd i{width:4px;border-radius:2px;background:var(--yellow);transform-origin:50% 100%;animation:eqd .9s ease-in-out infinite}
+  .eqd i:nth-child(1){height:7px}
+  .eqd i:nth-child(2){height:14px;background:var(--up);animation-delay:.15s}
+  .eqd i:nth-child(3){height:10px;background:var(--down);animation-delay:.3s}
+  @keyframes eqd{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+
+  .chipsrow{position:absolute;left:0;right:0;bottom:156px;display:flex;justify-content:center;align-items:center;gap:16px;z-index:6}
+  .chip.np{font-size:15px;padding:11px 22px;text-transform:none;letter-spacing:.04em}
+  .wl-c{position:absolute;left:0;right:0;bottom:214px;display:flex;justify-content:center;z-index:6}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;animation-delay:0s!important}
+    .spark{opacity:.75;animation:none}
+  }
+</style>
+</head>
+<body data-v="a">
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ============================ TAKE A · RUNDOWN GAUGE ============================ -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:9%;top:21%;--d:0s"></span>
+    <span class="spark" style="left:38%;top:11%;--d:1.3s;background:var(--up)"></span>
+    <span class="spark" style="left:87%;top:17%;--d:.7s;background:var(--down)"></span>
+    <span class="spark" style="left:64%;top:68%;--d:2.2s"></span>
+    <span class="spark" style="left:20%;top:80%;--d:3.1s;background:var(--sky)"></span>
+
+    <header class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.15s"><span class="ydot"></span>episode <b data-ep>128</b>&nbsp;· live podcast + screen share</span>
+    </header>
+
+    <div class="gaugewrap rise" style="--rd:.35s">
+      <div class="gspin"></div>
+      <svg class="gauge" viewBox="0 0 380 380" aria-hidden="true">
+        <circle class="track" cx="190" cy="190" r="170"/>
+        <circle class="arc" cx="190" cy="190" r="170" transform="rotate(-90 190 190)"/>
+      </svg>
+      <span class="chip dark gchip">60%</span>
+      <div class="face"></div>
+    </div>
+
+    <div class="glabel">
+      <h1 class="rise" style="--rd:.45s">part one <span class="y">wrapped</span><span class="g">.</span></h1>
+      <p class="sub rise" style="--rd:.55s">catch your breath — episode <span data-ep>128</span> continues in a moment.</p>
+      <div class="socials rise" style="--rd:.65s">
+        <span class="chip ghost">@smileke</span>
+        <span class="chip ghost">smile.co.ke</span>
+        <span class="chip ghost">#SmileSquad</span>
+      </div>
+    </div>
+
+    <div class="dq">
+      <div class="dqhead rise" style="--rd:.4s"><span class="dot"></span><span>up next</span><i class="rule"></i></div>
+      <div class="row active rise" style="--rd:.52s">
+        <span class="idx on">01</span>
+        <span class="rt"><b>requests round</b><i>your picks, our charts — the queue is open</i></span>
+        <span class="tag">next up</span>
+      </div>
+      <div class="row rise" style="--rd:.64s">
+        <span class="idx">02</span>
+        <span class="rt"><b>mailbag</b><i>letters, hot takes &amp; terrible puns from the squad</i></span>
+        <span class="tag dim">queued</span>
+      </div>
+      <div class="row rise" style="--rd:.76s">
+        <span class="idx">03</span>
+        <span class="rt"><b>part two</b><i>markets, mayhem &amp; the smile meter returns</i></span>
+        <span class="tag dim">queued</span>
+      </div>
+      <div class="wl-r" data-when-live hidden><span class="chip solid">● we're live — part two rolling</span></div>
+      <div class="cdrow rise" style="--rd:.88s"><span class="chip solid cd" data-cd-wrap>back in&nbsp;<b data-cd>10:00</b></span></div>
+    </div>
+
+    <div class="ticker" style="--tk-speed:46s">
+      <div class="tk"><span>✦ INTERMISSION</span><span>part one wrapped — nice work</span><span>up next · requests round</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>stretch · hydrate · come back smiling</span></div>
+      <div class="tk"><span>✦ INTERMISSION</span><span>part one wrapped — nice work</span><span>up next · requests round</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>stretch · hydrate · come back smiling</span></div>
+    </div>
+  </section>
+
+  <!-- ============================ TAKE B · EQUALIZER WALL ============================ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:6%;top:19%;--d:0s"></span>
+    <span class="spark" style="left:15%;top:62%;--d:1.6s;background:var(--sky)"></span>
+    <span class="spark" style="left:84%;top:15%;--d:.8s;background:var(--up)"></span>
+    <span class="spark" style="left:93%;top:50%;--d:2.4s;background:var(--down)"></span>
+    <span class="spark" style="left:70%;top:9%;--d:3.2s"></span>
+
+    <header class="topbar b">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <span class="chip dark rise" style="--rd:.15s"><span class="rdot"></span>on break</span>
+    </header>
+
+    <h1 class="bheadline rise" style="--rd:.12s">intermission — <span class="y">vibe</span> with us<span class="g">.</span></h1>
+
+    <div class="wallwrap rise" style="--rd:.3s">
+      <div class="wall">
+        <div class="barw" style="--h:220px;--c:var(--down);--bd:.50s;--bdur:1.8s;--amp:.60"><span></span></div>
+        <div class="barw" style="--h:340px;--c:var(--up);--bd:.56s;--bdur:1.5s;--amp:.66"><span></span></div>
+        <div class="barw" style="--h:260px;--c:#3b3b3b;--bd:.62s;--bdur:2.1s;--amp:.58"><span></span></div>
+        <div class="barw" style="--h:420px;--c:var(--up);--bd:.68s;--bdur:1.6s;--amp:.70"><span></span></div>
+        <div class="barw" style="--h:300px;--c:var(--down);--bd:.74s;--bdur:1.9s;--amp:.62"><span></span></div>
+        <div class="barw" style="--h:480px;--c:var(--up);--bd:.80s;--bdur:1.4s;--amp:.55"><span></span></div>
+        <div class="barw" style="--h:360px;--c:#3b3b3b;--bd:.86s;--bdur:2.0s;--amp:.68"><span></span></div>
+        <div class="barw" style="--h:540px;--c:var(--up);--bd:.92s;--bdur:1.7s;--amp:.60"><span></span></div>
+        <div class="barw hot" style="--h:580px;--c:var(--yellow);--bd:.98s;--bdur:2.2s;--amp:.50"><span></span></div>
+        <div class="barw" style="--h:540px;--c:#3b3b3b;--bd:1.04s;--bdur:1.7s;--amp:.60"><span></span></div>
+        <div class="barw" style="--h:360px;--c:var(--up);--bd:1.10s;--bdur:2.0s;--amp:.68"><span></span></div>
+        <div class="barw" style="--h:480px;--c:var(--down);--bd:1.16s;--bdur:1.4s;--amp:.55"><span></span></div>
+        <div class="barw" style="--h:300px;--c:var(--up);--bd:1.22s;--bdur:1.9s;--amp:.62"><span></span></div>
+        <div class="barw" style="--h:420px;--c:#3b3b3b;--bd:1.28s;--bdur:1.6s;--amp:.70"><span></span></div>
+        <div class="barw" style="--h:260px;--c:var(--up);--bd:1.34s;--bdur:2.1s;--amp:.58"><span></span></div>
+        <div class="barw" style="--h:340px;--c:var(--down);--bd:1.40s;--bdur:1.5s;--amp:.66"><span></span></div>
+      </div>
+      <div class="floor"></div>
+      <div class="fl fl-l">smile fm · intermission mix</div>
+      <div class="fl fl-r">ep <b data-ep>128</b> · 128 bpm</div>
+    </div>
+
+    <div class="hero rise" style="--rd:.55s">
+      <div class="bob2">
+        <div class="halo"></div>
+        <div class="ring2"></div>
+        <div class="face"></div>
+      </div>
+    </div>
+
+    <div class="wl-c" data-when-live hidden><span class="chip solid">● we're live — part two rolling</span></div>
+    <div class="chipsrow rise" style="--rd:.7s">
+      <span class="chip dark np"><span class="eqd"><i></i><i></i><i></i></span>lo-fi intermission mix</span>
+      <span class="chip solid cd" data-cd-wrap>back in&nbsp;<b data-cd>10:00</b></span>
+    </div>
+
+    <div class="ticker" style="--tk-speed:42s">
+      <div class="tk"><span>✦ LO-FI INTERMISSION</span><span>vibes courtesy of the smile squad</span><span>episode <b data-ep>128</b> resumes shortly</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>don't touch that dial</span></div>
+      <div class="tk"><span>✦ LO-FI INTERMISSION</span><span>vibes courtesy of the smile squad</span><span>episode <b data-ep>128</b> resumes shortly</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span><span>don't touch that dial</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/logo.js"></script><script src="assets/core.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  else { target=Date.now()+600000; } /* intermission default: 10:00 */
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+  var sky=document.getElementById('skyline'),cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
+  for(var i=0;i<26;i++){var c=document.createElement('span');c.className='cndl';c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';c.style.height=(70+Math.random()*240)+'px';c.style.background=cols[i%6];c.style.setProperty('--d',(0.6+i*0.06)+'s');sky.appendChild(c);}
+  setTimeout(function(){ if(window.smileMood) window.smileMood('wink',900); },2100);
+  var moods=['bounce','nod'],mi=0;
+  setInterval(function(){ if(window.smileMood){ window.smileMood(moods[mi%2],1000); mi++; } },9000);
+</script>
+</body>
+</html>

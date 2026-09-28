@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · end · REFINERY</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= REFINERY — the original, executed to its ceiling =================
+       Zero structural change, zero engine change. Expo-out family everywhere, one
+       orchestrated cascade, hairline glows, confetti given real depth (two parallax
+       layers, far layer blurred), disc spin retimed into an eased settle + idle bob. */
+
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+    h1{font-family:var(--font-display);font-weight:800;font-size:148px;letter-spacing:-.035em;line-height:.95;text-shadow:0 1px 0 rgba(255,255,255,.05)}
+    h1 .y{color:var(--yellow)}
+    .discbig{width:150px;height:150px;margin:2px 0 4px;filter:drop-shadow(0 20px 50px rgba(255,193,7,.3))}
+    .sub{font-size:26px;font-weight:500;color:#a8a8a8;max-width:760px;line-height:1.45}
+    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:15px;margin-top:6px}
+    .chip{font-variant-numeric:tabular-nums}
+
+    /* ---- orchestrated entrance cascade (expo-out, deliberate rhythm, no dead air) ---- */
+    @keyframes riseIn{from{opacity:0;transform:translate3d(0,var(--ry,26px),0)}to{opacity:1;transform:translate3d(0,0,0)}}
+    .rise{animation-duration:1.05s;animation-timing-function:cubic-bezier(.19,1,.22,1)}
+    .wrap>span.chip.ghost.rise{--ry:-20px;--rd:.02s}   /* the seal descends from above */
+    .wrap>h1.rise{--ry:34px;--rd:.14s}
+    .wrap>div.rise{--ry:18px;--rd:.28s}
+    .sub.rise{--ry:26px;--rd:.44s}
+    .socials.rise{animation:none;opacity:1}            /* container hands off to its chips */
+    .socials .chip{--ry:20px}
+    .socials .chip:nth-child(1){--rd:.60s}
+    .socials .chip:nth-child(2){--rd:.70s}
+    .socials .chip:nth-child(3){--rd:.80s}
+    .next.rise{--ry:16px;--rd:.94s}
+
+    /* ---- hairline micro-polish ---- */
+    .chip.ghost{box-shadow:0 0 0 1px rgba(255,193,7,.12),0 6px 22px rgba(255,193,7,.08)}
+    .chip.dark{box-shadow:0 6px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)}
+    .chip.solid{box-shadow:0 10px 30px rgba(255,193,7,.32),inset 0 1px 0 rgba(255,255,255,.35)}
+
+    /* ---- disc: mood "spin" retimed — full eased revolution settling into idle bob ---- */
+    svg.disc.smile-anim.spin{animation:exSpin 1.5s cubic-bezier(.19,1,.22,1) .32s both,exBob 6s ease-in-out 2.2s infinite;will-change:transform}
+    @keyframes exSpin{from{transform:rotate(-360deg) scale(.6)}to{transform:rotate(0deg) scale(1)}}
+    @keyframes exBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+    /* ---- confetti with depth: near plane crisp, far plane blurred + slower ---- */
+    .cf{position:absolute;top:-60px;border-radius:4px;animation:fall linear infinite;will-change:transform}
+    .cf.far{filter:blur(2.4px)}
+    @keyframes fall{to{transform:translate3d(var(--sx,0px),var(--sy,1200px),0) rotate(var(--rr,560deg))}}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div><div id="confetti"></div>
+  <div class="wrap">
+    <span class="chip ghost rise" style="--rd:.02s">✓ MARKET CLOSED</span>
+    <h1 class="rise" style="--rd:.14s">session <span class="y">closed</span>.</h1>
+    <div class="rise" style="--rd:.28s"><svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+      <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+    </svg></div>
+    <p class="sub rise" style="--rd:.44s">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+    <div class="socials rise" style="--rd:.60s"><span class="chip dark rise" style="--rd:.60s">▶ YouTube · /smileke</span><span class="chip dark rise" style="--rd:.70s">◉ Twitch · /smileke</span><span class="chip dark rise" style="--rd:.80s">♪ TikTok · @smileke</span></div>
+    <span class="chip solid next rise" style="--rd:.94s">NEXT SESSION · FRIDAY 8PM EAT</span>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  /* confetti: 42 pieces on two parallax planes — 26 far (blurred, slow, dim) / 16 near (crisp, fast, bold) */
+  const cols=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'],box=document.getElementById('confetti');
+  for(let i=0;i<42;i++){
+    const far=i%8<5,s=document.createElement('span');
+    s.className='cf'+(far?' far':'');
+    s.style.left=Math.random()*100+'%';
+    s.style.background=cols[i%cols.length];
+    s.style.animationDuration=(far?6.5+Math.random()*4:3.8+Math.random()*2.8)+'s';
+    s.style.animationDelay=-(Math.random()*8)+'s'; /* negative delay: sky already populated at frame one */
+    s.style.width=(far?7+Math.random()*6:10+Math.random()*8)+'px';
+    s.style.height=(far?14+Math.random()*9:19+Math.random()*13)+'px';
+    s.style.setProperty('--sx',(far?Math.random()*120-60:Math.random()*200-100)+'px');
+    s.style.setProperty('--sy',(far?1200:1230)+'px');
+    s.style.setProperty('--rr',(420+Math.random()*340)+'deg');
+    s.style.opacity=(far?.22+Math.random()*.2:.62+Math.random()*.38).toFixed(2);
+    box.appendChild(s);
+  }
+</script>
+</body>
+</html>

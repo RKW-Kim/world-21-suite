@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · open floor — transmission feed</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!--
+  SMILE · Q&A / OPEN FLOOR — a · TRANSMISSION FEED
+  split: left keynote type / right TX question deck cycling forever
+  ?q= injects a priority question card (textContent only — XSS safe) · ?ep= episode tag
+  ticker: live Binance prices w/ random-walk fallback · EAT clock in right cap
+-->
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.num{font-variant-numeric:tabular-nums;}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+/* ═══ 1920×1080 stage, scales to any window ═══ */
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;
+  transform:translate(-50%,-50%);transform-origin:50% 50%;background:var(--bg);overflow:hidden;}
+
+/* ═══ ambient — one system: dot grid + room light ═══ */
+.ambient{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.dots{position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 42% 42%,#000 26%,transparent 80%);
+          mask-image:radial-gradient(ellipse at 42% 42%,#000 26%,transparent 80%);}
+.roomlight{position:absolute;inset:0;
+  background:radial-gradient(ellipse 58% 48% at 28% 30%,rgba(255,193,7,.05),transparent 68%),
+             radial-gradient(ellipse 40% 40% at 78% 56%,rgba(255,255,255,.028),transparent 70%);}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%);}
+
+/* ═══ top-right cluster ═══ */
+.toptop{position:absolute;top:36px;right:56px;z-index:8;display:flex;align-items:center;gap:10px;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.55s both;}
+.lamp{position:relative;display:inline-flex;align-items:center;gap:10px;border-radius:999px;
+  border:1px solid rgba(246,70,93,.42);background:rgba(246,70,93,.06);padding:9px 18px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.3em;color:var(--down);}
+.lamp .halo{position:absolute;inset:-8px;border-radius:999px;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(246,70,93,.2),transparent 70%);
+  animation:lampb 3.4s ease-in-out infinite;}
+@keyframes lampb{0%,100%{opacity:.55;transform:scale(.96);}50%{opacity:1;transform:scale(1.05);}}
+.ldot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--down);}
+.ldot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.7s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.75;}80%,100%{transform:scale(2.7);opacity:0;}}
+.epchip{display:inline-flex;align-items:center;border-radius:999px;border:1px solid rgba(255,193,7,.35);
+  background:rgba(255,193,7,.05);padding:9px 16px;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.26em;color:var(--muted);}
+.epchip b{color:var(--yellow);font-weight:600;margin-right:8px;}
+
+/* ═══ split ═══ */
+.split{position:absolute;inset:66px 0 66px 0;display:flex;z-index:3;}
+
+/* LEFT — keynote */
+.kleft{width:45%;display:flex;flex-direction:column;justify-content:center;gap:30px;padding:0 24px 30px 88px;}
+.eyebrow{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);color:var(--yellow);
+  padding:8px 17px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.5s both;}
+.eyebrow .dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow);}
+.eyebrow .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite;}
+.kk{font-family:var(--font-display);font-weight:800;font-size:150px;line-height:.94;letter-spacing:-.025em;}
+.kk span{display:block;animation:wordup .85s cubic-bezier(.16,.84,.28,1) both;}
+.kk .w1{animation-delay:-.75s;} .kk .w2{animation-delay:-.66s;} .kk .w3{animation-delay:-.55s;}
+.kk .zl{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.kk .yl{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 28px rgba(255,193,7,.3));background-size:200% 100%;
+  animation:wordup .85s cubic-bezier(.16,.84,.28,1) -.55s both,shimmer 3.4s linear 1.4s infinite;}
+@keyframes wordup{from{opacity:0;transform:translateY(52px);}to{opacity:1;transform:none;}}
+@keyframes shimmer{to{background-position:-200% 0;}}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+.subrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.35s both;}
+.chipx{border-radius:999px;border:1px solid var(--border);background:rgba(9,9,11,.6);
+  padding:9px 16px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;
+  color:var(--muted);text-transform:uppercase;white-space:nowrap;}
+.chipx b{color:var(--fg);font-weight:600;}
+.mic{display:inline-flex;align-items:center;gap:10px;border-radius:999px;
+  border:1px solid rgba(246,70,93,.48);background:rgba(246,70,93,.07);padding:9px 18px;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.3em;color:var(--down);}
+.mic .d{position:relative;width:8px;height:8px;border-radius:50%;background:var(--down);}
+.mic .d::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.5s cubic-bezier(0,0,.2,1) infinite;}
+.kfoot{display:flex;align-items:center;gap:14px;animation:riseIn .9s cubic-bezier(.2,.9,.3,1) -.18s both;}
+.kfoot .rule{width:64px;height:1px;background:var(--border2);}
+.kfoot span{font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;color:var(--faint);text-transform:uppercase;}
+.kfoot b{color:var(--yellow);font-weight:600;}
+
+/* RIGHT — TX deck */
+.kright{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px;
+  padding:0 88px 26px 30px;}
+.deckhead{width:660px;display:flex;align-items:baseline;justify-content:space-between;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.4s both;}
+.deckhead .l{color:var(--muted);}
+.deckhead .l i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--yellow);
+  margin-right:10px;animation:softpulse 1.3s infinite;}
+.deckhead .r{color:var(--faint);}
+.deckhead .r b{color:var(--yellow);font-weight:600;}
+@keyframes softpulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.deckwin{position:relative;width:660px;height:372px;overflow:hidden;
+  animation:riseIn .9s cubic-bezier(.2,.9,.3,1) -.3s both;}
+.ghost{position:absolute;border-radius:12px;border:1px solid rgba(39,39,42,.85);
+  background:rgba(13,13,16,.42);}
+.ghost.g1{left:22px;right:22px;bottom:0;height:340px;}
+.ghost.g2{left:44px;right:44px;bottom:0;height:318px;opacity:.6;}
+.txcard{position:absolute;left:0;right:0;bottom:6px;border-radius:12px;padding:24px 28px 22px;
+  background:rgba(16,16,19,.92);border:1px solid var(--border);
+  box-shadow:0 20px 46px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:cardIn .74s cubic-bezier(.16,.84,.28,1) both;}
+.txcard.prio{border-color:rgba(255,193,7,.55);
+  box-shadow:0 20px 46px rgba(0,0,0,.52),0 0 30px rgba(255,193,7,.13),inset 0 1px 0 rgba(255,255,255,.05);}
+.txcard.out{animation:cardOut .72s cubic-bezier(.5,.02,.24,1) both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(122%);}to{opacity:1;transform:none;}}
+@keyframes cardOut{from{opacity:1;transform:none;}to{opacity:0;transform:translateY(-126%);}}
+.tx-hd{display:flex;align-items:center;gap:16px;}
+.tx-id{font-family:var(--font-mono);font-weight:600;font-size:11.5px;letter-spacing:.24em;color:var(--yellow);}
+.tx-handle{font-family:var(--font-body);font-weight:600;font-size:16px;color:var(--fg);}
+.tx-tag{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.22em;color:var(--yellow);
+  border:1px solid rgba(255,193,7,.4);border-radius:999px;padding:3px 9px;}
+.sig{margin-left:auto;display:flex;align-items:flex-end;gap:3px;height:18px;}
+.sig i{width:4px;height:100%;border-radius:1px;background:var(--yellow);opacity:.9;
+  transform-origin:bottom;animation:sigw 1.05s ease-in-out infinite alternate;}
+@keyframes sigw{from{transform:scaleY(.22);}to{transform:scaleY(1);}}
+.tx-q{margin:20px 0 22px;font-family:var(--font-display);font-weight:600;font-size:35px;
+  line-height:1.22;letter-spacing:-.015em;color:var(--fg);}
+.tx-ft{display:flex;align-items:center;gap:16px;}
+.tx-sig{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.22em;color:var(--muted);}
+.hairtrack{position:relative;flex:1;height:2px;border-radius:1px;background:rgba(255,255,255,.07);overflow:hidden;}
+.hairfill{position:absolute;inset:0;border-radius:1px;transform-origin:left;
+  background:linear-gradient(90deg,var(--yellow-hot),#FFDE7A);}
+.deckfoot{width:660px;display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--faint);animation:riseIn .9s cubic-bezier(.2,.9,.3,1) -.2s both;}
+.deckfoot b{color:var(--muted);font-weight:500;}
+
+/* ═══ TICKER ═══ */
+.ticker{position:absolute;left:0;right:0;bottom:0;height:66px;z-index:9;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.95);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 24px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.18em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.65)) drop-shadow(0 0 5px rgba(0,0,0,.5));}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.85);font-family:var(--font-mono);font-weight:500;font-size:10.5px;letter-spacing:.2em;}
+.tmask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);font-weight:500;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted);}
+.item::before{content:"✦";color:var(--yellow);margin-right:16px;font-size:10px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price{gap:9px;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.06em;}
+.item.price .pc{font-size:10px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(5px);opacity:.1;}100%{transform:none;opacity:1;}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;}
+  .kk .yl{filter:none;}
+}
+</style>
+</head>
+
+<body>
+<div id="stage">
+
+  <div class="ambient" aria-hidden="true">
+    <div class="dots"></div>
+    <div class="roomlight"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <!-- top-right: ON AIR lamp + episode -->
+  <div class="toptop">
+    <span class="lamp"><span class="halo"></span><span class="ldot"></span>ON AIR</span>
+    <span class="epchip"><b>EP·<span id="epc" class="num">128</span></b><span>OPEN FLOOR</span></span>
+  </div>
+
+  <main class="split">
+    <!-- LEFT · keynote -->
+    <section class="kleft">
+      <span class="eyebrow"><span class="dot"></span>Open Comms · Channel 01</span>
+      <h1 class="kk"><span class="zl w1">ASK</span><span class="zl w2">ME</span><span class="yl w3">ANYTHING.</span></h1>
+      <div class="subrow">
+        <span class="chipx">drop it in <b>chat</b></span>
+        <span class="chipx"><b>@smileke</b></span>
+        <span class="chipx"><b>#SmileSquad</b></span>
+      </div>
+      <div class="subrow" style="animation-delay:-.25s;">
+        <span class="mic"><span class="d"></span>MIC HOT</span>
+      </div>
+      <div class="kfoot"><span class="rule"></span><span>every question gets air time — <b>no dumb ones</b></span></div>
+    </section>
+
+    <!-- RIGHT · TX deck -->
+    <section class="kright">
+      <div class="deckhead">
+        <span class="l"><i></i>Incoming transmissions</span>
+        <span class="r">QUEUE · <b class="num">06</b></span>
+      </div>
+      <div class="deckwin" id="deckwin">
+        <div class="ghost g1"></div>
+        <div class="ghost g2"></div>
+        <!-- TX cards injected here -->
+      </div>
+      <div class="deckfoot">
+        <span>TX FEED · <b>AUTO-CYCLING</b></span>
+        <span>ROOM LISTENING</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ ticker ═══ -->
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></span>
+      <span>SMILE · OPEN FLOOR</span>
+    </div>
+    <div class="tmask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>ask me anything</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item">drop it in <b>chat</b></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item">mic hot — <b>be nice</b></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item"><b>#SmileSquad</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>ask me anything</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item">drop it in <b>chat</b></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item">mic hot — <b>be nice</b></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item"><b>#SmileSquad</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">ROOM LISTENING · <span id="eat1" class="num">00:00:00</span> EAT</div>
+  </footer>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── fit 1920×1080 canvas to any window (event-driven, never in rAF) ── */
+  var stage=document.getElementById('stage');
+  function fit(){
+    var s=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    stage.style.transform='translate(-50%,-50%) scale('+s+')';
+  }
+  window.addEventListener('resize',fit);fit();
+
+  /* ── URL contract: ?ep=128 · ?q= custom question (textContent only) ── */
+  var sp=new URLSearchParams(location.search);
+  var EP=parseInt(sp.get('ep'),10);
+  if(!isFinite(EP)||EP<1||EP>9999)EP=128;
+  document.getElementById('epc').textContent=String(EP);
+  var rawQ=(sp.get('q')||'').replace(/\s+/g,' ').trim().slice(0,120);
+
+  /* ── EAT clock (UTC+3, tz-independent) ── */
+  function pad(n){return (n<10?'0':'')+n;}
+  function eatStr(){
+    var d=new Date();
+    var s=(d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds()+3*3600)%86400;
+    return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60);
+  }
+  var eat1=document.getElementById('eat1');
+  function tick(){eat1.textContent=eatStr();}
+  tick();setInterval(tick,1000);
+
+  /* ── ticker marquee (transform-only, hidden-aware, no reads in rAF) ── */
+  var track=document.getElementById('tkTrack');
+  if(track&&!RM){
+    var seq=track.children[0],W=0,x=0,last=performance.now();
+    function measure(){W=seq.getBoundingClientRect().width;}
+    measure();window.addEventListener('resize',measure);
+    (function step(now){
+      var dt=Math.min(50,now-last);last=now;
+      if(!document.hidden&&W>0){
+        x-=dt*0.055;if(-x>=W)x+=W;
+        track.style.transform='translateX('+x+'px)';
+      }
+      requestAnimationFrame(step);
+    })(last);
+  }
+
+  /* ── live prices: Binance catch → random walk (5s, tick flash) ── */
+  var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+  function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function setPrice(key,val,pct){
+    var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+    var list=document.querySelectorAll('[data-sym="'+key+'"]');
+    for(var i=0;i<list.length;i++){
+      var el=list[i],pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+      pv.textContent=fmtP(val);
+      if(pct!=null){
+        pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+        pc.className='pc num '+(pct>=0?'up':'down');
+      }
+      if(changed){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+    }
+  }
+  function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+  function prices(){
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){
+        list.forEach(function(t){
+          var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+          if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+        });
+        kesWalk();
+      })
+      .catch(function(){
+        setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+        setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+        setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+        kesWalk();
+      });
+  }
+  setInterval(prices,5000);prices();
+
+  /* ── TX question deck — slide in, hold ~4s, file away, forever ── */
+  var POOL=[
+    {h:'@dennoh',    q:'screen share setup tour?'},
+    {h:'@wanjiku_t', q:'hot takes round when?'},
+    {h:'@nrb_bull',  q:"best part of today's ep?"},
+    {h:'@shay_fx',   q:'mt5 or web terminal?'},
+    {h:'@tiwi_trades',q:'how do you size a position?'},
+    {h:'@zedfx_ke',  q:'coffee or chai while trading?'}
+  ];
+  var win=document.getElementById('deckwin');
+  var txN=1,poolI=0,prioQ=rawQ?{q:rawQ}:null;
+
+  function makeCard(tx,handle,q,sig,prio){
+    var c=document.createElement('article');
+    c.className='txcard'+(prio?' prio':'');
+    var hd=document.createElement('div');hd.className='tx-hd';
+    var id=document.createElement('span');id.className='tx-id num';id.textContent=tx;
+    var h=document.createElement('span');h.className='tx-handle';h.textContent=handle;
+    hd.appendChild(id);hd.appendChild(h);
+    if(prio){var tg=document.createElement('span');tg.className='tx-tag';tg.textContent='PRIORITY';hd.appendChild(tg);}
+    var bars=document.createElement('span');bars.className='sig';
+    for(var i=0;i<4;i++){var b=document.createElement('i');b.style.animationDelay=(i*.14)+'s';bars.appendChild(b);}
+    hd.appendChild(bars);
+    var bd=document.createElement('div');bd.className='tx-q';bd.textContent='\u201C'+q+'\u201D';
+    var ft=document.createElement('div');ft.className='tx-ft';
+    var sg=document.createElement('span');sg.className='tx-sig num';sg.textContent='SIG '+sig+'%';
+    var tr=document.createElement('span');tr.className='hairtrack';
+    var fl=document.createElement('span');fl.className='hairfill';fl.style.transform='scaleX('+(sig/100)+')';
+    tr.appendChild(fl);ft.appendChild(sg);ft.appendChild(tr);
+    c.appendChild(hd);c.appendChild(bd);c.appendChild(ft);
+    return c;
+  }
+
+  function nextCard(){
+    var handle,q,sig,prio=false;
+    if(prioQ){q=prioQ.q;handle='@chat';sig=99;prio=true;prioQ=null;}
+    else{
+      var p=POOL[poolI%POOL.length];poolI++;
+      handle=p.h;q=p.q;sig=91+((poolI*7)%9);
+    }
+    var tx='TX\u00B7'+String(txN).padStart(2,'0');txN++;
+    var card=makeCard(tx,handle,q,sig,prio);
+    if(txN===2)card.style.animationDelay='-.3s'; /* first card mid-flight at frame one */
+    win.appendChild(card);
+    if(RM)return; /* reduced motion: composed static frame, first card only */
+    setTimeout(function(){card.classList.add('out');},5150);
+    setTimeout(function(){
+      card.remove();
+      setTimeout(nextCard,180);
+    },5980);
+  }
+  nextCard();
+})();
+</script>
+</body>
+</html>

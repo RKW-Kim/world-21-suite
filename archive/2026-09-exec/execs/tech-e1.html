@@ -1,0 +1,90 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · TECH · REFINERY</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ============ TECH BASE (derived from brb skeleton — frozen) ============ */
+  body{font-variant-numeric:tabular-nums}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:60px}
+  .field{position:absolute;inset:0}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07)}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+  .prog{fill:none;stroke:var(--yellow);stroke-width:7;stroke-linecap:round;stroke-dasharray:1046.15;stroke-dashoffset:1043;filter:drop-shadow(0 0 12px rgba(255,193,7,.35))}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;max-width:880px;font-size:26px;font-weight:500;color:#a8a8a8;text-wrap:balance}
+  .chips{margin-top:36px;display:flex;gap:14px;align-items:center}
+  .bnc{margin-top:32px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:bdot 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes bdot{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  /* pre-upgrade fallback face (smile-mark.js swaps innerHTML) */
+  .face .eye{position:absolute;top:33%;width:14px;height:19px;border-radius:50%;background:#0b0b0b}
+  .face .eye.l{left:29%}.face .eye.r{right:29%}
+  .face svg.mouth{position:absolute;left:50%;top:50%;width:58%;transform:translateX(-50%)}
+  .face svg.mouth path{fill:none;stroke:#0b0b0b;stroke-width:10.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ E1 · REFINERY — the original executed to its ceiling ============
+     expo-out family everywhere · one orchestrated cascade · eased sheen pass per
+     reconnect cycle · hairline micro-glows · zero structural change. */
+
+  /* retime the cascade: every .rise lands in deliberate rhythm, no dead air */
+  .rise{animation-duration:1.05s;animation-timing-function:cubic-bezier(.19,1,.22,1)}
+  h1 .y{text-shadow:0 0 1px rgba(255,193,7,.45)}
+
+  /* reconnect fill: symmetric ease segments — fills, holds "connected", soft reset */
+  .prog{animation:reconnect 7.2s infinite;animation-timing-function:cubic-bezier(.55,.08,.45,.92)}
+  @keyframes reconnect{
+    0%   {stroke-dashoffset:1043;opacity:1}
+    62%  {stroke-dashoffset:0}
+    80%  {stroke-dashoffset:0;opacity:1;animation-timing-function:cubic-bezier(.45,0,.55,1)}
+    92%  {stroke-dashoffset:0;opacity:0;animation-timing-function:linear}
+    100% {stroke-dashoffset:1043;opacity:0}
+  }
+
+  /* sheen pass: one eased lap of light along the ring, synced to the cycle */
+  .sheen{fill:none;stroke:rgba(255,251,235,.95);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:64 982.15;filter:drop-shadow(0 0 6px rgba(255,255,255,.75));opacity:0;animation:lap 7.2s ease-in-out infinite}
+  @keyframes lap{
+    0%   {stroke-dashoffset:0;opacity:0}
+    16%  {opacity:.95}
+    54%  {opacity:.85}
+    100% {stroke-dashoffset:-1046.15;opacity:0}
+  }
+
+  /* hairline micro-glow polish on existing chips */
+  .chip.ghost{box-shadow:0 0 0 1px rgba(255,193,7,.16),0 0 26px rgba(255,193,7,.14)}
+  .chip.dark{box-shadow:0 6px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="field">
+    <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  </div>
+  <div class="wrap">
+    <div class="buffer">
+      <svg class="ring" viewBox="0 0 340 340" aria-hidden="true">
+        <circle class="prog" cx="170" cy="170" r="166.5"/>
+        <circle class="sheen" cx="170" cy="170" r="166.5"/>
+      </svg>
+      <div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div>
+    </div>
+    <h1 class="rise" style="--rd:.12s">we're on <span class="y">it</span>.</h1>
+    <p class="sub rise" style="--rd:.28s">Feed hiccup on our side — the desk is already on it. Back to the charts in a moment.</p>
+    <div class="chips rise" style="--rd:.44s">
+      <span class="chip ghost">● FEED RECONNECTING</span>
+      <span class="chip dark">SYSTEMS NOMINAL</span>
+    </div>
+    <div class="bnc rise" style="--rd:.58s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>

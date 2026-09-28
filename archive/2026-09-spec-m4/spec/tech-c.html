@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · technical difficulties — workshop bench</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · TECHNICAL DIFFICULTIES — candidate C · "WORKSHOP BENCH"
+  narrative split: LEFT a broken candlestick chart (flatline candles, FEED LOST badge,
+  stuttering dashed grid) — RIGHT the smile with a wrench prop and a 3-step checklist
+  (resolder feed → rehydrate candles → relock quotes). As steps tick over, candles
+  reignite left-to-right with a warm-up flicker, FEED RESTORED flashes, the chart ticks
+  live for ~6s, then the whole bench fades through ambient and loops. Downtime clock +
+  "we're on it." lockup on top. Bottom ticker. ?elapsed= drives the downtime clock.
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.num{font-variant-numeric:tabular-nums;}
+.stage{position:relative;width:1920px;height:1080px;flex:none;background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;transform-origin:center center;}
+.spot{position:absolute;left:0;right:0;top:0;height:420px;pointer-events:none;
+  background:radial-gradient(ellipse 52% 80% at 22% -18%,rgba(255,255,255,.045),transparent 70%);}
+
+/* ═══ TOP LOCKUP ═══ */
+.top{position:relative;z-index:3;flex:none;height:96px;display:flex;align-items:center;
+  padding:0 64px;border-bottom:1px solid var(--border);
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) both;}
+@keyframes rise{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+.lock{font-family:var(--font-display);font-weight:700;font-size:52px;line-height:1;
+  letter-spacing:-.03em;
+  background:linear-gradient(180deg,#fafafa 24%,#8b8b93 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.lock .y{background:linear-gradient(180deg,#FFDE7A 8%,var(--yellow) 52%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 18px rgba(255,193,7,.22));}
+.topr{margin-left:auto;display:flex;align-items:center;gap:38px;}
+.eatw{display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+.eatw label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.3em;color:var(--faint);}
+.eatw .v{font-family:var(--font-mono);font-weight:600;font-size:17px;letter-spacing:.06em;}
+.downw{display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+.downw label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.3em;color:var(--faint);}
+.downw .v{font-family:var(--font-mono);font-weight:700;font-size:31px;color:var(--yellow);
+  letter-spacing:.04em;transition:color .6s ease;}
+.downw .v.okc{color:var(--up);}
+
+/* ═══ BENCH ═══ */
+.bench{position:relative;z-index:2;flex:1;display:flex;gap:28px;padding:24px 64px 30px;min-height:0;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .1s both;}
+.card{border:1px solid var(--border);border-radius:14px;background:rgba(13,13,16,.62);
+  box-shadow:0 18px 44px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04);
+  display:flex;flex-direction:column;min-width:0;min-height:0;}
+.chartcard{flex:1.55;}
+.workcard{flex:1;padding:26px 34px 22px;}
+
+/* ── chart card ── */
+.chead{flex:none;display:flex;align-items:center;gap:14px;padding:15px 22px;
+  border-bottom:1px solid var(--border);}
+.ctitle{font-family:var(--font-mono);font-weight:600;font-size:11px;letter-spacing:.26em;
+  color:var(--muted);text-transform:uppercase;}
+.cbadge{position:relative;margin-left:auto;display:inline-flex;align-items:center;gap:9px;
+  border-radius:8px;padding:7px 14px;font-family:var(--font-mono);font-weight:700;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;overflow:hidden;
+  transition:color .4s ease,border-color .4s ease,background-color .4s ease;}
+.cbadge.lost{color:var(--down);border:1px solid rgba(246,70,93,.45);background:rgba(246,70,93,.08);}
+.cbadge.rest{color:var(--up);border:1px solid rgba(14,203,129,.5);background:rgba(14,203,129,.08);}
+.bdot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+.cbadge.lost .bdot{animation:blip 1.4s ease-in-out infinite;}
+@keyframes blip{0%,100%{opacity:1;}50%{opacity:.25;}}
+#btxt{transition:opacity .35s ease;}
+.bflash{position:absolute;inset:0;background:rgba(14,203,129,.42);opacity:0;pointer-events:none;}
+.bflash.go{animation:bfl .95s ease both;}
+@keyframes bfl{0%{opacity:1;}100%{opacity:0;}}
+.chartwrap{position:relative;flex:1;min-height:0;padding:10px 12px 12px;}
+.chartwrap svg{width:100%;height:100%;}
+.grid line{stroke:#232327;stroke-width:1;stroke-dasharray:5 9;
+  transition:stroke-dashoffset .9s ease;}
+.chart.dead .grid line{animation:gjit 1.35s ease-in-out infinite;}
+.chart.dead .grid line:nth-child(2n){animation-delay:-.5s;}
+.chart.dead .grid line:nth-child(3n){animation-delay:-.9s;}
+@keyframes gjit{0%,100%{stroke-dashoffset:0;}28%{stroke-dashoffset:-11;}54%{stroke-dashoffset:-4;}80%{stroke-dashoffset:-17;}}
+.lastdot{fill:#FFDE7A;}
+.lastring{fill:none;stroke:#FFDE7A;stroke-width:1.5;transform-box:fill-box;transform-origin:center;
+  animation:ringp 2s ease-out infinite;}
+@keyframes ringp{0%{transform:scale(.4);opacity:.8;}100%{transform:scale(2.3);opacity:0;}}
+
+/* ── work card ── */
+.crew{position:relative;width:236px;height:226px;margin:6px auto 2px;}
+.crew .disc{position:absolute;left:50%;top:8px;transform:translateX(-50%);
+  width:198px;height:198px;filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));}
+.wrench{position:absolute;right:-20px;bottom:2px;width:86px;height:86px;
+  transform:rotate(-42deg);transform-origin:26% 78%;
+  transition:transform .6s cubic-bezier(.3,.8,.3,1);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.5));}
+.working .wrench{animation:wrk .52s ease-in-out infinite;}
+@keyframes wrk{0%,100%{transform:rotate(-42deg);}50%{transform:rotate(-30deg);}}
+.steps{list-style:none;display:flex;flex-direction:column;margin-top:20px;}
+.step{display:flex;align-items:center;gap:16px;padding:15px 6px;border-top:1px solid var(--border);}
+.snum{flex:none;width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);
+  font-weight:700;font-size:13px;color:var(--faint);
+  transition:color .5s ease,border-color .5s ease,background-color .5s ease;}
+.slabel{font-family:var(--font-mono);font-weight:500;font-size:15.5px;letter-spacing:.05em;
+  color:var(--faint);transition:color .5s ease;}
+.sstat{margin-left:auto;width:22px;height:22px;position:relative;}
+.sstat .sp{position:absolute;inset:0;width:22px;height:22px;color:var(--yellow);
+  opacity:0;animation:rot 1s linear infinite;transition:opacity .4s ease;}
+.sstat .ck{position:absolute;inset:0;width:22px;height:22px;opacity:0;}
+.sstat .ck polyline{fill:none;stroke:var(--up);stroke-width:2.6;stroke-linecap:round;
+  stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:100;}
+.step[data-st="act"] .slabel{color:var(--fg);}
+.step[data-st="act"] .snum{color:var(--yellow);border-color:rgba(255,193,7,.55);}
+.step[data-st="act"] .sstat .sp{opacity:1;}
+.step[data-st="done"] .slabel{color:var(--fg);}
+.step[data-st="done"] .snum{color:var(--ink);border-color:var(--yellow);background:var(--yellow);}
+.step[data-st="done"] .sstat .sp{opacity:0;}
+.step[data-st="done"] .sstat .ck{opacity:1;}
+.step[data-st="done"] .sstat .ck polyline{animation:draw .5s cubic-bezier(.3,.8,.3,1) both;}
+@keyframes draw{from{stroke-dashoffset:100;}to{stroke-dashoffset:0;}}
+@keyframes rot{to{transform:rotate(360deg);}}
+.wchips{display:flex;justify-content:center;gap:12px;margin-top:18px;position:relative;height:40px;}
+.wchip{position:absolute;display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  padding:9px 16px;font-family:var(--font-mono);font-weight:600;font-size:10.5px;
+  letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;
+  transition:opacity .55s ease,transform .55s ease;}
+.wchip .dot{font-size:12px;}
+.wc-rec{border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.06);color:var(--yellow);}
+.wc-rec .dot{animation:blip 1.5s ease-in-out infinite;}
+.wc-nom{border:1px solid rgba(14,203,129,.45);background:rgba(14,203,129,.06);color:var(--up);
+  opacity:0;transform:translateY(6px);}
+.wchips.rest .wc-rec{opacity:0;transform:translateY(-6px);}
+.wchips.rest .wc-nom{opacity:1;transform:none;}
+.wfoot{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);text-align:center;
+  font-family:var(--font-body);font-size:13.5px;color:var(--muted);}
+.wfoot b{color:var(--fg);font-weight:600;}
+
+/* ── soft reset fade ── */
+.benchfade{position:absolute;left:0;right:0;top:0;bottom:0;background:var(--bg);
+  opacity:0;z-index:20;pointer-events:none;}
+
+/* ═══ TICKER ═══ */
+.ticker{position:relative;z-index:5;flex:none;height:54px;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 22px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.2em;}
+.cap.left{background:var(--ink);color:var(--yellow);border-right:1px solid var(--border);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));}
+.cap.right{margin-left:auto;border-left:1px solid var(--border);color:var(--faint);
+  font-family:var(--font-mono);font-weight:500;font-size:10px;letter-spacing:.24em;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);
+  font-weight:500;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  margin-right:42px;color:var(--muted);}
+.item::before{content:"✦";color:var(--yellow);margin-right:14px;font-size:9.5px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.05em;}
+.item.price .pc{font-size:9.5px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(4px);opacity:.1;}100%{transform:none;opacity:1;}}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;animation-delay:0s !important;}
+}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+  <div class="spot" aria-hidden="true"></div>
+
+  <!-- top lockup -->
+  <header class="top">
+    <div class="lock">we're on <span class="y">it.</span></div>
+    <div class="topr">
+      <div class="eatw"><label>EAT</label><span class="v num" id="eat">--:--:--</span></div>
+      <div class="downw"><label>DOWNTIME</label><span class="v num" id="down">04:12</span></div>
+    </div>
+  </header>
+
+  <!-- bench -->
+  <main class="bench">
+    <section class="card chartcard">
+      <div class="chead">
+        <span class="ctitle">Market Feed — BTC/USDT · 1m</span>
+        <span class="cbadge lost" id="badge">
+          <span class="bdot"></span><span id="btxt">FEED LOST</span>
+          <span class="bflash" id="bflash"></span>
+        </span>
+      </div>
+      <div class="chartwrap">
+        <svg class="chart dead" id="chart" viewBox="0 0 1060 740" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="upG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#0ECB81" stop-opacity=".6"/>
+              <stop offset="1" stop-color="#0ECB81" stop-opacity=".12"/>
+            </linearGradient>
+            <linearGradient id="downG" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#F6465D" stop-opacity=".55"/>
+              <stop offset="1" stop-color="#F6465D" stop-opacity=".12"/>
+            </linearGradient>
+          </defs>
+          <g class="grid" id="grid">
+            <line x1="0" y1="110" x2="1060" y2="110"/>
+            <line x1="0" y1="250" x2="1060" y2="250"/>
+            <line x1="0" y1="390" x2="1060" y2="390"/>
+            <line x1="0" y1="530" x2="1060" y2="530"/>
+            <line x1="0" y1="670" x2="1060" y2="670"/>
+          </g>
+          <g id="candles"></g>
+          <circle class="lastring" id="lring" cx="0" cy="0" r="10" opacity="0"/>
+          <circle class="lastdot" id="ldot" cx="0" cy="0" r="5" opacity="0"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="card workcard">
+      <div class="crew" id="crew">
+        <svg class="disc" id="disc" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="wrench" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                fill="#26262b" stroke="#a1a1aa" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <ol class="steps">
+        <li class="step" id="s1" data-st="pend">
+          <span class="snum num">1</span><span class="slabel">resolder feed</span>
+          <span class="sstat">
+            <svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none"
+              stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+              stroke-linecap="round"/></svg>
+            <svg class="ck" viewBox="0 0 20 20"><polyline points="3.5 10.5 8.5 15.5 16.5 4.5"
+              pathLength="100"/></svg>
+          </span>
+        </li>
+        <li class="step" id="s2" data-st="pend">
+          <span class="snum num">2</span><span class="slabel">rehydrate candles</span>
+          <span class="sstat">
+            <svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none"
+              stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+              stroke-linecap="round"/></svg>
+            <svg class="ck" viewBox="0 0 20 20"><polyline points="3.5 10.5 8.5 15.5 16.5 4.5"
+              pathLength="100"/></svg>
+          </span>
+        </li>
+        <li class="step" id="s3" data-st="pend">
+          <span class="snum num">3</span><span class="slabel">relock quotes</span>
+          <span class="sstat">
+            <svg class="sp" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none"
+              stroke="currentColor" stroke-width="2.2" stroke-dasharray="24 14"
+              stroke-linecap="round"/></svg>
+            <svg class="ck" viewBox="0 0 20 20"><polyline points="3.5 10.5 8.5 15.5 16.5 4.5"
+              pathLength="100"/></svg>
+          </span>
+        </li>
+      </ol>
+
+      <div class="wchips" id="wchips">
+        <span class="wchip wc-rec"><span class="dot">●</span>FEED RECONNECTING</span>
+        <span class="wchip wc-nom">SYSTEMS NOMINAL</span>
+      </div>
+      <div class="wfoot">markets paused — <b>our desk is on it.</b></div>
+    </section>
+
+    <div class="benchfade" id="benchfade"></div>
+  </main>
+
+  <!-- ticker -->
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:24px;height:24px" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <circle cx="41" cy="40" r="6.5" fill="#0a0a0a"/><circle cx="59" cy="40" r="6.5" fill="#0a0a0a"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0a0a0a" stroke-width="10.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>
+      <span>SMILE · BENCH</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>resolder</b> · <b>rehydrate</b> · <b>relock</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">feed restored soon</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>resolder</b> · <b>rehydrate</b> · <b>relock</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">feed restored soon</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">SMILE.CO.KE</div>
+  </footer>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+'use strict';
+var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── scale 1920×1080 to any window ── */
+var stage=document.getElementById('stage');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform='scale('+s+')';}
+addEventListener('resize',fit);fit();
+
+/* ── clocks: EAT + downtime (?elapsed= → count-up, pauses at FEED RESTORED) ── */
+var eatEl=document.getElementById('eat'),downEl=document.getElementById('down');
+var qe=new URLSearchParams(location.search).get('elapsed');
+var live=/^\d+$/.test(qe||'');
+var base=live?Math.min(86399,parseInt(qe,10)):252; /* zero-state composes 04:12 */
+var downLive=true;
+function two(n){return n<10?'0'+n:''+n;}
+function fmtDown(s){s=Math.min(5999,s|0);return two((s/60)|0)+':'+two(s%60);}
+function clocks(){
+  downEl.textContent=fmtDown(base);
+  var d=new Date(Date.now()+3*3600*1000);
+  eatEl.textContent=two(d.getUTCHours())+':'+two(d.getUTCMinutes())+':'+two(d.getUTCSeconds());
+}
+clocks();
+setInterval(function(){if(live&&downLive)base++;clocks();},1000);
+
+/* ── marquee ── */
+var track=document.getElementById('tkTrack');
+(function(){
+  var seq=track.children[0],W=0,x=0,last=performance.now();
+  function measure(){W=seq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',measure);
+  if(RM)return;
+  (function step(now){
+    var dt=Math.min(50,now-last);last=now;
+    if(W>0){x-=dt*0.05;if(-x>=W)x+=W;track.style.transform='translateX('+x+'px)';}
+    requestAnimationFrame(step);
+  })(last);
+})();
+
+/* ── live prices (Binance, fallback walk) ── */
+var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+function setPrice(key,val,pct){
+  var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+  var els=document.querySelectorAll('[data-sym="'+key+'"]');
+  for(var i=0;i<els.length;i++){
+    var el=els[i],pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+    pv.textContent=fmtP(val);
+    if(pct!=null){
+      pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+      pc.className='pc num '+(pct>=0?'up':'down');
+    }
+    if(changed){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+  }
+}
+function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+function prices(){
+  fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+    encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+    .then(function(r){return r.json();})
+    .then(function(list){
+      list.forEach(function(t){
+        var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+      });
+      kesWalk();
+    })
+    .catch(function(){
+      setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+      setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+      setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+      kesWalk();
+    });
+}
+setInterval(prices,5000);prices();
+
+/* ═══ BROKEN → REVIVED CANDLE ENGINE (stolen market engine, injured) ═══ */
+var NS='http://www.w3.org/2000/svg';
+var N=30,H=740,SLOT=1060/N,BW=18,DEADV=28; /* dead flatline value */
+var gC=document.getElementById('candles');
+var chart=document.getElementById('chart');
+var ldot=document.getElementById('ldot'),lring=document.getElementById('lring');
+var els=[],closes=[],ticks=0;
+function seedCloses(){
+  closes.length=0;var v=330;
+  for(var i=0;i<N;i++){v+=Math.sin(i*.55)*16+(Math.random()-.5)*42;
+    v=Math.max(70,Math.min(660,v));closes.push(v);}
+}
+seedCloses();
+for(var j0=0;j0<N;j0++){
+  var dl=document.createElementNS(NS,'line');dl.setAttribute('stroke-width','2');
+  var dr=document.createElementNS(NS,'rect');dr.setAttribute('width',BW);dr.setAttribute('rx','3');
+  var ll=document.createElementNS(NS,'line');ll.setAttribute('stroke-width','2');
+  var lr=document.createElementNS(NS,'rect');lr.setAttribute('width',BW);lr.setAttribute('rx','3');
+  gC.appendChild(dl);gC.appendChild(dr);gC.appendChild(ll);gC.appendChild(lr);
+  els.push({dl:dl,dr:dr,ll:ll,lr:lr});
+}
+function y(vv){return H-30-vv;}
+function draw(nowS){
+  for(var j=0;j<N;j++){
+    var k=kk[j],e=els[j];
+    var o=j?closes[j-1]:closes[j],c=closes[j];
+    var ob=DEADV+(o-DEADV)*k,cb=DEADV+(c-DEADV)*k,up=cb>=ob;
+    var yO=y(ob),yC=y(cb),top=Math.min(yO,yC),h=Math.max(5,Math.abs(yO-yC));
+    var x=j*SLOT+(SLOT-BW)/2,cx=j*SLOT+SLOT/2;
+    var fl=k<1&&k>0?(0.45+0.55*Math.abs(Math.sin(nowS*20+j*1.7))):1;
+    var lo=(k*fl).toFixed(3),dop=((1-k)*0.9).toFixed(3);
+    var col=up?'rgba(14,203,129,':'rgba(246,70,93,';
+    /* dead ghost */
+    e.dl.setAttribute('x1',cx);e.dl.setAttribute('x2',cx);
+    e.dl.setAttribute('y1',678);e.dl.setAttribute('y2',704);
+    e.dl.setAttribute('stroke','#3f3f46');e.dl.setAttribute('opacity',dop);
+    e.dr.setAttribute('x',x);e.dr.setAttribute('y',691);e.dr.setAttribute('height',6);
+    e.dr.setAttribute('fill','#1d1d21');e.dr.setAttribute('stroke','#34343a');
+    e.dr.setAttribute('opacity',dop);
+    /* live candle */
+    e.ll.setAttribute('x1',cx);e.ll.setAttribute('x2',cx);
+    e.ll.setAttribute('y1',(top-9).toFixed(1));e.ll.setAttribute('y2',(top+h+9).toFixed(1));
+    e.ll.setAttribute('stroke',col+'.55)');e.ll.setAttribute('opacity',lo);
+    e.lr.setAttribute('x',x);e.lr.setAttribute('y',top.toFixed(1));
+    e.lr.setAttribute('height',h.toFixed(1));
+    e.lr.setAttribute('fill',up?'url(#upG)':'url(#downG)');
+    e.lr.setAttribute('stroke',col+(j===N-1?'.9)':'.4)'));
+    e.lr.setAttribute('opacity',lo);
+  }
+  var lx=(N-1)*SLOT+SLOT/2,ly=y(closes[N-1]);
+  ldot.setAttribute('cx',lx);ldot.setAttribute('cy',ly.toFixed(1));
+  lring.setAttribute('cx',lx);lring.setAttribute('cy',ly.toFixed(1));
+}
+function tick(){
+  ticks++;
+  var drift=(Math.random()-.48)*40;
+  if(ticks%4===0){closes.shift();closes.push(Math.max(70,Math.min(660,closes[N-2]+drift)));}
+  else closes[N-1]=Math.max(70,Math.min(660,closes[N-1]+drift));
+}
+
+/* ═══ BENCH NARRATIVE — one 17.6s clock ═══
+   0–1.2 idle dead · 1.2 s1 resolder · 3.8 s2 rehydrate (candles ignite 4.3 → 8.3) ·
+   6.4 FEED RESTORED flash + grid settles + chips swap + clock pauses ·
+   6.6 s3 relock · 8.8–14.8 live ticks · 14.8 fade-out · 15.8 reset under cover ·
+   16.4–17.4 fade-in · wrap 17.6 */
+var T=17.6,S1A=1.2,S1D=3.6,S2A=3.8,S2D=6.2,S3A=6.6,S3D=8.8;
+var IGNITE=4.3,SPREAD=0.115,GROW=0.7,RESTORE=6.4,LIVE0=8.8;
+var FADE0=14.8,RESET_AT=15.8,FADE_MIN=16.1,FADE1=16.4,FADE2=17.4;
+var tau=0,lastT=performance.now(),acc=0.5;
+var kk=new Array(N).fill(0);
+var restored=false,resetDone=false,crewIsWorking=false,nodded=false;
+
+var badge=document.getElementById('badge'),btxt=document.getElementById('btxt'),
+    bflash=document.getElementById('bflash');
+var steps=[document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3')];
+var crew=document.getElementById('crew'),wchips=document.getElementById('wchips');
+var fade=document.getElementById('benchfade');
+var disc=document.getElementById('disc');
+
+function kOf(j){
+  var s=(tau-IGNITE-j*SPREAD)/GROW;
+  if(s<=0)return 0;if(s>=1)return 1;
+  return 1-Math.pow(1-s,3);
+}
+function easeIO(k){return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+function setStep(el,st){if(el.getAttribute('data-st')!==st)el.setAttribute('data-st',st);}
+function badgeFlip(rest){
+  btxt.style.opacity='0';
+  setTimeout(function(){
+    btxt.textContent=rest?'FEED RESTORED':'FEED LOST';
+    badge.classList.toggle('rest',rest);badge.classList.toggle('lost',!rest);
+    btxt.style.opacity='1';
+  },200);
+  if(rest){bflash.classList.remove('go');
+    requestAnimationFrame(function(){bflash.classList.add('go');});}
+}
+function resetAll(){
+  restored=false;downLive=true;
+  seedCloses();ticks=0;
+  chart.classList.add('dead');
+  badgeFlip(false);
+  steps.forEach(function(s){setStep(s,'pend');});
+  crew.classList.remove('working');
+  wchips.classList.remove('rest');
+  downEl.classList.remove('okc');
+}
+
+function frame(now){
+  var dt=Math.min(.1,(now-lastT)/1000);lastT=now;
+  tau+=dt;
+  if(tau>=T){tau-=T;restored=false;resetDone=false;nodded=false;}
+
+  /* steps */
+  setStep(steps[0],tau>=S1D?'done':(tau>=S1A?'act':'pend'));
+  setStep(steps[1],tau>=S2D?'done':(tau>=S2A?'act':'pend'));
+  setStep(steps[2],tau>=S3D?'done':(tau>=S3A?'act':'pend'));
+  var working=tau>=S1A&&tau<S3D;
+  if(working!==crewIsWorking){crewIsWorking=working;
+    crew.classList.toggle('working',working);}
+
+  /* restore event */
+  if(tau>=RESTORE&&!restored){
+    restored=true;downLive=false;
+    chart.classList.remove('dead');
+    badgeFlip(true);
+    wchips.classList.add('rest');
+    downEl.classList.add('okc');
+    if(window.smileMood)window.smileMood('celebrate',950,disc);
+  }
+  if(tau>=S2D&&tau<S2D+0.2&&!nodded){nodded=true;
+    if(window.smileMood)window.smileMood('nod',800,disc);}
+
+  /* candles */
+  for(var j=0;j<N;j++)kk[j]=kOf(j);
+  draw(now/1000);
+
+  /* live ticking */
+  if(tau>=LIVE0&&tau<FADE0){acc+=dt;if(acc>0.65){acc=0;tick();}}
+  var liveOp=tau>=RESTORE?1:0;
+  ldot.setAttribute('opacity',(liveOp*0.95).toFixed(2));
+  lring.setAttribute('opacity',(liveOp*0.8).toFixed(2));
+
+  /* soft reset fade (fade-through-ambient) */
+  var fo;
+  if(tau<FADE0)fo=0;
+  else if(tau<FADE_MIN)fo=easeIO((tau-FADE0)/(FADE_MIN-FADE0))*0.96;
+  else if(tau<FADE1)fo=0.96;
+  else if(tau<FADE2)fo=0.96*(1-easeIO((tau-FADE1)/(FADE2-FADE1)));
+  else fo=0;
+  fade.style.opacity=fo.toFixed(3);
+
+  /* reset happens under cover of the fade */
+  if(tau>=RESET_AT&&!resetDone){resetDone=true;resetAll();}
+
+  requestAnimationFrame(frame);
+}
+
+if(!RM)requestAnimationFrame(frame);
+else{ /* composed static frame: bench dead, pre-reset */
+  draw(0);
+}
+})();
+</script>
+</body>
+</html>

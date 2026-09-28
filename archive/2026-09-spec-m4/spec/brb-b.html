@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · brb — away console</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · BRB — b · AWAY CONSOLE
+  · centered shadcn dialog on a dimmed ambient stage (breathing aura, vignette)
+  · header: positions paused + ● AWAY badge
+  · left: circular progress ring slowly cycling = away-time presence,
+          center clock mm:ss (?elapsed= counts UP, zero-state 00:00)
+  · right: checklist staggering to ✓ (loader → check), WHAT'S NEXT queue
+  · 40s cycle: ring + checklist soft-reset (rewind at low alpha — never snaps)
+  · thin status ticker strip at bottom (Binance → catch = random walk)
+  · document.hidden pauses rAF · prefers-reduced-motion → composed static frame
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --surface:#141417; --border:#27272a; --border2:#3f3f46; --fg:#fafafa;
+  --muted-fg:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.page{position:relative;display:flex;flex-direction:column;height:100vh;}
+.num{font-variant-numeric:tabular-nums;}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+/* ═══ AMBIENT — one system: breathing aura behind the console ═══ */
+.ambient{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.aura{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+  width:1100px;height:720px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,193,7,.07),transparent 62%);filter:blur(14px);
+  animation:breathe 9s ease-in-out infinite;}
+@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.55;}50%{transform:translate(-50%,-50%) scale(1.07);opacity:1;}}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,transparent 46%,rgba(0,0,0,.6) 100%);}
+
+/* ═══ CONSOLE CARD ═══ */
+.desk{position:relative;flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+.card{width:720px;max-width:94vw;border-radius:16px;border:1px solid var(--border);
+  background:rgba(20,20,23,.88);backdrop-filter:blur(14px) saturate(1.15);
+  box-shadow:0 50px 110px -18px rgba(0,0,0,.72),0 22px 44px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.06);
+  padding:30px 34px 24px;position:relative;z-index:2;
+  animation:cardIn .85s cubic-bezier(.2,.9,.3,1) -.55s both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(22px) scale(.965);}to{opacity:1;transform:none;}}
+.chead{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;
+  padding-bottom:22px;border-bottom:1px solid var(--border);}
+.chead h1{font-family:var(--font-display);font-weight:600;font-size:27px;letter-spacing:-.02em;line-height:1.1;}
+.chead .csub{margin-top:7px;font-size:13.5px;color:var(--muted-fg);}
+.badge{display:inline-flex;align-items:center;gap:8px;flex:none;border-radius:999px;
+  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.07);
+  padding:7px 13px;font-family:var(--font-mono);font-size:10px;letter-spacing:.26em;
+  color:var(--yellow);text-transform:uppercase;margin-top:4px;}
+.badge .bdot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow);}
+.badge .bdot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.9s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.7;}80%,100%{transform:scale(2.5);opacity:0;}}
+
+.cbody{display:grid;grid-template-columns:236px 1fr;gap:30px;align-items:center;padding:24px 0 6px;}
+.ringzone{position:relative;width:232px;height:232px;margin:0 auto;}
+.ringzone svg{width:100%;height:100%;}
+.ring-track{fill:none;stroke:var(--border);stroke-width:8;}
+.ring-fill{fill:none;stroke:url(#ringG);stroke-width:8;stroke-linecap:round;
+  stroke-dasharray:603.19;stroke-dashoffset:603.19;will-change:stroke-dashoffset,opacity;}
+.ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;}
+.ring-c .rlabel{font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--faint);}
+.ring-c .rtime{font-family:var(--font-mono);font-weight:600;font-size:40px;letter-spacing:-.01em;
+  color:var(--fg);font-variant-numeric:tabular-nums;}
+.ring-c .rsub{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--yellow);opacity:.85;}
+
+/* checklist + queue */
+.clist{display:flex;flex-direction:column;gap:12px;}
+.row{display:flex;align-items:center;gap:13px;border-radius:11px;border:1px solid var(--border);
+  background:rgba(255,255,255,.028);padding:11px 14px;
+  animation:riseIn .7s cubic-bezier(.2,.9,.3,1) both;}
+.row:nth-child(1){animation-delay:-.45s;}.row:nth-child(2){animation-delay:-.37s;}.row:nth-child(3){animation-delay:-.29s;}
+@keyframes riseIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.sbox{position:relative;width:22px;height:22px;flex:none;border-radius:7px;
+  border:1px solid var(--border2);background:rgba(9,9,11,.6);}
+.sbox .sp{position:absolute;inset:2px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.13);border-top-color:var(--yellow);
+  animation:rot .85s linear infinite;transition:opacity .4s ease,transform .4s ease;}
+@keyframes rot{to{transform:rotate(360deg);}}
+.sbox .ck{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:700;font-size:13px;color:var(--yellow);
+  opacity:0;transform:scale(.4);transition:opacity .3s ease,transform .5s cubic-bezier(.3,1.6,.5,1);}
+.row .rlab{font-size:15px;color:var(--fg);letter-spacing:.01em;}
+.row .rst{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--faint);transition:color .45s ease;}
+.row.done .sp{opacity:0;transform:scale(.25) rotate(120deg);}
+.row.done .ck{opacity:1;transform:scale(1);}
+.row.done{border-color:rgba(255,193,7,.26);}
+.row.done .rst{color:var(--yellow);}
+
+.queue{margin-top:20px;}
+.qlabel{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:9px;}
+.qrow{display:flex;align-items:center;gap:12px;border-radius:10px;border:1px solid var(--border);
+  background:rgba(255,255,255,.018);padding:9px 13px;font-size:14px;}
+.qrow + .qrow{margin-top:7px;}
+.qrow .qi{font-family:var(--font-mono);font-size:11px;color:var(--faint);letter-spacing:.1em;}
+.qrow .qn{color:var(--muted-fg);}
+.qrow .qa{margin-left:auto;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--faint);}
+.qrow.next{border-color:rgba(255,193,7,.3);}
+.qrow.next .qi{color:var(--yellow);}
+.qrow.next .qn{color:var(--fg);}
+.qrow.next .qa{color:var(--yellow);}
+.qrow.next .qa::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--yellow);margin-right:7px;vertical-align:1px;animation:softpulse 1.3s infinite;}
+@keyframes softpulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.qarrow{align-self:center;color:var(--faint);font-size:12px;margin:3px 0 3px 22px;}
+
+.cfoot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-top:22px;padding-top:18px;border-top:1px solid var(--border);}
+.chips{display:flex;gap:9px;flex-wrap:wrap;}
+.chip{border-radius:999px;border:1px solid var(--border);background:rgba(9,9,11,.6);
+  padding:7px 13px;font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;
+  color:var(--muted-fg);text-transform:uppercase;white-space:nowrap;}
+.chip.y{border-color:rgba(255,193,7,.4);color:var(--yellow);}
+.meta{display:flex;gap:14px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;
+  color:var(--faint);text-transform:uppercase;white-space:nowrap;}
+.meta b{color:var(--muted-fg);font-weight:500;}
+
+/* ═══ STATUS STRIP ═══ */
+.strip{position:relative;z-index:3;display:flex;align-items:center;height:42px;
+  background:rgba(9,9,11,.92);border-top:1px solid var(--border);overflow:hidden;}
+.sitem{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);font-weight:500;
+  font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;margin-right:40px;color:var(--muted-fg);}
+.sitem::before{content:"·";color:var(--faint);margin-right:14px;}
+.sitem.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--yellow);
+  margin-right:12px;animation:softpulse 1.3s infinite;}
+.sitem b{color:var(--fg);font-weight:700;}
+.sitem.price{gap:8px;}
+.sitem.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.05em;}
+.sitem.price .pc{font-size:9.5px;letter-spacing:.06em;color:var(--faint);}
+.sitem.price .pc.up{color:var(--up);} .sitem.price .pc.down{color:var(--down);}
+.sitem.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(4px);opacity:.1;}100%{transform:none;opacity:1;}}
+.smask{flex:1;overflow:hidden;display:flex;align-items:center;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);}
+.strack{display:flex;width:max-content;will-change:transform;}
+.sseq{display:flex;align-items:center;}
+.scap{flex:none;display:flex;align-items:center;gap:9px;padding:0 20px;height:100%;
+  border-right:1px solid var(--border);background:rgba(255,193,7,.05);
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.24em;color:var(--yellow);white-space:nowrap;}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <div class="desk">
+    <div class="ambient" aria-hidden="true">
+      <div class="aura"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <main class="card">
+      <div class="chead">
+        <div>
+          <h1>positions paused</h1>
+          <p class="csub">Trader stepped away — charts secured, smile intact.</p>
+        </div>
+        <span class="badge"><span class="bdot"></span>AWAY</span>
+      </div>
+
+      <div class="cbody">
+        <div class="ringzone">
+          <svg viewBox="0 0 232 232" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringG" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#FFDE7A"/>
+                <stop offset="1" stop-color="#F5A623"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-track" cx="116" cy="116" r="96"/>
+            <circle class="ring-fill" id="ringFill" cx="116" cy="116" r="96" transform="rotate(-90 116 116)"/>
+          </svg>
+          <div class="ring-c">
+            <span class="rlabel">away for</span>
+            <span class="rtime num" id="awayT">00:00</span>
+            <span class="rsub">console holding</span>
+          </div>
+        </div>
+
+        <div class="cright">
+          <div class="clist" id="clist">
+            <div class="row"><span class="sbox"><span class="sp"></span><span class="ck">✓</span></span><span class="rlab">positions secured</span><span class="rst">holding</span></div>
+            <div class="row"><span class="sbox"><span class="sp"></span><span class="ck">✓</span></span><span class="rlab">charts locked</span><span class="rst">holding</span></div>
+            <div class="row"><span class="sbox"><span class="sp"></span><span class="ck">✓</span></span><span class="rlab">mic muted</span><span class="rst">holding</span></div>
+          </div>
+          <div class="queue">
+            <div class="qlabel">What's next</div>
+            <div class="qrow next"><span class="qi num">01</span><span class="qn">market watch</span><span class="qa">next</span></div>
+            <div class="qarrow" aria-hidden="true">↓</div>
+            <div class="qrow"><span class="qi num">02</span><span class="qn">the open</span><span class="qa">queued</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cfoot">
+        <div class="chips">
+          <span class="chip y">✦ BE RIGHT BACK</span>
+          <span class="chip">don't close the tab</span>
+        </div>
+        <div class="meta">
+          <span>EAT <b class="num" id="eatT">--:--:--</b></span>
+          <span id="etaWrap" style="display:none">BACK ~ <b class="num" id="etaT">--:--</b></span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="strip">
+    <div class="scap"><span class="dw" style="width:18px;height:18px" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>SMILE · BRB</div>
+    <div class="smask">
+      <div class="strack" id="tkTrack">
+        <span class="sseq" id="tkSeq">
+          <span class="sitem live"><b>stream on break</b></span>
+          <span class="sitem price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="sitem">don't close the tab</span>
+          <span class="sitem">say hi <b>@smileke</b></span>
+          <span class="sitem"><b>smile.co.ke</b></span>
+          <span class="sitem"><b>#SmileSquad</b></span>
+        </span>
+        <span class="sseq" aria-hidden="true">
+          <span class="sitem live"><b>stream on break</b></span>
+          <span class="sitem price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="sitem price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="sitem">don't close the tab</span>
+          <span class="sitem">say hi <b>@smileke</b></span>
+          <span class="sitem"><b>smile.co.ke</b></span>
+          <span class="sitem"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>window.BRAND={};</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── URL contract ── */
+  function strictInt(v){v=parseInt(v,10);return isNaN(v)||v<0?0:v;}
+  var CAP=359999;
+  var qs=new URLSearchParams(location.search);
+  var elapsed0=Math.min(CAP,strictInt(qs.get('elapsed')));
+  var bootAt=Date.now();
+  function two(n){return n<10?'0'+n:''+n;}
+  function fmtElapsed(sec){
+    sec=Math.min(CAP,Math.max(0,Math.floor(sec)));
+    var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    return h>0?two(h)+':'+two(m)+':'+two(s):two(m)+':'+two(s);
+  }
+  /* optional ?t= ETA — seconds (duration from load) or ISO (absolute) */
+  var etaAbs=0,etaDur=0;
+  (function(){
+    var t=qs.get('t');if(!t)return;
+    if(/T|\:/.test(t)){var ms=Date.parse(t);if(!isNaN(ms))etaAbs=ms;}
+    else{var s=strictInt(t);if(s>0)etaDur=Math.min(CAP,s);}
+    document.getElementById('etaWrap').style.display='';
+  })();
+  var etaEl=document.getElementById('etaT');
+  function renderEta(){
+    if(!etaEl)return;
+    var sec=etaAbs?(etaAbs-Date.now())/1000:etaDur-(Date.now()-bootAt)/1000;
+    etaEl.textContent=fmtElapsed(sec);
+  }
+
+  /* EAT clock */
+  var eatEl=document.getElementById('eatT'),lastEat=-1;
+  function renderEat(){
+    var d=new Date(),utc=d.getTime()+d.getTimezoneOffset()*60000,eat=new Date(utc+3*3600000);
+    var key=eat.getHours()*3600+eat.getMinutes()*60+eat.getSeconds();
+    if(key===lastEat)return;lastEat=key;
+    eatEl.textContent=two(eat.getHours())+':'+two(eat.getMinutes())+':'+two(eat.getSeconds());
+  }
+
+  var awayEl=document.getElementById('awayT');
+  function renderAway(){awayEl.textContent=fmtElapsed(elapsed0+(Date.now()-bootAt)/1000);}
+
+  /* ═══ CYCLE ENGINE — ring fill + checklist, 40s, soft rewind reset ═══ */
+  var CYC=40000,RESET=1400;
+  var C=603.19;
+  var ring=document.getElementById('ringFill');
+  var rows=[].slice.call(document.querySelectorAll('#clist .row'));
+  var resolveT=[1500,2900,4300];
+  function easeIO(k){return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+  var cycStart=performance.now()-9000; /* pre-populated mid-cycle: frame one already alive */
+  var doneIdx=0,phase='run',resetStart=0;
+  function stepCycle(now){
+    if(phase==='run'){
+      var tc=now-cycStart;
+      while(doneIdx<rows.length&&tc>=resolveT[doneIdx]){rows[doneIdx].classList.add('done');doneIdx++;}
+      var p=easeIO(Math.min(1,tc/CYC));
+      ring.style.strokeDashoffset=(C*(1-p*.94)).toFixed(2);
+      ring.style.opacity='1';
+      if(tc>=CYC){
+        phase='reset';resetStart=now;
+        rows.forEach(function(r){r.classList.remove('done');});doneIdx=0;
+      }
+    }else{
+      var k=Math.min(1,(now-resetStart)/RESET);
+      ring.style.opacity=(1-.82*Math.sin(Math.PI*Math.min(1,k))).toFixed(3); /* dip, never out */
+      ring.style.strokeDashoffset=(C*(1-easeIO(k)*.94)).toFixed(2);
+      if(k>=1){phase='run';cycStart=now;ring.style.opacity='1';}
+    }
+  }
+
+  /* ═══ MARQUEE ═══ */
+  var track=document.getElementById('tkTrack'),seq=document.getElementById('tkSeq'),tkW=0,tkX=0;
+  function measure(){tkW=seq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',measure);
+
+  /* ═══ LIVE PRICES ═══ */
+  var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2},netFail=0;
+  function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function setPrice(key,val,pct){
+    var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+    document.querySelectorAll('[data-sym="'+key+'"]').forEach(function(el){
+      var pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+      pv.textContent=fmtP(val);
+      if(pct!=null){
+        pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+        pc.className='pc num '+(pct>=0?'up':'down');
+      }
+      if(changed&&!RM){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+    });
+  }
+  function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+  function walkAll(){
+    setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+    setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+    setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+    kesWalk();
+  }
+  function prices(){
+    var now=Date.now();
+    if(netFail&&now-netFail<45000){walkAll();return;}
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){
+        netFail=0;
+        list.forEach(function(t){
+          var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+          if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+        });
+        kesWalk();
+      })
+      .catch(function(){netFail=now;walkAll();});
+  }
+  if(!RM){setInterval(prices,5000);setTimeout(prices,1200);}
+
+  /* ═══ MASTER rAF ═══ */
+  var raf=null,last=0,secT=0;
+  function loop(now){
+    var dt=Math.min(50,now-last);last=now;
+    if(!RM)stepCycle(now);
+    if(tkW>0){tkX-=dt*.055;if(-tkX>=tkW)tkX+=tkW;track.style.transform='translateX('+tkX+'px)';}
+    if(now-secT>480){secT=now;renderAway();renderEat();renderEta();}
+    raf=requestAnimationFrame(loop);
+  }
+  function start(){if(raf==null){last=performance.now();raf=requestAnimationFrame(loop);}}
+  function stop(){if(raf!=null){cancelAnimationFrame(raf);raf=null;}}
+  document.addEventListener('visibilitychange',function(){document.hidden?stop():start();});
+
+  if(RM){
+    rows.forEach(function(r){r.classList.add('done');});
+    ring.style.strokeDashoffset=(C*(1-.62)).toFixed(2);
+    renderAway();renderEat();renderEta();
+  }else{
+    start();
+    setTimeout(measure,1200);setTimeout(measure,3000);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,73 +1,210 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>world-21-suite — overlay index</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · the scene kit</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-         background: #0a0a0b; color: #fafafa; max-width: 720px; margin: 4rem auto; padding: 0 1rem; }
-  h1 { font-weight: 600; margin-bottom: 0.5rem; font-family: "Space Grotesk", -apple-system, sans-serif; }
-  p.muted { color: #8a8a93; margin-bottom: 2rem; }
-  ul { list-style: none; padding: 0; }
-  li { padding: 0.75rem 0; border-bottom: 1px solid #1f1f23; }
-  li.tags { font-size: 11px; color: #6b6b74; letter-spacing: 0.04em; padding: 0.25rem 0 0.5rem 0; border: none; }
-  a { color: #FFC107; text-decoration: none; font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 500; }
-  a:hover { text-decoration: underline; }
-  code { background: #141416; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
-  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-family: "IBM Plex Mono", monospace; margin-left: 0.5rem; vertical-align: middle; }
-  .tag.sacred { background: rgba(255,193,7,0.15); color: #FFC107; border: 1px solid rgba(255,193,7,0.3); }
-  .tag.reference { background: rgba(107,107,116,0.15); color: #8a8a93; border: 1px solid rgba(107,107,116,0.3); }
-  .tag.exploration { background: rgba(63,182,255,0.15); color: #3FB6FF; border: 1px solid rgba(63,182,255,0.3); }
-  .tag.warning { background: rgba(246,70,93,0.15); color: #F6465D; border: 1px solid rgba(246,70,93,0.3); }
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+svg{display:block}
+.wrap{max-width:880px;margin:0 auto;padding:64px 24px 90px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) both}
+.brand svg{height:30px;width:auto}
+.tagchip{font-family:var(--fm);font-size:10px;letter-spacing:.24em;color:var(--muted);
+  border:1px solid var(--border);border-radius:999px;padding:8px 14px}
+h1{font-family:var(--fd);font-weight:700;font-size:clamp(34px,6vw,56px);line-height:1.04;
+  letter-spacing:-.03em;margin:26px 0 14px;animation:rise .7s cubic-bezier(.2,.9,.3,1) .08s both}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{max-width:640px;color:var(--muted);font-size:15.5px;line-height:1.65;margin-bottom:44px;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .16s both}
+.lede b{color:var(--fg);font-weight:600}
+.lede code{font-family:var(--fm);font-size:12.5px;color:var(--yellow);background:rgba(255,193,7,.07);
+  border:1px solid rgba(255,193,7,.2);border-radius:5px;padding:1px 7px}
+
+.kit{display:flex;flex-direction:column;border-top:1px solid var(--border);
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .24s both}
+.scene{display:flex;align-items:center;gap:22px;padding:22px 10px;border-bottom:1px solid var(--border);
+  text-decoration:none;color:inherit;transition:background .25s}
+.scene:hover{background:rgba(255,255,255,.025)}
+.scene .tag{flex:none;width:74px;font-family:var(--fm);font-weight:600;font-size:9.5px;
+  letter-spacing:.2em;color:var(--yellow);border:1px solid rgba(255,193,7,.3);border-radius:999px;
+  padding:6px 0;text-align:center}
+.scene .name{flex:none;width:190px;font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:-.01em}
+.scene .what{flex:1;color:var(--muted);font-size:13.5px;line-height:1.5}
+.scene .go{flex:none;font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;color:var(--faint);
+  transition:color .25s}
+.scene:hover .go{color:var(--yellow)}
+.scene .live{flex:none;width:7px;height:7px;border-radius:50%;background:var(--up)}
+.scene .live.amber{background:var(--yellow)}
+.scene .live.red{background:var(--down)}
+
+.klabel{display:flex;align-items:center;gap:14px;margin:44px 0 0;
+  font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.24em;
+  color:var(--muted);text-transform:uppercase}
+.klabel .y{color:var(--yellow)}
+.kit.k2{border-top:none;margin-top:16px;animation:rise .7s cubic-bezier(.2,.9,.3,1) .3s both}
+
+.foot{margin-top:40px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .32s both}
+.foot .f{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;color:var(--faint);
+  border:1px solid var(--border);border-radius:999px;padding:6px 12px;text-transform:uppercase}
+.foot .f.y{color:var(--yellow);border-color:rgba(255,193,7,.3)}
+.note{margin-top:26px;color:var(--faint);font-size:12.5px;line-height:1.7;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .4s both}
+.note b{color:var(--muted);font-weight:600}
+@media (max-width:640px){.scene .what,.scene .live{display:none}.scene .name{width:auto;flex:1}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
-  <h1>world-21-suite — overlay index</h1>
-  <p class="muted">Each file below is a self-contained OBS browser source. Copy the URL into OBS → Browser Source → 1920×1080.</p>
+<div class="wrap">
+  <header class="head">
+    <span class="brand" aria-label="smile">
+      <svg viewBox="5 7.4 118 28" xmlns="http://www.w3.org/2000/svg" role="img">
+        <style>.cls-0{fill:#E6E6E6}.cls-2{fill:#0A0900}</style>
+        <path class="cls-0" d="m46.9 18-6 0.7c-0.3-0.7-0.4-1.7-1.7-1.7-0.9 0-1.4 0.6-1.4 1.5s0.4 1.1 2.2 1.2c3.9 0.2 7.9 1.3 7.9 5.3 0 3.7-3.9 5.3-8.8 5.3-4.8 0-8.2-1.3-8.6-4.6l6.1-0.8c0.3 0.9 0.7 2.4 2.5 2.4 1.3 0 2.3-0.4 2.3-1.5 0-1.2-0.7-1.6-2.6-1.8-3.8-0.4-7.8-1.1-7.8-5.1 0-3.7 4.1-5 8.1-5 3.9 0 6.9 0.7 7.9 4"/>
+        <path class="cls-0" d="m70.7 14.6c0.9-0.4 1.9-0.6 3.1-0.6 3.2 0 5.5 1.5 5.5 5.6v10.7h-6.4v-10.4c-0.5-0.7-1-1.3-1.9-1.3-1.3 0-2.4 0.8-2.7 2.6v9.1h-6.3v-10.4c-0.4-0.6-1-1.2-1.9-1.3-1.3 0-2.4 0.7-2.7 2.6v9.1h-6.5v-16.3h5.9v2.2h0.2c1.4-1.4 3.2-2.2 5.7-2.3 1.9-0.1 3.9 0.7 4.9 2.3h0.4c0.9-0.7 1.7-1.3 2.7-1.6"/>
+        <path class="cls-0" d="m83.5 13.9h6.2v16.4h-6.2v-16.4zm0-6.4h6.2v4.1h-6.3l0.1-4.1z"/>
+        <polygon class="cls-0" points="93.8 7.5 100.4 7.5 100.4 30.3 93.8 30.3"/>
+        <path class="cls-0" d="m112.1 17.7c-1.7-0.1-2.9 1-3 2.5h6.2c-0.2-1.6-1.3-2.4-3.2-2.5m3.3 7.1 6.7 0.9c-1.3 2.5-3.7 4.6-9 4.6-4.8 0-9.5-1.7-9.5-8.1 0-3.2 1.8-8.3 9.2-8.2 7.8 0 9.3 4.4 9.3 9.1h-12.7c0 1.8 1.4 3.4 3.2 3.3 1.4 0 2.5-0.6 2.8-1.6"/>
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+        <path class="cls-2" d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z"/>
+        <path class="cls-2" d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z"/>
+        <path class="cls-2" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z"/>
+      </svg>
+    </span>
+    <span class="tagchip">SCENE KIT · 6 BOARDS</span>
+  </header>
 
-  <ul>
-    <li>
-      <a href="smile-v9.html">smile-v9.html</a>
-      <span class="tag sacred">current baseline · sacred</span>
-    </li>
-    <li class="tags">V7 strap choreography + V9 surgical fixes. The recommended overlay.</li>
-
-    <li>
-      <a href="test-7.html">test-7.html</a>
-      <span class="tag sacred">V7 · approved · sacred</span>
-    </li>
-    <li class="tags">The APPROVED baseline. Strap choreography is SACRED — extend, never regress.</li>
-
-    <li>
-      <a href="smile-v8.html">smile-v8.html</a>
-      <span class="tag warning">failed · keep for ref</span>
-    </li>
-    <li class="tags">The failed precision rebuild. Per archive §6: "Broski, we're going backwards."</li>
-
-    <li>
-      <a href="lab/index.html">lab/index.html</a>
-      <span class="tag exploration">lab · overlay tournament</span>
-    </li>
-    <li class="tags">ROUND 1 — five full broadcast overlay variants (PULSE / LEDGER / BRIEF / ISLAND / DESKPRO) sharing one locked spec. Pick a winner.</li>
-
-    <li>
-      <a href="test.html">test.html</a>
-      <span class="tag exploration">exploration · Revolut Obsidian</span>
-    </li>
-    <li class="tags">Revolut Obsidian Batch 01 — parallel design direction (electric blue, banking aesthetic).</li>
-
-    <li>
-      <a href="revolut-overlay-v03.html">revolut-overlay-v03.html</a>
-      <span class="tag exploration">exploration · Revolut Obsidian</span>
-    </li>
-    <li class="tags">Revolut Obsidian v0.3 — third iteration of the Revolut direction.</li>
-  </ul>
-
-  <p class="muted" style="margin-top: 2rem;">
-    URL pattern: <code>https://rkw-kim.github.io/world-21-suite/&lt;filename&gt;.html</code><br>
-    Archive of earlier iterations: <a href="archive/">archive/</a><br>
-    Source repo: <a href="https://github.com/RKW-Kim/world-21-suite">github.com/RKW-Kim/world-21-suite</a>
+  <h1><span class="g">one design language,</span><br><span class="y">six scenes.</span></h1>
+  <p class="lede">
+    Every board below is a <b>standalone full-screen page</b> — open it directly, fill any window,
+    no frames, no wrappers. Same smile tokens, same type, same ticker spine.
+    Countdown defaults to <b>next 20:00 EAT</b>; pass <code>?t=21:30</code> to aim it anywhere else.
   </p>
+
+  <nav class="kit">
+    <a class="scene" href="starting-soon.html">
+      <span class="tag">SOON</span>
+      <span class="name">Starting Soon</span>
+      <span class="what">Countdown, loading tiles, rotating tagline — the pre-show board.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="brb.html">
+      <span class="tag">BRB</span>
+      <span class="name">Be Right Back</span>
+      <span class="what">Positions paused, away timer, breathing face in the spinner ring.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="intermission.html">
+      <span class="tag">INTER</span>
+      <span class="name">Intermission</span>
+      <span class="what">Split stage: statement left, "while you wait" agenda + break clock right.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="tech-diff.html">
+      <span class="tag">TECH</span>
+      <span class="name">Technical Diff</span>
+      <span class="what">Calm incident report — what's being fixed, scan bars, honest ETA.</span>
+      <span class="live red"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="qa.html">
+      <span class="tag">Q&amp;A</span>
+      <span class="name">Ask Me Anything</span>
+      <span class="what">Live floor: how to ask, answered / queue / room counters.</span>
+      <span class="live red"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="end.html">
+      <span class="tag">END</span>
+      <span class="name">Session Closed</span>
+      <span class="what">Asante note, socials, next-session bell — with light confetti.</span>
+      <span class="live"></span>
+      <span class="go">OPEN →</span>
+    </a>
+  </nav>
+
+  <p class="klabel"><span class="y">The originals</span>&nbsp;— stingers + ticker, back in the lineup</p>
+  <nav class="kit k2">
+    <a class="scene" href="ticker.html">
+      <span class="tag">TK</span>
+      <span class="name">Market Ticker</span>
+      <span class="what">The original dock-bottom market bar — clock, live smile, seamless price marquee. Demo feed built in; takes the real /api/market feed when your server is up.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-matrix.html">
+      <span class="tag">SG·M</span>
+      <span class="name">Stingers — The Matrix</span>
+      <span class="what">21 interaction recipes, every platform — follow, like, subs, super thanks, M-PESA tips, raids, hype train, TikTok gifts. OBS capture: ?obs=1&amp;type=follow.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-spectacle.html">
+      <span class="tag">SG·S</span>
+      <span class="name">Stingers — Spectacle</span>
+      <span class="what">Paid moments only — the 3D brushed-gold coin, the M-PESA tile with KSh count-up, the bits jewel, the swinging bell.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-materials.html">
+      <span class="tag">SG·Mt</span>
+      <span class="name">Stingers — Materials</span>
+      <span class="what">Frost · obsidian · chameleon — the matte family. The chameleon samples the backdrop live (lab trick; OBS ships it as ?tint=h,s).</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers.html">
+      <span class="tag">SG·D</span>
+      <span class="name">Stingers — The Suite</span>
+      <span class="what">The full stinger lab — obsidian + clear directions, stage tests, the material guide and everything still missing.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/logo-motion.html">
+      <span class="tag">SG·L</span>
+      <span class="name">Logo Motion</span>
+      <span class="what">Draw ✓ nod ✓ glowline ✓ blink ✗ — the honest logo verdicts, with the failed studies kept as documentation.</span>
+      <span class="go">OPEN →</span>
+    </a>
+  </nav>
+
+  <div class="foot">
+    <span class="f y">VERBATIM SMILE LOGO</span>
+    <span class="f">CSS-ONLY MOTION</span>
+    <span class="f">1 GATED INTERVAL MAX</span>
+    <span class="f">ANY WINDOW SIZE</span>
+    <span class="f">OBS-FRIENDLY</span>
+    <span class="f y">STINGERS + TICKER ON BOARD</span>
+  </div>
+  <p class="note">
+    <b>Notes:</b> pages pause their clocks while the tab is hidden and respect
+    <b>prefers-reduced-motion</b> (everything freezes into a clean static frame).
+    The logo and face are the real <b>Smile-Logo.svg</b> paths inlined verbatim — no redraws.
+    The ticker runs a <b>demo random-walk</b> until <code>/api/market/ws</code> answers,
+    then flips to the live feed automatically. Stingers live in the round-6/7 lab
+    (<code>archive/2026-09-lab/lab/</code>) and load standalone.
+  </p>
+</div>
 </body>
 </html>

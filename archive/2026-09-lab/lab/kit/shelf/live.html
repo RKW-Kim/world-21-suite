@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  html{overflow:hidden}
+  html,body{scrollbar-width:none}
+  ::-webkit-scrollbar{display:none}
+
+  /* ---------- take gate ---------- */
+  .scn{position:absolute;inset:0;display:none;z-index:2}
+  body:not([data-v="b"]) .scn[data-take="a"]{display:block}
+  body[data-v="b"] .scn[data-take="b"]{display:block}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* keeps orbiting chip text level: cancels parent spin + static angle */
+  @keyframes lvl{from{transform:rotate(calc(var(--a) * -1))}to{transform:rotate(calc(-360deg - var(--a)))}}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.15}}
+  @keyframes slamIn{0%{opacity:0;transform:scale(1.7) rotate(-1.5deg)}55%{opacity:1;transform:scale(.965) rotate(.6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
+  /* hard two-layer chromatic offset (yellow / ink), ±3px — no glow */
+  @keyframes chroma{0%,100%{text-shadow:3px 0 0 rgba(255,193,7,.42),-3px 0 0 rgba(8,8,8,.9)}50%{text-shadow:-3px 0 0 rgba(255,193,7,.42),3px 0 0 rgba(8,8,8,.9)}}
+  @keyframes popIn{0%{opacity:0;transform:scale(0) rotate(-14deg)}62%{opacity:1;transform:scale(1.14) rotate(5deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
+  @keyframes sonar{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  @keyframes wv{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
+
+  /* ================= TAKE A · TYPE SLAM ================= */
+  .topbar{position:absolute;top:74px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+  .topbar .brand{font-size:42px}
+  .topbar .brand .dw{width:52px;height:52px}
+  .onair{font-size:19px}
+
+  .hero{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);text-align:center;z-index:5}
+  .slam{position:relative;display:inline-block}
+  .slam h1{font-family:var(--font-display);font-weight:800;font-size:clamp(110px,11.5vw,172px);line-height:.96;letter-spacing:-.03em;color:var(--paper);white-space:nowrap;
+    animation:slamIn .8s var(--ease-spring) .1s backwards, chroma 2.4s ease-in-out 1.1s infinite}
+  .slam h1 .y{color:var(--yellow)}
+  .slam .face{position:absolute;width:260px;height:260px;right:-70px;top:-92px;z-index:3;animation:popIn .75s var(--ease-spring) .55s backwards}
+  .rundown{margin-top:54px;display:flex;gap:16px;justify-content:center}
+
+  .rec{width:9px;height:9px;border-radius:50%;background:var(--down);display:inline-block;animation:blink 1.1s linear infinite}
+
+  /* ================= TAKE B · SONAR WELCOME ================= */
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:150px;z-index:4}
+  .sonarfield{position:relative;width:280px;height:280px;display:grid;place-items:center;margin-bottom:40px}
+  .sonarfield .ring{position:absolute;inset:0;border:2px solid var(--yellow);border-radius:50%;opacity:0;animation:sonar 3s linear infinite}
+  .sonarfield .ring.r2{animation-delay:1s}
+  .sonarfield .ring.r3{animation-delay:2s}
+  .sonarfield .face{width:280px;height:280px;animation:breathe 3.4s ease-in-out infinite;z-index:2}
+
+  .orb{position:absolute;left:50%;top:50%;width:0;height:0;animation:spin var(--os) linear infinite;z-index:3;pointer-events:none}
+  .orb .pl{position:absolute;left:0;top:0;transform:rotate(var(--a)) translateY(calc(-1 * var(--r)))}
+  .orb .lvl{position:absolute;left:0;top:0;animation:lvl var(--os) linear infinite}
+  .orb .chip{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+
+  .btitle{font-family:var(--font-display);font-weight:800;font-size:82px;letter-spacing:-.03em;line-height:1;color:var(--paper);text-align:center}
+  .btitle .y{color:var(--yellow)}
+  .btitle .g{color:var(--up)}
+  .bchips{margin-top:30px;display:flex;gap:14px}
+
+  #wave{position:absolute;left:0;right:0;bottom:162px;height:84px;display:flex;align-items:flex-end;justify-content:center;gap:6px;z-index:3;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 130px,#000 calc(100% - 130px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 130px,#000 calc(100% - 130px),transparent)}
+  #wave span{width:4px;border-radius:2px;background:rgba(255,193,7,.5);transform-origin:bottom;animation:wv 1.05s ease-in-out infinite alternate}
+  #wave span.hot{background:var(--yellow)}
+  #wave span.dim{background:rgba(255,193,7,.22)}
+
+  .tk b{color:var(--paper);font-weight:800}
+
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+
+  <!-- ============ TAKE A · TYPE SLAM ============ -->
+  <section class="scn" data-take="a">
+    <div id="skyline"></div>
+    <span class="spark" style="left:9%;top:20%;--d:0s"></span>
+    <span class="spark" style="left:40%;top:12%;--d:1.3s;background:var(--up)"></span>
+    <span class="spark" style="left:88%;top:22%;--d:.7s;background:var(--down)"></span>
+    <span class="spark" style="left:74%;top:70%;--d:2.4s"></span>
+    <span class="spark" style="left:20%;top:76%;--d:3.2s;background:var(--sky)"></span>
+    <span class="spark" style="left:57%;top:86%;--d:1.9s"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+      <div class="chip dark onair rise" style="--rd:.12s"><i class="rec"></i>ON AIR</div>
+    </div>
+
+    <div class="hero">
+      <div class="slam">
+        <h1>WE'RE <span class="y">LIVE</span></h1>
+        <div class="face"></div>
+      </div>
+      <div class="rundown">
+        <span class="chip solid rise" style="--rd:.5s">EP <b data-ep>128</b></span>
+        <span class="chip ghost rise" style="--rd:.62s">REQUESTS</span>
+        <span class="chip ghost rise" style="--rd:.74s">MAILBAG</span>
+        <span class="chip ghost rise" style="--rd:.86s">SCREEN SHARE SEGMENT</span>
+      </div>
+    </div>
+
+    <div class="ticker" style="--tk-speed:38s">
+      <div class="tk"><span>● LIVE NOW</span><span>EP <b data-ep>128</b> ON AIR</span><span>REQUESTS OPEN</span><span>MAILBAG TIME</span><span>PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>● LIVE NOW</span><span>EP <b data-ep>128</b> ON AIR</span><span>REQUESTS OPEN</span><span>MAILBAG TIME</span><span>PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE B · SONAR WELCOME ============ -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:10%;top:16%;--d:0s"></span>
+    <span class="spark" style="left:88%;top:14%;--d:1.5s;background:var(--up)"></span>
+    <span class="spark" style="left:92%;top:62%;--d:.9s;background:var(--down)"></span>
+    <span class="spark" style="left:8%;top:64%;--d:2.3s"></span>
+    <span class="spark" style="left:50%;top:9%;--d:3s;background:var(--sky)"></span>
+    <span class="spark" style="left:72%;top:84%;--d:1.1s"></span>
+
+    <div class="center">
+      <div class="sonarfield rise" style="--rd:.05s">
+        <span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span>
+        <div class="face"></div>
+        <div class="orb" style="--a:-28deg;--r:345px;--os:26s"><div class="pl"><div class="lvl"><span class="chip ghost">AUDIO STAYS LIVE</span></div></div></div>
+        <div class="orb" style="--a:152deg;--r:310px;--os:34s"><div class="pl"><div class="lvl"><span class="chip dark">SAY HI IN CHAT</span></div></div></div>
+      </div>
+      <h1 class="btitle rise" style="--rd:.25s">welcome to the <span class="y">show</span><span class="g">.</span></h1>
+      <div class="bchips rise" style="--rd:.4s">
+        <span class="chip solid">EP <b data-ep>128</b></span>
+        <span class="chip ghost">@smileke</span>
+        <span class="chip ghost">#SmileSquad</span>
+      </div>
+    </div>
+
+    <div id="wave"></div>
+
+    <div class="ticker" style="--tk-speed:42s">
+      <div class="tk"><span>✦ WELCOME TO THE SHOW</span><span>MIC IS HOT</span><span>SAY HI IN CHAT</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ WELCOME TO THE SHOW</span><span>MIC IS HOT</span><span>SAY HI IN CHAT</span><span>EP <b data-ep>128</b> · PODCAST + SCREEN SHARE</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/logo.js"></script><script src="assets/core.js"></script>
+<script>
+(function(){
+  /* ---------- URL contract: take gate + episode (live scene: no countdown) ---------- */
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){ e.textContent=eps; });
+
+  /* ---------- candle skyline (take a) ---------- */
+  var sky=document.getElementById('skyline'), cols=['#1f1f1f','#0ECB81','#262626','#F6465D','#232323','#FFC107'];
+  for(var i=0;i<26;i++){
+    var c=document.createElement('span'); c.className='cndl';
+    c.style.left=(i*76+Math.random()*20)+'px'; c.style.width=(22+Math.random()*14)+'px';
+    c.style.height=(70+Math.random()*240)+'px'; c.style.background=cols[i%6];
+    c.style.setProperty('--d',(0.6+i*0.06)+'s'); sky.appendChild(c);
+  }
+
+  /* ---------- audio wave strip (take b) ---------- */
+  var w=document.getElementById('wave');
+  for(var j=0;j<72;j++){
+    var b=document.createElement('span');
+    b.style.height=(10+Math.round(Math.random()*66))+'px';
+    b.style.animationDelay=(-(Math.random()*1.05)).toFixed(2)+'s';
+    b.style.animationDuration=(0.8+Math.random()*0.7).toFixed(2)+'s';
+    if(j%9===4) b.className='hot'; else if(j%4===2) b.className='dim';
+    w.appendChild(b);
+  }
+
+  /* ---------- moods on top of core.js idle blink ---------- */
+  setTimeout(function(){ if(window.smileMood) window.smileMood('celebrate',1000); },600);
+  var moods=['wink','bounce','nod','smirk'];
+  setInterval(function(){ if(window.smileMood) window.smileMood(moods[Math.floor(Math.random()*moods.length)],900); },8600);
+})();
+</script>
+</body>
+</html>

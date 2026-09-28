@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · countdown · MATERIAL STUDY</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= frozen scene layout (countdown-original) ================= */
+    .topbar{position:absolute;top:88px;left:120px;right:120px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+    .topbar .brand{font-size:34px}.topbar .brand .dw{width:42px;height:42px}
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:40px}
+    .halo{position:absolute;left:50%;top:46%;width:760px;height:760px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,193,7,.07) 0%,transparent 62%);pointer-events:none}
+    .ring{position:relative;width:560px;height:560px;filter:drop-shadow(0 0 34px rgba(255,193,7,.18))}
+    .ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+    .ring circle{fill:none;stroke-width:13;stroke-linecap:round}
+    .ring .pr{stroke:var(--yellow);stroke-dasharray:1609;transition:stroke-dashoffset 1s linear}
+    .tickrow{position:absolute;inset:14px;border-radius:50%;pointer-events:none}
+    .tickrow i{position:absolute;left:50%;top:0;width:2px;height:10px;margin-left:-1px;background:rgba(255,255,255,.14);transform-origin:50% 266px}
+    .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:292px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;text-shadow:0 2px 30px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.10)}
+    .num.pop{animation:pop .9s var(--ease-spring)}
+    @keyframes pop{0%{transform:scale(1.26);opacity:.12;color:var(--yellow)}60%{transform:scale(.97)}100%{transform:scale(1)}}
+    .label{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:.42em;margin-right:-.42em;text-transform:uppercase;color:var(--muted);margin-top:36px}
+    .flash{position:absolute;inset:0;background:var(--yellow);opacity:0;pointer-events:none}.flash.go{animation:fl 1s ease forwards}
+    @keyframes fl{0%{opacity:0}16%{opacity:1}100%{opacity:0}}
+    .endlogo{position:absolute;inset:0;display:grid;place-items:center;opacity:0}.endlogo.go{animation:endp 1s var(--ease-spring) forwards}
+    .endlogo .brand{font-size:190px;background:rgba(20,20,20,.9);padding:.16em .32em;border-radius:.16em;border:1px solid var(--line);box-shadow:0 40px 120px rgba(0,0,0,.6)}
+    .endlogo .brand .dw{width:150px;height:150px}
+    @keyframes endp{0%{opacity:0;transform:scale(.72)}35%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+
+    /* ================= E3 · MATERIAL STUDY execution layer =================
+       Same geometry, same choreography — the surfaces change: brushed-metal
+       track, gradient progress stroke with an orbiting energy flow, rotating
+       specular on the ring band, glass number plate, luminous halo bloom,
+       glassy chips. Motion curves untouched. */
+
+    /* --- brushed-metal track + gradient energy progress --- */
+    .ring .tr{stroke:url(#mg)}
+    .ring .pr{stroke:url(#pg)}
+    .ring .flow{transform-origin:280px 280px;animation:flowOrbit 3.2s linear infinite;will-change:transform}
+    .ring .flow circle{fill:none;stroke-width:13;stroke-linecap:round}
+    .ring .f1{stroke:rgba(255,255,255,.85);stroke-dasharray:90 1519;opacity:.9}
+    .ring .f2{stroke:rgba(255,224,130,.55);stroke-dasharray:260 1349;opacity:.22}
+    @keyframes flowOrbit{to{transform:rotate(-360deg)}}  /* chases the retreating progress edge */
+
+    /* --- rotating specular highlight, masked to the ring band --- */
+    .spec{position:absolute;inset:0;border-radius:50%;pointer-events:none;mix-blend-mode:screen;
+      background:conic-gradient(from 0deg,transparent 0 28deg,rgba(255,255,255,.10) 52deg,rgba(255,255,255,.34) 68deg,rgba(255,255,255,.10) 84deg,transparent 108deg,transparent 360deg);
+      -webkit-mask:radial-gradient(circle at 50% 50%,transparent 0 244px,#000 249px 265px,transparent 270px);
+      mask:radial-gradient(circle at 50% 50%,transparent 0 244px,#000 249px 265px,transparent 270px);
+      animation:specRot 13s linear infinite;will-change:transform}
+    @keyframes specRot{to{transform:rotate(360deg)}}
+
+    /* --- glass number plate (finish on the number's stage, geometry untouched) --- */
+    .plate{position:absolute;inset:86px;border-radius:50%;pointer-events:none;
+      background:linear-gradient(165deg,rgba(255,255,255,.07),rgba(255,255,255,.02) 40%,rgba(0,0,0,.16) 78%,rgba(0,0,0,.24));
+      border:1px solid rgba(255,255,255,.07);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -18px 40px rgba(0,0,0,.30),0 26px 70px rgba(0,0,0,.35);
+      -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+
+    /* --- luminous halo bloom --- */
+    .halo::after{content:"";position:absolute;inset:18%;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,193,7,.12) 0%,transparent 60%);
+      animation:bloom 6.5s ease-in-out infinite;will-change:transform,opacity}
+    @keyframes bloom{0%,100%{opacity:.45;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+
+    /* --- glassy inner strokes on existing chips/plate --- */
+    .topbar .chip.dark{background:rgba(20,20,20,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-color:rgba(255,255,255,.10);box-shadow:0 6px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.55)}
+    .endlogo .brand{background:rgba(20,20,20,.78);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 40px 120px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(0,0,0,.5)}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+  <span class="spark" style="left:14%;top:18%;--d:.3s"></span>
+  <span class="spark" style="left:82%;top:24%;--d:1.6s;background:var(--up)"></span>
+  <span class="spark" style="left:76%;top:80%;--d:2.8s"></span>
+  <span class="spark" style="left:22%;top:74%;--d:3.7s;background:var(--sky)"></span>
+  <div class="topbar">
+    <span class="brand"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></span>
+    <div class="chip dark">● OPENING BELL</div>
+  </div>
+  <div class="halo"></div>
+  <div class="wrap">
+    <div class="ring">
+      <svg viewBox="0 0 560 560">
+        <defs>
+          <linearGradient id="mg" x1="0" y1="0" x2="560" y2="560" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#2e2e2e"/><stop offset=".28" stop-color="#171717"/><stop offset=".52" stop-color="#333333"/><stop offset=".74" stop-color="#141414"/><stop offset="1" stop-color="#262626"/>
+          </linearGradient>
+          <linearGradient id="pg" x1="0" y1="0" x2="560" y2="560" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#FFC107"/><stop offset=".5" stop-color="#FFE082"/><stop offset="1" stop-color="#F5A623"/>
+          </linearGradient>
+        </defs>
+        <circle class="tr" cx="280" cy="280" r="256"/><circle class="pr" id="pr" cx="280" cy="280" r="256"/>
+        <g class="flow"><circle class="f1" cx="280" cy="280" r="256"/><circle class="f2" cx="280" cy="280" r="256"/></g>
+      </svg>
+      <div class="tickrow" id="ticks"></div>
+      <div class="plate" aria-hidden="true"></div>
+      <div class="num" id="num">10</div>
+      <div class="spec" aria-hidden="true"></div>
+    </div>
+    <div class="label">opening bell in</div>
+  </div>
+  <div class="endlogo" id="end">
+    <span class="brand" data-mood="bounce">
+      <span class="dw">
+        <svg class="disc" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+        </svg>
+      </span><b>smile</b>
+    </span>
+  </div>
+  <div class="flash" id="flash"></div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  const q=new URLSearchParams(location.search);const total=+(q.get('from')||10);let n=total,AC;
+  const num=document.getElementById('num'),pr=document.getElementById('pr'),C=1609;
+  (function(){const row=document.getElementById('ticks');for(let i=0;i<60;i++){const t=document.createElement('i');t.style.transform=`rotate(${i*6}deg)`;if(i%5===0)t.style.height='16px';row.appendChild(t);}})();
+  function beep(f){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.18);o.start();o.stop(AC.currentTime+.2);}catch(e){}}
+  (function tick(){if(n>0){num.textContent=n;num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');pr.style.strokeDashoffset=C*(1-n/total);beep(n<=3?988:660);n--;setTimeout(tick,1000);}else{beep(1319);document.getElementById('flash').classList.add('go');document.getElementById('end').classList.add('go');}})();
+</script>
+</body>
+</html>

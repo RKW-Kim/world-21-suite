@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · END — BENTO SIGN-OFF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0900; --panel:#141210; --card:#1C1914; --line:#2A251C;
+  --paper:#F5F1E6; --mut:#9C9484; --amber:#E8A800;
+  --dis:'Archivo',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --glide:cubic-bezier(.2,.9,.25,1); --spring:cubic-bezier(.3,1.36,.35,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--ink);overflow:hidden;font-family:var(--dis);color:var(--paper)}
+html.obs body{background:transparent}
+#wrap{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%);opacity:0}
+#stage{position:absolute;inset:0;background:var(--ink)}
+html.obs #stage{background:transparent}
+
+/* ---------- top HUD ---------- */
+.topbar{position:absolute;left:32px;right:32px;top:24px;height:40px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.fsvg{display:block}
+.brand .fsvg{width:28px;height:28px}
+.bw{font:800 21px/1 var(--dis);letter-spacing:-.02em;color:var(--paper)}
+.bdiv{width:1px;height:18px;background:var(--line)}
+.bm{font:500 11px/1 var(--mono);letter-spacing:.16em;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;gap:10px;height:40px;padding:0 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px}
+.offair span{font:500 12.5px/1 var(--mono);letter-spacing:.14em;color:var(--paper)}
+.offair b{color:var(--amber);font-weight:600;font-variant-numeric:tabular-nums}
+.dm{width:7px;height:7px;background:var(--amber);transform:rotate(45deg);flex:none}
+.hud{opacity:0;transform:translateY(14px);transition:opacity .5s var(--glide),transform .55s var(--glide)}
+.hud.in{opacity:1;transform:translateY(0)}
+
+/* ---------- bento ---------- */
+.bento{position:absolute;left:32px;top:88px;width:1856px;height:912px;display:grid;
+  grid-template-columns:208px 208px 292px 292px 300px 436px;
+  grid-template-rows:216px 216px 224px 184px;gap:24px}
+.tile{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  opacity:0;transform:scale(.96);
+  transition:opacity .45s var(--glide),transform .6s var(--spring)}
+.tile.in{opacity:1;transform:scale(1)}
+.t1{grid-column:1/3;grid-row:1/3;background:var(--amber);box-shadow:0 12px 24px rgba(232,168,0,.32);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+.t2{grid-column:3/4;grid-row:1/3;background:var(--panel)}
+.t3{grid-column:4/6;grid-row:1/4;background:var(--panel)}
+.t4{grid-column:6/7;grid-row:1/4;background:var(--ink)}
+.t5{grid-column:1/4;grid-row:3/4;background:var(--panel);padding:0 36px;display:flex;flex-direction:column}
+.t6{grid-column:1/7;grid-row:4/5;background:var(--panel);display:flex;align-items:center;justify-content:space-between;padding:0 48px}
+
+.ix{position:absolute;top:18px;left:22px;font:500 11px/1 var(--mono);letter-spacing:.14em;color:var(--mut);z-index:3}
+.ix-tr{left:auto;right:22px}
+.ix-ink{color:rgba(10,9,0,.55)}
+
+/* ---------- tile 1 · amber slab ---------- */
+.hero-chip{width:248px;height:248px;background:var(--ink);border-radius:16px;display:grid;place-items:center;flex:none}
+.hero-chip .fsvg{width:200px;height:200px;animation:breath 4s cubic-bezier(.42,0,.35,1) infinite}
+.slab-st{font:800 37px/1.05 var(--dis);letter-spacing:-.01em;color:var(--ink);text-align:center}
+.slab-url{position:absolute;left:24px;bottom:18px;font:500 11.5px/1 var(--mono);letter-spacing:.12em;color:rgba(10,9,0,.62)}
+.eye-r{transform-box:fill-box;transform-origin:center}
+.eyes{transform-box:fill-box;transform-origin:center;animation:look 8s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes look{0%,20%{transform:translateX(0)}32%,46%{transform:translateX(-6px)}58%,74%{transform:translateX(6px)}86%,100%{transform:translateX(0)}}
+.wink .eye-r{animation:winkA .42s cubic-bezier(.45,0,.3,1) 1 both}
+@keyframes breath{0%,100%{transform:scale(1)}40%{transform:scale(1.015)}62%{transform:scale(1.006)}}
+@keyframes winkA{0%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+
+/* ---------- tile 2 · watch dial ---------- */
+.dial{position:absolute;inset:0;display:grid;place-items:center}
+.dsvg{position:absolute;inset:0;margin:auto;width:232px;height:232px}
+.d-mid{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:5px}
+.d-label{font:500 11px/1 var(--mono);letter-spacing:.2em;color:var(--mut)}
+.d-day{font:600 13px/1 var(--mono);letter-spacing:.14em;color:var(--amber)}
+.d-num{font:800 42px/1 var(--dis);color:var(--amber);font-variant-numeric:tabular-nums}
+.d-zone{font:600 11px/1 var(--mono);letter-spacing:.24em;color:rgba(245,241,230,.72)}
+.d-tick{display:inline-flex;align-items:flex-end;margin-top:3px}
+.rl{display:inline-block;height:15px;overflow:hidden}
+.rl .strip{display:block;transition:transform .42s var(--glide)}
+.rl .strip span{display:block;height:15px;font:500 12px/15px var(--mono);color:var(--mut);font-variant-numeric:tabular-nums}
+.rl.nt .strip{transition:none}
+.tick-u{font:500 10px/1 var(--mono);letter-spacing:.18em;color:rgba(156,148,132,.7);margin-left:4px}
+.d-arc{stroke-dashoffset:75;transition:stroke-dashoffset .9s var(--glide)}
+.d-arc.draw{stroke-dashoffset:0}
+.d-hand{transform-origin:116px 116px;transition:transform .24s cubic-bezier(.3,.7,.4,1)}
+.d-sig{position:absolute;left:22px;bottom:20px;font:500 10.5px/1 var(--mono);letter-spacing:.16em;color:rgba(156,148,132,.7)}
+.d-tick.blink .rl{animation:sb .2s var(--glide) both}
+@keyframes sb{from{opacity:.75}to{opacity:1}}
+
+/* ---------- tile 3 · duotone ---------- */
+#duo{position:absolute;inset:0;width:100%;height:100%}
+#duo .sc{animation:scan 6s cubic-bezier(.45,0,.4,1) infinite;animation-delay:calc(var(--c)*.16s)}
+@keyframes scan{0%,68%{opacity:var(--o)}76%{opacity:calc(var(--o) + .45)}86%,100%{opacity:var(--o)}}
+.duo-cap{position:absolute;left:28px;bottom:24px;display:inline-flex;align-items:center;gap:12px;z-index:2}
+.duo-cap span{font:500 12.5px/1 var(--mono);letter-spacing:.18em;color:var(--paper)}
+.duo-cap b{color:var(--amber);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- tile 4 · merch ---------- */
+.m-head{position:absolute;top:24px;left:32px;right:24px;display:flex;justify-content:space-between;align-items:center;z-index:2}
+.m-brand{display:flex;align-items:center;gap:10px}
+.m-brand .fsvg{width:28px;height:28px}
+.bw2{font:800 24px/1 var(--dis);letter-spacing:-.02em;color:var(--paper)}
+.m-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding-top:44px}
+.tee{width:190px;height:auto;display:block}
+.m-line{display:inline-flex;align-items:center;gap:12px}
+.m-line span{font:600 14px/1 var(--mono);letter-spacing:.22em;color:var(--paper)}
+.m-at{font:500 10.5px/1 var(--mono);letter-spacing:.18em;color:var(--mut);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+
+/* ---------- tile 5 · stats ---------- */
+.srow{flex:1;display:flex;align-items:center;gap:18px;min-height:0}
+.srow+.srow{border-top:1px solid var(--line)}
+.six{font:500 11px/1 var(--mono);letter-spacing:.14em;color:rgba(156,148,132,.75);width:24px;flex:none}
+.slb{font:500 12px/1 var(--mono);letter-spacing:.2em;color:var(--mut)}
+.sld{flex:1;height:0;border-top:2px dotted #2E281E;margin:0 6px}
+.sval{font:600 30px/1 var(--mono);color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ---------- tile 6 · wide sign-off ---------- */
+.st-wrap{display:flex;flex-direction:column;gap:12px}
+.big{font:800 64px/1 var(--dis);letter-spacing:-.02em;color:var(--paper);white-space:nowrap}
+.big em{font-style:normal;color:var(--amber)}
+.st-sub{font:500 12px/1 var(--mono);letter-spacing:.14em;color:var(--mut)}
+.st-sub b{color:var(--paper);font-weight:500;font-variant-numeric:tabular-nums}
+.next-chip{display:inline-flex;align-items:center;gap:14px;height:48px;padding:0 24px;background:var(--card);border:1px solid var(--line);border-radius:16px;flex:none}
+.next-chip span{font:600 12.5px/1 var(--mono);letter-spacing:.18em;color:var(--paper)}
+.tri{width:0;height:0;border-left:11px solid var(--amber);border-top:7px solid transparent;border-bottom:7px solid transparent;flex:none}
+
+/* ---------- ticker + watermark ---------- */
+.ticker{position:absolute;left:0;right:0;bottom:24px;height:40px;border-top:1px solid var(--line);overflow:hidden;opacity:0;transition:opacity .5s var(--glide)}
+.ticker.in{opacity:1}
+.tk-track{position:absolute;top:0;left:0;height:40px;display:flex;align-items:center;width:max-content;animation:tk 26s linear infinite}
+.ti{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--mut);text-transform:uppercase;padding:0 20px;white-space:nowrap}
+.ti b{color:var(--paper);font-weight:500;font-variant-numeric:tabular-nums}
+.tk-track .dm{margin:0 8px}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.wm{position:absolute;right:36px;bottom:74px;opacity:0;transition:opacity .6s var(--glide);pointer-events:none;z-index:4}
+.wm.in{opacity:.18}
+.wm .fsvg{width:42px;height:42px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001s!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <header class="topbar">
+    <div class="brand hud">
+      <svg class="fsvg" viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bw">smile</span>
+      <span class="bdiv"></span>
+      <span class="bm">PODCAST + SCREEN SHARE</span>
+    </div>
+    <div class="chip offair hud"><i class="dm"></i><span>OFF AIR — EP&nbsp;<b data-ep>128</b></span></div>
+  </header>
+
+  <main class="bento">
+
+    <!-- 1 · amber slab -->
+    <section class="tile t1" data-t="t1">
+      <span class="ix ix-ink">01</span>
+      <div class="hero-chip">
+        <svg id="face-hero" class="fsvg" viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><g class="eyes"><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle class="eye-r" cx="69" cy="35" r="5.5" fill="#0a0a0a"/></g><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 class="slab-st">GROW THROUGH<br>MARKETS.</h1>
+      <span class="slab-url">smile.co.ke</span>
+    </section>
+
+    <!-- 2 · watch dial -->
+    <section class="tile t2" data-t="t2">
+      <span class="ix">02</span>
+      <div class="dial">
+        <svg class="dsvg" viewBox="0 0 232 232" aria-hidden="true">
+          <circle cx="116" cy="116" r="106" fill="none" stroke="#2A251C" stroke-width="2"/>
+          <g id="ticks"></g>
+          <circle id="arc" class="d-arc" cx="116" cy="116" r="106" fill="none" stroke="#E8A800" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="75 125" transform="rotate(135 116 116)"/>
+          <g id="hand" class="d-hand"><circle cx="116" cy="22" r="4.5" fill="#E8A800"/></g>
+        </svg>
+        <div class="d-mid">
+          <span class="d-label" data-title>NEXT AIR</span>
+          <span class="d-day">THU</span>
+          <span class="d-num" data-sub>19:00</span>
+          <span class="d-zone">EAT</span>
+          <span class="d-tick"><span class="rl" id="r1"><span class="strip"></span></span><span class="rl" id="r2"><span class="strip"></span></span><span class="tick-u">SEC</span></span>
+        </div>
+      </div>
+      <span class="d-sig">SIGNAL 98% NOMINAL</span>
+    </section>
+
+    <!-- 3 · duotone -->
+    <section class="tile t3" data-t="t3">
+      <span class="ix ix-tr">03</span>
+      <svg id="duo" viewBox="0 0 616 704" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="duo-cap"><i class="dm"></i><span>EP&nbsp;<b data-ep>128</b> — IN THE CAN</span></div>
+    </section>
+
+    <!-- 4 · merch -->
+    <section class="tile t4" data-t="t4">
+      <div class="m-head">
+        <div class="m-brand">
+          <svg class="fsvg" viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="bw2">smile</span>
+        </div>
+        <span class="ix ix-tr" style="position:static">04</span>
+      </div>
+      <div class="m-mid">
+        <svg class="tee" viewBox="0 0 140 120" fill="none" aria-hidden="true"><path d="M50 12 C58 24 82 24 90 12 L118 22 L136 54 L110 66 L100 54 L100 106 L40 106 L40 54 L30 66 L4 54 L22 22 Z" stroke="#F5F1E6" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        <div class="m-line"><i class="dm"></i><span>SQUAD KIT — NEW DROP</span></div>
+        <span class="m-at">@smileke</span>
+      </div>
+    </section>
+
+    <!-- 5 · stats -->
+    <section class="tile t5" data-t="t5">
+      <div class="srow"><span class="six">01</span><span class="slb">EPISODES</span><span class="sld"></span><span class="sval">128</span></div>
+      <div class="srow"><span class="six">02</span><span class="slb">SQUAD</span><span class="sld"></span><span class="sval">5,912</span></div>
+      <div class="srow"><span class="six">03</span><span class="slb">FOLLOWERS</span><span class="sld"></span><span class="sval">50K</span></div>
+    </section>
+
+    <!-- 6 · wide sign-off -->
+    <section class="tile t6" data-t="t6">
+      <span class="ix ix-tr">06</span>
+      <div class="st-wrap">
+        <h2 class="big">SEE YOU <em>THURSDAY.</em></h2>
+        <p class="st-sub">EPISODE No.&nbsp;<b data-ep>128</b> WRAPPED — REPLAY ON smile.co.ke</p>
+      </div>
+      <div class="next-chip"><i class="tri"></i><span>NEXT: MAILBAG REPLIES</span></div>
+    </section>
+
+  </main>
+
+  <footer class="ticker" id="tkbox"><div class="tk-track" id="tk"><span class="ti">EPISODE No. <b data-ep>128</b></span><i class="dm"></i><span class="ti">@smileke</span><i class="dm"></i><span class="ti">smile.co.ke</span><i class="dm"></i><span class="ti">#SmileSquad</span><i class="dm"></i><span class="ti">EPISODE No. <b data-ep>128</b></span><i class="dm"></i><span class="ti">@smileke</span><i class="dm"></i><span class="ti">smile.co.ke</span><i class="dm"></i><span class="ti">#SmileSquad</span><i class="dm"></i><span class="ti">EPISODE No. <b data-ep>128</b></span><i class="dm"></i><span class="ti">@smileke</span><i class="dm"></i><span class="ti">smile.co.ke</span><i class="dm"></i><span class="ti">#SmileSquad</span><i class="dm"></i><span class="ti">EPISODE No. <b data-ep>128</b></span><i class="dm"></i><span class="ti">@smileke</span><i class="dm"></i><span class="ti">smile.co.ke</span><i class="dm"></i><span class="ti">#SmileSquad</span><i class="dm"></i></div></footer>
+
+  <div class="wm"><svg class="fsvg" viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+</div></div>
+<noscript><style>#wrap{opacity:1!important}.tile,.hud,.ticker{opacity:1!important;transform:none!important}.wm{opacity:.18!important}</style></noscript>
+<script>
+(function(){
+'use strict';
+var $=function(s,c){return (c||document).querySelector(s)};
+var $$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s))};
+var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var Q=new URLSearchParams(location.search);
+
+/* ---- URL contract ---- */
+var EP=Q.get('ep')||'128';
+$$('[data-ep]').forEach(function(n){n.textContent=EP});
+if(Q.get('title'))$$('[data-title]').forEach(function(n){n.textContent=Q.get('title')});
+if(Q.get('sub'))$$('[data-sub]').forEach(function(n){n.textContent=Q.get('sub')});
+if(Q.get('obs')==='1')document.documentElement.classList.add('obs');
+if(Q.get('wm')==='0'){var w=$('.wm');w&&w.remove();}
+
+/* ---- scale to fit ---- */
+var wrap=$('#wrap');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);wrap.style.transform='translate(-50%,-50%) scale('+s+')';wrap.style.opacity='1';}
+addEventListener('resize',fit);fit();
+
+/* ---- ticker: duplicate for seamless -50% loop ---- */
+var tk=$('#tk');tk.innerHTML+=tk.innerHTML;
+
+/* ---- dial ticks ---- */
+var NS='http://www.w3.org/2000/svg',ticks=$('#ticks');
+for(var i=0;i<12;i++){
+  var a=i*30*Math.PI/180,r1=88,r2=96;
+  var l=document.createElementNS(NS,'line');
+  l.setAttribute('x1',(116+r1*Math.sin(a)).toFixed(2));l.setAttribute('y1',(116-r1*Math.cos(a)).toFixed(2));
+  l.setAttribute('x2',(116+r2*Math.sin(a)).toFixed(2));l.setAttribute('y2',(116-r2*Math.cos(a)).toFixed(2));
+  l.setAttribute('stroke',i%3===0?'#4A4130':'#2A251C');l.setAttribute('stroke-width',i%3===0?2.5:1.5);
+  ticks.appendChild(l);
+}
+
+/* ---- duotone halftone ring ---- */
+(function(){
+  var duo=$('#duo'),cx=300,cy=310,R=250,r0=155,sp=22,col=0;
+  for(var x=sp/2;x<616;x+=sp,col++){for(var y=sp/2;y<704;y+=sp){
+    var d=Math.hypot(x-cx,y-cy);if(d>R-8||d<r0+8)continue;
+    var p=(x+y)/1320,rad=1.5+Math.pow(1-p,1.6)*9.5;if(rad<1.2)continue;
+    var o=+(0.95-p*0.45).toFixed(2);
+    var c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',x.toFixed(1));c.setAttribute('cy',y.toFixed(1));c.setAttribute('r',rad.toFixed(2));
+    c.setAttribute('fill','#E8A800');c.setAttribute('opacity',o);
+    c.classList.add('sc');c.style.setProperty('--o',o);c.style.setProperty('--c',col);
+    duo.appendChild(c);
+  }}
+  [[cx-44,cy-78,7.5,.3],[cx+44,cy-78,7.5,.3],[cx,cy-38,4.5,.2]].forEach(function(e){
+    var c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',e[0]);c.setAttribute('cy',e[1]);c.setAttribute('r',e[2]);
+    c.setAttribute('fill','#E8A800');c.setAttribute('opacity',e[3]);
+    duo.appendChild(c);
+  });
+})();
+
+/* ---- rolling seconds (kit signature) ---- */
+var RH=15;
+function roller(el){var st=el.firstChild;for(var i=0;i<10;i++){var s=document.createElement('span');s.textContent=i;st.appendChild(s);}}
+var r1=$('#r1'),r2=$('#r2');roller(r1);roller(r2);
+function setRoll(el,d,instant){
+  if(el._d===d)return;el._d=d;var st=el.firstChild;
+  if(instant){el.classList.add('nt');}
+  st.style.transform='translateY('+(-d*RH)+'px)';
+  if(instant){void el.offsetHeight;el.classList.remove('nt');}
+}
+var hand=$('#hand'),dtick=$('.d-tick');
+var base=Math.floor(Date.now()/1000)%60,count=0;window.__sec=base;
+function setSec(s,instant){var str=String(s).length<2?'0'+s:String(s);setRoll(r1,+str[0],instant);setRoll(r2,+str[1],instant);}
+setSec(base,true);
+hand.style.transform='rotate('+(base*6)+'deg)';
+setInterval(function(){
+  count++;var s=(base+count)%60;window.__sec=s;setSec(s,false);
+  hand.style.transform='rotate('+((base+count)*6)+'deg)';
+  if(!RM){dtick.classList.remove('blink');void dtick.offsetWidth;dtick.classList.add('blink');}
+},1000);
+
+/* ---- entry sequence (tiles hand off, arc draws, face winks) ---- */
+var tiles=$$('.tile'),arcEl=$('#arc'),heroFace=$('#face-hero');
+var hud=$$('.hud'),tkbox=$('#tkbox'),wm=$('.wm');
+function snap(name){
+  var o={};tiles.forEach(function(t){o[t.dataset.t]=+(+getComputedStyle(t).opacity).toFixed(3)});
+  window.__snaps[name]={t:+(performance.now()-T0).toFixed(0),tiles:o,arc:getComputedStyle(arcEl).strokeDashoffset,sec:window.__sec};
+}
+window.__snaps={};var T0=0;
+function start(){
+  if(window.__started)return;window.__started=true;T0=performance.now();
+  tiles.forEach(function(t,i){if(RM){t.classList.add('in')}else{setTimeout(function(){t.classList.add('in')},100+i*70)}});
+  hud.forEach(function(h,i){if(RM){h.classList.add('in')}else{setTimeout(function(){h.classList.add('in')},i*60)}});
+  setTimeout(function(){tkbox.classList.add('in');wm&&wm.classList.add('in')},RM?0:520);
+  if(RM){arcEl.classList.add('draw');}
+  else{
+    setTimeout(function(){arcEl.classList.add('draw')},430);
+    setTimeout(function(){heroFace.classList.add('wink')},1600);
+  }
+  [['s300',300],['s1200',1200],['s2800',2800]].forEach(function(p){
+    setTimeout(function(){snap(p[0])},RM?0:p[1]);
+  });
+}
+var fontsReady=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
+Promise.race([fontsReady,new Promise(function(r){setTimeout(r,900)})]).then(function(){setTimeout(start,RM?0:60)});
+
+/* ---- audit API ---- */
+window.__bentoAudit=function(){
+  var st=$('#stage').getBoundingClientRect();
+  var TA=tiles.map(function(t){var r=t.getBoundingClientRect();
+    return{c:t.dataset.t,x:+r.x.toFixed(1),y:+r.y.toFixed(1),w:+r.width.toFixed(1),h:+r.height.toFixed(1),o:+(+getComputedStyle(t).opacity).toFixed(3)};});
+  var xs=[].concat.apply([],TA.map(function(t){return[t.x,t.x+t.w]})).sort(function(a,b){return a-b});
+  var ys=[].concat.apply([],TA.map(function(t){return[t.y,t.y+t.h]})).sort(function(a,b){return a-b});
+  var ux=[],dx=[];xs.forEach(function(v){if(ux.indexOf(v)<0)ux.push(v)});for(var i=1;i<ux.length;i++)dx.push(+(ux[i]-ux[i-1]).toFixed(1));
+  var uy=[],dy=[];ys.forEach(function(v){if(uy.indexOf(v)<0)uy.push(v)});for(var j=1;j<uy.length;j++)dy.push(+(uy[j]-uy[j-1]).toFixed(1));
+  var bad=[];
+  $$('#stage *').forEach(function(e){
+    if(e instanceof HTMLElement&&e.children.length===0&&e.textContent.trim().length&&e.scrollWidth>e.clientWidth+1)
+      bad.push({t:e.textContent.trim().slice(0,24),sw:e.scrollWidth,cw:e.clientWidth});
+  });
+  var overlap='none';
+  for(var a=0;a<TA.length;a++)for(var b=a+1;b<TA.length;b++){
+    var A=TA[a],B=TA[b];
+    var ox=Math.max(0,Math.min(A.x+A.w,B.x+B.w)-Math.max(A.x,B.x));
+    var oy=Math.max(0,Math.min(A.y+A.h,B.y+B.h)-Math.max(A.y,B.y));
+    if(ox>1&&oy>1)overlap=A.c+'x'+b;
+  }
+  var num=$('.d-num'),lbl=$('.d-label');
+  var arc=getComputedStyle(arcEl);
+  return{stage:{w:+st.width.toFixed(1),h:+st.height.toFixed(1)},tiles:TA,
+    xs:ux,ys:uy,dx:dx,dy:dy,badTexts:bad,overlap:overlap,
+    heroRatio:+(parseFloat(getComputedStyle(num).fontSize)/parseFloat(getComputedStyle(lbl).fontSize)).toFixed(2),
+    arcOffset:arc.strokeDashoffset,arcDash:arc.strokeDasharray,sec:window.__sec,
+    started:!!window.__started,snaps:window.__snaps};
+};
+})();
+</script>
+</body>
+</html>

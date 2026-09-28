@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · end · TYPE IN MOTION</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= TYPE IN MOTION — kinetic typography =================
+       The text is the performer: h1 reveals per-word through mask wipes, the
+       kicker chip types itself (width reserved, no reflow), the sub breathes in
+       reading-rhythm groups, socials chips slide+flip in sequence, and the NEXT
+       SESSION chip gets a rolling-dot underline. Positions and sizes identical. */
+
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+    h1{font-family:var(--font-display);font-weight:800;font-size:148px;letter-spacing:-.035em;line-height:.95}
+    h1 .y{color:var(--yellow)}
+    .discbig{width:150px;height:150px;margin:2px 0 4px;filter:drop-shadow(0 20px 50px rgba(255,193,7,.3))}
+    .sub{font-size:26px;font-weight:500;color:#a8a8a8;max-width:760px;line-height:1.45}
+    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:15px;margin-top:6px}
+
+    /* hooks kept; behavior re-executed */
+    h1.rise,.socials.rise,.sub.rise,.mk.rise{opacity:1;animation:none}
+
+    /* ---- h1: per-word mask reveal (padding/negative-margin so glyph edges never clip) ---- */
+    .w{display:inline-block;overflow:hidden;vertical-align:top;padding:.12em .06em;margin:-.12em -.06em}
+    .wi{display:inline-block;transform:translateY(118%);animation:wUp 1s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--wd,0s)}
+    .w:nth-child(1) .wi{--wd:.12s}
+    .w:nth-child(2) .wi{--wd:.26s}
+    @keyframes wUp{to{transform:translateY(0)}}
+
+    /* ---- kicker chip: types itself, final width reserved (zero reflow) ---- */
+    .mk{position:relative}
+    .mk .res{visibility:hidden}
+    .mk .tyw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+    .mk .car{display:inline-block;width:3px;height:1.05em;margin-left:3px;background:var(--yellow);opacity:0;animation:cblink .8s steps(1) infinite}
+    @keyframes cblink{0%,55%{opacity:1}56%,100%{opacity:0}}
+
+    /* ---- sub: reading-rhythm reveal (phrase groups on the breath) ---- */
+    .rg{display:inline-block;opacity:0;transform:translateY(12px);animation:rgIn .65s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--wd,0s)}
+    @keyframes rgIn{to{opacity:1;transform:translateY(0)}}
+
+    /* ---- socials: slide + flip, in sequence ---- */
+    .socials{perspective:700px}
+    .fl{opacity:0;transform:translateY(26px) rotateX(-72deg);transform-origin:50% 100%;
+      animation:flIn .8s cubic-bezier(.19,1,.22,1) forwards;animation-delay:var(--fd,0s)}
+    .fl:nth-child(1){--fd:.95s}.fl:nth-child(2){--fd:1.07s}.fl:nth-child(3){--fd:1.19s}
+    @keyframes flIn{60%{opacity:1}to{opacity:1;transform:translateY(0) rotateX(0deg)}}
+
+    /* ---- NEXT SESSION: rolling-dot underline ---- */
+    .next{position:relative}
+    .next::after{content:"";position:absolute;left:20px;right:20px;bottom:-9px;height:2px;border-radius:2px;background:rgba(255,193,7,.4)}
+    .next::before{content:"";position:absolute;left:20px;right:20px;bottom:-11px;height:5px;border-radius:5px;opacity:0;
+      background:radial-gradient(circle 3px at 4px 50%,#fff 0 2px,var(--yellow) 2.6px,transparent 4.4px) no-repeat;
+      filter:drop-shadow(0 0 6px rgba(255,193,7,.8));
+      animation:roll 2.8s ease-in-out 1.9s infinite}
+    @keyframes roll{
+      0%{transform:translateX(0);opacity:0}
+      6%{opacity:1}
+      46%{transform:translateX(calc(100% - 8px))}
+      54%{transform:translateX(calc(100% - 8px));opacity:1}
+      70%{opacity:0}
+      100%{transform:translateX(0);opacity:0}}
+
+    .cf{position:absolute;top:-60px;width:12px;height:22px;border-radius:4px;animation:fall linear infinite;will-change:transform}
+    @keyframes fall{to{transform:translate(var(--sx,0px),1200px) rotate(560deg)}}
+
+    /* let the mood-spin land after the disc does */
+    svg.disc.smile-anim.spin{animation-delay:.4s}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div><div id="confetti"></div>
+  <div class="wrap">
+    <span class="chip ghost mk rise" style="--rd:.05s"><span class="res" aria-hidden="true">✓ MARKET CLOSED</span><span class="tyw"><span id="ty"></span><i class="car" id="car"></i></span></span>
+    <h1 class="rise" style="--rd:.15s"><span class="w"><span class="wi">session</span></span> <span class="w"><span class="wi"><span class="y">closed</span>.</span></span></h1>
+    <div class="rise" style="--rd:.25s"><svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+      <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+    </svg></div>
+    <p class="sub rise" style="--rd:.35s"><span class="rg" style="--wd:.55s">Asante for trading with us today —</span> <span class="rg" style="--wd:.67s">books balanced, smile intact.</span> <span class="rg" style="--wd:.79s">Same desk next time.</span></p>
+    <div class="socials rise" style="--rd:.45s"><span class="chip dark fl">▶ YouTube · /smileke</span><span class="chip dark fl">◉ Twitch · /smileke</span><span class="chip dark fl">♪ TikTok · @smileke</span></div>
+    <span class="chip solid next rise" style="--rd:1.3s">NEXT SESSION · FRIDAY 8PM EAT</span>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  /* typewriter: exact copy, human cadence, caret retires after the line lands */
+  (function(){
+    const msg='✓ MARKET CLOSED',ty=document.getElementById('ty'),car=document.getElementById('car');
+    let i=0;
+    setTimeout(function tick(){
+      car.style.opacity='1';
+      ty.textContent=msg.slice(0,++i);
+      if(i<msg.length) setTimeout(tick,34+Math.random()*42);
+      /* retirement: kill the blink loop first (it outranks inline opacity), then fade —
+         caret stays in place so the typed text never re-centres by a few px */
+      else setTimeout(function(){car.style.animation='none';car.style.transition='opacity .45s';car.style.opacity='0';},1400);
+    },380);
+  })();
+
+  /* confetti: identical palette/count to the frozen design */
+  const cols=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'],box=document.getElementById('confetti');
+  for(let i=0;i<42;i++){const s=document.createElement('span');s.className='cf';s.style.left=Math.random()*100+'%';s.style.background=cols[i%cols.length];s.style.animationDuration=(4+Math.random()*3.5)+'s';s.style.animationDelay=-(Math.random()*7.5)+'s';s.style.width=(9+Math.random()*9)+'px';s.style.height=(18+Math.random()*10)+'px';s.style.setProperty('--sx',(Math.random()*160-80)+'px');s.style.opacity=(.55+Math.random()*.45).toFixed(2);box.appendChild(s);}
+</script>
+</body>
+</html>

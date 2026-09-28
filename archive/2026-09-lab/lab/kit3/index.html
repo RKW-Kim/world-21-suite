@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMILE KIT3 — The Essentials Tournament</title>
+<link rel="icon" href="../assets/smile-face.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900; --panel:#141210;
+  --card:#1C1914; --line:#2A251C; --muted:#9C9484; --paper:#F5F1E6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--paper);
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+::selection{background:rgba(255,206,0,.3);color:var(--ink)}
+a{color:inherit;text-decoration:none}
+img,svg{display:block}
+.disp{font-family:'Space Grotesk',sans-serif}
+
+.mast{display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:22px clamp(20px,4vw,56px);border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:rgba(10,9,0,.88);backdrop-filter:blur(12px);z-index:50}
+.mast .brand{display:flex;align-items:center;gap:14px}
+.mast .brand svg{height:40px}
+.mast .brand b{font-family:'Space Grotesk';font-size:19px;letter-spacing:-.01em}
+.mast .brand span{font-size:12px;color:var(--muted);font-weight:600;display:block;margin-top:2px}
+.mast nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mast nav a{font-size:13px;font-weight:600;color:var(--muted);padding:8px 14px;border-radius:999px;transition:.2s}
+.mast nav a:hover{color:var(--paper);background:var(--panel)}
+.mast nav a.cta{color:var(--ink);background:var(--yellow)}
+.mast nav a.cta:hover{background:var(--yellow-hot)}
+
+.hero{padding:clamp(40px,6vw,84px) clamp(20px,4vw,56px) clamp(24px,3vw,40px);max-width:1440px;margin:0 auto}
+.hero h1{font-family:'Space Grotesk';font-weight:700;letter-spacing:-.03em;
+  font-size:clamp(32px,5vw,60px);line-height:1.05;max-width:22ch}
+.hero h1 em{font-style:normal;color:var(--yellow)}
+.hero p{margin-top:18px;color:var(--muted);font-size:clamp(14px,1.3vw,16px);line-height:1.65;max-width:70ch}
+.hero p b{color:var(--paper);font-weight:600}
+.hero .law{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px}
+.hero .law span{font-size:12px;font-weight:600;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:7px 13px}
+.hero .law span.y{color:var(--ink);background:var(--yellow);border-color:var(--yellow)}
+
+.tour{max-width:1440px;margin:0 auto;padding:8px clamp(20px,4vw,56px) 70px}
+.tour-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:22px 0 16px}
+.tour-head h2{font-family:'Space Grotesk';font-size:clamp(20px,2.4vw,28px);letter-spacing:-.02em}
+.tour-head .hint{font-size:13px;color:var(--muted)}
+.tour-head .hint b{color:var(--yellow)}
+
+.scene{border:1px solid var(--line);border-radius:20px;background:var(--panel);overflow:hidden;margin-bottom:34px}
+.scene-bar{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.scene-bar .idx{font-family:'Space Grotesk';font-weight:700;font-size:13px;color:var(--ink);
+  background:var(--yellow);border-radius:8px;padding:5px 10px}
+.scene-bar h3{font-family:'Space Grotesk';font-size:18px;letter-spacing:-.01em}
+.scene-bar .meta{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.08em}
+.takes{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:0}
+.take{border-right:1px solid var(--line);padding:18px 18px 20px;display:flex;flex-direction:column;gap:12px}
+.take:last-child{border-right:none}
+@media (max-width:920px){.take{border-right:none;border-bottom:1px solid var(--line)}}
+.take:last-child{border-bottom:none}
+.shot{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000;aspect-ratio:16/9}
+.shot iframe{width:1920px;height:1080px;border:0;transform-origin:0 0;pointer-events:none;position:absolute;left:0;top:0}
+.shot .open{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  color:var(--ink);background:var(--yellow);border-radius:999px;padding:6px 12px;z-index:3;transition:.2s}
+.shot .open:hover{background:var(--yellow-hot)}
+.take h4{font-family:'Space Grotesk';font-size:15.5px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.take h4 .tk{font-size:11px;font-weight:700;color:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 7px}
+.take p{font-size:13px;color:var(--muted);line-height:1.55;flex:1}
+.take p b{color:var(--paper);font-weight:600}
+.take .row{display:flex;align-items:center;gap:10px}
+.vote{cursor:pointer;user-select:none;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--paper);
+  background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;transition:.15s}
+.vote:hover{border-color:var(--yellow);color:var(--yellow)}
+.vote.did{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
+.vote .n{font-family:'Space Grotesk'}
+.src{font-size:11px;color:var(--muted);opacity:.8}
+
+.foot{border-top:1px solid var(--line);padding:26px clamp(20px,4vw,56px);display:flex;gap:18px;flex-wrap:wrap;
+  align-items:center;justify-content:space-between;max-width:1440px;margin:0 auto}
+.foot .l{font-size:12px;color:var(--muted);line-height:1.7;max-width:72ch}
+.foot .l b{color:var(--paper)}
+.foot nav{display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)}
+.foot nav a:hover{color:var(--yellow)}
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="brand">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>smile · KIT3</b><span>THE ESSENTIALS TOURNAMENT — 5 SCENES × 2 TAKES</span></div>
+  </div>
+  <nav>
+    <a href="director.html">Director</a>
+    <a href="../kit/index.html">Archive (kit)</a>
+    <a href="BRIEF.md">DNA Brief</a>
+    <a class="cta" href="#start">Vote below</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>Ten designs. Five essentials. <em>Every take extracted from Dribbble's top UI.</em></h1>
+  <p>475 Dribbble shots downloaded, reviewed natively by the director, and distilled into studio style formulas —
+  then <b>10 build agents</b> each shipped one scene as if a top studio had been hired by smile.co.ke.
+  A second wave of agents re-did every file against the director's eye-notes. The shelf scenes
+  (gifting, live, share, ad, intermission) are parked until we come back to them.</p>
+  <div class="law">
+    <span class="y">?t=90</span><span>?t=2026-10-03T19:00:00+03:00</span><span>?ep=128</span><span>?title=</span><span>?sub=</span><span>?obs=1</span><span>?wm=0</span><span>H = help · V = variants (where present)</span>
+  </div>
+</section>
+
+<main class="tour" id="start">
+  <div class="tour-head"><h2>The board</h2><div class="hint">Live previews are real scenes running on the default 10:00 count · <b>vote</b> the ones that should advance to round 2</div></div>
+
+  <section class="scene" id="scene-start">
+    <div class="scene-bar"><span class="idx">01</span><h3>STARTING SOON</h3><span class="meta">PRE-SHOW · COUNTDOWN · AGENDA</span></div>
+    <div class="takes">
+      <div class="take" data-file="start-clay">
+        <div class="shot"><iframe src="scenes/start-clay.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/start-clay.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">A</span> YELLOW FIELD <span class="src">— Clay q9_10</span></h4>
+        <p>Ink blob cutting a giant yellow field; bento cards carry the rolling countdown, the desk queue and signal status. <b>Sazabi snap on entry</b>, ticker along the base.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+      <div class="take" data-file="start-print">
+        <div class="shot"><iframe src="scenes/start-print.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/start-print.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">B</span> PRINT EDITION <span class="src">— d~studio q7_08</span></h4>
+        <p>Serif display headline with <b>~ and > grammar</b>, underline meta rows, stamped countdown, and a giant <b>smile.*</b> wordmark pinned to a hairline rule. The broadcast as a printed poster.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene-brb">
+    <div class="scene-bar"><span class="idx">02</span><h3>BRB — BE RIGHT BACK</h3><span class="meta">SHORT BREAK · PERSONALITY</span></div>
+    <div class="takes">
+      <div class="take" data-file="brb-otto">
+        <div class="shot"><iframe src="scenes/brb-otto.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/brb-otto.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">A</span> MASCOT DEVICE <span class="src">— Otto s17</span></h4>
+        <p>The face as a <b>dot-matrix LED device</b> idling in an ink void — blinks, glances, tilts. Calibration ruler tracks the return vector. The kit's quietest, most alive scene.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+      <div class="take" data-file="brb-breathe">
+        <div class="shot"><iframe src="scenes/brb-breathe.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/brb-breathe.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">B</span> AMBER BREATH <span class="src">— s14 + s13</span></h4>
+        <p>Face breathing on a 4s halo cycle, status ledger with chat-watcher pulse, and the return dial as the <b>one hero numeral</b>. Warm amber accents on stacked ink.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene-tech">
+    <div class="scene-bar"><span class="idx">03</span><h3>TECHNICAL DIFFICULTY</h3><span class="meta">HOLD SCREEN · RECOVERY</span></div>
+    <div class="takes">
+      <div class="take" data-file="tech-abyss">
+        <div class="shot"><iframe src="scenes/tech-abyss.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/tech-abyss.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">A</span> SIGNAL DIAL <span class="src">— The Abyss q10_01</span></h4>
+        <p>A giant instrument dial with yellow arc gauge, tabular T-minus rolling inside, <b>micro-caps hugging the ring</b>, terminal log rail and frozen status cells. The watch-face formula at broadcast scale.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+      <div class="take" data-file="tech-serv">
+        <div class="shot"><iframe src="scenes/tech-serv.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/tech-serv.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">B</span> FREEZE WALL <span class="src">— serv s58</span></h4>
+        <p>Swiss bento of frozen panels with <b>floating label chips</b>, a giant reconnect % as the hero, dot-matrix art and spec-sheet rows. "Not your fault" energy, studio-grade restraint.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene-qa">
+    <div class="scene-bar"><span class="idx">04</span><h3>Q&amp;A</h3><span class="meta">AUDIENCE QUESTIONS · QUEUE</span></div>
+    <div class="takes">
+      <div class="take" data-file="qa-wanna">
+        <div class="shot"><iframe src="scenes/qa-wanna.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/qa-wanna.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">A</span> MONO QUEUE <span class="src">— Wannathis q7_06</span></h4>
+        <p>Greyscale question wall where <b>yellow exists only on the live question</b> — ≈1% accent discipline. Carousel deals rows like cards; a JUST ANSWERED ledger updates as the queue advances.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+      <div class="take" data-file="qa-brut">
+        <div class="shot"><iframe src="scenes/qa-brut.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/qa-brut.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">B</span> BRUT ASK <span class="src">— Gumroad + BOLT</span></h4>
+        <p>Giant <b>smile.(face)</b> wordmark band, hard yellow/paper split, sticker faces, brutalist question cards with solid offset shadows. The loud one.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene-end">
+    <div class="scene-bar"><span class="idx">05</span><h3>END OF STREAM</h3><span class="meta">SIGN-OFF · NEXT EPISODE</span></div>
+    <div class="takes">
+      <div class="take" data-file="end-reel">
+        <div class="shot"><iframe src="scenes/end-reel.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/end-reel.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">A</span> FILMSTRIP REEL <span class="src">— Matt Becker s52</span></h4>
+        <p>Two-tone masked headline over a <b>scrolling filmstrip of episode frames</b>, numbered next-episode slabs with one filled yellow, replay queue line. The motion designer's sign-off.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+      <div class="take" data-file="end-bento">
+        <div class="shot"><iframe src="scenes/end-bento.html?ep=128" loading="lazy" tabindex="-1"></iframe><a class="open" href="scenes/end-bento.html?ep=128" target="_blank">OPEN FULL ↗</a></div>
+        <h4><span class="tk">B</span> BENTO SIGN-OFF <span class="src">— EduFix s13</span></h4>
+        <p>A brand-collage bento: amber slab with the face, <b>next-air watch dial</b>, duotone art tile, squad-kit merch tile and dotted-leader stats. Tiles hand off in sequence.</p>
+        <div class="row"><button class="vote">▲ <span class="n">0</span></button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="l"><b>Process:</b> D1+D2 research agents pulled 475 Dribbble shots (top-liked + fresh/niche) → director natively reviewed contact sheets &amp; keepers → DNA brief → 10 Wave-1 build agents (draft → measure → iterate ×3) → director eye-notes on every scene → 10 Wave-2 improvement agents (no regressions, gates re-verified). No VLM anywhere — native vision only.</div>
+  <nav><a href="director.html">Director console</a><a href="../kit/index.html">Archive</a><a href="BRIEF.md">Brief</a></nav>
+</footer>
+
+<script>
+(function(){
+  /* scale 1920x1080 iframes into 16:9 cards */
+  function fit(){
+    document.querySelectorAll('.shot').forEach(function(sh){
+      var f=sh.querySelector('iframe'),w=sh.clientWidth;
+      if(f&&w){var s=w/1920;f.style.transform='scale('+s+')';f.style.height=(1080*s)+'px';f.style.width=w+'px';}
+    });
+  }
+  addEventListener('resize',fit);addEventListener('load',fit);fit();setTimeout(fit,400);setTimeout(fit,1600);
+  /* votes */
+  var KEY='smile-kit3-votes';
+  var store={};try{store=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){store={}}
+  document.querySelectorAll('.take').forEach(function(t){
+    var id=t.getAttribute('data-file'),b=t.querySelector('.vote'),n=b.querySelector('.n');
+    var c=store[id]&&store[id].c||0,me=store[id]&&store[id].me||false;
+    function paint(){n.textContent=c;b.classList.toggle('did',me)}
+    paint();
+    b.addEventListener('click',function(){
+      if(me){c--;me=false}else{c++;me=true}
+      store[id]={c:c,me:me};try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}
+      paint();
+    });
+  });
+})();
+</script>
+</body>
+</html>

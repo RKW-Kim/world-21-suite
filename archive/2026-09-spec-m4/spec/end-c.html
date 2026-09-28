@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · session closed — credits crawl</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · END / CREDITS CRAWL
+  · keynote black stage: 300px smile disc running the trick loop (bowl eye-dip →
+    rim roll → launch home · eased 360° spin settle · occasional wink), h1 `thank you.`
+  · right third: auto-scrolling credits column (seamless two-copy loop, masked fade)
+  · bottom: socials + NEXT SESSION marquee band (JS transform loop, two copies)
+  · confetti on 2 depth planes (far blurred / near crisp, negative delays = frame one
+    is populated) · one ambient: slow light sweep every ~21s
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a; --bg:#09090b;
+  --border:#27272a; --border2:#3f3f46; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk','Inter',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-family:var(--fb);color:var(--fg);-webkit-font-smoothing:antialiased;user-select:none}
+.num{font-variant-numeric:tabular-nums}
+svg{display:block}
+
+.stage{position:relative;flex:none;width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 52% 56% at 36% 42%,rgba(255,255,255,.06),transparent 70%)}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,transparent 48%,rgba(0,0,0,.6) 100%);z-index:9;pointer-events:none}
+
+/* ambient: slow light sweep every ~21s */
+.sweep{position:absolute;top:-10%;bottom:-10%;left:0;width:46%;z-index:8;pointer-events:none;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,240,200,.05) 46%,rgba(255,244,214,.08) 50%,rgba(255,240,200,.05) 54%,transparent 80%);
+  transform:translateX(-700px) skewX(-12deg);
+  animation:sweepk 21s ease-in-out infinite}
+@keyframes sweepk{
+  0%{transform:translateX(-700px) skewX(-12deg);opacity:0}
+  6%{opacity:1}
+  24%{opacity:1}
+  30%{transform:translateX(2600px) skewX(-12deg);opacity:0}
+  100%{transform:translateX(2600px) skewX(-12deg);opacity:0}}
+
+/* confetti — two depth planes */
+.cf2{position:absolute;top:0;will-change:transform;animation:fallk linear infinite}
+.cf2 i{display:block;border-radius:2px;animation:swayk ease-in-out infinite alternate}
+.plane-far{filter:blur(2.4px);opacity:.38}
+.plane-near{opacity:.85}
+@keyframes fallk{from{transform:translate3d(0,-130px,0)}to{transform:translate3d(0,1310px,0)}}
+@keyframes swayk{from{transform:translateX(-30px) rotate(-200deg)}to{transform:translateX(30px) rotate(200deg)}}
+
+/* ═══ hero (left ⅔) ═══ */
+.hero{position:absolute;left:70px;top:0;bottom:64px;width:1180px;z-index:4;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.discwrap{position:relative;width:300px;height:300px;margin-bottom:30px;
+  animation:riseIn .95s cubic-bezier(.2,.9,.3,1) .25s both}
+.halo{position:absolute;inset:-58px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,193,7,.15),transparent 62%);
+  filter:blur(8px);animation:haloT 5s ease-in-out infinite}
+@keyframes haloT{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
+.discwrap svg.disc{width:100%;height:100%;filter:drop-shadow(0 18px 44px rgba(0,0,0,.5))}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.07);
+  color:var(--yellow);padding:7px 16px;font-family:var(--fm);font-size:10.5px;letter-spacing:.3em;
+  animation:riseIn .7s cubic-bezier(.2,.9,.3,1) .55s both}
+h1{margin-top:16px;font-family:var(--fd);font-weight:700;font-size:140px;line-height:1;letter-spacing:-.04em}
+h1 .wp{display:inline-block;animation:wordup .95s cubic-bezier(.2,.9,.3,1) both}
+@keyframes wordup{from{opacity:0;transform:translateY(64px)}to{opacity:1;transform:none}}
+h1 .w1{animation-delay:.66s;background:linear-gradient(180deg,#fafafa 20%,#86868e 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .w2{animation-delay:.82s;background:linear-gradient(180deg,#FFDE7A 8%,#FFC107 52%,#F5A623 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 34px rgba(255,193,7,.28))}
+.sub{margin-top:22px;max-width:680px;font-size:20px;line-height:1.55;color:var(--muted);
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .95s both}
+
+/* ═══ credits (right third) ═══ */
+.credits{position:absolute;left:1398px;top:130px;bottom:176px;width:452px;z-index:4;
+  border-left:1px solid var(--border);padding-left:38px;display:flex;flex-direction:column;
+  animation:slideL .9s cubic-bezier(.2,.9,.3,1) 1.05s both}
+@keyframes slideL{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:none}}
+.chead{display:flex;align-items:center;justify-content:space-between}
+.chead b{font-family:var(--fm);font-size:11px;letter-spacing:.34em;color:var(--fg);font-weight:700}
+.chead .tag{font-family:var(--fm);font-size:10px;letter-spacing:.2em;color:var(--yellow);
+  border:1px solid rgba(255,193,7,.35);border-radius:999px;padding:4px 11px}
+.cfeed{margin-top:16px;font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--faint);
+  display:flex;gap:22px;white-space:nowrap}
+.cfeed b{color:var(--muted);font-weight:500}
+.cfeed .pc{font-size:9.5px}
+.pc.up{color:var(--up)}.pc.down{color:var(--down)}
+.cmask{flex:1;overflow:hidden;margin-top:14px;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 9%,#000 90%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 9%,#000 90%,transparent)}
+.ccol{animation:crawl 32s linear infinite;will-change:transform}
+@keyframes crawl{to{transform:translateY(-50%)}}
+.cseq{padding-bottom:48px}
+.ci{font-family:var(--fm);font-size:13.5px;letter-spacing:.04em;line-height:1.5;margin-bottom:74px;color:var(--fg)}
+.ci .role{color:var(--faint)}
+.ci .val{color:var(--fg);font-weight:500}
+.ci.gold{color:var(--yellow);font-weight:600;letter-spacing:.1em}
+
+/* ═══ bottom marquee band ═══ */
+.band{position:absolute;left:0;right:0;bottom:0;height:64px;z-index:6;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.96);border-top:1px solid var(--border);
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) 1.15s both}
+.cap{display:flex;align-items:center;gap:10px;padding:0 24px;font-family:var(--fd);font-weight:700;
+  font-size:12px;letter-spacing:.18em;white-space:nowrap}
+.cap.left{background:var(--yellow);color:var(--ink)}
+.cap.left .dw{display:inline-block;position:relative;overflow:hidden;flex:none;width:26px;height:26px;
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+.cap.left .dw svg{width:100% !important;height:100% !important}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--fm);font-weight:400;font-size:10.5px;letter-spacing:.2em}
+.bmask{flex:1;overflow:hidden;display:flex;align-items:center}
+.btrack{display:flex;width:max-content;will-change:transform}
+.bseq{display:flex;align-items:center}
+.bitem{display:inline-flex;align-items:center;gap:10px;margin-right:52px;font-family:var(--fm);
+  font-size:12px;letter-spacing:.18em;color:var(--muted);white-space:nowrap}
+.bitem::before{content:"✦";color:var(--yellow);font-size:10px}
+.bitem b{color:var(--fg);font-weight:600}
+.bitem.next{background:var(--yellow);color:var(--ink);border-radius:999px;padding:8px 16px;
+  font-weight:700;letter-spacing:.16em;box-shadow:0 6px 18px rgba(255,193,7,.16)}
+.bitem.next::before{content:"★";color:rgba(10,10,10,.55)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+  <div class="spot" aria-hidden="true"></div>
+  <div class="sweep" aria-hidden="true"></div>
+
+  <!-- hero -->
+  <main class="hero">
+    <div class="discwrap" aria-hidden="true">
+      <span class="halo"></span>
+      <svg class="disc" id="cdisc" viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+        <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+        <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+              stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="eyebrow">✓ MARKET CLOSED</span>
+    <h1><span class="wp w1">thank</span> <span class="wp w2">you.</span></h1>
+    <p class="sub">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+  </main>
+
+  <!-- credits column -->
+  <aside class="credits">
+    <div class="chead"><b>CREDITS</b><span class="tag num" id="epTag">EP 128</span></div>
+    <div class="cfeed">
+      <span>AFTER HOURS</span>
+      <span>BTC <b class="num" id="fBTC">67,240</b> <span class="pc num" id="fcBTC">▲0.8%</span></span>
+      <span>ETH <b class="num" id="fETH">3,512</b> <span class="pc num" id="fcETH">▼0.4%</span></span>
+    </div>
+    <div class="cmask">
+      <div class="ccol" id="ccol">
+        <div class="cseq">
+          <div class="ci"><span class="role">desk</span> — <span class="val">charts · candles · coffee · vibes</span></div>
+          <div class="ci"><span class="role">host</span> — <span class="val">smile</span></div>
+          <div class="ci"><span class="role">camera</span> — <span class="val">you</span></div>
+          <div class="ci"><span class="role">questions</span> — <span class="val">the room</span></div>
+          <div class="ci gold">@smileke</div>
+          <div class="ci gold">smile.co.ke</div>
+          <div class="ci gold">#SmileSquad</div>
+        </div>
+        <div class="cseq" aria-hidden="true">
+          <div class="ci"><span class="role">desk</span> — <span class="val">charts · candles · coffee · vibes</span></div>
+          <div class="ci"><span class="role">host</span> — <span class="val">smile</span></div>
+          <div class="ci"><span class="role">camera</span> — <span class="val">you</span></div>
+          <div class="ci"><span class="role">questions</span> — <span class="val">the room</span></div>
+          <div class="ci gold">@smileke</div>
+          <div class="ci gold">smile.co.ke</div>
+          <div class="ci gold">#SmileSquad</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- bottom marquee band -->
+  <footer class="band">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span>SMILE · THANK YOU</span>
+    </div>
+    <div class="bmask">
+      <div class="btrack" id="btrack">
+        <span class="bseq">
+          <span class="bitem">▶ YouTube · <b>/smileke</b></span>
+          <span class="bitem">◉ Twitch · <b>/smileke</b></span>
+          <span class="bitem">♪ TikTok · <b>@smileke</b></span>
+          <span class="bitem next">NEXT SESSION · FRIDAY 8PM EAT</span>
+        </span>
+        <span class="bseq" aria-hidden="true">
+          <span class="bitem">▶ YouTube · <b>/smileke</b></span>
+          <span class="bitem">◉ Twitch · <b>/smileke</b></span>
+          <span class="bitem">♪ TikTok · <b>@smileke</b></span>
+          <span class="bitem next">NEXT SESSION · FRIDAY 8PM EAT</span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">NAIROBI · <span class="num" id="tclock">--:--:--</span> EAT</div>
+  </footer>
+
+  <div class="vig" aria-hidden="true"></div>
+  <div id="fx" aria-hidden="true" style="position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden"></div>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  'use strict';
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── fit 1920×1080 to any window ── */
+  var stage=document.getElementById('stage');
+  function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+
+  /* ── URL contract (graceful ?ep=) ── */
+  var ep='128';
+  try{var q=new URLSearchParams(location.search).get('ep');
+    if(q&&/^\d{1,4}$/.test(q))ep=q;}catch(e){}
+  document.getElementById('epTag').textContent='EP '+ep;
+
+  /* ── EAT clock ── */
+  function eatFmt(o){try{return new Intl.DateTimeFormat('en-GB',
+    Object.assign({timeZone:'Africa/Nairobi',hourCycle:'h23'},o)).format(new Date());}catch(e){return '';}}
+  var clockEl=document.getElementById('tclock');
+  function tick(){clockEl.textContent=eatFmt({hour:'2-digit',minute:'2-digit',second:'2-digit'})||'--:--:--';}
+  tick();setInterval(tick,1000);
+
+  /* ── market pulse: after-hours feed (Binance w/ fallback, silent on file://) ── */
+  var P={BTC:67240,ETH:3512};
+  var D={BTC:.8,ETH:-.4};
+  var elP={BTC:document.getElementById('fBTC'),ETH:document.getElementById('fETH')};
+  var elC={BTC:document.getElementById('fcBTC'),ETH:document.getElementById('fcETH')};
+  function fmt(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function paint(k){
+    if(elP[k])elP[k].textContent=fmt(P[k]);
+    var c=elC[k];
+    if(c){var up=D[k]>=0;c.textContent=(up?'▲':'▼')+Math.abs(D[k]).toFixed(1)+'%';
+      c.className='pc num '+(up?'up':'down');}}
+  function walk(){['BTC','ETH'].forEach(function(k){
+    P[k]*=1+(Math.random()-.5)*.004;D[k]+=(Math.random()-.5)*.06;paint(k);});}
+  function pull(){
+    if(location.protocol.indexOf('http')!==0){walk();return;}
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){list.forEach(function(t){
+        var k=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':null;
+        if(k){P[k]=parseFloat(t.lastPrice);D[k]=parseFloat(t.priceChangePercent);paint(k);}});})
+      .catch(walk);
+  }
+  Object.keys(elP).forEach(paint);setInterval(pull,5000);pull();
+
+  /* ── marquee band (two-copy transform loop, hidden-safe) ── */
+  var track=document.getElementById('btrack');
+  if(track){
+    var seq=track.children[0],W=0,x=0,last=performance.now();
+    var measure=function(){W=seq.getBoundingClientRect().width;};
+    measure();addEventListener('resize',measure);
+    (function step(now){
+      var dt=Math.min(50,now-last);last=now;
+      if(!document.hidden&&!RM&&W>0){
+        x-=dt*.06;if(-x>=W)x+=W;
+        track.style.transform='translateX('+x.toFixed(2)+'px)';
+      }
+      requestAnimationFrame(step);
+    })(last);
+  }
+
+  /* ── confetti: two depth planes, negative delays → frame one is populated ── */
+  var COLORS=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'];
+  var fx=document.getElementById('fx');
+  function seed(plane,n,Tmin,Tmax){
+    for(var i=0;i<n;i++){
+      var w=document.createElement('div'),c=document.createElement('i');
+      var col=COLORS[(Math.random()*COLORS.length)|0],round=Math.random()<.35;
+      var s=round?6+Math.random()*5:5+Math.random()*5;
+      c.style.width=s.toFixed(1)+'px';
+      c.style.height=(round?s:s+4+Math.random()*5).toFixed(1)+'px';
+      c.style.background=col;c.style.borderRadius=round?'50%':'1.5px';
+      var T=Tmin+Math.random()*(Tmax-Tmin);
+      w.className='cf2 '+plane;
+      w.style.left=(Math.random()*100).toFixed(2)+'%';
+      w.style.animationDuration=T.toFixed(2)+'s';
+      w.style.animationDelay=(-Math.random()*T).toFixed(2)+'s';
+      var S=3.2+Math.random()*3.4;
+      c.style.animationDuration=S.toFixed(2)+'s';
+      c.style.animationDelay=(-Math.random()*S).toFixed(2)+'s';
+      w.appendChild(c);fx.appendChild(w);
+    }
+  }
+  if(!RM){seed('plane-far',16,17,23);seed('plane-near',10,11,15);}
+
+  /* ═══ trick engine (ported from _ref: smooth returns, eased home) ═══ */
+  var svg=null,eyeL=null,eyeR=null,mouth=null,busy=false;
+  var st={l:{x:0,y:0,sx:1,sy:1},r:{x:0,y:0,sx:1,sy:1}};
+  function grab(){
+    if(svg&&svg.isConnected&&eyeL)return true;
+    svg=document.getElementById('cdisc');
+    if(!svg)return false;
+    eyeL=svg.querySelector('.eye-l');eyeR=svg.querySelector('.eye-r');mouth=svg.querySelector('.mouth');
+    if(eyeL)svg.style.transformOrigin='50% 50%';
+    return !!(eyeL&&eyeR);
+  }
+  function applyE(k){var o=st[k],el=(k==='l')?eyeL:eyeR;
+    el.style.transform='translate('+o.x+'px,'+o.y+'px) scale('+o.sx+','+o.sy+')';}
+  function setE(k,x,y,sx,sy){var o=st[k];
+    o.x=x;o.y=y;o.sx=(sx==null?1:sx);o.sy=(sy==null?1:sy);applyE(k);}
+  function clearE(){eyeL.style.transform='';eyeR.style.transform='';
+    st.l={x:0,y:0,sx:1,sy:1};st.r={x:0,y:0,sx:1,sy:1};}
+  function eyesHome(done){
+    var s={l:{x:st.l.x,y:st.l.y,sx:st.l.sx,sy:st.l.sy},r:{x:st.r.x,y:st.r.y,sx:st.r.sx,sy:st.r.sy}};
+    var t0=performance.now(),D=420;
+    (function f(now){
+      var k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,3);
+      ['l','r'].forEach(function(q){var o=s[q];
+        setE(q,o.x*(1-e),o.y*(1-e),1+(o.sx-1)*(1-e),1+(o.sy-1)*(1-e));});
+      if(k<1)requestAnimationFrame(f);else{clearE();done&&done();}
+    })(t0);
+  }
+  function easeIO(k){return k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;}
+  function easeIn(k){return k*k;}
+  function easeOut(k){return 1-(1-k)*(1-k);}
+
+  /* 1 · BOWL EYE-DIP — drop to the smile's rim, roll the bowl, launch home */
+  function bowlSwap(done){
+    var R=19,CX=50,CY=52,PHI=50*Math.PI/180;
+    var sL={x:41,y:40},sR={x:59,y:40};
+    var eL={x:CX-R*Math.sin(PHI),y:CY+R*Math.cos(PHI)};
+    var eR={x:CX+R*Math.sin(PHI),y:CY+R*Math.cos(PHI)};
+    var B={x:CX,y:CY+R};
+    var cL={x:CX+22,y:B.y},cR={x:CX-22,y:B.y};
+    var D1=280,D2=300,D3=460,T=D1+D2+D3;
+    function P(a){return{x:CX+R*Math.sin(a),y:CY+R*Math.cos(a)};}
+    function lerp(a,b,k){return{x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k};}
+    function qbez(p0,c,p1,k){var i=1-k;return{
+      x:i*i*p0.x+2*i*k*c.x+k*k*p1.x,
+      y:i*i*p0.y+2*i*k*c.y+k*k*p1.y};}
+    function posL(t){
+      if(t<D1)return lerp(sL,eL,easeIn(t/D1));
+      if(t<D1+D2)return P(-PHI*(1-easeIn((t-D1)/D2)));
+      return qbez(B,cL,sR,easeOut(Math.min(1,(t-D1-D2)/D3)));
+    }
+    function posR(t){
+      if(t<D1)return lerp(sR,eR,easeIn(t/D1));
+      if(t<D1+D2)return P(PHI*(1-easeIn((t-D1)/D2)));
+      return qbez(B,cR,sL,easeOut(Math.min(1,(t-D1-D2)/D3)));
+    }
+    var a0=performance.now();
+    (function dip(now){
+      var k=Math.min(1,(now-a0)/140);
+      setE('l',0,2*k);setE('r',0,2*k);
+      if(k<1)requestAnimationFrame(dip);
+      else{
+        var t0=performance.now();
+        (function f(now){
+          var t=now-t0;
+          var pl=posL(Math.min(t,T)),pr=posR(Math.min(t,T));
+          setE('l',pl.x-41,pl.y-40);
+          setE('r',pr.x-59,pr.y-40);
+          if(t<T+20)requestAnimationFrame(f);
+          else{
+            var q0=performance.now();
+            (function sq(now){
+              var k2=Math.min(1,(now-q0)/200);
+              setE('l',st.l.x,st.l.y,1,.84+.16*k2);
+              setE('r',st.r.x,st.r.y,1,.84+.16*k2);
+              if(k2<1)requestAnimationFrame(sq);
+              else{
+                var te=eyeL;eyeL=eyeR;eyeR=te;
+                var ts=st.l;st.l=st.r;st.r=ts;
+                clearE();done&&done();
+              }
+            })(q0);
+          }
+        })(t0);
+      }
+    })(a0);
+    if(window.smileMood)smileMood('nod',700,svg);
+  }
+
+  /* 2 · SPIN with eased settle — 360° ease-in-out, scale tide, home */
+  function spinSettle(done){
+    var SPIN=1250,t0=performance.now();
+    (function f(now){
+      var k=Math.min(1,(now-t0)/SPIN);
+      var e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+      svg.style.transform='rotate('+(360*e).toFixed(2)+'deg) scale('+(1+.05*Math.sin(Math.PI*k)).toFixed(3)+')';
+      if(k<1)requestAnimationFrame(f);
+      else{svg.style.transform='';eyesHome(done);}
+    })(t0);
+  }
+
+  /* 3 · WINK + tilt */
+  function winkTilt(done){
+    if(window.smileMood)smileMood('wink',650,svg);
+    var t0=performance.now(),DUR=560;
+    (function f(now){
+      var k=Math.min(1,(now-t0)/DUR);
+      svg.style.transform='rotate('+(5*Math.sin(Math.PI*k)).toFixed(2)+'deg)';
+      if(k<1)requestAnimationFrame(f);
+      else{svg.style.transform='';done&&done();}
+    })(t0);
+  }
+
+  function runTrick(t,end){
+    if(t==='bowl')bowlSwap(end);
+    else if(t==='spin')spinSettle(end);
+    else winkTilt(end);
+  }
+  var lastTrick='',TRICKS=['bowl','spin','wink'];
+  function pick(){
+    var t=TRICKS[(Math.random()*TRICKS.length)|0];
+    if(t===lastTrick)t=t==='bowl'?'spin':'bowl';
+    lastTrick=t;return t;
+  }
+  function loop(first){
+    setTimeout(function(){
+      if(RM)return;
+      if(document.hidden||busy||!grab()){loop();return;}
+      busy=true;
+      runTrick(first?'bowl':pick(),function(){busy=false;loop();});
+    },first?2400:2800+Math.random()*1800);
+  }
+
+  function init(){if(grab())loop(true);else setTimeout(init,120);}
+  if(document.readyState==='loading')addEventListener('DOMContentLoaded',init);
+  else init();
+
+  /* ── will-change release after settle ── */
+  setTimeout(function(){
+    var cc=document.querySelector('.ccol');
+    if(cc)cc.style.willChange='auto';
+  },6000);
+})();
+</script>
+</body>
+</html>

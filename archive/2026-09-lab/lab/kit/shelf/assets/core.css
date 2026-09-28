@@ -1,0 +1,147 @@
+/* ============================================================
+   SMILE KIT — core.css · brand tokens, stage, shared primitives
+   Yellow = the real logo yellow (#FFCE00 / face #ffd100).
+   Scenes own their layouts; this file only sets family DNA.
+   ============================================================ */
+:root {
+  --yellow: #FFCE00;
+  --yellow-hot: #E8A800;
+  --face-yellow: #ffd100;
+  --ink: #0A0900;
+  --paper: #ffffff;
+  --panel: #131313;
+  --panel-2: #1b1b1b;
+  --line: #2a2a2a;
+  --muted: #8c8c8c;
+  --up: #0ECB81;
+  --down: #F6465D;
+  --sky: #3FB6FF;
+  --font-display: 'Manrope', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+
+  /* motion DNA — the smile snap */
+  --glide: cubic-bezier(.22, 1, .36, 1);
+  --settle: cubic-bezier(.16, 1, .3, 1);
+  --snap: cubic-bezier(.2, 1.4, .3, 1);
+  --servo: steps(8, end);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: transparent;
+  color: var(--paper);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+/* base stage light — scenes may override entirely */
+.bg {
+  position: absolute; inset: 0; z-index: -2;
+  background:
+    radial-gradient(1100px 640px at 74% 18%, rgba(255, 206, 0, 0.05), transparent 62%),
+    radial-gradient(900px 560px at 12% 88%, rgba(14, 203, 129, 0.04), transparent 60%),
+    radial-gradient(circle at 50% 38%, #171717 0%, var(--ink) 78%);
+}
+.bg::after {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 96px 96px;
+  -webkit-mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 78%);
+}
+
+/* ---------- chips (optional family furniture) ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 20px; border-radius: 999px;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+}
+.chip.dark  { background: rgba(20, 20, 20, 0.86); border: 1px solid var(--line); color: var(--paper); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.chip.ghost { background: rgba(255, 206, 0, 0.08); border: 1px solid rgba(255, 206, 0, 0.55); color: var(--yellow); }
+.chip.solid { background: linear-gradient(135deg, var(--yellow), var(--yellow-hot)); color: var(--ink); box-shadow: 0 8px 28px rgba(255, 206, 0, 0.28); }
+
+/* ---------- brand lockups ---------- */
+.brand { display: inline-flex; align-items: center; gap: 14px; font-family: var(--font-display); font-weight: 800; }
+.brand .dw { width: 48px; height: 48px; display: inline-block; }
+.brand .dw svg { width: 100%; height: 100%; display: block; }
+.brand b { letter-spacing: -0.02em; }
+.logo-full { display: block; }
+.logo-full svg { width: 100%; height: 100%; display: block; }
+
+/* face containers: a sized box — logo.js paints the REAL face inside */
+.face { position: relative; }
+.face svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* ---------- ticker primitive (family signature, opt-in) ---------- */
+.ticker {
+  position: absolute; left: 0; right: 0; bottom: 88px; height: 52px;
+  display: flex; align-items: center; overflow: hidden; z-index: 4;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(90deg, rgba(10, 10, 10, 0.72), rgba(10, 10, 10, 0.5));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 90px, #000 calc(100% - 90px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 90px, #000 calc(100% - 90px), transparent);
+}
+.tk { flex: none; display: flex; align-items: center; white-space: nowrap; animation: tkMarch var(--tk-speed, 42s) linear infinite; will-change: transform; }
+.tk span { display: inline-flex; align-items: center; padding: 0 30px; font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.tk span:first-child { color: var(--yellow); font-weight: 800; }
+.tk span + span { border-left: 1px solid rgba(255, 255, 255, 0.08); }
+@keyframes tkMarch { to { transform: translateX(-100%); } }
+
+/* ---------- shared motion primitives ---------- */
+/* rolling split-flap digit cells (kitDigits builds <span class="dgt"><i>7</i></span>) */
+.dgt{display:inline-flex;overflow:hidden}
+.dgt i{display:inline-flex;font-style:normal}
+.dgt.roll i{animation:droll .34s var(--glide)}
+@keyframes droll{0%{transform:translateY(-58%)}100%{transform:translateY(0)}}
+.dgt.sep{opacity:.55}
+
+.rise { opacity: 0; animation: riseIn 0.9s var(--glide) forwards; animation-delay: var(--rd, 0s); }
+@keyframes riseIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+
+/* sticker slap: scale + rotate settle; --slap-rest preserves a designed resting tilt */
+.slap { opacity: 0; animation: slapIn .62s var(--snap) forwards; animation-delay: var(--rd, 0s); }
+@keyframes slapIn {
+  0% { opacity: 0; transform: scale(1.34) rotate(calc(var(--slap-rest, 0deg) + var(--slap-rot, 5deg))); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) rotate(var(--slap-rest, 0deg)); }
+}
+
+/* sticker slap that settles at a designed resting rotation (--rot) */
+.slapR { opacity: 0; animation: slapRin .62s var(--snap) forwards; animation-delay: var(--rd, 0s); }
+@keyframes slapRin {
+  0% { opacity: 0; transform: scale(1.3) rotate(calc(var(--rot, 0deg) + 6deg)); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
+}
+
+/* chamfer clip reveal (mecha panels) */
+.chamfer { clip-path: polygon(var(--ch, 18px) 0, 100% 0, 100% calc(100% - var(--ch, 18px)), calc(100% - var(--ch, 18px)) 100%, 0 100%, 0 var(--ch, 18px)); }
+.cham-reveal { opacity: 0; animation: chamIn .7s var(--settle) forwards; animation-delay: var(--rd, 0s); }
+@keyframes chamIn {
+  0% { opacity: 0; clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); }
+  40% { opacity: 1; }
+  100% { opacity: 1; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+/* single light sweep for glass */
+@keyframes sheenSweep { 0% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(230%) skewX(-18deg); } }
+
+/* tabular numerals everywhere time appears */
+.num, [data-cd] { font-variant-numeric: tabular-nums; }
+
+/* OBS-safe reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition: none !important;
+  }
+}

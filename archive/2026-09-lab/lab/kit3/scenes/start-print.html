@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>SMILE — STARTING SOON · PRINT EDITION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ SMILE KIT3 · start-print · PRINT EDITION (d~studio DNA q7_08) ============ */
+:root{
+  --ink:#0A0900;
+  --paper:#FFF9E8;
+  --paper2:#FFF3C4;
+  --warm:#FFE44D;
+  --brand:#FFCE00;
+  --hair:rgba(10,9,0,.18);
+  --hair-soft:rgba(10,9,0,.12);
+  --serif:'Fraunces',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',monospace;
+  --glide:cubic-bezier(.2,.9,.25,1);
+  --snap:cubic-bezier(.85,0,.15,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --wm-head:56px;          /* headroom inside wordmark mask (covers ascender overflow) */
+  --wm-crop:60px;          /* dead space below wordmark baseline (tuned at runtime) */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%}
+body{background:var(--ink);overflow:hidden;font-family:var(--serif);color:var(--ink);
+  font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+body.obs{background:transparent}
+body.wm-off #wm{display:none}
+
+.fit{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%)}
+.stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+  /* printed paper under studio light: subtle vertical luminance ramp */
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper) 10%,var(--paper2) 62%,var(--warm) 100%)}
+/* bottom padding = 2px rule + 24px breathing gap + 48px ticker — the wordmark
+   baseline is pinned to the rule top, never sliced by the ticker */
+.page{position:absolute;inset:0;display:flex;flex-direction:column;padding:52px 64px 74px;z-index:1}
+
+/* ---------- masthead ---------- */
+.mast{display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:18px;border-bottom:1px solid var(--hair);
+  animation:mastIn 560ms var(--glide) both}
+.mast-l{display:flex;align-items:center;gap:16px}
+#wm{position:relative;display:block;width:42px;height:42px;flex:0 0 42px;
+  animation:faceIn 640ms var(--spring) 60ms both}
+#wm svg{display:block;width:42px;height:42px}
+.wink-patch{position:absolute;left:31%;top:35%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:50%;background:#FFC107;transform:scale(0);pointer-events:none}
+#wm.winking .wink-patch{animation:wink 520ms ease both}
+.mast-brand{font:600 21px/1.15 var(--serif);letter-spacing:.06em}
+.mast-meta{font:500 12.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(10,9,0,.72)}
+
+/* ---------- headline ---------- */
+.headline{margin-top:40px;font-weight:470;font-size:118px;line-height:1.13;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mask{display:block;overflow:hidden;padding-bottom:.16em;margin-bottom:-.16em}
+.mline{display:block;animation:riseIn 720ms var(--snap) both;animation-delay:calc(140ms + var(--i)*90ms)}
+
+/* ---------- sub columns ---------- */
+.cols{position:relative;margin-top:42px;display:grid;grid-template-columns:1fr 620px;gap:64px;align-items:start}
+.col-l{display:flex;gap:22px;align-items:flex-start;animation:snapIn 520ms var(--snap) 320ms both}
+.star{display:block;flex:0 0 44px;width:44px;height:44px;margin-top:4px;
+  animation:popIn 620ms var(--spring) 300ms both}
+.star-spin{display:block;width:100%;height:100%;animation:spin24 24s linear infinite}
+.star svg{display:block;width:44px;height:44px;animation:sway 5.6s ease-in-out 1.9s infinite}
+.col-copy{font:430 25px/1.35 var(--serif);letter-spacing:.002em;max-width:620px}
+.col-r{animation:snapIn 520ms var(--snap) 400ms both}
+
+/* ---------- REC stamp (d~studio formula, right of the service list) ---------- */
+.stamp{position:absolute;top:38px;right:76px;z-index:5;transform:rotate(-3deg);
+  border:2px solid var(--ink);background:transparent;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  animation:stampIn 520ms var(--snap) 560ms both}
+.stamp svg{display:block;width:16px;height:16px;flex:0 0 16px}
+.stamp-txt{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+  white-space:nowrap;padding-top:1px}
+.svc{display:flex;justify-content:space-between;align-items:baseline;gap:24px;
+  border-top:1px solid var(--hair);padding:15px 2px 13px}
+.svc:last-child{border-bottom:1px solid var(--hair)}
+.svc-t{font:500 27px/1.15 var(--serif);letter-spacing:-.01em}
+.svc-a{font:400 24px/1.15 var(--serif)}
+
+/* ---------- stat row ---------- */
+.stats{margin-top:50px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:48px}
+.stat{border-bottom:2px solid var(--ink);padding-bottom:16px;
+  animation:snapIn 520ms var(--snap) both;animation-delay:calc(480ms + var(--i)*80ms)}
+.stat .v{font:560 58px/1.15 var(--serif);letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  display:flex;align-items:baseline;gap:12px}
+.stat .vpre{font:500 18px/1.15 var(--mono);letter-spacing:.14em}
+.stat .l{margin-top:12px;font:500 12px/1.3 var(--mono);letter-spacing:.2em;
+  text-transform:uppercase;color:rgba(10,9,0,.62)}
+
+/* ---------- giant wordmark ----------
+   Bottom-anchored by BASELINE: block bottom = page content bottom (y1006),
+   which is exactly the top of the full-width 2px ink rule (bottom:72px).
+   The runtime tune lifts the line-box dead space so glyph bottoms sit ON the rule. */
+.wm-block{position:absolute;left:64px;right:64px;bottom:74px}
+.wm-clip{overflow:hidden;padding-top:var(--wm-head);margin-top:calc(-1 * var(--wm-head))}
+.wm{display:flex;align-items:baseline;font-weight:600;font-size:300px;line-height:1.12;
+  letter-spacing:-.03em;height:calc(1.12em - var(--wm-crop,60px));
+  animation:wmRise 820ms var(--snap) 640ms both}
+.wm-star{display:inline-block;width:92px;height:92px;margin-left:14px;transform:none}
+.wm>span{display:block;height:100%}
+.wm-rule{position:absolute;left:0;right:0;bottom:72px;height:2px;background:var(--ink);z-index:2}
+
+/* ---------- countdown stamp chip (top-right HUD) ---------- */
+.cd{position:absolute;top:148px;right:64px;z-index:10;min-width:205px;min-height:101px;text-align:right;
+  border:2px solid var(--ink);padding:18px 20px 16px;background:transparent;
+  display:flex;flex-direction:column;justify-content:center;
+  transform:rotate(-1.5deg);animation:chipIn 560ms var(--glide) 180ms both}
+.cd-label{display:flex;justify-content:flex-end;align-items:center;gap:7px;
+  font:600 12.5px/1.3 var(--mono);letter-spacing:.22em;text-transform:uppercase}
+.cd-label .dot{display:none;font-size:11px;line-height:1}
+.cd-digits{margin-top:10px;display:flex;justify-content:flex-end;align-items:flex-start;
+  font:500 39px/1 var(--mono);font-variant-numeric:tabular-nums}
+.cd-colon{width:.62em;height:1.15em;line-height:1.15em;text-align:center}
+.dcell{display:block;width:.62em;height:1.15em;overflow:hidden}
+.dreel{display:block;transition:transform 420ms var(--glide)}
+.dreel span{display:block;height:1.15em;line-height:1.15;text-align:center}
+/* LIVE flip */
+.cd.live{background:var(--ink);color:var(--paper);border-color:var(--ink);
+  box-shadow:0 4px 18px rgba(255,206,0,.38); /* the ONE glow — under the LIVE element */
+  animation:slam 420ms var(--spring) both}
+.cd.live .cd-digits{display:none}
+.cd.live .cd-label{font-size:16px;letter-spacing:.14em}
+.cd.live .cd-label .dot{display:inline-block;animation:pulse 2.4s ease-in-out infinite}
+
+/* ---------- ticker (ink strip, very bottom edge) ---------- */
+.tk{position:absolute;left:0;right:0;bottom:0;height:48px;z-index:30;background:var(--ink);
+  color:var(--paper);display:flex;align-items:center;overflow:hidden}
+.tk-track{display:flex;width:max-content;animation:tkMove 30s linear infinite}
+.tk-half{display:block;white-space:nowrap;font:500 13px/48px var(--mono);
+  letter-spacing:.18em;text-transform:uppercase}
+.tk-half b{font-weight:600}
+
+/* ---------- help chip ---------- */
+.help{position:absolute;right:64px;bottom:84px;z-index:20;border:1px solid var(--hair);
+  background:rgba(255,249,232,.82);padding:10px 14px;font:400 11px/1.6 var(--mono);
+  letter-spacing:.06em;color:rgba(10,9,0,.66);transition:opacity 400ms var(--glide)}
+.help.hide{opacity:0;pointer-events:none}
+
+/* ---------- LIVE sweep line ---------- */
+.sweep{position:absolute;top:0;bottom:0;width:12px;left:-24px;z-index:40;
+  background:var(--brand);border-left:1px solid var(--ink);border-right:1px solid var(--ink);
+  opacity:0;pointer-events:none;transform:translateX(0)}
+.sweep.go{animation:sweepX 600ms var(--snap) both}
+
+/* ---------- keyframes ---------- */
+@keyframes mastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes faceIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes riseIn{from{transform:translateY(112%)}to{transform:none}}
+@keyframes snapIn{0%{opacity:0;transform:translateY(12px)}62%{opacity:1;transform:translateY(0)}
+  82%{transform:translateY(-2px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes spin24{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes stampIn{0%{opacity:0;transform:translateY(12px) rotate(-3deg)}
+  62%{opacity:1;transform:translateY(0) rotate(-3deg)}
+  82%{transform:translateY(-2px) rotate(-3deg)}
+  100%{opacity:1;transform:translateY(0) rotate(-3deg)}}
+@keyframes sway{0%{transform:rotate(0deg)}40%{transform:rotate(7deg)}
+  60%{transform:rotate(5deg)}100%{transform:rotate(0deg)}}
+@keyframes wmRise{from{transform:translateY(110%)}to{transform:none}}
+@keyframes chipIn{from{opacity:0;transform:translateY(14px) rotate(-1.5deg)}
+  to{opacity:1;transform:translateY(0) rotate(-1.5deg)}}
+@keyframes slam{from{transform:scale(1.15) rotate(-1.5deg)}to{transform:scale(1) rotate(-1.5deg)}}
+@keyframes pulse{0%,100%{opacity:1}40%{opacity:.55}60%{opacity:.82}}
+@keyframes wink{0%{transform:scale(0)}30%{transform:scale(1.15)}62%{transform:scale(1)}100%{transform:scale(0)}}
+@keyframes tkMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes sweepX{from{transform:translateX(0);opacity:1}to{transform:translateX(2000px);opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="fit">
+  <main class="stage">
+
+    <div class="page">
+      <!-- masthead -->
+      <header class="mast">
+        <div class="mast-l">
+          <span id="wm" aria-label="Smile mark"><svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wink-patch"></span></span>
+          <span class="mast-brand">SMILE BROADCAST</span>
+        </div>
+        <div class="mast-meta">EVENING DESK — <span data-eat>—</span> · EAT</div>
+      </header>
+
+      <!-- headline -->
+      <h1 class="headline">
+        <span class="mask"><span class="mline" data-title style="--i:0">The Evening Desk ~</span></span>
+        <span class="mask"><span class="mline" style="--i:1">Episode No. <span data-ep>128</span> &gt; Live</span></span>
+      </h1>
+
+      <!-- starburst + service columns -->
+      <section class="cols">
+        <div class="col-l">
+          <span class="star" aria-hidden="true"><span class="star-spin"><svg viewBox="0 0 100 100"><g fill="#0A0900"><path d="M50 3 L56.5 50 L43.5 50 Z"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(45 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(90 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(135 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(180 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(225 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(270 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(315 50 50)"/></g></svg></span></span>
+          <p class="col-copy" data-sub>Smile Specialise In Delivering Markets, Mailbag &amp; Hot Takes.</p>
+        </div>
+        <div class="col-r">
+          <div class="svc"><span class="svc-t">Mailbag / Website</span><span class="svc-a">→</span></div>
+          <div class="svc"><span class="svc-t">Hot Takes / Chart Dive</span><span class="svc-a">→</span></div>
+        </div>
+        <div class="stamp" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true"><g fill="#0A0900"><path d="M50 3 L56.5 50 L43.5 50 Z"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(45 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(90 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(135 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(180 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(225 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(270 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(315 50 50)"/></g></svg><span class="stamp-txt">REC ● 19:00 EAT</span></div>
+      </section>
+
+      <!-- underline stat row -->
+      <section class="stats">
+        <div class="stat" style="--i:0"><div class="v">LIVE</div><div class="l">FROM NAIROBI · EAT</div></div>
+        <div class="stat" style="--i:1"><div class="v"><span class="vpre">No.</span><span data-ep>128</span></div><div class="l">EPISODE</div></div>
+        <div class="stat" style="--i:2"><div class="v">98%</div><div class="l">SIGNAL · NOMINAL</div></div>
+      </section>
+
+      <!-- giant wordmark: baseline pinned ON the full-width ink rule -->
+      <div class="wm-block">
+        <div class="wm-clip">
+          <div class="wm"><span>smile.</span><svg class="wm-star" viewBox="0 0 100 100" aria-hidden="true"><g fill="#0A0900"><path d="M50 3 L56.5 50 L43.5 50 Z"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(45 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(90 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(135 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(180 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(225 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(270 50 50)"/><path d="M50 3 L56.5 50 L43.5 50 Z" transform="rotate(315 50 50)"/></g></svg></div>
+        </div>
+      </div>
+      <div class="wm-rule" aria-hidden="true"></div>
+    </div>
+
+    <!-- countdown stamp chip -->
+    <div class="cd" role="status" aria-live="off">
+      <div class="cd-label"><span class="dot">●</span><span data-cd-label-text>ON AIR IN</span></div>
+      <div class="cd-digits" data-cd-digits></div>
+    </div>
+
+    <!-- help chip -->
+    <div class="help hide">?t=sec|ISO · ?ep=128 · ?title= · ?sub= · ?obs=1 · ?wm=0 — H toggles this · V cycles variants (none)</div>
+
+    <!-- ink ticker strip -->
+    <div class="tk" aria-hidden="true"><div class="tk-track" data-tk></div></div>
+
+    <!-- live sweep -->
+    <div class="sweep" aria-hidden="true"></div>
+
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var P=new URLSearchParams(location.search);
+var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function $(s){return document.querySelector(s)}
+function $$(s){return Array.prototype.slice.call(document.querySelectorAll(s))}
+
+/* URL contract */
+if(P.get('obs')==='1')document.body.classList.add('obs');
+if(P.get('wm')==='0')document.body.classList.add('wm-off');
+var EP=(P.get('ep')||'128').replace(/[^0-9A-Za-z\-]/g,'')||'128';
+$$('[data-ep]').forEach(function(el){el.textContent=EP});
+if(P.get('title'))$('[data-title]').textContent=P.get('title');
+if(P.get('sub'))$('[data-sub]').textContent=P.get('sub');
+
+/* EAT (Africa/Nairobi) date */
+try{
+  var d=new Date().toLocaleDateString('en-GB',{timeZone:'Africa/Nairobi',weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  $('[data-eat]').textContent=d.toUpperCase().replace(/,/g,'');
+}catch(e){$('[data-eat]').textContent=''}
+
+/* scale-to-fit */
+var fitEl=$('.fit');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);
+  fitEl.style.transform='translate(-50%,-50%) scale('+s+')'}
+addEventListener('resize',fit);fit();
+
+/* ticker — linear marquee, two identical halves */
+var SEQ='EPISODE No. '+EP+'\u2002◆\u2002@smileke\u2002◆\u2002smile.co.ke\u2002◆\u2002#SmileSquad\u2002◆\u2002';
+var half=SEQ+SEQ+SEQ+SEQ+SEQ;
+$('[data-tk]').innerHTML='<span class="tk-half">'+half+'</span><span class="tk-half">'+half+'</span>';
+
+/* rolling digits — kit signature (slide-up roll 420ms, staggered per cell) */
+var GLYPHS=['-','0','1','2','3','4','5','6','7','8','9'];
+var cdDigits=$('[data-cd-digits]'),cdLabel=$('[data-cd-label-text]');
+var cells=[],curShape='';
+function buildCells(str){
+  cdDigits.innerHTML='';cells=[];curShape=str;
+  Array.prototype.forEach.call(str,function(ch,i){
+    if(ch===':'){var c=document.createElement('span');c.className='cd-colon';c.textContent=':';
+      cdDigits.appendChild(c);cells.push(null);return}
+    var cell=document.createElement('span');cell.className='dcell';
+    var reel=document.createElement('span');reel.className='dreel';
+    reel.innerHTML=GLYPHS.map(function(g){return '<span>'+g+'</span>'}).join('');
+    reel.style.transitionDelay=(i*45)+'ms';
+    cell.appendChild(reel);cdDigits.appendChild(cell);cells.push(reel);
+  });
+}
+function shapeOf(str){return str.replace(/\d/g,'#')}
+function setDigits(str){
+  if(shapeOf(str)!==shapeOf(curShape))buildCells(str);
+  Array.prototype.forEach.call(str,function(ch,i){
+    var r=cells[i];if(!r)return;
+    var idx=ch==='-'?0:GLYPHS.indexOf(ch);
+    r.style.transform='translateY(-'+(idx*1.15)+'em)';
+  });
+}
+
+/* countdown master */
+var target=null,live=false;
+var pT=P.get('t');
+function startDefault(){ /* no ?t: hold --:-- STAND BY 3s, then roll into 10:00 */
+  cdLabel.textContent='STAND BY';setDigits('--:--');
+  setTimeout(function(){cdLabel.textContent='ON AIR IN';target=Date.now()+600000},3000);
+}
+if(pT){
+  var t=null;
+  if(/^-?\d+$/.test(pT))t=Date.now()+parseInt(pT,10)*1000;
+  else{var dv=Date.parse(pT);if(!isNaN(dv))t=dv}
+  if(t==null)startDefault();else target=t;
+}else startDefault();
+
+function fireLive(){
+  if(live)return;live=true;
+  document.body.classList.add('is-live');
+  $('.cd').classList.add('live');
+  cdLabel.textContent="WE'RE LIVE";
+  var sw=$('.sweep');sw.classList.remove('go');void sw.offsetWidth;sw.classList.add('go');
+  var f=$('#wm');f.classList.remove('winking');void f.offsetWidth;f.classList.add('winking');
+  setTimeout(function(){sw.classList.remove('go')},900);
+  setTimeout(function(){f.classList.remove('winking')},700);
+}
+setInterval(function(){
+  if(live||target==null)return;
+  var remain=target-Date.now();
+  if(remain<=0){setDigits('00:00');fireLive();return} /* never negative */
+  var mm=Math.floor(remain/60000),ss=Math.floor(remain/1000)%60;
+  setDigits(String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0'));
+},200);
+
+/* wordmark baseline crop: measure real font metrics, pull the hairline to the baseline */
+function tuneWordmark(){
+  try{
+    var wm=$('.wm'),cs=getComputedStyle(wm);
+    var ctx=document.createElement('canvas').getContext('2d');
+    ctx.font=cs.fontStyle+' '+cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;
+    var m=ctx.measureText('smile.');
+    if(!m.fontBoundingBoxAscent)return;
+    var fs=parseFloat(cs.fontSize),lh=parseFloat(cs.lineHeight)||fs;
+    var half2=(lh-(m.fontBoundingBoxAscent+m.fontBoundingBoxDescent))/2;
+    var below=lh-(half2+m.fontBoundingBoxAscent);
+    document.documentElement.style.setProperty('--wm-crop',below.toFixed(1)+'px');
+  }catch(e){}
+}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){tuneWordmark();setTimeout(tuneWordmark,400)});
+else tuneWordmark();
+
+/* help chip: hidden by default (OBS-clean); H toggles */
+var help=$('.help');
+addEventListener('keydown',function(e){
+  var k=(e.key||'').toLowerCase();
+  if(k==='h'){help.classList.toggle('hide');clearTimeout(helpTimer)}
+  /* V: no internal variants in this scene — no-op by contract */
+});
+})();
+</script>
+</body>
+</html>

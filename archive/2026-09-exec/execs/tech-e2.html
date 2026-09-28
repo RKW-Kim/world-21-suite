@@ -1,0 +1,169 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · TECH · MASS &amp; SPRING</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ============ TECH BASE (derived from brb skeleton — frozen) ============ */
+  body{font-variant-numeric:tabular-nums}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:60px}
+  .field{position:absolute;inset:0}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07)}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+  .prog{fill:none;stroke:var(--yellow);stroke-width:7;stroke-linecap:round;stroke-dasharray:1046.15;stroke-dashoffset:1043;filter:drop-shadow(0 0 12px rgba(255,193,7,.35))}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;max-width:880px;font-size:26px;font-weight:500;color:#a8a8a8;text-wrap:balance}
+  .chips{margin-top:36px;display:flex;gap:14px;align-items:center}
+  .bnc{margin-top:32px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:bdot 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes bdot{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  /* pre-upgrade fallback face (smile-mark.js swaps innerHTML) */
+  .face .eye{position:absolute;top:33%;width:14px;height:19px;border-radius:50%;background:#0b0b0b}
+  .face .eye.l{left:29%}.face .eye.r{right:29%}
+  .face svg.mouth{position:absolute;left:50%;top:50%;width:58%;transform:translateX(-50%)}
+  .face svg.mouth path{fill:none;stroke:#0b0b0b;stroke-width:10.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ E2 · MASS & SPRING — everything has weight ============
+     entrances: hand-rolled rAF springs (slightly underdamped, settle once) ·
+     dots: spring pendulums swinging on an invisible pivot ·
+     ring fill: spring-followed value that overshoots and settles ·
+     face: underdamped tide · ticker/dashed-ring stay CSS linear.
+     Physics runs on a fixed 120Hz substep off a wall clock, so cadence is
+     identical at 60fps, 30fps or after an OBS hiccup. */
+  .rise{animation:none;opacity:0;transform:translateY(34px);will-change:transform,opacity}
+  .buffer{opacity:0;transform:translateY(34px);will-change:transform,opacity}
+  .buffer .face{animation:none;will-change:transform}
+  .bnc span{animation:none;transform-origin:50% -16px;will-change:transform}
+  .prog{transition:opacity .65s ease-in-out}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="field">
+    <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  </div>
+  <div class="wrap">
+    <div class="buffer">
+      <svg class="ring" viewBox="0 0 340 340" aria-hidden="true">
+        <circle class="prog" cx="170" cy="170" r="166.5"/>
+      </svg>
+      <div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div>
+    </div>
+    <h1 class="rise" style="--rd:.12s">we're on <span class="y">it</span>.</h1>
+    <p class="sub rise" style="--rd:.28s">Feed hiccup on our side — the desk is already on it. Back to the charts in a moment.</p>
+    <div class="chips rise" style="--rd:.44s">
+      <span class="chip ghost">● FEED RECONNECTING</span>
+      <span class="chip dark">SYSTEMS NOMINAL</span>
+    </div>
+    <div class="bnc rise" style="--rd:.58s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+/* E2 · hand-rolled spring engine — no libraries, no layout reads in the loop */
+(function(){
+  const prog=document.querySelector('.ring .prog');
+  const face=document.querySelector('.buffer .face');
+  function S(x,t,k,c){return{x:x,t:t,pt:t,v:0,k:k,c:c,rest:false};}
+  function step(s,h){
+    if(s.t!==s.pt){s.rest=false;s.pt=s.t;}          /* retarget wakes the spring */
+    if(s.rest)return;
+    const a=(s.t-s.x)*s.k - s.v*s.c;                /* F = -k·(x-t) - c·v */
+    s.v+=a*h; s.x+=s.v*h;
+  }
+  function settle(s){
+    if(!s.rest&&Math.abs(s.t-s.x)<.004&&Math.abs(s.v)<.02){s.x=s.t;s.v=0;s.rest=true;}
+  }
+  /* entrances: same cascade rhythm, spring-driven (underdamped settle) */
+  const rows=[
+    {el:document.querySelector('.buffer'), d:40},
+    {el:document.querySelector('h1'),      d:150},
+    {el:document.querySelector('.sub'),    d:260},
+    {el:document.querySelector('.chips'),  d:370},
+    {el:document.querySelector('.bnc'),    d:480}
+  ];
+  rows.forEach(function(r){
+    r.y=S(34,34,85,11.5);                           /* position: 1 visible oscillation */
+    r.o=S(0,0,160,17.5);                            /* opacity: near-critical, fast */
+    r.el.style.transform='translateY(34px)';
+    r.el.style.opacity='0';
+    setTimeout(function(){r.y.t=0;r.o.t=1;},r.d);
+  });
+  const fs=S(1,1,55,6.4);                           /* face tide: underdamped follow */
+  const dots=Array.prototype.map.call(document.querySelectorAll('.bnc span'),function(el,i){
+    return {el:el,a:S(0,0,42,5.4),ph:i*1.05};       /* spring pendulums */
+  });
+  const fv=S(0,0,24,6.2);                           /* reconnect fill: spring-followed */
+  const MARKS=[[0.45,62],[2.5,84],[4.55,100]];
+  let mi=0,mode='fill',clock=0;
+
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+    rows.forEach(function(r){r.el.style.transform='none';r.el.style.opacity='1';});
+    dots.forEach(function(d){d.el.style.transform='none';});
+    fv.x=100;prog.style.strokeDashoffset='0';
+    return;
+  }
+
+  function phys(h){
+    clock+=h;
+    for(let i=0;i<rows.length;i++){
+      step(rows[i].y,h);settle(rows[i].y);
+      step(rows[i].o,h);settle(rows[i].o);
+    }
+    fs.t=1+.035*Math.sin(clock*1.85); step(fs,h);
+    for(let i=0;i<dots.length;i++){
+      dots[i].a.t=11*Math.sin(clock*1.9+dots[i].ph); step(dots[i].a,h);
+    }
+    if(mode==='fill'){
+      if(mi<MARKS.length&&clock>=MARKS[mi][0]){fv.t=MARKS[mi][1];mi++;}
+      step(fv,h); settle(fv);
+      if(clock>=7.3){mode='fade';prog.style.opacity='0';}
+    }else if(clock>=8.1){                           /* reset happens while invisible */
+      mode='fill'; mi=1; clock=0;
+      fv.x=0; fv.v=0; fv.t=62; fv.pt=62; fv.rest=false;
+      prog.style.transition='none'; prog.style.opacity='1';
+      requestAnimationFrame(function(){requestAnimationFrame(function(){prog.style.transition='';});});
+    }
+  }
+  function render(){
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i];
+      if(!(r.y.rest&&r.o.rest)){                    /* write only while alive */
+        r.el.style.transform='translateY('+r.y.x.toFixed(2)+'px)';
+        r.el.style.opacity=r.o.x.toFixed(3);
+      }
+    }
+    face.style.transform='scale('+fs.x.toFixed(4)+')';
+    for(let i=0;i<dots.length;i++){
+      dots[i].el.style.transform='rotate('+dots[i].a.x.toFixed(2)+'deg)';
+    }
+    prog.style.strokeDashoffset=(1043*(1-Math.min(Math.max(fv.x,0),100)/100)).toFixed(2);
+  }
+  let raf=0,last=0,acc=0;
+  function frame(now){
+    raf=requestAnimationFrame(frame);
+    let dt=(now-last)/1000; last=now;
+    if(!(dt>0))return;
+    if(dt>.25)dt=.25;                               /* wall clock, hiccup-proof */
+    acc+=dt;
+    const h=1/120; let n=0;                         /* fixed-step physics */
+    while(acc>=h&&n<40){phys(h);acc-=h;n++;}
+    if(n===40)acc=0;                                /* drop backlog, never spiral */
+    render();
+  }
+  function start(){ if(raf)return; last=performance.now(); raf=requestAnimationFrame(frame); }
+  function stop(){ cancelAnimationFrame(raf); raf=0; }
+  document.addEventListener('visibilitychange',function(){ document.hidden?stop():start(); });
+  start();
+})();
+</script>
+</body></html>

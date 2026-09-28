@@ -1,0 +1,243 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · ad</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<style>
+  /* ---------- take gating ---------- */
+  .scn{position:absolute;inset:0;display:none}
+  body[data-v="a"] .scn[data-take="a"],body[data-v="b"] .scn[data-take="b"]{display:block}
+
+  /* ---------- shared scene bits ---------- */
+  .sky{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
+    -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
+    -webkit-mask-composite:source-in;
+    mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
+    mask-composite:intersect}
+  h1{font-family:var(--font-display);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--paper)}
+  h1 .y{color:var(--yellow)} h1 .g{color:var(--up)}
+  .sub{font-size:22px;font-weight:500;color:#a8a8a8;line-height:1.5}
+  [data-cd-wrap][data-done="1"]{opacity:.35;transition:opacity .5s var(--ease-out)}
+  .livechip{display:none;position:absolute;inset:0;margin:auto;width:max-content;height:max-content;z-index:6}
+  .livechip:not([hidden]){display:inline-flex;animation:popA .7s var(--ease-spring) both}
+  @keyframes popA{from{opacity:0;transform:scale(.45)}to{opacity:1;transform:scale(1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  .rprog{fill:none;stroke:var(--yellow);stroke-linecap:round;transition:stroke-dashoffset .3s linear;filter:drop-shadow(0 0 6px rgba(255,193,7,.35))}
+  body.is-done .rprog{stroke:var(--up);stroke-dashoffset:0!important;filter:drop-shadow(0 0 8px rgba(14,203,129,.4))}
+
+  /* ---------- TAKE A · partner slide ---------- */
+  .adA-top{position:absolute;top:60px;left:96px;z-index:5}
+  .adA-top .brand{font-size:30px}.adA-top .brand .dw{width:42px;height:42px}
+  .pcard{position:absolute;left:120px;top:calc(50% - 158px);width:840px;padding:42px 56px;z-index:2;
+    background:rgba(20,20,20,.92);border:1px solid var(--line);border-radius:20px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);
+    animation:cardIn 1s var(--ease-spring) .15s both}
+  @keyframes cardIn{from{opacity:0;transform:translateX(-160px)}to{opacity:1;transform:translateX(0)}}
+  .pcard .chip.solid{font-size:13px}
+  .slot{position:relative;height:72px;margin-top:28px}
+  .sitem{position:absolute;left:0;top:0;opacity:0;animation:slotCycle 7.2s linear infinite;animation-delay:calc(var(--i)*2.4s)}
+  .sitem .chip{font-size:20px;padding:16px 30px;text-transform:none;letter-spacing:.01em}
+  @keyframes slotCycle{0%{opacity:0;transform:translateY(16px)}4%{opacity:1;transform:none}29.4%{opacity:1;transform:none}33.4%{opacity:0;transform:translateY(-14px)}100%{opacity:0}}
+  .sdots{display:flex;gap:10px;margin-top:18px}
+  .sdots span{width:9px;height:9px;border-radius:50%;background:var(--line);animation:sdotC 7.2s linear infinite;animation-delay:calc(var(--i)*2.4s)}
+  @keyframes sdotC{0%,30%{background:var(--yellow);box-shadow:0 0 10px rgba(255,193,7,.55);transform:scale(1.2)}33%,100%{background:var(--line);transform:none}}
+  .cfoot{margin-top:24px;font-size:16px;font-weight:500;color:var(--muted)}
+  .cfoot b{color:var(--paper);font-weight:600}
+  .peek{position:absolute;left:960px;top:calc(50% - 112px);width:200px;height:200px;z-index:1;
+    transform:translateX(-38%);animation:peekIn .9s var(--ease-spring) .55s both}
+  @keyframes peekIn{from{opacity:0;transform:translateX(-95%)}to{opacity:1;transform:translateX(-38%)}}
+  .peek .pb{position:absolute;inset:0;animation:bobY 4.4s ease-in-out infinite}
+  .peek .face{width:200px;height:200px;animation:breathe 3.6s ease-in-out infinite}
+  .rbox{position:absolute;right:150px;top:calc(50% - 172px);width:280px;z-index:3;text-align:center}
+  .rwrap{position:relative;width:280px;height:280px;margin:0 auto}
+  .rwrap::before{content:"";position:absolute;inset:-14px;border:2px dashed rgba(255,193,7,.2);border-radius:50%;animation:spin 20s linear infinite}
+  .rwrap svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .rtrack{fill:none;stroke:rgba(255,255,255,.07);stroke-width:12}
+  .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .rc .lb{font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.24em;color:var(--muted)}
+  .rc .n{font-family:var(--font-display);font-weight:800;font-size:42px;color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .rmeta{margin-top:16px;font-size:15px;font-weight:500;color:var(--muted)}
+
+  /* ---------- TAKE B · ring timer ---------- */
+  .rt-wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding-bottom:96px;z-index:3;text-align:center}
+  .rt{position:relative;width:560px;height:560px;display:grid;place-items:center}
+  .rt::before{content:"";position:absolute;inset:-18px;border:2px dashed rgba(255,193,7,.18);border-radius:50%;animation:spin 30s linear infinite}
+  .comet{position:absolute;inset:8px;animation:spin 11s linear infinite}
+  .comet i{position:absolute;left:50%;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--yellow);box-shadow:0 0 20px rgba(255,193,7,.85)}
+  .rt svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .rt .rtrack{fill:none;stroke:rgba(255,255,255,.06);stroke-width:14}
+  .rt .rprog{stroke-width:14;filter:drop-shadow(0 0 8px rgba(255,193,7,.3))}
+  .fwrap2{transform:translateY(-16px)}
+  .rt .face{width:300px;height:300px;animation:breathe 4.2s ease-in-out infinite}
+  .rtcd{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);animation:rtcdIn .8s var(--ease-out) .5s both}
+  .rtcd .lb{font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.26em;color:var(--muted)}
+  .rtcd .n{font-family:var(--font-display);font-weight:800;font-size:72px;color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:.01em;line-height:1}
+  @keyframes rtcdIn{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+  .rtlive{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:6;display:none}
+  .rtlive:not([hidden]){display:inline-flex;animation:popC .7s var(--ease-spring) both}
+  @keyframes popC{from{opacity:0;transform:translateX(-50%) scale(.45)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+  .rt-wrap h1{font-size:90px}
+  .rtc{position:absolute;z-index:4}
+  .rtc1{left:calc(50% - 620px);top:calc(50% - 240px)}
+  .rtc2{left:calc(50% + 300px);top:calc(50% - 240px)}
+  .rtc3{left:calc(50% + 320px);top:calc(50% + 120px)}
+  .rtc .chip{text-transform:none;letter-spacing:.02em}
+  .rtc .chip{animation:floatY 4.8s ease-in-out infinite}
+  .rtc2 .chip{animation-delay:.8s}.rtc3 .chip{animation-delay:1.6s}
+
+  /* ---------- reduced motion ---------- */
+  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+    .rise{animation-delay:0s!important}
+    .sitem{opacity:0!important}
+    .sitem:first-child{opacity:1!important;position:relative}
+    .sdots span{animation:none!important}}
+</style></head><body data-v="a">
+<div class="stage">
+
+  <!-- ============ TAKE A · partner slide ============ -->
+  <section class="scn" data-take="a">
+    <div class="bg"></div>
+    <div class="sky"></div>
+    <span class="spark" style="left:10%;top:22%;--d:.4s"></span>
+    <span class="spark" style="left:47%;top:14%;--d:1.6s;background:var(--up)"></span>
+    <span class="spark" style="left:60%;top:78%;--d:2.7s"></span>
+    <span class="spark" style="left:84%;top:30%;--d:2s;background:var(--sky)"></span>
+    <span class="spark" style="left:90%;top:70%;--d:3.3s;background:var(--down)"></span>
+    <header class="adA-top">
+      <div class="brand rise" style="--rd:.05s"><span class="dw"><svg class="disc" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/></svg></span><b>smile</b></div>
+    </header>
+    <div class="peek">
+      <span class="pb"><div class="face"></div></span>
+    </div>
+    <div class="pcard">
+      <span class="chip solid rise" style="--rd:.5s">A QUICK WORD FROM OUR PARTNERS</span>
+      <div class="slot rise" style="--rd:.6s">
+        <div class="sitem" style="--i:0"><span class="chip ghost">your brand here — chat us</span></div>
+        <div class="sitem" style="--i:1"><span class="chip ghost">support the show</span></div>
+        <div class="sitem" style="--i:2"><span class="chip ghost">partner slot open</span></div>
+      </div>
+      <div class="sdots rise" style="--rd:.68s"><span style="--i:0"></span><span style="--i:1"></span><span style="--i:2"></span></div>
+      <p class="cfoot rise" style="--rd:.76s">while you're here — follow <b>@smileke</b> and keep the tab warm.</p>
+    </div>
+    <div class="rbox rise" style="--rd:.55s">
+      <div class="rwrap">
+        <svg viewBox="0 0 280 280">
+          <circle class="rtrack" cx="140" cy="140" r="120"/>
+          <circle class="rprog" cx="140" cy="140" r="120" data-c="753.98" stroke-dasharray="753.98" stroke-dashoffset="0" stroke-width="12"/>
+        </svg>
+        <div class="rc" data-cd-wrap>
+          <span class="lb">BACK IN</span>
+          <span class="n" data-cd>02:00</span>
+        </div>
+        <span class="chip solid livechip" data-when-live hidden>BACK NOW</span>
+      </div>
+      <p class="rmeta">ad break · episode <span data-ep>128</span></p>
+    </div>
+    <div class="ticker" style="--tk-speed:40s">
+      <div class="tk"><span>✦ AD BREAK</span><span>back after this quick word</span><span>your brand here — chat us</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ AD BREAK</span><span>back after this quick word</span><span>your brand here — chat us</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+
+  <!-- ============ TAKE B · ring timer ============ -->
+  <section class="scn" data-take="b">
+    <div class="bg"></div>
+    <div class="sky"></div>
+    <span class="spark" style="left:6%;top:20%;--d:.4s"></span>
+    <span class="spark" style="left:18%;top:60%;--d:1.4s;background:var(--up)"></span>
+    <span class="spark" style="left:34%;top:12%;--d:2.4s"></span>
+    <span class="spark" style="left:52%;top:86%;--d:1s;background:var(--sky)"></span>
+    <span class="spark" style="left:68%;top:16%;--d:2.9s;background:var(--down)"></span>
+    <span class="spark" style="left:76%;top:74%;--d:1.8s"></span>
+    <span class="spark" style="left:88%;top:34%;--d:3.5s;background:var(--up)"></span>
+    <span class="spark" style="left:94%;top:56%;--d:.7s"></span>
+    <div class="rt-wrap">
+      <div class="rt rise" style="--rd:.1s">
+        <svg viewBox="0 0 560 560">
+          <circle class="rtrack" cx="280" cy="280" r="252"/>
+          <circle class="rprog" cx="280" cy="280" r="252" data-c="1583.36" stroke-dasharray="1583.36" stroke-dashoffset="0"/>
+        </svg>
+        <span class="comet"><i></i></span>
+        <span class="fwrap2"><div class="face"></div></span>
+        <div class="rtcd" data-cd-wrap>
+          <div class="lb">BACK IN</div>
+          <div class="n" data-cd>02:00</div>
+        </div>
+        <span class="chip solid rtlive" data-when-live hidden>WE'RE BACK</span>
+      </div>
+      <h1 class="rise" style="--rd:.35s">back <span class="y">after</span> this<span class="g">.</span></h1>
+      <p class="sub rise" style="--rd:.45s">resuming automatically — episode <span data-ep>128</span> continues next.</p>
+      <span class="rtc rtc1 rise" style="--rd:.55s"><span class="chip ghost">partner moment</span></span>
+      <span class="rtc rtc2 rise" style="--rd:.65s"><span class="chip ghost">ep <span data-ep>128</span></span></span>
+      <span class="rtc rtc3 rise" style="--rd:.75s"><span class="chip ghost">support the squad</span></span>
+    </div>
+    <div class="ticker" style="--tk-speed:46s">
+      <div class="tk"><span>✦ AD BREAK</span><span>stretch · hydrate · refresh</span><span>support the squad</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+      <div class="tk"><span>✦ AD BREAK</span><span>stretch · hydrate · refresh</span><span>support the squad</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    </div>
+  </section>
+
+</div>
+<script src="assets/logo.js"></script><script src="assets/core.js"></script>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  if(target===null){ target=Date.now()+120000; }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  window.__smileTarget=target;
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+(function(){
+  var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#2e2e2e'];
+  document.querySelectorAll('.sky').forEach(function(sk){
+    for(var i=0;i<22;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*82+Math.random()*18)+'px';
+      c.style.width=(20+Math.random()*14)+'px';
+      c.style.height=(60+Math.random()*230)+'px';
+      c.style.background=cols[i%6];
+      c.style.setProperty('--d',(0.5+i*0.06).toFixed(2)+'s');
+      sk.appendChild(c);
+    }
+  });
+  if(document.body.getAttribute('data-v')==='b'){
+    setInterval(function(){ if(window.smileMood) smileMood('nod',900); },6500);
+  }else{
+    setInterval(function(){ if(window.smileMood) smileMood('wink',600); },4500);
+  }
+  var tg=window.__smileTarget||Date.now()+120000;
+  var tot=Math.max(1,(tg-Date.now())/1000);
+  var circles=document.querySelectorAll('.rprog');
+  setInterval(function(){
+    var s=Math.max(0,(tg-Date.now())/1000);
+    var f=Math.min(1,Math.max(0,s/tot));
+    circles.forEach(function(c){
+      var C=parseFloat(c.getAttribute('data-c'))||0;
+      c.style.strokeDashoffset=(C*(1-f)).toFixed(2);
+    });
+  },250);
+  var done=false;
+  setInterval(function(){
+    if(done)return;
+    if(Date.now()>=tg){
+      done=true;document.body.classList.add('is-done');
+      if(window.smileMood)smileMood('celebrate',1300);
+    }
+  },300);
+})();
+</script>
+</body></html>

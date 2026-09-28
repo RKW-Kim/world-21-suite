@@ -1,0 +1,102 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · TECH · AMBIENT CINEMA</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="smile-core.css">
+<style>
+  /* ============ TECH BASE (derived from brb skeleton — frozen) ============ */
+  body{font-variant-numeric:tabular-nums}
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:60px}
+  .field{position:absolute;inset:0}
+  .buffer{position:relative;width:340px;height:340px;display:grid;place-items:center;margin-bottom:44px}
+  .buffer::before{content:"";position:absolute;inset:0;border-radius:50%;border:7px solid rgba(255,255,255,.07)}
+  .buffer::after{content:"";position:absolute;inset:16px;border-radius:50%;border:2px dashed rgba(255,193,7,.22);animation:spinRev 14s linear infinite}
+  @keyframes spinRev{to{transform:rotate(-360deg)}}
+  .ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+  .prog{fill:none;stroke:var(--yellow);stroke-width:7;stroke-linecap:round;stroke-dasharray:1046.15;stroke-dashoffset:1043;filter:drop-shadow(0 0 12px rgba(255,193,7,.35))}
+  .buffer .face{width:216px;height:216px;animation:faceBreathe 3.4s ease-in-out infinite}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  h1{font-family:var(--font-display);font-weight:800;font-size:118px;letter-spacing:-.03em;line-height:1}
+  h1 .y{color:var(--yellow)}
+  .sub{margin-top:22px;max-width:880px;font-size:26px;font-weight:500;color:#a8a8a8;text-wrap:balance}
+  .chips{margin-top:36px;display:flex;gap:14px;align-items:center}
+  .bnc{margin-top:32px;display:flex;gap:14px}
+  .bnc span{width:14px;height:14px;border-radius:50%;background:var(--yellow);animation:bdot 1.2s ease-in-out infinite}
+  .bnc span:nth-child(2){animation-delay:.15s;background:var(--up)}
+  .bnc span:nth-child(3){animation-delay:.3s;background:var(--down)}
+  @keyframes bdot{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+  /* pre-upgrade fallback face (smile-mark.js swaps innerHTML) */
+  .face .eye{position:absolute;top:33%;width:14px;height:19px;border-radius:50%;background:#0b0b0b}
+  .face .eye.l{left:29%}.face .eye.r{right:29%}
+  .face svg.mouth{position:absolute;left:50%;top:50%;width:58%;transform:translateX(-50%)}
+  .face svg.mouth path{fill:none;stroke:#0b0b0b;stroke-width:10.5;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ============ E5 · AMBIENT CINEMA — the premium idle ============
+     slow parallax drift (bg vs sparks at different depths) · 40s light sweep ·
+     face glow tide · calm premium reconnect loop · entrances slow + long-staggered ·
+     every loop seamless — any two frames 10s apart both look composed. */
+
+  /* slower entrances, longer stagger */
+  .rise{animation-duration:1.55s;animation-timing-function:cubic-bezier(.19,1,.22,1)}
+
+  /* depth layer 1: backdrop grid drifts deep */
+  .bg{animation:bgDrift 72s ease-in-out infinite alternate;will-change:transform}
+  @keyframes bgDrift{from{transform:translate3d(-16px,10px,0) scale(1.04)}to{transform:translate3d(16px,-10px,0) scale(1.04)}}
+  /* depth layer 2: spark field drifts against it */
+  .field{animation:fieldDrift 54s ease-in-out infinite alternate;will-change:transform}
+  @keyframes fieldDrift{from{transform:translate3d(12px,-14px,0)}to{transform:translate3d(-12px,14px,0)}}
+
+  /* 40s light sweep crossing the whole stage */
+  .sweep{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.05) 50%,transparent 60%);
+    animation:sweep 40s ease-in-out infinite;will-change:transform}
+  @keyframes sweep{0%{transform:translateX(-85%);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(85%);opacity:0}}
+
+  /* face glow tide (8s) */
+  .halo{position:absolute;width:320px;height:320px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,193,7,.26),rgba(255,193,7,.08) 45%,transparent 70%);
+    animation:tide 8s ease-in-out infinite;will-change:transform,opacity}
+  @keyframes tide{0%,100%{opacity:.4;transform:scale(.94)}50%{opacity:.85;transform:scale(1.07)}}
+  .buffer .face{animation-duration:8s}
+  @keyframes faceBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+
+  /* calm premium reconnect: 9s fill, long hold, soft reset — all symmetric */
+  .prog{animation:reconnect 14s infinite;animation-timing-function:cubic-bezier(.42,.08,.58,.92)}
+  @keyframes reconnect{
+    0%   {stroke-dashoffset:1043;opacity:1}
+    64%  {stroke-dashoffset:0}
+    86%  {stroke-dashoffset:0;opacity:1;animation-timing-function:cubic-bezier(.45,0,.55,1)}
+    94%  {stroke-dashoffset:0;opacity:0;animation-timing-function:linear}
+    100% {stroke-dashoffset:1043;opacity:0}
+  }
+
+  /* ticker depth shadow */
+  .tk span{text-shadow:0 2px 12px rgba(0,0,0,.55)}
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="field">
+    <span class="spark" style="left:14%;top:20%;--d:.4s"></span><span class="spark" style="left:84%;top:26%;--d:1.8s;background:var(--up)"></span><span class="spark" style="left:76%;top:78%;--d:3s"></span><span class="spark" style="left:24%;top:72%;--d:2.3s;background:var(--sky)"></span>
+  </div>
+  <div class="sweep"></div>
+  <div class="wrap">
+    <div class="buffer">
+      <div class="halo"></div>
+      <svg class="ring" viewBox="0 0 340 340" aria-hidden="true">
+        <circle class="prog" cx="170" cy="170" r="166.5"/>
+      </svg>
+      <div class="face"><span class="eye l"></span><span class="eye r"></span><svg class="mouth" viewBox="0 0 150 70"><path d="M12 12 C 45 62, 105 62, 138 12"/></svg></div>
+    </div>
+    <h1 class="rise" style="--rd:.3s">we're on <span class="y">it</span>.</h1>
+    <p class="sub rise" style="--rd:.75s">Feed hiccup on our side — the desk is already on it. Back to the charts in a moment.</p>
+    <div class="chips rise" style="--rd:1.15s">
+      <span class="chip ghost">● FEED RECONNECTING</span>
+      <span class="chip dark">SYSTEMS NOMINAL</span>
+    </div>
+    <div class="bnc rise" style="--rd:1.4s"><span></span><span></span><span></span></div>
+  </div>
+  <div class="ticker" style="--tk-speed:38s">
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ TECHNICAL HICCUP</span><span>markets paused</span><span>our desk is on it</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+</body></html>

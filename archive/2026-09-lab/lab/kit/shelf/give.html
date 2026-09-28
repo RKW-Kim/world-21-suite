@@ -1,0 +1,252 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SMILE · Giveaway</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/core.css">
+<script src="assets/logo.js"></script><script src="assets/core.js"></script>
+<style>
+  body{overflow:hidden}
+  [hidden]{display:none!important}
+  [data-cd]{font-variant-numeric:tabular-nums}
+  [data-done="1"]{opacity:.35;transition:opacity .4s var(--ease-out)}
+  .scn{position:absolute;inset:0;z-index:2;overflow:hidden}
+  body[data-v="a"] .scn[data-take="b"]{display:none}
+  body[data-v="b"] .scn[data-take="a"]{display:none}
+
+  /* ---------- shared furniture ---------- */
+  .topbar{position:absolute;top:60px;left:90px;right:90px;display:flex;justify-content:space-between;align-items:center;z-index:6}
+  .topbar .brand{font-size:40px}.topbar .brand .dw{width:48px;height:48px}
+  .livechip .dot{width:9px;height:9px;border-radius:50%;background:var(--up);animation:dotPulse 1.7s ease-in-out infinite}
+  @keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
+  @keyframes spinCW{to{transform:rotate(360deg)}}
+  @keyframes spinCCW{to{transform:rotate(-360deg)}}
+  @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+  /* ============ TAKE A · gift pop ============ */
+  [data-take="a"] .ghead{position:absolute;top:128px;left:0;right:0;text-align:center;z-index:5}
+  [data-take="a"] h1{font-family:var(--font-display);font-weight:800;font-size:92px;letter-spacing:-.03em;line-height:1;color:var(--paper)}
+  [data-take="a"] h1 .y{color:var(--yellow)}
+
+  .cl{position:absolute;top:428px;left:50%;transform:translateX(-54%);display:flex;align-items:flex-end;gap:64px;z-index:3}
+  .gwrap{position:relative;width:220px}
+  .conf{position:absolute;left:50%;top:2px;width:0;height:0;z-index:2}
+  .conf span{position:absolute;left:-2px;top:-8px;width:9px;height:9px;opacity:0;box-shadow:0 0 10px rgba(255,255,255,.18)}
+  .conf.pop span{animation:confBurst 1.05s cubic-bezier(.15,.72,.3,1) forwards}
+  @keyframes confBurst{
+    0%{transform:translate(-50%,-50%) rotate(0deg);opacity:1}
+    55%{transform:translate(calc(-50% + var(--tx,0px) * .78), calc(-50% + var(--ty,-200px))) rotate(calc(var(--rz,0deg) * .6));opacity:1}
+    100%{transform:translate(calc(-50% + var(--tx,0px)), calc(-50% + var(--ty,-200px) + 150px)) rotate(var(--rz,0deg));opacity:0}
+  }
+  .gift{position:relative;width:220px;transform-origin:50% 92%;animation:idleFloat 3.6s ease-in-out infinite}
+  @keyframes idleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .gift.shake{animation:gShake .5s ease}
+  @keyframes gShake{0%,100%{transform:rotate(0)}12%{transform:rotate(-6deg)}30%{transform:rotate(6deg)}48%{transform:rotate(-5deg)}66%{transform:rotate(4deg)}84%{transform:rotate(-2deg)}}
+  .bow{position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:92px;height:34px;z-index:3}
+  .bow i{position:absolute;top:2px;width:38px;height:26px;background:#141414;border-radius:60% 60% 50% 50%/70% 70% 40% 40%}
+  .bow i:first-child{left:0;transform:rotate(-26deg)}
+  .bow i:last-child{right:0;transform:rotate(26deg)}
+  .bow b{position:absolute;left:50%;top:7px;width:18px;height:18px;margin-left:-9px;background:#0a0a0a;border-radius:5px;transform:rotate(45deg);box-shadow:inset 0 0 0 3px rgba(255,193,7,.35)}
+  .lid{position:relative;z-index:2;height:52px;width:240px;margin-left:-10px;background:linear-gradient(180deg,#FFD75A,#F5A623);border-radius:10px;box-shadow:0 5px 0 rgba(0,0,0,.22);overflow:hidden}
+  .lid .rib{position:absolute;left:50%;top:0;bottom:0;width:30px;margin-left:-15px;background:#141414}
+  .gift.shake .lid{animation:lidPop .5s ease}
+  @keyframes lidPop{0%,100%{transform:translateY(0) rotate(0deg)}35%{transform:translateY(-16px) rotate(-7deg)}70%{transform:translateY(-5px) rotate(4deg)}}
+  .gbody{position:relative;height:148px;margin-top:3px;background:linear-gradient(165deg,#FFC82E,#EFA31D);border-radius:6px 6px 14px 14px;overflow:hidden}
+  .gbody .rib{position:absolute;left:50%;top:0;bottom:0;width:30px;margin-left:-15px;background:#141414}
+  .gbody .ribH{position:absolute;left:0;right:0;top:50%;height:30px;margin-top:-15px;background:#141414}
+
+  .fwrap{position:relative;width:260px;height:260px;display:grid;place-items:center}
+  .fhalo{position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.4);border-radius:50%;animation:spinCW 22s linear infinite}
+  .fwrap .face{width:200px;height:200px;animation:faceBob 5.2s ease-in-out infinite}
+
+  [data-take="a"] .crow{position:absolute;top:812px;left:0;right:0;display:flex;gap:14px;justify-content:center;flex-wrap:nowrap;z-index:5}
+  [data-take="a"] .crow [data-cd]{letter-spacing:.04em}
+
+  /* ============ TAKE B · prize wheel ============ */
+  .col{position:absolute;left:130px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;align-items:flex-start;z-index:5}
+  [data-take="b"] .whead{position:absolute;top:136px;left:0;right:0;text-align:center;z-index:5}
+  [data-take="b"] .whead h2{font-family:var(--font-display);font-weight:800;font-size:46px;letter-spacing:-.025em;line-height:1;color:var(--paper)}
+  [data-take="b"] .whead h2 .y{color:var(--yellow)}
+  .wzone{position:absolute;top:262px;left:56%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:3}
+  .wzone-in{position:relative;width:440px;height:440px}
+  .halo{position:absolute;inset:-30px;border:2px dashed rgba(255,193,7,.3);border-radius:50%;animation:spinCCW 30s linear infinite}
+  .wheel{position:absolute;inset:0;border-radius:50%;border:12px solid #2e2e2e;background:conic-gradient(var(--yellow) 0 90deg,var(--panel) 90deg 180deg,var(--up) 180deg 270deg,var(--down) 270deg 360deg);animation:spinCW 9s linear infinite;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .wheel::after{content:"";position:absolute;inset:-12px;border-radius:50%;background:conic-gradient(#0a0a0a 0 .35deg,transparent .35deg 89.65deg,#0a0a0a 89.65deg 90.35deg,transparent 90.35deg 179.65deg,#0a0a0a 179.65deg 180.35deg,transparent 180.35deg 269.65deg,#0a0a0a 269.65deg 270.35deg,transparent 270.35deg 359.65deg,#0a0a0a 359.65deg)}
+  .peg{position:absolute;left:calc(50% - 7px);top:8px;width:14px;height:14px;border-radius:50%;background:#0a0a0a;box-shadow:0 0 0 2px rgba(255,255,255,.09);transform-origin:7px 202px}
+  .wl{position:absolute;left:50%;top:50%;transform-origin:0 0;transform:rotate(var(--a,45deg)) translateY(-158px) translate(-50%,-50%);font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:.14em;white-space:nowrap}
+  .wl.ink{color:var(--ink)} .wl.paper{color:var(--paper)}
+  .pointer{position:absolute;top:-30px;left:calc(50% - 21px);width:0;height:0;border:21px solid transparent;border-top:36px solid var(--yellow);z-index:4;transform-origin:50% 4px;animation:ptick .5s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
+  @keyframes ptick{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(7deg)}}
+  .hub{position:absolute;inset:0;display:grid;place-items:center;z-index:3}
+  .hub::before{content:"";position:absolute;width:212px;height:212px;border-radius:50%;background:var(--panel);border:3px solid rgba(255,255,255,.1);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .hub .face{width:180px;height:180px;position:relative;z-index:2;animation:faceBob 4.8s ease-in-out infinite}
+  .cd{margin-top:26px;text-align:center}
+  .cd .lbl{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+  .cd .num{font-family:var(--font-display);font-weight:800;font-size:60px;letter-spacing:.02em;line-height:1.15;color:var(--paper);font-variant-numeric:tabular-nums}
+  .cd [data-when-live]{margin-top:10px}
+
+  /* ---------- reduced motion ---------- */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+    .rise{animation-delay:0s!important}
+    .spark{opacity:.7}
+    .tk{animation:none}
+    .gift,.gift.shake,.gift.shake .lid,.fhalo{animation:none}
+    .conf span{animation:none;opacity:0}
+    .wheel,.halo,.pointer,.fwrap .face,.hub .face{animation:none}
+  }
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div id="skyline"></div>
+
+  <!-- ================= TAKE A · gift pop ================= -->
+  <section class="scn" data-take="a">
+    <span class="spark" style="left:10%;top:16%;--d:0s"></span>
+    <span class="spark" style="left:38%;top:10%;--d:1.2s;background:var(--up)"></span>
+    <span class="spark" style="left:90%;top:18%;--d:.6s;background:var(--down)"></span>
+    <span class="spark" style="left:85%;top:66%;--d:2.4s"></span>
+    <span class="spark" style="left:24%;top:80%;--d:3.2s;background:var(--sky)"></span>
+    <span class="spark" style="left:60%;top:84%;--d:1.8s"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>GIVEAWAY · LIVE DRAW</span>
+    </div>
+
+    <div class="ghead">
+      <h1 class="rise" style="--rd:.1s">giveaway <span class="y">live</span>.</h1>
+    </div>
+
+    <div class="cl">
+      <div class="gwrap rise" style="--rd:.25s">
+        <div class="conf" id="conf"></div>
+        <div class="gift" id="gift">
+          <div class="bow"><i></i><i></i><b></b></div>
+          <div class="lid"><span class="rib"></span></div>
+          <div class="gbody"><span class="rib"></span><span class="ribH"></span></div>
+        </div>
+      </div>
+      <div class="fwrap rise" style="--rd:.35s"><div class="fhalo"></div><div class="face" id="faceA"></div></div>
+    </div>
+
+    <div class="crow">
+      <span class="chip solid rise" style="--rd:.45s">say hi in chat to enter</span>
+      <span class="chip ghost rise" style="--rd:.55s">prize — ep <span data-ep>128</span> merch drop</span>
+      <span class="chip ghost rise" style="--rd:.65s" data-cd-wrap>WINNER IN&nbsp;<span data-cd>03:00</span></span>
+      <span class="chip solid" data-when-live hidden>winner drawn on air</span>
+    </div>
+  </section>
+
+  <!-- ================= TAKE B · prize wheel ================= -->
+  <section class="scn" data-take="b">
+    <span class="spark" style="left:6%;top:22%;--d:0s"></span>
+    <span class="spark" style="left:44%;top:10%;--d:1.4s;background:var(--up)"></span>
+    <span class="spark" style="left:92%;top:30%;--d:.7s;background:var(--down)"></span>
+    <span class="spark" style="left:88%;top:74%;--d:2.6s"></span>
+    <span class="spark" style="left:10%;top:76%;--d:3.4s;background:var(--sky)"></span>
+
+    <div class="topbar">
+      <span class="brand rise" style="--rd:.05s"><span class="dw"></span><b>smile</b></span>
+      <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>GIVEAWAY · SPIN TO WIN</span>
+    </div>
+
+    <div class="whead">
+      <h2 class="rise" style="--rd:.1s">spin for the <span class="y">drop</span>.</h2>
+    </div>
+
+    <div class="col">
+      <span class="chip dark rise" style="--rd:.25s">how to enter — say hi in chat</span>
+      <span class="chip dark rise" style="--rd:.35s">prize — ep <span data-ep>128</span> merch</span>
+      <span class="chip dark rise" style="--rd:.45s">winner drawn on air</span>
+    </div>
+
+    <div class="wzone">
+      <div class="wzone-in rise" style="--rd:.15s">
+        <div class="halo"></div>
+        <div class="wheel">
+          <span class="peg" style="transform:rotate(22.5deg)"></span>
+          <span class="peg" style="transform:rotate(67.5deg)"></span>
+          <span class="peg" style="transform:rotate(112.5deg)"></span>
+          <span class="peg" style="transform:rotate(157.5deg)"></span>
+          <span class="peg" style="transform:rotate(202.5deg)"></span>
+          <span class="peg" style="transform:rotate(247.5deg)"></span>
+          <span class="peg" style="transform:rotate(292.5deg)"></span>
+          <span class="peg" style="transform:rotate(337.5deg)"></span>
+          <span class="wl ink" style="--a:45deg">MERCH</span>
+          <span class="wl paper" style="--a:135deg">STICKERS</span>
+          <span class="wl ink" style="--a:225deg">SHOUTOUT</span>
+          <span class="wl ink" style="--a:315deg">BONUS</span>
+        </div>
+        <div class="pointer"></div>
+        <div class="hub"><div class="face" id="faceB"></div></div>
+      </div>
+      <div class="cd rise" style="--rd:.35s" data-cd-wrap>
+        <div class="lbl">winner in</div>
+        <div class="num"><span data-cd>03:00</span></div>
+        <div data-when-live hidden><span class="chip solid">winner drawn on air</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" style="--tk-speed:44s">
+    <div class="tk"><span>✦ GIVEAWAY LIVE</span><span>say hi in chat to enter</span><span>ep 128 merch drop</span><span>winner drawn on air</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+    <div class="tk"><span>✦ GIVEAWAY LIVE</span><span>say hi in chat to enter</span><span>ep 128 merch drop</span><span>winner drawn on air</span><span>@smileke</span><span>smile.co.ke</span><span>#SmileSquad</span></div>
+  </div>
+</div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var v=(q.get('v')||'a').toLowerCase(); if(v!=='b')v='a';
+  document.body.setAttribute('data-v',v);
+  function P(n){return String(n).padStart(2,'0')}
+  var target=null, tp=q.get('t');
+  if(tp){ if(/^\d+$/.test(tp)){target=Date.now()+parseInt(tp,10)*1000;} else {var d=new Date(tp); if(!isNaN(d.getTime())) target=d.getTime();} }
+  if(target===null){ target=Date.now()+180000; }
+  var eps=q.get('ep')||'128';
+  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  setInterval(function(){
+    var s=Math.max(0,Math.round((target-Date.now())/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+    document.querySelectorAll('[data-cd]').forEach(function(e){ e.textContent=(h>0?P(h)+':':'')+P(m)+':'+P(x); });
+    if(s<=0){ document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');}); document.querySelectorAll('[data-cd-wrap]').forEach(function(e){e.setAttribute('data-done','1');}); }
+  },250);
+})();
+</script>
+<script>
+  (function(){
+    var sky=document.getElementById('skyline'),cols=['#202020','#282828','#1c1c1c','#2e2e2e'];
+    for(var i=0;i<26;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*76+Math.random()*20)+'px';c.style.width=(22+Math.random()*14)+'px';
+      c.style.height=(70+Math.random()*240)+'px';
+      c.style.background=cols[i%4];
+      c.style.setProperty('--d',(0.5+i*0.07)+'s');sky.appendChild(c);
+    }
+    var faceA=document.getElementById('faceA'),faceB=document.getElementById('faceB');
+    var gift=document.getElementById('gift'),conf=document.getElementById('conf');
+    var COLORS=['#FFC107','#0ECB81','#F6465D','#3FB6FF'];
+    var spans=[];
+    if(conf){for(var j=0;j<14;j++){var s=document.createElement('span');conf.appendChild(s);spans.push(s);}}
+    function burst(){
+      if(!conf)return;
+      spans.forEach(function(el,i){
+        var sz=(8+Math.random()*4).toFixed(1);
+        el.style.width=sz+'px';el.style.height=sz+'px';el.style.background=COLORS[i%4];
+        el.style.setProperty('--tx',Math.round(Math.random()*540-270)+'px');
+        el.style.setProperty('--ty',Math.round(-(150+Math.random()*240))+'px');
+        el.style.setProperty('--rz',Math.round(Math.random()*960-480)+'deg');
+        el.style.animationDelay=(i*20)+'ms';
+      });
+      conf.classList.remove('pop');void conf.offsetWidth;conf.classList.add('pop');
+    }
+    function pop(){
+      if(!gift)return;
+      gift.classList.add('shake');
+      setTimeout(function(){burst();if(window.smileMood)window.smileMood('celebrate',900,faceA);},130);
+      setTimeout(function(){gift.classList.remove('shake');},620);
+    }
+    setTimeout(pop,900);
+    setInterval(pop,4000);
+    function bounce(){if(window.smileMood)window.smileMood('bounce',800,faceB);}
+    setTimeout(bounce,1800);setInterval(bounce,5000);
+  })();
+</script>
+</body></html>

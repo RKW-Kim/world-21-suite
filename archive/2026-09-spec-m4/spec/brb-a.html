@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · brb — standby saver</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · BRB — a · STANDBY SAVER
+  · DVD-screensaver physics: real velocity vector, wall reflections,
+    squash + glow pulse at every impact, trick (spin / wink) every 4th wall-hit
+  · 3 ghost trail copies fade behind the disc
+  · corner-locked lockup: be right back. + away timer (?elapsed=, counts UP, zero-state 00:00)
+  · ticker: live Binance (BTC/ETH/XAU + USD/KES walk) — catch → random walk fallback
+  · document.hidden pauses rAF · prefers-reduced-motion → composed static frame
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46; --fg:#fafafa; --muted-fg:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.page{position:relative;display:flex;flex-direction:column;height:100vh;}
+.num{font-variant-numeric:tabular-nums;}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+/* ═══ AMBIENT — one system: dot grid + vignette ═══ */
+.stage{position:relative;flex:1;overflow:hidden;}
+.dots{position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 42%,#000 28%,transparent 82%);
+          mask-image:radial-gradient(ellipse at 50% 42%,#000 28%,transparent 82%);}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 52%,rgba(0,0,0,.55) 100%);}
+
+/* ═══ BALL + TRAIL ═══ */
+.ghost{position:absolute;left:0;top:0;width:150px;height:150px;opacity:0;will-change:transform,opacity;pointer-events:none;}
+.ghost svg{width:100%;height:100%;}
+.ball{position:absolute;left:0;top:0;width:150px;height:150px;will-change:transform;z-index:3;}
+.squash{width:100%;height:100%;will-change:transform;}
+.squash .disc{width:100%;height:100%;
+  filter:drop-shadow(0 14px 30px rgba(0,0,0,.5)) drop-shadow(0 0 20px rgba(255,193,7,.2));}
+.impact{position:absolute;left:0;top:0;width:170px;height:170px;margin:-85px 0 0 -85px;
+  z-index:2;pointer-events:none;will-change:transform;}
+.impact i{display:block;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,193,7,.4),rgba(255,193,7,.12) 42%,transparent 68%);
+  animation:impactP .72s cubic-bezier(.16,.8,.34,1) both;}
+@keyframes impactP{0%{transform:scale(.35);opacity:.85;}100%{transform:scale(1.55);opacity:0;}}
+
+/* ═══ LOCKUP (corner-locked bottom-left) ═══ */
+.lockup{position:absolute;left:64px;bottom:88px;z-index:4;max-width:760px;}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);
+  color:var(--yellow);padding:7px 15px;font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.32em;text-transform:uppercase;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.62s both;}
+.eyebrow .dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow);}
+.eyebrow .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
+  animation:ping 1.9s cubic-bezier(0,0,.2,1) infinite;}
+@keyframes ping{0%{transform:scale(1);opacity:.7;}80%,100%{transform:scale(2.6);opacity:0;}}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(46px,4.6vw,78px);
+  line-height:1.02;letter-spacing:-.035em;margin-top:18px;}
+h1 span{display:inline-block;animation:riseIn .9s cubic-bezier(.2,.9,.3,1) both;}
+h1 .w1{animation-delay:-.55s;} h1 .w2{animation-delay:-.46s;} h1 .w3{animation-delay:-.36s;}
+h1 .w1,h1 .w2{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+h1 .w3{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.26));}
+.sub{margin-top:14px;font-size:17px;color:var(--muted-fg);letter-spacing:.005em;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.26s both;}
+.chiprow{display:flex;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) -.16s both;}
+.chip{display:inline-flex;align-items:center;gap:9px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(9,9,11,.66);padding:8px 15px;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.16em;color:var(--muted-fg);text-transform:uppercase;}
+.chip.away{border-color:rgba(255,193,7,.4);color:var(--yellow);}
+.chip.away b{color:var(--fg);font-weight:600;letter-spacing:.1em;}
+.pausebars{display:inline-flex;gap:3px;}
+.pausebars i{width:3px;height:11px;border-radius:1px;background:var(--yellow);}
+.chip.eat{color:var(--faint);}
+.chip.eat b{color:var(--muted-fg);font-weight:500;letter-spacing:.08em;}
+
+/* ═══ TICKER ═══ */
+.ticker{position:relative;z-index:6;display:flex;align-items:stretch;height:66px;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 26px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.18em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.65)) drop-shadow(0 0 5px rgba(0,0,0,.5));}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);font-weight:500;
+  font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted-fg);}
+.item::before{content:"✦";color:var(--yellow);margin-right:16px;font-size:10px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price{gap:9px;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.06em;}
+.item.price .pc{font-size:10px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);} .item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(5px);opacity:.1;}100%{transform:none;opacity:1;}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <div class="stage" id="stage">
+    <div class="dots" aria-hidden="true"></div>
+
+    <div class="ghost" id="g0" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="ghost" id="g1" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="ghost" id="g2" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <div class="ball" id="ball">
+      <div class="squash" id="squash">
+        <svg class="disc" id="ballDisc" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="lockup">
+      <span class="eyebrow"><span class="dot"></span>Standby · Stream On Break</span>
+      <h1><span class="w1">be</span> <span class="w2">right</span> <span class="w3">back.</span></h1>
+      <p class="sub">Trader stepped away — charts secured, smile intact.</p>
+      <div class="chiprow">
+        <span class="chip away"><span class="pausebars" aria-hidden="true"><i></i><i></i></span>away <b class="num" id="awayT">00:00</b></span>
+        <span class="chip eat">EAT <b class="num" id="eatT">--:--</b></span>
+      </div>
+    </div>
+
+    <div class="vignette" aria-hidden="true"></div>
+  </div>
+
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#FFC107"/><ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/><path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span>SMILE · BRB</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq" id="tkSeq">
+          <span class="item"><b>be right back</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">positions <b>secured</b></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>be right back</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">positions <b>secured</b></span>
+          <span class="item">say hi <b>@smileke</b></span>
+          <span class="item"><b>smile.co.ke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">NOT FINANCIAL ADVICE — JUST GOOD VIBES</div>
+  </footer>
+</div>
+
+<script>window.BRAND={};</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── URL contract: ?elapsed= seconds → mm:ss counting UP, zero-state 00:00 ── */
+  function strictInt(v){v=parseInt(v,10);return isNaN(v)||v<0?0:v;}
+  var CAP=359999; /* 99:59:59 */
+  var elapsed0=Math.min(CAP,strictInt(new URLSearchParams(location.search).get('elapsed')));
+  var bootAt=Date.now();
+  function two(n){return n<10?'0'+n:''+n;}
+  function fmtElapsed(sec){
+    sec=Math.min(CAP,Math.max(0,Math.floor(sec)));
+    var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    return h>0?two(h)+':'+two(m)+':'+two(s):two(m)+':'+two(s);
+  }
+  var awayEl=document.getElementById('awayT');
+  function renderAway(){awayEl.textContent=fmtElapsed(elapsed0+(Date.now()-bootAt)/1000);}
+
+  /* ── EAT clock (Nairobi, UTC+3 — manual offset, no Intl dependency) ── */
+  var eatEl=document.getElementById('eatT'),lastEat=-1;
+  function renderEat(){
+    var d=new Date(),utc=d.getTime()+d.getTimezoneOffset()*60000,eat=new Date(utc+3*3600000);
+    var key=eat.getHours()*3600+eat.getMinutes()*60+eat.getSeconds();
+    if(key===lastEat)return;lastEat=key;
+    eatEl.textContent=two(eat.getHours())+':'+two(eat.getMinutes());
+  }
+
+  /* ═══ BOUNCE PHYSICS ═══ */
+  var stage=document.getElementById('stage'),ball=document.getElementById('ball'),
+      squashEl=document.getElementById('squash'),discSvg=document.getElementById('ballDisc');
+  var BW=150,SPEED=.29,RATIO=.215/SPEED;
+  var x=0,y=0,vx=SPEED,vy=SPEED*RATIO,minX=0,minY=0,maxX=600,maxY=400;
+  var hits=0,busy=false,trickFlip=false,sqT=0;
+  function bounds(){
+    maxX=Math.max(10,stage.clientWidth-BW);
+    maxY=Math.max(10,stage.clientHeight-BW);
+    if(x>maxX)x=maxX;if(y>maxY)y=maxY;
+  }
+  x=maxX*.42;y=maxY*.24;
+
+  /* impact glow — fresh node per hit, removed after its animation */
+  function glow(cx,cy){
+    if(RM)return;
+    var g=document.createElement('div');g.className='impact';
+    g.style.transform='translate('+(cx-85)+'px,'+(cy-85)+'px)';
+    g.innerHTML='<i></i>';stage.appendChild(g);
+    setTimeout(function(){if(g.parentNode)g.parentNode.removeChild(g);},800);
+  }
+  function squashHit(axis){
+    if(RM)return;
+    squashEl.style.transition='transform .05s ease-out';
+    squashEl.style.transform=axis==='x'?'scale(.84,1.09)':'scale(1.09,.84)';
+    clearTimeout(sqT);
+    sqT=setTimeout(function(){
+      squashEl.style.transition='transform .42s cubic-bezier(.2,1.3,.35,1)';
+      squashEl.style.transform='scale(1,1)';
+    },60);
+  }
+  /* every Nth wall-hit fires a trick — alternating 360 spin / wink */
+  function doTrick(){
+    busy=true;trickFlip=!trickFlip;
+    if(trickFlip){ /* eased 360 spin with settle */
+      var t0=performance.now(),D=950;
+      (function f(now){
+        var k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,3);
+        discSvg.style.transform='rotate('+(360*e)+'deg)';
+        if(k<1)requestAnimationFrame(f);else{discSvg.style.transform='';busy=false;}
+      })(t0);
+    }else{ /* wink via smile-mark.js trick engine */
+      if(window.smileMood)smileMood('wink',760,discSvg);
+      setTimeout(function(){busy=false;},820);
+    }
+  }
+  function hit(cx,cy,axis){
+    glow(cx,cy);squashHit(axis);
+    hits++;if(hits%4===0&&!busy)doTrick();
+  }
+
+  /* trail — 3 ghost copies at previous positions, fading */
+  var ghosts=[document.getElementById('g0'),document.getElementById('g1'),document.getElementById('g2')],
+      samples=[],lastSample=0;
+
+  /* ═══ MARQUEE (ref engine — 0.055 px/ms) ═══ */
+  var track=document.getElementById('tkTrack'),tkSeq=document.getElementById('tkSeq'),tkW=0,tkX=0;
+  function measure(){tkW=tkSeq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',function(){bounds();measure();});
+
+  /* ═══ LIVE PRICES (Binance → catch = random walk; quiet backoff) ═══ */
+  var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2},netFail=0;
+  function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function setPrice(key,val,pct){
+    var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+    document.querySelectorAll('[data-sym="'+key+'"]').forEach(function(el){
+      var pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+      pv.textContent=fmtP(val);
+      if(pct!=null){
+        pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+        pc.className='pc num '+(pct>=0?'up':'down');
+      }
+      if(changed&&!RM){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+    });
+  }
+  function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+  function walkAll(){
+    setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+    setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+    setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+    kesWalk();
+  }
+  function prices(){
+    var now=Date.now();
+    if(netFail&&now-netFail<45000){walkAll();return;} /* quiet backoff — no console spam */
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){
+        netFail=0;
+        list.forEach(function(t){
+          var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+          if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+        });
+        kesWalk();
+      })
+      .catch(function(){netFail=now;walkAll();});
+  }
+  if(!RM){setInterval(prices,5000);setTimeout(prices,1200);}
+
+  /* ═══ MASTER rAF (paused when document.hidden) ═══ */
+  var raf=null,last=0,eatT=0;
+  function loop(now){
+    var dt=Math.min(50,now-last);last=now;
+    /* physics */
+    x+=vx*dt;y+=vy*dt;
+    var bounced=false;
+    if(x<=minX){x=minX;vx=Math.abs(vx);glow(x+BW/2,y+BW/2);squashHit('x');hits++;bounced=true;}
+    else if(x>=maxX){x=maxX;vx=-Math.abs(vx);glow(x+BW/2,y+BW/2);squashHit('x');hits++;bounced=true;}
+    if(y<=minY){y=minY;vy=Math.abs(vy);glow(x+BW/2,y+BW/2);squashHit('y');hits++;bounced=true;}
+    else if(y>=maxY){y=maxY;vy=-Math.abs(vy);glow(x+BW/2,y+BW/2);squashHit('y');hits++;bounced=true;}
+    if(bounced&&hits%4===0&&!busy)doTrick();
+    ball.style.transform='translate3d('+x+'px,'+y+'px,0)';
+    /* trail */
+    if(now-lastSample>115){lastSample=now;samples.push({x:x,y:y,t:now});if(samples.length>3)samples.shift();}
+    for(var i=0;i<3;i++){
+      var s=samples[samples.length-1-i],op=0;
+      if(s){var age=now-s.t;op=age>650?0:.15*(1-age/650);}
+      ghosts[i].style.opacity=op.toFixed(3);
+      if(s)ghosts[i].style.transform='translate3d('+s.x+'px,'+s.y+'px,0)';
+    }
+    /* marquee */
+    if(tkW>0){tkX-=dt*.055;if(-tkX>=tkW)tkX+=tkW;track.style.transform='translateX('+tkX+'px)';}
+    /* clocks (1s gate) */
+    if(now-eatT>480){eatT=now;renderAway();renderEat();}
+    raf=requestAnimationFrame(loop);
+  }
+  function start(){if(raf==null){last=performance.now();raf=requestAnimationFrame(loop);}}
+  function stop(){if(raf!=null){cancelAnimationFrame(raf);raf=null;}}
+  document.addEventListener('visibilitychange',function(){document.hidden?stop():start();});
+
+  if(RM){
+    /* composed static frame */
+    x=maxX*.60;y=maxY*.28;
+    ball.style.transform='translate3d('+x+'px,'+y+'px,0)';
+    renderAway();renderEat();
+  }else{
+    bounds();start();
+    setTimeout(measure,1200);setTimeout(measure,3000); /* re-measure after font swap */
+  }
+})();
+</script>
+</body>
+</html>

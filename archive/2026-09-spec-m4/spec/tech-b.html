@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · technical difficulties — reconnect lab</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · TECHNICAL DIFFICULTIES — candidate B · "RECONNECT LAB"
+  one big shadcn progress ring (yellow sweep on zinc track, eased hold, invisible fast reset),
+  smile disc seated in the center doing loader-eyes while the ring sweeps,
+  mono reconnect log typing itself beneath, side chips, giant gradient h1, bottom ticker.
+  URL contract: ?elapsed= seconds → downtime base for clock + log timestamps (zero-state 04:12).
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --bg:#09090b; --border:#27272a; --border2:#3f3f46;
+  --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --font-display:'Space Grotesk','Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;user-select:none;}
+svg{display:block;}
+.num{font-variant-numeric:tabular-nums;}
+.stage{position:relative;width:1920px;height:1080px;flex:none;background:var(--bg);
+  display:flex;flex-direction:column;overflow:hidden;transform-origin:center center;}
+
+/* ═══ ambient — one system: graph-paper lab grid ═══ */
+.paper{position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(ellipse 62% 60% at 50% 44%,#000 20%,transparent 82%);
+          mask-image:radial-gradient(ellipse 62% 60% at 50% 44%,#000 20%,transparent 82%);}
+.floor{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);
+  width:900px;height:300px;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 100%,rgba(255,193,7,.07),transparent 62%);}
+
+/* ═══ CENTER STACK ═══ */
+.center{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:30px;padding-bottom:16px;z-index:2;}
+h1{font-family:var(--font-display);font-weight:700;font-size:122px;line-height:1;
+  letter-spacing:-.035em;text-align:center;
+  background:linear-gradient(180deg,#fafafa 22%,#8b8b93 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .04s both;}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 8%,var(--yellow) 52%,var(--yellow-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(255,193,7,.25));}
+@keyframes rise{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+
+/* ── ring + face ── */
+.ringwrap{position:relative;width:400px;height:400px;animation:rise .8s cubic-bezier(.2,.9,.3,1) .14s both;}
+.ring{position:absolute;inset:0;}
+.ring .track{fill:none;stroke:var(--border);stroke-width:13;}
+.ring .halo{fill:none;stroke:rgba(255,193,7,.32);stroke-width:24;filter:url(#soft);}
+.ring .fillc{fill:none;stroke:var(--yellow);stroke-width:13;stroke-linecap:round;}
+.core{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;}
+.disc{width:148px;height:148px;filter:drop-shadow(0 10px 22px rgba(0,0,0,.5));}
+.pct{font-family:var(--font-mono);font-weight:600;font-size:19px;letter-spacing:.14em;
+  color:var(--muted);transition:color .5s ease;}
+.pct.full{color:var(--yellow);}
+/* loader-eyes */
+.disc .ldarc{opacity:0;transform-box:fill-box;transform-origin:center;}
+.disc.loading .ldarc{opacity:1;animation:ldspin 1.05s linear infinite;}
+.disc.loading .ldarc.a2{animation-delay:-.525s;}
+.disc.loading .eye-l,.disc.loading .eye-r{opacity:0;}
+@keyframes ldspin{to{transform:rotate(360deg);}}
+
+/* ── side chips ── */
+.ringside{position:absolute;top:50%;transform:translateY(-50%);display:flex;
+  align-items:center;gap:16px;z-index:3;}
+.ringside.left{right:calc(100% + 34px);}
+.ringside.right{left:calc(100% + 34px);}
+.hl{width:110px;height:1px;background:linear-gradient(90deg,var(--border2),transparent);}
+.ringside.right .hl{background:linear-gradient(270deg,var(--border2),transparent);}
+.chip{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:10px 18px;
+  font-family:var(--font-mono);font-weight:600;font-size:11.5px;letter-spacing:.22em;
+  text-transform:uppercase;white-space:nowrap;transition:color .5s ease,border-color .5s ease;}
+.chip .dot{font-size:13px;line-height:1;}
+.chip-rec{border:1px solid rgba(255,193,7,.4);background:rgba(255,193,7,.06);color:var(--yellow);}
+.chip-rec .dot{animation:blip 1.5s ease-in-out infinite;}
+@keyframes blip{0%,100%{opacity:1;}50%{opacity:.3;}}
+.chip-nom{border:1px solid var(--border);background:rgba(14,14,17,.72);color:var(--faint);}
+.chip-nom.live{border-color:rgba(14,203,129,.5);color:var(--up);}
+
+/* ── reconnect log ── */
+.logpanel{width:660px;border:1px solid var(--border);border-radius:12px;
+  background:rgba(13,13,16,.78);backdrop-filter:blur(8px);
+  box-shadow:0 18px 44px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .24s both;}
+.loghead{display:flex;align-items:center;padding:12px 18px 10px;border-bottom:1px solid var(--border);}
+.loghead .t{font-family:var(--font-mono);font-size:10px;letter-spacing:.3em;color:var(--faint);
+  text-transform:uppercase;}
+.loghead .attempt{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.18em;color:var(--yellow);text-transform:uppercase;}
+.logview{position:relative;height:118px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 26%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 26%);}
+.logstack{position:absolute;left:20px;right:20px;bottom:9px;display:flex;flex-direction:column;
+  justify-content:flex-end;transition:transform .5s cubic-bezier(.3,.8,.3,1);}
+.lline{display:flex;gap:12px;font-family:var(--font-mono);font-size:13.5px;line-height:25px;
+  white-space:nowrap;transition:opacity .45s ease,transform .45s ease;}
+.lline .ts{color:var(--faint);opacity:.75;}
+.lline.c-to{color:var(--muted);}
+.lline.c-ok{color:var(--up);}
+.lline.c-warm{color:var(--yellow);}
+.lline.c-syn{color:var(--muted);}
+.lline.out{opacity:0;transform:translateY(-9px);}
+.caret{display:inline-block;width:8px;height:15px;margin-left:5px;vertical-align:-2px;
+  background:var(--yellow);animation:cblink 1.1s ease-in-out infinite;}
+@keyframes cblink{0%,100%{opacity:1;}50%{opacity:.08;}}
+.logfoot{padding:10px 18px 13px;border-top:1px solid var(--border);
+  font-family:var(--font-body);font-size:13.5px;color:var(--muted);text-align:center;}
+.logfoot b{color:var(--fg);font-weight:600;}
+
+/* ═══ TICKER ═══ */
+.ticker{position:relative;z-index:5;flex:none;height:58px;display:flex;align-items:stretch;
+  background:rgba(9,9,11,.94);border-top:1px solid var(--border);}
+.cap{display:flex;align-items:center;gap:10px;padding:0 24px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.2em;}
+.cap.left{background:var(--yellow);color:var(--ink);}
+.cap.left .dw{filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));}
+.cap.right{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
+  color:rgba(255,193,7,.8);font-family:var(--font-mono);font-weight:500;font-size:10.5px;
+  letter-spacing:.22em;}
+.mask{flex:1;overflow:hidden;display:flex;align-items:center;}
+.track{display:flex;width:max-content;will-change:transform;}
+.seq{display:flex;align-items:center;}
+.item{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-mono);
+  font-weight:500;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+  margin-right:44px;color:var(--muted);}
+.item::before{content:"✦";color:var(--yellow);margin-right:15px;font-size:10px;}
+.item b{color:var(--fg);font-weight:700;}
+.item.price .pv{display:inline-block;color:var(--fg);font-weight:700;letter-spacing:.05em;}
+.item.price .pc{font-size:10px;letter-spacing:.08em;color:var(--faint);}
+.item.price .pc.up{color:var(--up);}
+.item.price .pc.down{color:var(--down);}
+.item.price .pv.flash{animation:pvf .6s ease;}
+@keyframes pvf{0%{transform:translateY(5px);opacity:.1;}100%{transform:none;opacity:1;}}
+.dw{display:inline-block;position:relative;overflow:hidden;flex:none;}
+.dw svg{width:100% !important;height:100% !important;}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;animation-delay:0s !important;}
+}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+  <div class="paper" aria-hidden="true"></div>
+  <div class="floor" aria-hidden="true"></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs><filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="7"/></filter></defs>
+  </svg>
+
+  <main class="center">
+    <h1>we're on <span class="y">it.</span></h1>
+
+    <div class="ringwrap">
+      <div class="ringside left">
+        <span class="chip chip-rec"><span class="dot">●</span>FEED RECONNECTING</span>
+        <span class="hl"></span>
+      </div>
+      <div class="ringside right">
+        <span class="hl"></span>
+        <span class="chip chip-nom" id="chipNom">SYSTEMS NOMINAL</span>
+      </div>
+
+      <svg class="ring" viewBox="0 0 400 400" width="400" height="400" aria-hidden="true">
+        <circle class="track" cx="200" cy="200" r="152"/>
+        <circle class="halo" id="halo" cx="200" cy="200" r="152"
+                stroke-dasharray="955 955" stroke-dashoffset="650" transform="rotate(-90 200 200)"/>
+        <circle class="fillc" id="fillc" cx="200" cy="200" r="152"
+                stroke-dasharray="955 955" stroke-dashoffset="650" transform="rotate(-90 200 200)"/>
+      </svg>
+
+      <div class="core">
+        <svg class="disc" id="disc" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+          <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+          <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="pct num" id="pct">31%</div>
+      </div>
+    </div>
+
+    <div class="logpanel">
+      <div class="loghead">
+        <span class="t">Reconnect log</span>
+        <span class="attempt num" id="attempt">attempt 047</span>
+      </div>
+      <div class="logview"><div class="logstack" id="logstack"></div></div>
+      <div class="logfoot">markets paused — <b>our desk is on it.</b></div>
+    </div>
+  </main>
+
+  <!-- ticker -->
+  <footer class="ticker">
+    <div class="cap left brand">
+      <span class="dw" style="width:26px;height:26px" aria-hidden="true">
+        <svg viewBox="0 0 100 100" width="100%" height="100%">
+          <circle cx="50" cy="50" r="50" fill="#0a0a0a"/>
+          <circle cx="41" cy="40" r="6.5" fill="#FFC107"/><circle cx="59" cy="40" r="6.5" fill="#FFC107"/>
+          <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#FFC107" stroke-width="10.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg></span>
+      <span>SMILE · TECH</span>
+    </div>
+    <div class="mask">
+      <div class="track" id="tkTrack">
+        <span class="seq">
+          <span class="item"><b>we're on it</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">feed reconnecting</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+        <span class="seq" aria-hidden="true">
+          <span class="item"><b>we're on it</b></span>
+          <span class="item price" data-sym="BTC"><b>BTC</b><span class="pv num">67,240</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="ETH"><b>ETH</b><span class="pv num">3,512</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="XAU"><b>XAU</b><span class="pv num">2,384</span><span class="pc num">—</span></span>
+          <span class="item price" data-sym="KES"><b>USD/KES</b><span class="pv num">129.20</span><span class="pc num">ref</span></span>
+          <span class="item">feed reconnecting</span>
+          <span class="item"><b>@smileke</b></span>
+          <span class="item"><b>#SmileSquad</b></span>
+        </span>
+      </div>
+    </div>
+    <div class="cap right">SMILE.CO.KE</div>
+  </footer>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+'use strict';
+var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── scale 1920×1080 to any window ── */
+var stage=document.getElementById('stage');
+function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform='scale('+s+')';}
+addEventListener('resize',fit);fit();
+
+/* ── downtime base (?elapsed= seconds; zero-state 04:12 = 252) ── */
+var qe=new URLSearchParams(location.search).get('elapsed');
+var base=/^\d+$/.test(qe||'')?Math.min(86399,parseInt(qe,10)):252;
+
+/* ── marquee ── */
+var track=document.getElementById('tkTrack');
+(function(){
+  var seq=track.children[0],W=0,x=0,last=performance.now();
+  function measure(){W=seq.getBoundingClientRect().width;}
+  measure();addEventListener('resize',measure);
+  if(RM)return;
+  (function step(now){
+    var dt=Math.min(50,now-last);last=now;
+    if(W>0){x-=dt*0.05;if(-x>=W)x+=W;track.style.transform='translateX('+x+'px)';}
+    requestAnimationFrame(step);
+  })(last);
+})();
+
+/* ── live prices (Binance, fallback walk) ── */
+var lastP={BTC:67240,ETH:3512,XAU:2384,KES:129.2};
+function fmtP(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+function setPrice(key,val,pct){
+  var changed=Math.abs(val-lastP[key])>1e-9;lastP[key]=val;
+  var els=document.querySelectorAll('[data-sym="'+key+'"]');
+  for(var i=0;i<els.length;i++){
+    var el=els[i],pv=el.querySelector('.pv'),pc=el.querySelector('.pc');
+    pv.textContent=fmtP(val);
+    if(pct!=null){
+      pc.textContent=(pct>=0?'▲':'▼')+Math.abs(pct).toFixed(1)+'%';
+      pc.className='pc num '+(pct>=0?'up':'down');
+    }
+    if(changed){pv.classList.remove('flash');void pv.offsetWidth;pv.classList.add('flash');}
+  }
+}
+function kesWalk(){setPrice('KES',lastP.KES+(Math.random()-.5)*.08,null);}
+function prices(){
+  fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+    encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+    .then(function(r){return r.json();})
+    .then(function(list){
+      list.forEach(function(t){
+        var key=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(key)setPrice(key,parseFloat(t.lastPrice),parseFloat(t.priceChangePercent));
+      });
+      kesWalk();
+    })
+    .catch(function(){
+      setPrice('BTC',lastP.BTC*(1+(Math.random()-.5)*.004),null);
+      setPrice('ETH',lastP.ETH*(1+(Math.random()-.5)*.004),null);
+      setPrice('XAU',lastP.XAU*(1+(Math.random()-.5)*.002),null);
+      kesWalk();
+    });
+}
+setInterval(prices,5000);prices();
+
+/* ═══ FACE — loader-eyes engine (steal: blinkHold + spinLoaders DNA) ═══ */
+var disc=document.getElementById('disc');
+var eyeL=disc.querySelector('.eye-l'),eyeR=disc.querySelector('.eye-r');
+var st={l:{x:0,y:0,sx:1,sy:1},r:{x:0,y:0,sx:1,sy:1}};
+function setE(k,x,y,sx,sy){var o=st[k];o.x=x;o.y=y;o.sx=(sx==null?1:sx);o.sy=(sy==null?1:sy);
+  var el=(k==='l')?eyeL:eyeR;
+  el.style.transform='translate('+o.x+'px,'+o.y+'px) scale('+o.sx+','+o.sy+')';}
+function clearE(){eyeL.style.transform='';eyeR.style.transform='';
+  st.l={x:0,y:0,sx:1,sy:1};st.r={x:0,y:0,sx:1,sy:1};}
+function easeIn(k){return k*k;}
+function easeOut(k){return 1-(1-k)*(1-k);}
+
+/* loader arcs injected AFTER smile-mark.js upgrade (it rebuilds svg.disc innerHTML) */
+function injectArcs(){
+  if(!disc||disc.querySelector('.ldarc'))return;
+  var NS='http://www.w3.org/2000/svg';
+  [41,59].forEach(function(x,i){
+    var c=document.createElementNS(NS,'circle');
+    c.setAttribute('class','ldarc'+(i?' a2':''));
+    c.setAttribute('cx',x);c.setAttribute('cy',40);c.setAttribute('r',6.4);
+    c.setAttribute('fill','none');c.setAttribute('stroke','#0b0b0b');
+    c.setAttribute('stroke-width','3.4');c.setAttribute('stroke-dasharray','28 40.2');
+    c.setAttribute('stroke-linecap','round');
+    disc.appendChild(c);
+  });
+}
+if(disc.querySelector('.eye-l'))injectArcs();
+else document.addEventListener('DOMContentLoaded',injectArcs);
+setTimeout(injectArcs,400);
+
+/* closed-eyes swap wrapper (blinkHold pattern) */
+function eyeSwap(toLoaders,done){
+  var t0=performance.now();
+  (function c(now){
+    var k=Math.min(1,(now-t0)/240),sy=1-.95*easeIn(k);
+    setE('l',0,0,1,sy);setE('r',0,0,1,sy);
+    if(k<1)requestAnimationFrame(c);
+    else{
+      disc.classList.toggle('loading',toLoaders);
+      setTimeout(function(){
+        var r0=performance.now();
+        (function o(now){
+          var k2=Math.min(1,(now-r0)/300),sy2=.05+.95*easeOut(k2);
+          setE('l',0,0,1,sy2);setE('r',0,0,1,sy2);
+          if(k2<1)requestAnimationFrame(o);else{clearE();done&&done();}
+        })(r0);
+      },120);
+    }
+  })(t0);
+}
+
+/* ═══ RING + LOG — one 9.4s clock ═══
+   sweep 0–5.6 (ease, C→0) · hold 5.6–7.6 (100%, NOMINAL live) ·
+   drain 7.6–8.35 (fast invisible reset, dimmed) · pause 8.35–9.4 */
+var C=955.0,CE=C-4;
+var fillc=document.getElementById('fillc'),halo=document.getElementById('halo');
+var pctEl=document.getElementById('pct'),chipNom=document.getElementById('chipNom');
+var attemptEl=document.getElementById('attempt');
+var stack=document.getElementById('logstack');
+var T_SWEEP=5.6,T_HOLD=7.6,T_DRAIN=8.35,CY=9.4;
+var tau=2.4,prev=0; /* start mid-sweep; prev=0 → loader-eyes swap fires on frame one */
+var attempt=47,busySwap=false,lines=[],resetting=false;
+var caret=document.createElement('span');caret.className='caret';
+
+function easeIO(k){return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;}
+function two(n){return n<10?'0'+n:''+n;}
+function ts(t){
+  var s=base+t;return '['+two((s/60)|0)+':'+two((s|0)%60)+'.'+(((s%1)*10)|0)+']';
+}
+
+/* schedule */
+var LINES=[
+  {t:0.35,txt:'ping 1 — timeout',cls:'c-to'},
+  {t:2.05,txt:'ping 2 — timeout',cls:'c-to'},
+  {t:3.75,txt:'ping 3 — 212ms ✓ handshake',cls:'c-ok'},
+  {t:5.35,txt:'feed warming up…',cls:'c-warm'},
+  {t:6.55,txt:'stream resynced — candles rehydrated',cls:'c-syn'}
+];
+var li=0;
+
+function startLine(def){
+  var el=document.createElement('div');
+  el.className='lline '+def.cls;
+  var t=document.createElement('span');t.className='ts';t.textContent=ts(def.t);
+  var x=document.createElement('span');x.className='tx';
+  el.appendChild(t);el.appendChild(x);
+  stack.appendChild(el);
+  var rec={el:el,tx:x,txt:def.txt,born:performance.now(),done:false};
+  lines.push(rec);
+  var n=lines.length;
+  stack.style.transform='translateY(-'+Math.max(0,n-4)*25+'px)';
+  if(caret.parentNode)caret.parentNode.removeChild(caret);
+  el.appendChild(caret);
+}
+function stepLines(now){
+  while(li<LINES.length&&tau>=LINES[li].t){startLine(LINES[li]);li++;}
+  for(var i=0;i<lines.length;i++){
+    var r=lines[i];
+    if(!r.done){
+      var k=(now-r.born)/1000*34; /* 34 chars/s */
+      if(k>=r.txt.length){r.tx.textContent=r.txt;r.done=true;}
+      else r.tx.textContent=r.txt.slice(0,k|0);
+    }
+  }
+}
+function resetLog(){
+  resetting=true;
+  if(caret.parentNode)caret.parentNode.removeChild(caret);
+  lines.forEach(function(r,i){r.el.style.transitionDelay=(i*70)+'ms';r.el.classList.add('out');});
+  setTimeout(function(){
+    stack.innerHTML='';lines=[];li=0;
+    stack.style.transform='translateY(0px)';
+    resetting=false;
+  },620);
+}
+
+function ringFrame(now){
+  var dt=Math.min(.1,(now-lastT)/1000);lastT=now;
+  prev=tau;tau+=dt;
+  if(tau>=CY){tau-=CY;prev=-0.01;attempt++;
+    attemptEl.textContent='attempt '+('00'+attempt).slice(-3);}
+
+  /* crossings */
+  if(prev<0.12&&tau>=0.12&&!busySwap&&!RM){busySwap=true;eyeSwap(true,function(){busySwap=false;});}
+  if(prev<T_HOLD+0.35&&tau>=T_HOLD+0.35&&!busySwap&&!RM){busySwap=true;eyeSwap(false,function(){busySwap=false;});}
+
+  /* ring value */
+  var v,fo=1;
+  if(tau<T_SWEEP){var k=easeIO(tau/T_SWEEP);v=CE*(1-k);}
+  else if(tau<T_HOLD){v=0;}
+  else if(tau<T_DRAIN){var k2=(tau-T_HOLD)/(T_DRAIN-T_HOLD);v=CE*easeIn(k2);fo=1-.82*k2;}
+  else{v=CE;var k3=seg(tau,T_DRAIN+0.25,CY-0.1);fo=.18+.82*k3;}
+  fillc.setAttribute('stroke-dashoffset',v.toFixed(1));
+  halo.setAttribute('stroke-dashoffset',v.toFixed(1));
+  fillc.style.opacity=fo;halo.style.opacity=fo;
+
+  /* pct readout */
+  var p=Math.round(100*(1-Math.max(0,Math.min(1,v/CE))));
+  pctEl.textContent=(p<100?two(p):'100')+'%';
+  pctEl.classList.toggle('full',tau>=T_SWEEP&&tau<T_HOLD+0.1);
+
+  /* nominal chip */
+  chipNom.classList.toggle('live',tau>=T_SWEEP&&tau<T_HOLD+0.1);
+
+  /* log */
+  if(!resetting)stepLines(now);
+  if(prev<T_DRAIN+0.15&&tau>=T_DRAIN+0.15)resetLog();
+
+  requestAnimationFrame(ringFrame);
+}
+function seg(t,a,b){if(t<=a)return 0;if(t>=b)return 1;var s=(t-a)/(b-a);return s*s*(3-2*s);}
+var lastT=performance.now();
+
+if(!RM)requestAnimationFrame(ringFrame);
+else{ /* composed static frame: ring mid-sweep, log pre-written */
+  var pre=[['[04:12.3]','ping 1 — timeout','c-to'],
+           ['[04:15.1]','ping 2 — timeout','c-to'],
+           ['[04:18.0]','ping 3 — 212ms ✓ handshake','c-ok']];
+  pre.forEach(function(p){
+    var el=document.createElement('div');el.className='lline '+p[2];
+    var t=document.createElement('span');t.className='ts';t.textContent=p[0];
+    var x=document.createElement('span');x.className='tx';x.textContent=p[1];
+    el.appendChild(t);el.appendChild(x);stack.appendChild(el);
+  });
+}
+})();
+</script>
+</body>
+</html>

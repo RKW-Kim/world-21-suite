@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMILE KIT3 — Director Console</title>
+<link rel="icon" href="../assets/smile-face.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--yellow:#FFCE00;--ink:#0A0900;--panel:#141210;--card:#1C1914;--line:#2A251C;--muted:#9C9484;--paper:#F5F1E6}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--ink);color:var(--paper);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+.mast{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 40px;border-bottom:1px solid var(--line)}
+.mast .brand{display:flex;align-items:center;gap:12px}
+.mast .brand svg{height:34px}
+.mast .brand b{font-family:'Space Grotesk';font-size:17px}
+.mast nav{display:flex;gap:10px}
+.mast nav a{font-size:13px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:999px}
+.mast nav a:hover{color:var(--paper);background:var(--panel)}
+.wrap{max-width:1180px;margin:0 auto;padding:36px 40px 70px}
+h1{font-family:'Space Grotesk';font-size:clamp(24px,3vw,34px);letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--yellow)}
+.sub{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.6}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:22px;margin-top:28px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.panel h2{font-family:'Space Grotesk';font-size:14px;letter-spacing:.04em;color:var(--muted);margin-bottom:14px;font-weight:600}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:14px 0 6px;text-transform:uppercase}
+label:first-of-type{margin-top:0}
+select,input[type=text]{width:100%;background:var(--card);border:1px solid var(--line);color:var(--paper);
+  border-radius:10px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none}
+select:focus,input:focus{border-color:var(--yellow)}
+.checks{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
+.checks label{display:flex;align-items:center;gap:8px;margin:0;text-transform:none;letter-spacing:0;
+  font-size:13px;font-weight:600;color:var(--paper);cursor:pointer}
+.checks input{accent-color:var(--yellow);width:15px;height:15px}
+.out{background:#000;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+.out .u{font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:var(--yellow);
+  word-break:break-all;padding:6px 0;border-bottom:1px dashed #222}
+.out .u:last-child{border-bottom:none}
+.copy{margin-top:14px;width:100%;background:var(--yellow);color:var(--ink);border:none;border-radius:10px;
+  padding:11px;font-weight:800;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+.copy:hover{background:#E8A800}
+.tips{margin-top:18px;font-size:12.5px;color:var(--muted);line-height:1.8}
+.tips code{font-family:'IBM Plex Mono',monospace;color:var(--paper);background:var(--card);
+  border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:11.5px}
+.frame{background:#000;border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;aspect-ratio:16/9}
+.frame iframe{border:0;position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.flabel{position:absolute;left:14px;top:12px;z-index:5;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--ink);background:var(--yellow);border-radius:999px;padding:5px 11px;font-weight:600}
+</style>
+</head>
+<body>
+<header class="mast">
+  <div class="brand">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <b>KIT3 · DIRECTOR</b>
+  </div>
+  <nav><a href="index.html">← Tournament</a><a href="../kit/director.html">Kit archive</a></nav>
+</header>
+
+<main class="wrap">
+  <h1>URL console for <em>OBS</em> — build the exact scene URLs, copy them, go live.</h1>
+  <p class="sub">Pick a scene, set the countdown and overrides, preview it here, copy the URL. OBS browser-source: 1920×1080, or add <b>?obs=1</b> for a transparent page background.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>SCENE + PARAMS</h2>
+      <label>Scene</label>
+      <select id="scene">
+        <option value="start-clay">STARTING SOON · A — Yellow Field</option>
+        <option value="start-print">STARTING SOON · B — Print Edition</option>
+        <option value="brb-otto">BRB · A — Mascot Device</option>
+        <option value="brb-breathe">BRB · B — Amber Breath</option>
+        <option value="tech-abyss">TECHNICAL DIFF · A — Signal Dial</option>
+        <option value="tech-serv">TECHNICAL DIFF · B — Freeze Wall</option>
+        <option value="qa-wanna">Q&amp;A · A — Mono Queue</option>
+        <option value="qa-brut">Q&amp;A · B — Brut Ask</option>
+        <option value="end-reel">END · A — Filmstrip Reel</option>
+        <option value="end-bento">END · B — Bento Sign-off</option>
+      </select>
+      <label>Countdown ?t — seconds or ISO datetime</label>
+      <input type="text" id="t" placeholder="e.g. 600 or 2026-10-03T19:00:00+03:00">
+      <label>Episode ?ep</label>
+      <input type="text" id="ep" value="128">
+      <label>Title override ?title</label>
+      <input type="text" id="title" placeholder="(default)">
+      <label>Sub override ?sub</label>
+      <input type="text" id="sub" placeholder="(default)">
+      <div class="checks">
+        <label><input type="checkbox" id="obs"> ?obs=1 (transparent)</label>
+        <label><input type="checkbox" id="wm"> ?wm=0 (hide watermark)</label>
+      </div>
+      <div class="out" id="out"></div>
+      <button class="copy" id="copy">COPY ALL URLS</button>
+      <div class="tips">
+        No <code>?t</code> → scenes hold <code>--:--</code> STAND BY, then roll a 10:00 count.<br>
+        At <code>00:00</code> every scene fires its LIVE beat and holds.<br>
+        <code>H</code> toggles help in-page. Keys are OBS-safe.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>LIVE PREVIEW — RENDERED AT 1920×1080</h2>
+      <div class="frame" id="frame">
+        <span class="flabel" id="flabel">start-clay</span>
+        <iframe id="prev" src="scenes/start-clay.html?ep=128"></iframe>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var scene=$('#scene'),t=$('#t'),ep=$('#ep'),ti=$('#title'),sb=$('#sub'),obs=$('#obs'),wm=$('#wm');
+  var base=location.href.replace(/director\.html.*$/,'')+'scenes/';
+  function url(file){
+    var p=new URLSearchParams();
+    if(t.value.trim())p.set('t',t.value.trim());
+    if(ep.value.trim())p.set('ep',ep.value.trim());
+    if(ti.value.trim())p.set('title',ti.value.trim());
+    if(sb.value.trim())p.set('sub',sb.value.trim());
+    if(obs.checked)p.set('obs','1');
+    if(wm.checked)p.set('wm','0');
+    var q=p.toString();
+    return base+file+'.html'+(q?'?'+q:'');
+  }
+  var pages=['start-clay','start-print','brb-otto','brb-breathe','tech-abyss','tech-serv','qa-wanna','qa-brut','end-reel','end-bento'];
+  function render(){
+    var u=url(scene.value);
+    $('#out').innerHTML='<div class="u">'+u+'</div>';
+    $('#prev').src=u;$('#flabel').textContent=scene.value;
+    fitFrame();
+  }
+  function fitFrame(){
+    var f=$('#frame'),p=$('#prev'),w=f.clientWidth;
+    if(w&&p){var s=w/1920;p.style.transform='scale('+s+')';p.style.width=w+'px';p.style.height=(1080*s)+'px'}
+  }
+  function fitFrameSafe(){try{fitFrame()}catch(e){}}
+  addEventListener('resize',fitFrameSafe);addEventListener('load',fitFrameSafe);fitFrameSafe();
+  [scene,t,ep,ti,sb,obs,wm].forEach(function(el){el.addEventListener('input',render);el.addEventListener('change',render)});
+  $('#copy').addEventListener('click',function(){
+    var all=pages.map(function(p){return url(p)}).join('\n')+'\n'+url(scene.value);
+    navigator.clipboard.writeText(all).then(function(){
+      $('#copy').textContent='COPIED — ALL 10 SCENES + CURRENT';setTimeout(function(){$('#copy').textContent='COPY ALL URLS'},1600);
+    });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

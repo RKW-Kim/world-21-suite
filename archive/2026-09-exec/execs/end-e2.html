@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SMILE · end · MASS &amp; SPRING</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="smile-core.css">
+  <style>
+    /* ================= MASS & SPRING — physical execution =================
+       Every entrance re-driven by a hand-rolled closed-form spring integrator
+       (rAF, no libraries): critically-damped settle for most elements, the disc
+       underdamped so it visibly oscillates once or twice before resting.
+       Confetti = lightweight physics particles with per-piece sway frequency.
+       rAF pauses on document.hidden so OBS never burns idle CPU. */
+
+    .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;text-align:center}
+    h1{font-family:var(--font-display);font-weight:800;font-size:148px;letter-spacing:-.035em;line-height:.95}
+    h1 .y{color:var(--yellow)}
+    .discbig{width:150px;height:150px;margin:2px 0 4px;filter:drop-shadow(0 20px 50px rgba(255,193,7,.3))}
+    .sub{font-size:26px;font-weight:500;color:#a8a8a8;max-width:760px;line-height:1.45}
+    .socials{display:flex;gap:16px;margin-top:8px}.next{font-size:15px;margin-top:6px}
+
+    /* .rise hooks kept; CSS entrance handed to the spring engine */
+    .rise{opacity:0;animation:none;will-change:transform,opacity}
+    /* let the mood-spin play where it can be SEEN: after the disc wrapper has landed */
+    svg.disc.smile-anim.spin{animation-delay:.5s}
+
+    /* confetti: physics particles positioned purely by transform */
+    .cf{position:absolute;top:0;left:0;border-radius:4px;will-change:transform}
+  </style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div><div id="confetti"></div>
+  <div class="wrap">
+    <span class="chip ghost rise" data-k="180" data-z="1"   data-d="60"  data-y="-26" data-s="1">✓ MARKET CLOSED</span>
+    <h1 class="rise" data-k="110" data-z=".8"  data-d="210" data-y="46"  data-s=".965">session <span class="y">closed</span>.</h1>
+    <div class="rise" data-k="62"  data-z=".42" data-d="390" data-y="34"  data-s=".72"><svg class="discbig disc" data-mood="spin" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+      <ellipse cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <ellipse cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+      <path d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b" stroke-width="10.5" stroke-linecap="round"/>
+    </svg></div>
+    <p class="sub rise" data-k="95" data-z="1"   data-d="580" data-y="30"  data-s="1">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+    <div class="socials rise" data-k="135" data-z=".75" data-d="760" data-y="36" data-s=".94"><span class="chip dark">▶ YouTube · /smileke</span><span class="chip dark">◉ Twitch · /smileke</span><span class="chip dark">♪ TikTok · @smileke</span></div>
+    <span class="chip solid next rise" data-k="200" data-z="1" data-d="930" data-y="22" data-s=".9">NEXT SESSION · FRIDAY 8PM EAT</span>
+  </div>
+</div>
+<script src="smile-mark.js"></script>
+<script>
+  (function(){
+    /* ---------- spring engine (closed form — zero drift, zero layout reads) ----------
+       x(t) = progress 0→1 of a damped oscillator released from rest:
+         underdamped (z<1): x = 1 - e^(-zωt)·(cos(ωd t) + (zω/ωd)·sin(ωd t))
+         critical    (z≥1): x = 1 - e^(-ωt)·(1 + ωt)                              */
+    const els=Array.prototype.slice.call(document.querySelectorAll('[data-k]'));
+    function prog(k,z,d,t){
+      let x=t-d; if(x<=0) return 0;
+      const w=Math.sqrt(k), ms=x/1000;
+      if(z>=1){ return 1-Math.exp(-w*ms)*(1+w*ms); }
+      const wd=w*Math.sqrt(1-z*z);
+      return 1-Math.exp(-z*w*ms)*(Math.cos(wd*ms)+(z*w/wd)*Math.sin(wd*ms));
+    }
+
+    const cols=['#FFC107','#0ECB81','#F6465D','#FFFFFF','#3FB6FF'],box=document.getElementById('confetti'),P=[];
+    for(let i=0;i<42;i++){
+      const s=document.createElement('span');s.className='cf';
+      const w=9+Math.random()*12;
+      s.style.width=w.toFixed(1)+'px';
+      s.style.height=(w*1.9+Math.random()*8).toFixed(1)+'px';
+      s.style.background=cols[i%cols.length];
+      s.style.opacity=(.5+Math.random()*.5).toFixed(2);
+      const p={el:s,
+        x0:Math.random()*1920, y:-90+Math.random()*1240,  /* sky pre-populated at frame one: uniform over the whole fall range */
+        vy:170+Math.random()*190,               /* terminal velocity = mass */
+        amp:18+Math.random()*56,                /* sway amplitude           */
+        fq:.7+Math.random()*1.7,                /* varying sway frequency   */
+        ph:Math.random()*6.283,
+        r:Math.random()*360,
+        rv:(Math.random()<.5?-1:1)*(90+Math.random()*230)};
+      s.style.transform='translate3d('+p.x0.toFixed(1)+'px,'+p.y.toFixed(1)+'px,0) rotate('+p.r.toFixed(1)+'deg)';
+      box.appendChild(s);P.push(p);
+    }
+
+    let start=null,lastT=performance.now(),g=0,raf=0,pausedAt=0;
+    function frame(now){
+      if(start===null){start=now;lastT=now;}
+      const t=now-start;
+      for(let i=0;i<els.length;i++){
+        const el=els[i]; if(el.dataset.done) continue;
+        const p=prog(+el.dataset.k,+el.dataset.z,+el.dataset.d,t);
+        if(p>=.9995){ el.dataset.done='1'; el.style.transform='none'; el.style.opacity='1'; el.style.willChange='auto'; continue; }
+        const pc=p<0?0:p, s0=+el.dataset.s||1, sc=s0+(1-s0)*pc;
+        el.style.transform='translate3d(0,'+((1-pc)*(+el.dataset.y)).toFixed(2)+'px,0)'+(s0!==1?' scale('+sc.toFixed(4)+')':'');
+        el.style.opacity=Math.min(1,pc*2.5).toFixed(3);
+      }
+      const dt=Math.min(.05,(now-lastT)/1000); lastT=now; g+=dt;
+      for(let i=0;i<P.length;i++){
+        const p=P[i]; p.y+=p.vy*dt;
+        if(p.y>1180){ p.y=-90-Math.random()*140; p.x0=Math.random()*1920; }
+        const x=p.x0+Math.sin(g*p.fq+p.ph)*p.amp;
+        p.r+=p.rv*dt;
+        p.el.style.transform='translate3d('+x.toFixed(1)+'px,'+p.y.toFixed(1)+'px,0) rotate('+p.r.toFixed(1)+'deg)';
+      }
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+
+    /* OBS courtesy: freeze the world while the scene is hidden, resume seamlessly */
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden){ cancelAnimationFrame(raf); pausedAt=performance.now(); }
+      else if(pausedAt){
+        const gap=performance.now()-pausedAt; pausedAt=0;
+        if(start!==null) start+=gap;
+        lastT=performance.now();
+        raf=requestAnimationFrame(frame);
+      }
+    });
+  })();
+</script>
+</body>
+</html>

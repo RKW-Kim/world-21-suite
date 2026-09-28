@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>smile.co.ke — BRB · OTTO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFCE00; --yellow-hot:#E8A800; --ink:#0A0900;
+  --panel:#141210; --card:#1C1914; --hair:#2A251C;
+  --paper:#F5F1E6; --muted:#9C9484;
+  --ease-out:cubic-bezier(.2,.9,.25,1);
+  --ease-snap:cubic-bezier(.85,0,.15,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--ink);overflow:hidden}
+html.obs,body.obs{background:transparent!important}
+#fit{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+#stage{
+  position:relative;width:1920px;height:1080px;flex:none;
+  background:var(--ink);overflow:hidden;
+  font-family:'Archivo',sans-serif;color:var(--paper);
+}
+
+/* ---------- background: scrim + void texture ---------- */
+.scrim{position:absolute;inset:0;z-index:0;
+  background:radial-gradient(780px 620px at 893px 456px, rgba(245,241,230,.06), rgba(245,241,230,.026) 46%, rgba(245,241,230,0) 72%);}
+.voidtex{position:absolute;inset:0;z-index:0;opacity:.5;
+  background-image:radial-gradient(rgba(245,241,230,.05) 1px, rgba(245,241,230,0) 1.4px);
+  background-size:26px 26px;background-position:13px 13px;
+  -webkit-mask-image:radial-gradient(1000px 780px at 893px 458px, #000 20%, transparent 78%);
+          mask-image:radial-gradient(1000px 780px at 893px 458px, #000 20%, transparent 78%);}
+
+/* ---------- mid-ground: the OTTO device ---------- */
+.otto-wrap{position:absolute;left:893px;top:240px;transform:translateX(-50%);z-index:2;
+  display:flex;flex-direction:column;align-items:center;}
+.otto{animation:snapIn .68s var(--ease-snap) .12s both}
+.otto-tilt{animation:tilt 4.4s cubic-bezier(.45,.05,.55,.95) .9s infinite;will-change:transform}
+@keyframes snapIn{0%{opacity:0;transform:translateY(30px)}62%{opacity:1;transform:translateY(-2px)}100%{opacity:1;transform:none}}
+@keyframes tilt{0%{transform:rotate(0deg)}22%{transform:rotate(-1.2deg)}64%{transform:rotate(1.2deg)}100%{transform:rotate(0deg)}}
+
+.device{position:relative;width:572px;height:432px;border-radius:24px;
+  background:var(--panel);border:1px solid var(--hair);
+  box-shadow:0 24px 48px rgba(0,0,0,.42), 0 2px 0 rgba(245,241,230,.03) inset;
+  display:flex;flex-direction:column;padding:32px 32px 0;}
+.device::before{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;
+  background:rgba(245,241,230,.10);border-radius:1px}
+.screw{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(245,241,230,.14);
+  box-shadow:inset 0 1px 1px rgba(0,0,0,.7)}
+.screw.tl{top:16px;left:16px}.screw.tr{top:16px;right:16px}
+.screw.bl{bottom:16px;left:16px}.screw.br{bottom:16px;right:16px}
+.sdot{position:absolute;top:15px;right:30px;width:5px;height:5px;border-radius:50%;
+  background:var(--yellow);animation:pulse 2.4s ease-in-out .9s infinite}
+@keyframes pulse{0%,100%{opacity:1}45%{opacity:.3}}
+
+.screen{background:#0B0A01;border:1px solid var(--card);border-radius:12px;padding:12px;
+  box-shadow:inset 0 3px 14px rgba(0,0,0,.65), inset 0 0 0 1px rgba(0,0,0,.4);}
+.dots{display:grid;animation:faceIn .7s var(--ease-spring) .3s both}
+@keyframes faceIn{from{transform:scale(.92)}to{transform:scale(1)}}
+.d{width:6px;height:6px;border-radius:50%;place-self:center;background:var(--paper);
+  opacity:.055;transform:scale(.4);
+  transition:transform .5s cubic-bezier(.33,0,.15,1), opacity .5s ease-out, box-shadow .5s ease-out, background .5s ease-out;}
+.d.eye{opacity:1;transform:scale(1);transition-duration:.26s;transition-timing-function:cubic-bezier(.2,.9,.25,1);
+  box-shadow:0 0 11px rgba(245,241,230,.32)}
+.d.mouth{opacity:1;transform:scale(1);background:var(--yellow);
+  transition-duration:.26s;transition-timing-function:cubic-bezier(.2,.9,.25,1);
+  box-shadow:0 0 11px rgba(255,206,0,.36)}
+.d.sleep{opacity:.4;transform:scale(.85)}
+
+.plate{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.plate::before,.plate::after{content:'';width:36px;height:1px;background:var(--hair)}
+.plabel{font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.34em;color:rgba(156,148,132,.85);
+  text-shadow:0 1px 1px rgba(0,0,0,.85);margin:0 14px;white-space:nowrap}
+
+/* ---------- calibration ruler ---------- */
+.ruler{position:relative;width:1200px;height:46px;margin-top:30px;animation:fadeIn .5s var(--ease-out) .44s both}
+.ruler::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:rgba(156,148,132,.35)}
+.tick{position:absolute;top:0;width:1px;height:8px;background:rgba(156,148,132,.4)}
+.tick.mid{height:13px;background:rgba(156,148,132,.6)}
+.tick.maj{height:19px;background:rgba(156,148,132,.9)}
+.tnum{position:absolute;top:28px;transform:translateX(-50%);font:500 11px 'IBM Plex Mono',monospace;
+  color:rgba(156,148,132,.8);letter-spacing:.08em}
+.mark{position:absolute;top:-3px;left:0;width:7px;height:7px;background:var(--paper);
+  transform:translateX(-3.5px) rotate(45deg);opacity:.9;
+  transition:transform .26s var(--ease-out), box-shadow .3s ease-out}
+.mark.moving{box-shadow:0 0 0 2px rgba(255,206,0,.32)}
+.rlab{position:absolute;top:-26px;font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.16em;
+  color:rgba(156,148,132,.78);white-space:nowrap}
+.rlab.l{left:0}.rlab.r{right:0}
+
+/* ---------- foreground HUD ---------- */
+.brandrow{position:absolute;top:32px;left:36px;z-index:10;display:flex;align-items:center;gap:14px;
+  animation:hudIn .6s var(--ease-out) .08s both}
+.brandrow svg{width:40px;height:40px;display:block}
+.brandname{font:700 15px 'Archivo',sans-serif;letter-spacing:.18em;color:var(--paper);text-transform:uppercase}
+.brandname b{color:var(--muted);font-weight:700}
+
+.chip{display:flex;align-items:center;background:var(--card);border:1px solid var(--hair);border-radius:999px}
+.chip-ep{position:absolute;top:32px;right:36px;z-index:10;height:40px;padding:0 20px;
+  font:500 12px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--paper);
+  animation:hudIn .6s var(--ease-out) .16s both}
+.chip-ep .k{color:var(--muted)}
+.chip-ep .sep{color:var(--muted);margin:0 8px;opacity:.7}
+
+.bc{position:absolute;left:0;right:0;bottom:80px;height:56px;z-index:10;
+  display:flex;justify-content:center;align-items:center;pointer-events:none}
+.capchip{height:56px;padding:0 26px;gap:16px;animation:hudIn .6s var(--ease-out) .52s both;
+  transition:opacity .24s ease-out,transform .24s ease-out}
+.capchip.out{opacity:0;transform:translateY(10px)}
+.caplead{font:600 17px/1 'Archivo',sans-serif;letter-spacing:.01em;color:var(--paper);white-space:nowrap}
+.caplead .mut{color:var(--muted)}
+.vr{width:1px;height:22px;background:var(--hair)}
+.sb{display:none;font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:var(--yellow);white-space:nowrap}
+.capchip.standby .sb{display:block}
+.digits{display:flex;align-items:center;gap:3px}
+.colon{font:600 21px/30px 'IBM Plex Mono',monospace;color:var(--muted);padding:0 4px 2px}
+.slot{position:relative;width:15px;height:30px;overflow:hidden;background:var(--ink);border-radius:6px;
+  box-shadow:inset 0 0 0 1px rgba(245,241,230,.07)}
+.slot .strip{position:absolute;left:0;top:0;width:100%;transition:transform .42s var(--ease-out)}
+.slot .strip b{display:block;height:30px;font:600 20px/30px 'IBM Plex Mono',monospace;
+  font-variant-numeric:tabular-nums;color:var(--paper);text-align:center}
+.slot::after{content:'';position:absolute;left:3px;right:3px;top:50%;height:1px;background:rgba(0,0,0,.55);z-index:2}
+
+#liveChip{position:absolute;left:50%;top:50%;height:56px;padding:0 30px;gap:12px;
+  transform:translate(-50%,-50%) scale(1.15);opacity:0;pointer-events:none;
+  background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+#liveChip .ldot{font-size:14px;line-height:1}
+#liveChip .ltxt{font:800 19px 'Archivo',sans-serif;letter-spacing:.06em;white-space:nowrap}
+#liveChip.in{animation:slam .48s var(--ease-spring) forwards}
+@keyframes slam{0%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}40%{opacity:1}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+#sweep{position:absolute;top:456px;left:0;width:420px;height:2px;background:var(--yellow);
+  opacity:0;transform:translateX(-460px);z-index:6;pointer-events:none}
+#sweep.go{animation:sweep .6s cubic-bezier(.7,0,.25,1) forwards}
+@keyframes sweep{0%{opacity:1;transform:translateX(-460px)}100%{opacity:1;transform:translateX(1960px)}}
+
+/* ---------- watermark / ticker / help ---------- */
+.wm{position:absolute;right:36px;bottom:46px;width:42px;height:42px;opacity:.18;z-index:8;
+  animation:fadeIn .6s var(--ease-out) .72s both}
+.wm svg{width:42px;height:42px;display:block}
+
+.ticker{position:absolute;left:0;right:0;bottom:0;height:30px;z-index:9;overflow:hidden;
+  display:flex;align-items:center;background:rgba(20,18,16,.72);border-top:1px solid var(--hair);
+  animation:fadeIn .5s var(--ease-out) .64s both}
+.tk-track{display:flex;width:max-content;animation:marquee 36s linear infinite}
+.tk-half{font:500 12px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted);white-space:nowrap}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+.help{position:absolute;left:36px;bottom:46px;z-index:10;font:500 11px 'IBM Plex Mono',monospace;
+  letter-spacing:.18em;color:var(--muted);opacity:.6;animation:fadeIn .6s var(--ease-out) .8s both}
+.help.hide{display:none}
+
+@keyframes hudIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  #liveChip.in{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #sweep.go{display:none}
+}
+</style>
+</head>
+<body>
+<div id="fit">
+<div id="stage">
+  <div class="scrim"></div>
+  <div class="voidtex"></div>
+
+  <!-- mid-ground: smile device -->
+  <div class="otto-wrap">
+    <div class="otto">
+      <div class="otto-tilt">
+        <div class="device" id="device">
+          <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+          <i class="sdot" id="sdot"></i>
+          <div class="screen"><div class="dots" id="dotGrid"></div></div>
+          <div class="plate"><span class="plabel">SMILE FLIGHT UNIT-01</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="ruler" id="ruler">
+      <span class="rlab l">CAL-01 · OTTO-IDLE</span>
+      <span class="rlab r" data-sub>SIGNAL 98% NOMINAL</span>
+      <span class="mark"></span>
+    </div>
+  </div>
+
+  <!-- foreground HUD -->
+  <div class="brandrow">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="brandname">smile<b>.co.ke</b></span>
+  </div>
+
+  <div class="chip chip-ep"><span class="k">BRB</span><span class="sep">—</span><span>EP&nbsp;<span data-ep>128</span></span></div>
+
+  <div class="bc">
+    <div class="chip capchip" id="capChip">
+      <span class="sb">STAND BY</span>
+      <span class="caplead"><span data-title>away from the desk</span> <span class="mut">— back in</span></span>
+      <span class="vr"></span>
+      <span class="digits" id="digits"></span>
+    </div>
+    <div class="chip" id="liveChip"><span class="ldot">●</span><span class="ltxt">WE'RE LIVE</span></div>
+  </div>
+
+  <div id="sweep"></div>
+
+  <div class="wm" id="wm">
+    <svg viewBox="0 0 100 100" aria-label="Smile mark"><circle cx="50" cy="50" r="48" fill="#FFC107"/><circle cx="31" cy="35" r="5.5" fill="#0a0a0a"/><circle cx="69" cy="35" r="5.5" fill="#0a0a0a"/><path d="M 20 48 A 30 30 0 0 0 80 48" fill="none" stroke="#0a0a0a" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="help hide" id="help">V POSE · H HIDE</div>
+
+  <div class="ticker"><div class="tk-track" id="tkTrack"></div></div>
+</div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---- scale-to-fit ---- */
+const stage = $('#stage');
+function fit(){ const s = Math.min(innerWidth/1920, innerHeight/1080); stage.style.transform = 'scale('+s+')'; }
+addEventListener('resize', fit); fit();
+
+/* ---- URL contract ---- */
+if (params.get('obs') === '1'){ document.documentElement.classList.add('obs'); document.body.classList.add('obs'); }
+const ep = (params.get('ep') || '128').replace(/[^\w .\-]/g,'').trim() || '128';
+document.querySelectorAll('[data-ep]').forEach(n => n.textContent = ep);
+const tv = params.get('title'); if (tv) document.querySelectorAll('[data-title]').forEach(n => n.textContent = tv);
+const sv = params.get('sub');   if (sv) document.querySelectorAll('[data-sub]').forEach(n => n.textContent = sv);
+if (params.get('wm') === '0') $('#wm').style.display = 'none';
+
+/* ---- dot-matrix face ---- */
+const COLS = 30, ROWS = 18, CY = 5, LX = 8, RX = 21;
+const grid = $('#dotGrid');
+grid.style.gridTemplateColumns = 'repeat(' + COLS + ', 16px)';
+grid.style.gridTemplateRows = 'repeat(' + ROWS + ', 16px)';
+const dots = [];
+for (let i = 0; i < COLS * ROWS; i++){ const d = document.createElement('i'); d.className = 'd'; grid.appendChild(d); dots.push(d); }
+
+const EYE_OPEN = [[-1,-2],[0,-2],[1,-2],[-2,-1],[-1,-1],[0,-1],[1,-1],[2,-1],[-2,0],[-1,0],[0,0],[1,0],[2,0],[-2,1],[-1,1],[0,1],[1,1],[2,1],[-2,2],[-1,2],[0,2],[1,2],[2,2],[-1,3],[0,3],[1,3]];
+const EYE_LINE = [[-2,0],[-1,0],[0,0],[1,0],[2,0]];
+const EYE_HAPPY = [[-1,-2],[0,-2],[1,-2],[-2,-1],[2,-1],[-2,0],[2,0]];
+
+function rng(a,b){ const o=[]; for(let c=a;c<=b;c++)o.push(c); return o; }
+function eyeCells(kind, ox, wink){
+  const s = new Set();
+  if (kind === 'closed') return s;
+  const shape = kind === 'line' ? EYE_LINE : kind === 'happy' ? EYE_HAPPY : EYE_OPEN;
+  const one = cx => shape.forEach(([dx,dy]) => { const c = cx + ox + dx, r = CY + dy;
+    if (c >= 0 && c < COLS && r >= 0 && r < ROWS) s.add(r * COLS + c); });
+  if (!wink) one(LX);
+  one(RX);
+  return s;
+}
+function mouthCells(kind){
+  const s = new Set(); const add = (c,r) => { if (c>=0 && c<COLS && r>=0 && r<ROWS) s.add(r*COLS+c); };
+  if (kind === 'flat'){ rng(12,17).forEach(c => add(c,11)); }
+  else if (kind === 'calm'){ add(10,10); add(19,10); rng(11,18).forEach(c => add(c,11)); rng(13,16).forEach(c => add(c,12)); }
+  else if (kind === 'deep'){ add(10,10); add(19,10); rng(11,18).forEach(c => add(c,11)); rng(12,17).forEach(c => add(c,12)); add(14,13); add(15,13); }
+  else if (kind === 'grin'){ add(10,9); add(19,9); rng(10,19).forEach(c => add(c,10)); rng(11,18).forEach(c => add(c,11)); rng(12,17).forEach(c => add(c,12)); rng(13,16).forEach(c => add(c,13)); }
+  return s;
+}
+const pose = { ox:0, eyes:'open', mouth:'calm', wink:false };
+/* sleep dot: 1-cell orbit in the far corner of the matrix, one faint blink every ~9s */
+const SLEEP = [[29,17],[28,17],[29,16]];
+let sleepIdx = -1;
+function render(){
+  const e = eyeCells(pose.eyes, pose.ox, pose.wink), m = mouthCells(pose.mouth);
+  const sc = sleepIdx < 0 ? -1 : SLEEP[sleepIdx][1] * COLS + SLEEP[sleepIdx][0];
+  for (let i = 0; i < COLS * ROWS; i++){
+    let cls = e.has(i) ? 'd eye' : m.has(i) ? 'd mouth' : 'd';
+    if (cls === 'd' && i === sc) cls = 'd sleep';
+    if (dots[i].className !== cls) dots[i].className = cls;
+  }
+}
+render();
+
+/* ---- personality idle loop ---- */
+function blink(then){
+  const prev = pose.eyes;
+  if (prev === 'happy' || prev === 'closed'){ if (then) then(); return; }
+  pose.eyes = 'line'; render();
+  // each step applies only if the previous blink state survived — a LIVE beat or V-pose
+  // change owns the face and silently aborts the rest of the blink chain
+  setTimeout(() => { if (pose.eyes === 'line'){ pose.eyes = 'closed'; render(); } }, 110);
+  setTimeout(() => { if (pose.eyes === 'closed'){ pose.eyes = 'line'; render(); } }, 190);
+  setTimeout(() => { if (pose.eyes === 'line'){ pose.eyes = prev; } render(); if (then) then(); }, 310);
+}
+function scheduleBlink(){
+  setTimeout(() => {
+    if (document.hidden){ scheduleBlink(); return; }
+    if (Math.random() < 0.22) blink(() => blink(scheduleBlink));
+    else blink(scheduleBlink);
+  }, 2600 + Math.random() * 1400);
+}
+function scheduleGlance(){
+  setTimeout(() => {
+    if (!document.hidden && pose.eyes !== 'happy'){
+      pose.ox = Math.random() < 0.5 ? -2 : 2; render();
+      setTimeout(() => { pose.ox = 0; render(); }, 3200 + Math.random() * 1200);
+    }
+    scheduleGlance();
+  }, 6200 + Math.random() * 2600);
+}
+if (!REDUCED){ scheduleBlink(); setTimeout(scheduleGlance, 5000); }
+if (!REDUCED){
+  let si = 0;
+  (function scheduleSleep(){
+    setTimeout(() => {
+      if (!document.hidden){
+        sleepIdx = si; render();
+        setTimeout(() => { if (sleepIdx === si){ sleepIdx = -1; render(); } }, 1700);
+        si = (si + 1) % SLEEP.length;
+      }
+      scheduleSleep();
+    }, 8600 + Math.random() * 900);
+  })();
+}
+let deep = false;
+if (!REDUCED) setInterval(() => {
+  deep = !deep;
+  if (pose.mouth !== 'grin') pose.mouth = deep ? 'deep' : 'calm';
+  render();
+}, 1800);
+
+/* ---- rolling split-flap digits ---- */
+const ORDER = ['9','8','7','6','5','4','3','2','1','0','–'];   // countdown = strip slides UP
+const digits = $('#digits');
+const slots = [];
+['m1','m2','s1','s2'].forEach((k, i) => {
+  if (i === 2){ const c = document.createElement('span'); c.className = 'colon'; c.textContent = ':'; digits.appendChild(c); }
+  const slot = document.createElement('span'); slot.className = 'slot';
+  const strip = document.createElement('span'); strip.className = 'strip';
+  strip.style.transitionDelay = ((i % 2) * 60) + 'ms';
+  ORDER.forEach(ch => { const b = document.createElement('b'); b.textContent = ch; strip.appendChild(b); });
+  slot.appendChild(strip); digits.appendChild(slot);
+  slots.push({ el: slot, strip, cur: null });
+});
+function setSlot(s, ch){
+  if (s.cur === ch) return;
+  s.cur = ch;
+  const idx = ch === '–' ? 10 : 9 - (+ch);
+  s.strip.style.transform = 'translateY(' + (-idx * 30) + 'px)';
+}
+function setDigits(mm, ss){
+  setSlot(slots[0], String(Math.floor(mm / 10)));
+  setSlot(slots[1], String(mm % 10));
+  setSlot(slots[2], String(Math.floor(ss / 10)));
+  setSlot(slots[3], String(ss % 10));
+}
+function setDashes(){ slots.forEach(s => setSlot(s, '–')); }
+setDashes();
+
+/* ---- countdown + LIVE beat ---- */
+const capChip = $('#capChip'), liveChip = $('#liveChip'), sweep = $('#sweep');
+const markEl = document.querySelector('.mark');
+let t0 = 0, totalMs = 0;
+let target = null, standby = false, live = false;
+const tp = params.get('t');
+if (tp !== null){
+  if (/^-?\d+$/.test(tp)) target = Date.now() + parseInt(tp, 10) * 1000;
+  else { const d = Date.parse(tp); target = isNaN(d) ? Date.now() + 600000 : d; }
+  if (target - Date.now() > 99 * 60000 + 59000) target = Date.now() + 99 * 60000 + 59000; // clamp display
+  t0 = Date.now(); totalMs = Math.max(1000, target - t0);
+} else {
+  standby = true; capChip.classList.add('standby');
+  setTimeout(() => {
+    standby = false; capChip.classList.remove('standby');
+    target = Date.now() + 600000;
+    t0 = Date.now(); totalMs = 600000;
+    setDigits(10, 0);
+  }, 3000);
+}
+
+/* ---- ruler marker: slides 00 → 100 with countdown return-progress ---- */
+function setMark(p, moving){
+  p = Math.max(0, Math.min(1, p));
+  markEl.style.transform = 'translateX(' + (p * 1200 - 3.5).toFixed(1) + 'px) rotate(45deg)';
+  markEl.classList.toggle('moving', !!moving && p > 0.002 && p < 0.998);
+}
+function fireLive(){
+  if (live) return; live = true;
+  pose.eyes = 'happy'; pose.mouth = 'grin'; pose.ox = 0; render();
+  setDigits(0, 0);
+  setMark(1, false);
+  capChip.style.animation = 'none';  // entry fill:both would pin opacity — release it so .out can slide the chip away
+  void capChip.offsetWidth;
+  capChip.classList.add('out');
+  liveChip.classList.add('in');
+  if (!REDUCED){
+    sweep.classList.add('go');
+    setTimeout(() => { pose.wink = true; render(); }, 430);
+    setTimeout(() => { pose.wink = false; render(); }, 620);
+  }
+}
+setInterval(() => {
+  if (standby || live || target === null) return;
+  const nowMs = Date.now();
+  const rem = Math.max(0, Math.ceil((target - nowMs) / 1000));   // whole seconds: hold 10:00 for its full beat
+  if (rem <= 0){ setMark(1, false); fireLive(); return; }
+  setMark(1 - (target - nowMs) / totalMs, true);
+  setDigits(Math.min(99, Math.floor(rem / 60)), rem % 60);
+}, 250);
+
+/* ---- ticker ---- */
+const unit = 'EPISODE No. ' + ep + ' \u25C6 @smileke \u25C6 smile.co.ke \u25C6 #SmileSquad \u25C6 ';
+const half = document.createElement('span'); half.className = 'tk-half'; half.textContent = unit.repeat(6);
+$('#tkTrack').appendChild(half);
+$('#tkTrack').appendChild(half.cloneNode(true));
+
+/* ---- calibration ruler ---- */
+const ruler = $('#ruler');
+for (let i = 0; i <= 100; i++){
+  const t = document.createElement('i');
+  t.className = 'tick' + (i % 10 === 0 ? ' maj' : i % 5 === 0 ? ' mid' : '');
+  t.style.left = (i * 12) + 'px';
+  ruler.appendChild(t);
+  if (i % 10 === 0){
+    const n = document.createElement('b'); n.className = 'tnum';
+    n.textContent = String(i).padStart(2, '0'); n.style.left = (i * 12) + 'px';
+    ruler.appendChild(n);
+  }
+}
+
+/* ---- keys ---- */
+const POSES = [['open','calm'], ['happy','grin'], ['open','flat'], ['line','calm']];
+let pi = 0;
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'v'){ pi = (pi + 1) % POSES.length; pose.eyes = POSES[pi][0]; pose.mouth = POSES[pi][1]; render(); }
+  if (k === 'h'){ $('#help').classList.toggle('hide'); }
+});
+})();
+</script>
+</body>
+</html>

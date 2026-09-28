@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · session closed — receipt print</title>
+<link rel="icon" type="image/svg+xml" href="smile-mark.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!--
+  SMILE · END / RECEIPT PRINT
+  · thermal receipt prints DOWN from a printer slot (clip-path inset reveal, 2.2s, paper sway)
+  · off-white paper on zinc stage — the one light surface; mono ink; jagged torn bottom
+  · stamp ✓ MARKET CLOSED thunks in (scale 2.4→1, -8°, ink bleed) after print
+  · tear-off wobble (±1.2° decay) at print end
+  · smile disc peeks over the slot edge during print, drops behind it after
+  · flanking zinc panels: socials + NEXT SESSION chip (left) · session ledger + print job (right)
+-->
+
+<style>
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a; --bg:#09090b; --paper:#f4f1ea;
+  --border:#27272a; --border2:#3f3f46; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk','Inter',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-family:var(--fb);color:var(--fg);-webkit-font-smoothing:antialiased;user-select:none}
+.num{font-variant-numeric:tabular-nums}
+svg{display:block}
+
+.stage{position:relative;flex:none;width:1920px;height:1080px;background:var(--bg);overflow:hidden}
+.spot{position:absolute;inset:0;background:radial-gradient(ellipse 58% 62% at 50% 34%,rgba(255,255,255,.06),transparent 70%)}
+.slotlight{position:absolute;left:50%;top:98px;transform:translateX(-50%);width:560px;height:340px;
+  background:linear-gradient(180deg,rgba(255,220,130,.055),transparent 75%);pointer-events:none}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,transparent 50%,rgba(0,0,0,.58) 100%);z-index:9;pointer-events:none}
+
+/* ═══ 3-zone grid ═══ */
+.grid{position:absolute;inset:0;display:grid;grid-template-columns:1fr 520px 1fr;padding:0 64px;z-index:1}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.panel{margin-top:150px;height:676px;border:1px solid var(--border);border-radius:18px;
+  background:rgba(14,14,17,.82);padding:26px 28px;display:flex;flex-direction:column;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) both}
+.panel.left{margin-right:6px;animation-delay:.12s}
+.panel.right{margin-left:6px;animation-delay:.24s}
+.cap{display:flex;align-items:center;gap:9px;font-family:var(--fm);font-size:10px;letter-spacing:.3em;color:var(--muted)}
+.cap .dot{width:7px;height:7px;border-radius:50%;background:var(--yellow);flex:none}
+.cap .dot.dim{background:var(--faint)}
+.hr{border-top:1px solid var(--border);margin:18px 0}
+.clock{font-family:var(--fd);font-weight:700;font-size:52px;letter-spacing:.01em;line-height:1;margin-top:18px}
+.clocksub{margin-top:8px;font-family:var(--fm);font-size:10px;letter-spacing:.24em;color:var(--faint)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--fm);font-size:11.5px;
+  letter-spacing:.1em;padding:7px 0;color:var(--faint)}
+.kv b{color:var(--fg);font-weight:600;letter-spacing:.14em}
+.cap2{font-family:var(--fm);font-size:9.5px;letter-spacing:.3em;color:var(--faint);margin:2px 0 4px}
+.srow{display:flex;align-items:center;gap:12px;padding:10px 2px;font-family:var(--fm);font-size:12.5px;
+  letter-spacing:.05em;border-bottom:1px dashed var(--border);
+  animation:riseIn .7s cubic-bezier(.2,.9,.3,1) both}
+.srow .g{color:var(--yellow);width:18px;text-align:center;font-size:11px}
+.srow .nm{color:var(--fg);font-weight:600;letter-spacing:.14em}
+.srow .sep{color:var(--faint)}
+.srow .hd{color:var(--muted)}
+.srow:nth-of-type(1){animation-delay:.55s}
+.srow:nth-of-type(2){animation-delay:.67s}
+.srow:nth-of-type(3){animation-delay:.79s}
+.chip{margin-top:auto;display:flex;align-items:center;justify-content:center;background:var(--yellow);color:var(--ink);
+  border-radius:999px;padding:12px 16px;font-family:var(--fm);font-weight:700;font-size:11.5px;letter-spacing:.16em;
+  box-shadow:0 10px 26px rgba(255,193,7,.16);animation:riseIn .7s cubic-bezier(.3,1.3,.4,1) .95s both}
+.lrow{display:flex;align-items:baseline;font-family:var(--fm);font-size:12px;letter-spacing:.08em;
+  padding:10px 0;border-bottom:1px dashed var(--border);color:var(--faint)}
+.lrow b{margin-left:auto;color:var(--fg);font-weight:600}
+.lrow .pc{margin-left:10px;font-size:10px;letter-spacing:.04em}
+.pc.up{color:var(--up)}.pc.down{color:var(--down)}
+.pj{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--fm);font-size:11px;
+  letter-spacing:.16em;color:var(--muted);margin-top:12px}
+.pj b{color:var(--yellow);font-weight:600}
+.pbar{height:6px;border-radius:3px;background:#18181b;border:1px solid var(--border);overflow:hidden;margin-top:10px}
+.pbar i{display:block;height:100%;background:var(--yellow);transform:scaleX(0);transform-origin:left;
+  animation:fillb 2.5s cubic-bezier(.3,.75,.3,1) .3s both}
+@keyframes fillb{to{transform:scaleX(1)}}
+.foot{margin-top:auto;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--faint)}
+
+/* ═══ printer well ═══ */
+.well{position:relative;z-index:2}
+.slot{position:absolute;left:50%;top:64px;transform:translateX(-50%);width:540px;height:34px;z-index:6;
+  animation:riseIn .8s cubic-bezier(.2,.9,.3,1) .05s both}
+.slot-bar{position:absolute;inset:0;border-radius:8px;
+  background:linear-gradient(180deg,#2c2c31,#18181b 55%,#242428);
+  border:1px solid var(--border2);
+  box-shadow:0 16px 34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.09)}
+.slot-mouth{position:absolute;left:16px;right:16px;bottom:5px;height:6px;border-radius:3px;background:#050506;
+  box-shadow:inset 0 2px 4px #000,0 1px 0 rgba(255,255,255,.06)}
+.slot-ep{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:var(--fm);font-size:9.5px;
+  letter-spacing:.2em;color:var(--yellow);border:1px solid rgba(255,193,7,.32);border-radius:4px;padding:3px 8px}
+.slot-label{position:absolute;right:44px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px;
+  font-family:var(--fm);font-size:9.5px;letter-spacing:.24em;color:var(--faint)}
+.led{width:6px;height:6px;border-radius:50%;background:var(--up);animation:ledk 1.6s ease-in-out infinite}
+@keyframes ledk{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* smile peeking over the slot edge */
+.peeker{position:absolute;left:calc(50% - 238px);top:18px;width:86px;height:86px;z-index:2;
+  animation:peekDrop .75s cubic-bezier(.55,0,.85,.36) 3.05s both}
+.peeker .pk{width:100%;height:100%;animation:peekBob 1.6s ease-in-out infinite alternate;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+@keyframes peekBob{from{transform:translateY(0)}to{transform:translateY(-9px)}}
+@keyframes peekDrop{0%{transform:translateY(0);opacity:1}55%{opacity:1}100%{transform:translateY(160px);opacity:0}}
+
+/* the receipt */
+.printClip{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:420px;z-index:3;
+  filter:drop-shadow(0 26px 30px rgba(0,0,0,.5));
+  animation:printDown 2.2s cubic-bezier(.3,.75,.3,1) .3s both;will-change:clip-path}
+@keyframes printDown{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0% 0)}}
+.wobble{animation:wobk .95s cubic-bezier(.3,.8,.4,1) 2.72s both}
+@keyframes wobk{0%{transform:rotate(0)}18%{transform:rotate(1.2deg)}44%{transform:rotate(-.9deg)}70%{transform:rotate(.5deg)}100%{transform:rotate(0)}}
+.psway{animation:psway 7.5s ease-in-out 1s infinite alternate}
+@keyframes psway{from{transform:rotate(-.45deg)}to{transform:rotate(.45deg)}}
+.paper{position:relative;background:var(--paper);color:var(--ink);font-family:var(--fm);
+  padding:26px 28px 30px;min-height:690px;
+  background-image:repeating-linear-gradient(0deg,rgba(10,10,10,.03) 0 1px,transparent 1px 3px);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),97.5% 100%,95% calc(100% - 12px),92.5% 100%,90% calc(100% - 12px),87.5% 100%,85% calc(100% - 12px),82.5% 100%,80% calc(100% - 12px),77.5% 100%,75% calc(100% - 12px),72.5% 100%,70% calc(100% - 12px),67.5% 100%,65% calc(100% - 12px),62.5% 100%,60% calc(100% - 12px),57.5% 100%,55% calc(100% - 12px),52.5% 100%,50% calc(100% - 12px),47.5% 100%,45% calc(100% - 12px),42.5% 100%,40% calc(100% - 12px),37.5% 100%,35% calc(100% - 12px),32.5% 100%,30% calc(100% - 12px),27.5% 100%,25% calc(100% - 12px),22.5% 100%,20% calc(100% - 12px),17.5% 100%,15% calc(100% - 12px),12.5% 100%,10% calc(100% - 12px),7.5% 100%,5% calc(100% - 12px),2.5% 100%,0 calc(100% - 12px))}
+.ph{font-size:16px;font-weight:700;letter-spacing:.14em;text-align:center}
+.ph2{margin-top:8px;font-size:11px;letter-spacing:.18em;text-align:center;color:rgba(10,10,10,.55)}
+.dash{border-top:2px dashed rgba(10,10,10,.3);margin:15px 0}
+.li{display:flex;align-items:baseline;gap:9px;font-size:13.5px;letter-spacing:.03em;padding:5.5px 0}
+.li .lab{font-weight:600;white-space:nowrap}
+.li .lead{flex:1;border-bottom:2px dotted rgba(10,10,10,.38);transform:translateY(-3px);min-width:24px}
+.li .val{font-weight:700;white-space:nowrap}
+.total{margin-top:4px;padding:13px 0;border-top:3px double rgba(10,10,10,.85);border-bottom:3px double rgba(10,10,10,.85);
+  text-align:center;font-size:17px;font-weight:700;letter-spacing:.12em}
+.bc{height:52px;margin:20px 4px 10px;
+  background:repeating-linear-gradient(90deg,#0a0a0a 0 2px,transparent 2px 5px,#0a0a0a 5px 8px,transparent 8px 10px,#0a0a0a 10px 11px,transparent 11px 15px,#0a0a0a 15px 19px,transparent 19px 21px,#0a0a0a 21px 22px,transparent 22px 26px)}
+.pf{font-size:10.5px;line-height:1.7;text-align:center;color:rgba(10,10,10,.72);letter-spacing:.02em}
+
+.stamp{position:absolute;left:50%;top:46%;width:300px;padding:13px 10px;text-align:center;
+  font-family:var(--fm);font-weight:700;font-size:21px;letter-spacing:.1em;color:var(--down);
+  border:3px solid var(--down);border-radius:10px;background:rgba(246,70,93,.06);
+  box-shadow:inset 0 0 0 2px rgba(246,70,93,.28);
+  mix-blend-mode:multiply;opacity:.94;
+  transform:translate(-50%,-50%) rotate(-8deg);
+  animation:thunk .42s cubic-bezier(.25,1.25,.4,1) 2.6s both}
+@keyframes thunk{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(-14deg) scale(2.4);filter:blur(2.2px)}
+  55%{filter:blur(.5px)}
+  100%{opacity:.94;transform:translate(-50%,-50%) rotate(-8deg) scale(1);filter:blur(0)}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+  .pbar i{transform:scaleX(1)}
+}
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage">
+  <div class="spot" aria-hidden="true"></div>
+  <div class="slotlight" aria-hidden="true"></div>
+
+  <div class="grid">
+
+    <!-- left flank: desk close-out -->
+    <aside class="panel left">
+      <div class="cap"><i class="dot"></i>DESK CLOSE-OUT</div>
+      <div class="clock num" id="clock">--:--:--</div>
+      <div class="clocksub">EAT · NAIROBI · UTC+3</div>
+      <div class="hr"></div>
+      <div class="kv"><span>RECEIPT NO.</span><b class="num" id="epTag">EP-128</b></div>
+      <div class="kv"><span>ISSUED</span><b class="num" id="dateTag">— — —</b></div>
+      <div class="hr"></div>
+      <div class="cap2">SOCIALS</div>
+      <div class="srow"><span class="g">▶</span><span class="nm">YouTube</span><span class="sep">·</span><span class="hd">/smileke</span></div>
+      <div class="srow"><span class="g">◉</span><span class="nm">Twitch</span><span class="sep">·</span><span class="hd">/smileke</span></div>
+      <div class="srow"><span class="g">♪</span><span class="nm">TikTok</span><span class="sep">·</span><span class="hd">@smileke</span></div>
+      <div class="chip">NEXT SESSION · FRIDAY 8PM EAT</div>
+    </aside>
+
+    <!-- center: printer + receipt -->
+    <div class="well">
+      <div class="slot">
+        <div class="slot-bar"></div>
+        <div class="slot-mouth"></div>
+        <span class="slot-ep num" id="slotEp">EP 128</span>
+        <span class="slot-label"><i class="led"></i>THERMAL DESK PRINTER</span>
+      </div>
+
+      <div class="peeker" aria-hidden="true">
+        <div class="pk">
+          <svg class="disc" viewBox="0 0 100 100" width="100%" height="100%">
+            <circle cx="50" cy="50" r="50" fill="#FFC107"/>
+            <ellipse class="eye-l" cx="41" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+            <ellipse class="eye-r" cx="59" cy="40" rx="6.5" ry="7.6" fill="#0b0b0b"/>
+            <path class="mouth" d="M32 55 C 35 77, 65 77, 68 55" fill="none" stroke="#0b0b0b"
+                  stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="printClip">
+        <div class="wobble">
+          <div class="psway">
+            <div class="paper">
+              <div class="ph">SMILE CO. — NAIROBI DESK</div>
+              <div class="ph2 num"><span id="epLine">EP 128</span> · <span id="dateLine">— — —</span></div>
+              <div class="dash"></div>
+              <div class="li"><span class="lab">uptime</span><span class="lead"></span><span class="val num">04:12:36</span></div>
+              <div class="li"><span class="lab">moves called</span><span class="lead"></span><span class="val num">17</span></div>
+              <div class="li"><span class="lab">best move</span><span class="lead"></span><span class="val num">XAUUSD</span></div>
+              <div class="li"><span class="lab">coffee cups</span><span class="lead"></span><span class="val num">3</span></div>
+              <div class="li"><span class="lab">vibes</span><span class="lead"></span><span class="val num">100%</span></div>
+              <div class="dash"></div>
+              <div class="total">SESSION PAID IN FULL</div>
+              <div class="bc" aria-hidden="true"></div>
+              <div class="dash"></div>
+              <p class="pf">Asante for trading with us today — books balanced, smile intact. Same desk next time.</p>
+              <div class="stamp">✓ MARKET CLOSED</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right flank: session ledger -->
+    <aside class="panel right">
+      <div class="cap"><i class="dot dim"></i>SESSION LEDGER · CLOSED</div>
+      <div class="lrow"><span>BTC</span><b class="num" id="pBTC">67,240</b><span class="pc num" id="cBTC">▲0.8%</span></div>
+      <div class="lrow"><span>ETH</span><b class="num" id="pETH">3,512</b><span class="pc num" id="cETH">▼0.4%</span></div>
+      <div class="lrow"><span>XAU</span><b class="num" id="pXAU">2,384</b><span class="pc num" id="cXAU">▲0.2%</span></div>
+      <div class="lrow"><span>USD/KES</span><b class="num" id="pKES">129.20</b><span class="pc num">ref</span></div>
+      <div class="hr"></div>
+      <div class="cap2">PRINT JOB</div>
+      <div class="pj"><b id="pjState">PRINTING…</b><span class="num" id="pjPct">0%</span></div>
+      <div class="pbar"><i></i></div>
+      <div class="foot">after-hours tape — crypto never closes.</div>
+    </aside>
+
+  </div>
+
+  <div class="vig" aria-hidden="true"></div>
+</div>
+
+<script>window.BRAND={};/* brand tokens are frozen in-page — no brand.json fetch */</script>
+<script src="smile-mark.js"></script>
+<script>
+(function(){
+  'use strict';
+  var RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── fit 1920×1080 to any window ── */
+  var stage=document.getElementById('stage');
+  function fit(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+
+  /* ── URL contract (graceful ?ep=) ── */
+  var ep='128';
+  try{var q=new URLSearchParams(location.search).get('ep');
+    if(q&&/^\d{1,4}$/.test(q))ep=q;}catch(e){}
+  document.getElementById('epTag').textContent='EP-'+ep;
+  document.getElementById('slotEp').textContent='EP '+ep;
+  document.getElementById('epLine').textContent='EP '+ep;
+
+  /* ── EAT clock + issued date ── */
+  function eatFmt(o){try{return new Intl.DateTimeFormat('en-GB',
+    Object.assign({timeZone:'Africa/Nairobi',hourCycle:'h23'},o)).format(new Date());}catch(e){return '';}}
+  var clockEl=document.getElementById('clock');
+  function tick(){clockEl.textContent=eatFmt({hour:'2-digit',minute:'2-digit',second:'2-digit'})||'--:--:--';}
+  tick();setInterval(tick,1000);
+  var issued=(eatFmt({day:'2-digit',month:'short',year:'numeric'})||'').toUpperCase();
+  if(issued){document.getElementById('dateTag').textContent=issued;
+             document.getElementById('dateLine').textContent=issued;}
+
+  /* ── market pulse: after-hours ledger (Binance w/ fallback, silent on file://) ── */
+  var P={BTC:67240,ETH:3512,XAU:2384,KES:129.20};
+  var D={BTC:.8,ETH:-.4,XAU:.2};
+  var elP={BTC:document.getElementById('pBTC'),ETH:document.getElementById('pETH'),
+           XAU:document.getElementById('pXAU'),KES:document.getElementById('pKES')};
+  var elC={BTC:document.getElementById('cBTC'),ETH:document.getElementById('cETH'),
+           XAU:document.getElementById('cXAU')};
+  function fmt(v){return v>=1000?Math.round(v).toLocaleString('en-US'):(v>=100?v.toFixed(1):v.toFixed(2));}
+  function paint(k){
+    if(elP[k])elP[k].textContent=fmt(P[k]);
+    var c=elC[k];
+    if(c){var up=D[k]>=0;c.textContent=(up?'▲':'▼')+Math.abs(D[k]).toFixed(1)+'%';
+      c.className='pc num '+(up?'up':'down');}}
+  function kesWalk(){P.KES=Math.max(120,P.KES+(Math.random()-.5)*.08);paint('KES');}
+  function walk(){['BTC','ETH','XAU'].forEach(function(k){
+    P[k]*=1+(Math.random()-.5)*.004;D[k]+=(Math.random()-.5)*.06;paint(k);});kesWalk();}
+  function pull(){
+    if(location.protocol.indexOf('http')!==0){walk();return;}
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbols='+
+      encodeURIComponent('["BTCUSDT","ETHUSDT","PAXGUSDT"]'))
+      .then(function(r){return r.json();})
+      .then(function(list){list.forEach(function(t){
+        var k=t.symbol==='BTCUSDT'?'BTC':t.symbol==='ETHUSDT'?'ETH':t.symbol==='PAXGUSDT'?'XAU':null;
+        if(k){P[k]=parseFloat(t.lastPrice);D[k]=parseFloat(t.priceChangePercent);paint(k);}});
+        kesWalk();})
+      .catch(walk);
+  }
+  Object.keys(elP).forEach(paint);setInterval(pull,5000);pull();
+
+  /* ── print job monitor (wall clock, no layout reads) ── */
+  var pctEl=document.getElementById('pjPct'),stateEl=document.getElementById('pjState');
+  var t0=performance.now()+300;
+  if(RM){pctEl.textContent='100%';stateEl.textContent='PRINTED ✓';}
+  else{
+    var iv=setInterval(function(){
+      if(document.hidden)return;
+      var k=(performance.now()-t0)/2500;
+      if(k>=1){pctEl.textContent='100%';stateEl.textContent='PRINTED ✓';clearInterval(iv);}
+      else if(k>0){pctEl.textContent=Math.round(k*100)+'%';}
+    },120);
+  }
+
+  /* ── peeker moods: watch the print, then drop ── */
+  if(!RM){
+    setTimeout(function(){
+      var s=document.querySelector('.peeker svg');
+      if(s&&window.smileMood){smileMood('look',700,s);
+        setTimeout(function(){if(window.smileMood)smileMood('wink',650,s);},1500);}
+    },900);
+  }
+
+  /* ── will-change release after settle ── */
+  setTimeout(function(){
+    var pc=document.querySelector('.printClip');
+    if(pc)pc.style.willChange='auto';
+  },5200);
+})();
+</script>
+</body>
+</html>
