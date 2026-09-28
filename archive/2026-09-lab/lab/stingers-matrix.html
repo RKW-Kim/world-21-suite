@@ -1145,5 +1145,42 @@ if (TYPE && REC[TYPE]) {
   setTimeout(function () { startDemo(true); }, 400);
 }
 </script>
+<script>
+/* ── STREAMER.BOT-READY · trigger wiring — HTML only, zero idle cost ──────
+   Fire this deck any of four ways:
+   1. URL          ?type=<recipe>                       (isolates + loops)
+   2. Streamer.bot add ?sb=1 [&sbws=127.0.0.1:8080] to the source URL, then in
+      Streamer.bot broadcast a Custom WebSocket Event with data {"smile":"<recipe>"}
+      (listens on Streamer.bot's built-in WebSocket server; reconnects every 5s)
+   3. OBS dock     new BroadcastChannel('smile-stingers').postMessage({stinger:'<recipe>'})
+   4. Iframe host  frame.contentWindow.postMessage({stinger:'<recipe>'},'*')
+   Recipes: follow · like · heart · share · bell · tip · subscribe · super ·
+            superchat · membership · cheer · raid · hype · clip · reaction · stars
+   No external files. No timers added unless ?sb=1 connects. */
+(function(){
+  function doFire(id){ if(!id) return; try{ if(REC[id]) fire(id); }catch(_){} }
+  try{ var ch=new BroadcastChannel('smile-stingers');
+    ch.onmessage=function(e){ var d=e.data||{}; doFire(d.smile||d.stinger); };
+  }catch(_){}
+  addEventListener('message',function(e){ var d=e.data||{}; doFire(d.smile||d.stinger); });
+  var q=new URLSearchParams(location.search);
+  if(q.get('sb')==='1'){
+    var host=q.get('sbws')||'127.0.0.1:8080', ws=null, rt=null;
+    function connect(){
+      rt=null;
+      try{ ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+host); }catch(_){ return; }
+      ws.onopen=function(){ try{ ws.send(JSON.stringify({request:'Subscribe',id:'smile-stinger',events:{Custom:true,Raw:true}})); }catch(_){} };
+      ws.onmessage=function(e){
+        try{ var m=JSON.parse(e.data), d=m.data||{}, p=d.data||{};
+          doFire(d.smile||d.stinger||p.smile||p.stinger);
+        }catch(_){}
+      };
+      ws.onclose=function(){ if(!rt) rt=setTimeout(connect,5000); };
+      ws.onerror=function(){ try{ ws.close(); }catch(_){} };
+    }
+    connect();
+  }
+})();
+</script>
 </body>
 </html>

@@ -12,7 +12,7 @@
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
   --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
@@ -153,14 +153,14 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <a class="scene" href="ticker.html">
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
-      <span class="what">The original dock-bottom market bar — clock, live smile, seamless price marquee. Demo feed built in; takes the real /api/market feed when your server is up.</span>
+      <span class="what">The stingers-era merged pill — smile cap, masked marquee, pure market data by default; ?mode=offair adds sponsors + socials. Static content, one CSS loop.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
     <a class="scene" href="archive/2026-09-lab/lab/stingers-matrix.html">
       <span class="tag">SG·M</span>
       <span class="name">Stingers — The Matrix</span>
-      <span class="what">21 interaction recipes, every platform — follow, like, subs, super thanks, M-PESA tips, raids, hype train, TikTok gifts. OBS capture: ?obs=1&amp;type=follow.</span>
+      <span class="what">21 interaction recipes, every platform — follow, like, subs, super thanks, M-PESA tips, raids, hype train, TikTok gifts. Streamer.bot-ready: ?sb=1 or ?type=follow.</span>
       <span class="go">OPEN →</span>
     </a>
     <a class="scene" href="archive/2026-09-lab/lab/stingers-spectacle.html">
@@ -201,9 +201,10 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <b>Notes:</b> pages pause their clocks while the tab is hidden and respect
     <b>prefers-reduced-motion</b> (everything freezes into a clean static frame).
     The logo and face are the real <b>Smile-Logo.svg</b> paths inlined verbatim — no redraws.
-    The ticker runs a <b>demo random-walk</b> until <code>/api/market/ws</code> answers,
-    then flips to the live feed automatically. Stingers live in the round-6/7 lab
-    (<code>archive/2026-09-lab/lab/</code>) and load standalone.
+    Stingers are <b>Streamer.bot-ready</b>, HTML only: add <code>?sb=1</code> to the source URL
+    (they listen on Streamer.bot's WebSocket server for a custom event carrying
+    <code>{"smile":"&lt;recipe&gt;"}</code>), or trigger with <code>?type=&lt;recipe&gt;</code>.
+    The old demo-feed market bar is retired — this ticker is the era pill.
   </p>
 </div>
 </body>

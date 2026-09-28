@@ -12,7 +12,7 @@
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
   --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'S
   overflow:hidden;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
 .page{position:relative;display:flex;flex-direction:column;height:100%}
 
 .ambient{position:absolute;inset:0;pointer-events:none}
@@ -86,6 +87,8 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .bnc i:nth-child(2){animation-delay:.15s;background:var(--up)}
 .bnc i:nth-child(3){animation-delay:.3s;background:var(--down)}
 @keyframes bnc{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.usin{font-family:var(--fm);font-size:9.5px;letter-spacing:.22em;color:var(--muted);
+  border:1px solid var(--border);border-radius:999px;padding:7px 13px;background:rgba(14,14,17,.55)}
 
 .ticker{position:relative;z-index:6;display:flex;align-items:stretch;height:clamp(48px,7vh,62px);
   background:rgba(9,9,11,.94);border-top:1px solid var(--border)}
@@ -151,6 +154,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <div class="meta">
       <span class="timer num"><span>AWAY FOR</span><span id="away">00:00</span></span>
       <span class="bnc" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="usin">USUALLY BACK IN ~5 MIN</span>
     </div>
   </main>
 
