@@ -58,6 +58,12 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .scene .live.amber{background:var(--yellow)}
 .scene .live.red{background:var(--down)}
 
+.klabel{display:flex;align-items:center;gap:14px;margin:44px 0 0;
+  font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.24em;
+  color:var(--muted);text-transform:uppercase}
+.klabel .y{color:var(--yellow)}
+.kit.k2{border-top:none;margin-top:16px;animation:rise .7s cubic-bezier(.2,.9,.3,1) .3s both}
+
 .foot{margin-top:40px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
   animation:rise .7s cubic-bezier(.2,.9,.3,1) .32s both}
 .foot .f{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;color:var(--faint);
@@ -142,17 +148,62 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </a>
   </nav>
 
+  <p class="klabel"><span class="y">The originals</span>&nbsp;— stingers + ticker, back in the lineup</p>
+  <nav class="kit k2">
+    <a class="scene" href="ticker.html">
+      <span class="tag">TK</span>
+      <span class="name">Market Ticker</span>
+      <span class="what">The original dock-bottom market bar — clock, live smile, seamless price marquee. Demo feed built in; takes the real /api/market feed when your server is up.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-matrix.html">
+      <span class="tag">SG·M</span>
+      <span class="name">Stingers — The Matrix</span>
+      <span class="what">21 interaction recipes, every platform — follow, like, subs, super thanks, M-PESA tips, raids, hype train, TikTok gifts. OBS capture: ?obs=1&amp;type=follow.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-spectacle.html">
+      <span class="tag">SG·S</span>
+      <span class="name">Stingers — Spectacle</span>
+      <span class="what">Paid moments only — the 3D brushed-gold coin, the M-PESA tile with KSh count-up, the bits jewel, the swinging bell.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers-materials.html">
+      <span class="tag">SG·Mt</span>
+      <span class="name">Stingers — Materials</span>
+      <span class="what">Frost · obsidian · chameleon — the matte family. The chameleon samples the backdrop live (lab trick; OBS ships it as ?tint=h,s).</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/stingers.html">
+      <span class="tag">SG·D</span>
+      <span class="name">Stingers — The Suite</span>
+      <span class="what">The full stinger lab — obsidian + clear directions, stage tests, the material guide and everything still missing.</span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="archive/2026-09-lab/lab/logo-motion.html">
+      <span class="tag">SG·L</span>
+      <span class="name">Logo Motion</span>
+      <span class="what">Draw ✓ nod ✓ glowline ✓ blink ✗ — the honest logo verdicts, with the failed studies kept as documentation.</span>
+      <span class="go">OPEN →</span>
+    </a>
+  </nav>
+
   <div class="foot">
     <span class="f y">VERBATIM SMILE LOGO</span>
     <span class="f">CSS-ONLY MOTION</span>
     <span class="f">1 GATED INTERVAL MAX</span>
     <span class="f">ANY WINDOW SIZE</span>
     <span class="f">OBS-FRIENDLY</span>
+    <span class="f y">STINGERS + TICKER ON BOARD</span>
   </div>
   <p class="note">
     <b>Notes:</b> pages pause their clocks while the tab is hidden and respect
     <b>prefers-reduced-motion</b> (everything freezes into a clean static frame).
     The logo and face are the real <b>Smile-Logo.svg</b> paths inlined verbatim — no redraws.
+    The ticker runs a <b>demo random-walk</b> until <code>/api/market/ws</code> answers,
+    then flips to the live feed automatically. Stingers live in the round-6/7 lab
+    (<code>archive/2026-09-lab/lab/</code>) and load standalone.
   </p>
 </div>
 </body>
