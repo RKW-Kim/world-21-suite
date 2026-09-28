@@ -12,7 +12,7 @@
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
   --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'S
   overflow:hidden;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
 .page{position:relative;display:flex;flex-direction:column;height:100%}
 
 .ambient{position:absolute;inset:0;pointer-events:none}
@@ -91,7 +92,8 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .row .tt b{display:block;font-family:var(--fd);font-weight:500;font-size:14.5px;letter-spacing:.01em}
 .row .tt span{display:block;margin-top:3px;font-family:var(--fm);font-size:9.5px;
   letter-spacing:.16em;color:var(--faint);text-transform:uppercase}
-.row .st{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--up);white-space:nowrap}
+.row .st{display:flex;align-items:center;white-space:nowrap}
+.row .st i{width:7px;height:7px;border-radius:50%;background:var(--up)}
 .count{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);
   display:flex;align-items:center;justify-content:space-between}
 .count .cl{font-family:var(--fm);font-size:9.5px;letter-spacing:.26em;color:var(--faint)}
@@ -171,17 +173,17 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
       <div class="row">
         <span class="ix">01</span>
         <span class="tt"><b>Hydrate</b><span>water beats a third coffee</span></span>
-        <span class="st">●</span>
+        <span class="st"><i></i></span>
       </div>
       <div class="row">
         <span class="ix">02</span>
         <span class="tt"><b>Drop your questions</b><span>Q&amp;A right after the break</span></span>
-        <span class="st">●</span>
+        <span class="st"><i></i></span>
       </div>
       <div class="row">
         <span class="ix">03</span>
         <span class="tt"><b>Check the watchlist</b><span>BTC · ETH · USD/KES · XAU</span></span>
-        <span class="st">●</span>
+        <span class="st"><i></i></span>
       </div>
       <div class="count">
         <span class="cl">BACK IN</span>

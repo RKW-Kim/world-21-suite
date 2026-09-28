@@ -12,7 +12,7 @@
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#71717a;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
   --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
@@ -23,6 +23,7 @@ body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'S
   overflow:hidden;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
 .page{position:relative;display:flex;flex-direction:column;height:100%}
 
 .ambient{position:absolute;inset:0;pointer-events:none}
