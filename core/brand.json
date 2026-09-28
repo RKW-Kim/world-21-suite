@@ -1,0 +1,26 @@
+{
+  "name": "Smile",
+  "wordmark": "smile",
+  "tokens": {
+    "--yellow": "#FFC107",
+    "--yellow-hot": "#F5A623",
+    "--ink": "#0a0a0a",
+    "--panel": "#141414",
+    "--panel-2": "#1b1b1b",
+    "--line": "#2a2a2a",
+    "--muted": "#8c8c8c",
+    "--paper": "#ffffff",
+    "--up": "#0ECB81",
+    "--down": "#F6465D",
+    "--up-soft": "#5BE9B0",
+    "--down-soft": "#FF8A98",
+    "--sky": "#3FB6FF",
+    "--live": "#F6465D"
+  },
+  "handles": {
+    "@smileke": "@smileke",
+    "smile.co.ke": "smile.co.ke",
+    "#SmileSquad": "#SmileSquad",
+    "Kenya's all-in-one finance hub": "Kenya's all-in-one finance hub"
+  }
+}
