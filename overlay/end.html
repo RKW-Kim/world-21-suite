@@ -16,6 +16,7 @@
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:96px; /* bottom module zone — the ticker module docks here */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -50,7 +51,7 @@ svg{display:block}
 .clockchip b{color:var(--fg);font-weight:600}
 
 .wrap{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:clamp(12px,2.2vh,20px);text-align:center;padding:0 24px;min-height:0}
+  justify-content:center;gap:clamp(12px,2.2vh,20px);text-align:center;padding:0 24px var(--safe-b);min-height:0}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 .chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;
   border:1px solid rgba(14,203,129,.4);background:rgba(14,203,129,.07);color:var(--up);
@@ -85,24 +86,8 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   padding:10px 20px;font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.12em;
   text-transform:uppercase;animation:rise .8s cubic-bezier(.2,.9,.3,1) .5s both}
 
-.ticker{position:relative;z-index:6;display:flex;align-items:stretch;height:clamp(48px,7vh,62px);
-  background:rgba(9,9,11,.94);border-top:1px solid var(--border)}
-.cap{display:flex;align-items:center;gap:10px;padding:0 clamp(14px,2vw,26px);white-space:nowrap;
-  font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.18em}
-.cap.l{background:var(--up);color:var(--ink)}
-.cap.l svg{height:18px;width:auto}
-.cap.r{margin-left:auto;background:rgba(255,193,7,.05);border-left:1px solid rgba(255,193,7,.25);
-  color:rgba(255,193,7,.8);font-family:var(--fm);font-weight:400;font-size:10px;letter-spacing:.2em}
-.mask{flex:1;overflow:hidden;display:flex;align-items:center}
-.track{display:flex;width:max-content;animation:tk 32s linear infinite}
-.seq{display:flex;align-items:center}
-.item{display:inline-block;vertical-align:middle;white-space:nowrap;font-family:var(--fm);
-  font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-right:44px;color:var(--muted)}
-.item::before{content:"✦";color:var(--yellow);margin-right:14px;font-size:10px}
-.item b{color:var(--fg);font-weight:600}
-@keyframes tk{to{transform:translateX(-50%)}}
 
-@media (max-width:720px){.cap.r{display:none}.soc span{display:none}}
+@media (max-width:720px){.soc span{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}
   .cf{display:none}}
 </style>
@@ -155,36 +140,6 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
     <span class="next">Next Session · Friday 8PM EAT</span>
   </main>
 
-  <footer class="ticker">
-    <div class="cap l">
-      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#0a0a0a"/>
-        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#FFC107"/>
-        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#FFC107"/>
-        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#FFC107"/>
-      </svg>
-      <span>MARKET CLOSED</span>
-    </div>
-    <div class="mask">
-      <div class="track">
-        <span class="seq">
-          <span class="item"><b>asante squad</b></span>
-          <span class="item">replays on <b>youtube</b></span>
-          <span class="item">say hi <b>@smileke</b></span>
-          <span class="item"><b>smile.co.ke</b></span>
-          <span class="item"><b>#SmileSquad</b></span>
-        </span>
-        <span class="seq" aria-hidden="true">
-          <span class="item"><b>asante squad</b></span>
-          <span class="item">replays on <b>youtube</b></span>
-          <span class="item">say hi <b>@smileke</b></span>
-          <span class="item"><b>smile.co.ke</b></span>
-          <span class="item"><b>#SmileSquad</b></span>
-        </span>
-      </div>
-    </div>
-    <div class="cap r">NOT FINANCIAL ADVICE — JUST GOOD VIBES</div>
-  </footer>
 </div>
 
 <script>

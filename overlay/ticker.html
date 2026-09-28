@@ -15,7 +15,13 @@
    Content is static HTML — zero intervals, zero rAF, zero canvas; the
    loop is one compositor transform. The era's backdrop blur is dropped:
    a transparent OBS dock has nothing behind it to sample, so it was pure
-   GPU cost. Reduced motion: the strip freezes as a clean static row. */
+   GPU cost. Reduced motion: the strip freezes as a clean static row.
+
+   THE TICKER MODULE — layer it as its own OBS browser source over ANY
+   scene (scenes keep their bottom 96px module zone clear for it):
+     1920×76 dock · transparent · ?mode=offair adds sponsors + socials
+     ?scale=1.25    = pill size inside the dock (0.5–3, default 1)
+   No other params, no timers — same contract as the watermark module. */
 :root{
   --yellow:#FFC107; --ink:#0a0a0a; --up:#0ECB81; --down:#F6465D;
   --fg:#F2F5FC; --meta:#9AA4BC;
@@ -26,6 +32,7 @@ html,body{width:1920px;height:76px;overflow:hidden;background:transparent}
 body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
 .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:35;pointer-events:none;padding:0 12px}
 .tkPill{width:fit-content;max-width:1896px;height:54px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
+  transform:scale(var(--tks,1));transform-origin:50% 50%;
   background:rgba(12,15,23,.93);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,206,0,.2)}
 .tkPill .cap{flex:none;display:flex;align-items:center;gap:10px;padding:0 22px 0 18px;background:#FFCE00;color:#1F1702;
@@ -117,12 +124,14 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoo
   </div>
 </div>
 <script>
-/* mode toggle only — no timers, no loops. ?mode=offair shows sponsors + socials. */
+/* module params only — no timers, no loops. ?mode=offair shows sponsors + socials; ?scale resizes the pill. */
 (function(){
   if((location.search.match(/[?&]mode=(offair|market)/)||[])[1]==='offair'){
     document.getElementById('tk-market').hidden=true;
     document.getElementById('tk-offair').hidden=false;
   }
+  var sc=parseFloat((location.search.match(/[?&]scale=([\d.]+)/)||[])[1]);
+  if(!isNaN(sc)&&sc>0)document.documentElement.style.setProperty('--tks',Math.min(3,sc));
 })();
 </script>
 </body>

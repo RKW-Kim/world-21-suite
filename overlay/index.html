@@ -72,6 +72,34 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .note{margin-top:26px;color:var(--faint);font-size:12.5px;line-height:1.7;
   animation:rise .7s cubic-bezier(.2,.9,.3,1) .4s both}
 .note b{color:var(--muted);font-weight:600}
+
+/* ── module zone map ── */
+.mods{margin-top:44px;display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start;
+  animation:rise .7s cubic-bezier(.2,.9,.3,1) .36s both}
+.zmap{position:relative;flex:none;width:min(440px,100%);aspect-ratio:16/9;
+  border:1px solid var(--border);border-radius:12px;background:rgba(14,14,17,.55);overflow:hidden}
+.z{position:absolute;display:block}
+.z.wm{width:15%;height:26%;border:1px dashed rgba(255,193,7,.45);background:rgba(255,193,7,.06)}
+.z.wm.tl{left:0;top:0;border-left:none;border-top:none}
+.z.wm.tr{right:0;top:0;border-right:none;border-top:none}
+.z.wm.bl{left:0;bottom:0;border-left:none;border-bottom:none}
+.z.wm.br{right:0;bottom:0;border-right:none;border-bottom:none}
+.z.tk{left:0;right:0;bottom:0;height:9%;background:rgba(255,193,7,.13);border-top:1px dashed rgba(255,193,7,.45)}
+.z.sg{left:17%;right:17%;top:13%;bottom:24%;border:1px dashed rgba(14,203,129,.4);
+  background:rgba(14,203,129,.05);border-radius:10px}
+.zl{position:absolute;font-family:var(--fm);font-weight:600;font-size:8px;letter-spacing:.14em;
+  color:rgba(255,255,255,.55);text-transform:uppercase}
+.zl.tl2{left:10px;top:8px}.zl.tr2{right:10px;top:8px}.zl.bl2{left:10px;bottom:9%}.zl.br2{right:10px;bottom:9%}
+.zl.tk2{left:10px;bottom:6px;color:rgba(255,193,7,.75)}
+.zl.sg2{left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(14,203,129,.8);font-size:9.5px}
+.zlegend{flex:1;min-width:240px;display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.zlegend .row{display:flex;gap:12px;align-items:baseline;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.zlegend .row b{font-family:var(--fm);font-weight:600;font-size:9.5px;letter-spacing:.2em;color:var(--fg);
+  border:1px solid var(--border);border-radius:6px;padding:4px 8px;white-space:nowrap}
+.zlegend .row b.y{color:var(--yellow);border-color:rgba(255,193,7,.35)}
+.zlegend .row b.g{color:var(--up);border-color:rgba(14,203,129,.35)}
+.zlegend .cap{margin-top:4px;color:var(--faint);font-size:12px;line-height:1.6}
+@media (max-width:640px){.mods{flex-direction:column}}
 @media (max-width:640px){.scene .what,.scene .live{display:none}.scene .name{width:auto;flex:1}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
 </style>
@@ -93,14 +121,16 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
         <path class="cls-2" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z"/>
       </svg>
     </span>
-    <span class="tagchip">SCENE KIT · 6 BOARDS</span>
+    <span class="tagchip">SCENE KIT · 6 BOARDS + MODULES</span>
   </header>
 
   <h1><span class="g">one design language,</span><br><span class="y">six scenes.</span></h1>
   <p class="lede">
     Every board below is a <b>standalone full-screen page</b> — open it directly, fill any window,
-    no frames, no wrappers. Same smile tokens, same type, same ticker spine.
-    Countdown defaults to <b>next 20:00 EAT</b>; pass <code>?t=21:30</code> to aim it anywhere else.
+    no frames, no wrappers. The <b>watermark</b>, the <b>ticker</b> and the <b>stingers</b> are not
+    baked into the scenes: they are <b>modules</b> — their own OBS browser sources, layered over any
+    scene, in any combination. Scenes keep the bottom 96px and the corners clear for them.
+    The zone map below is the law — future modules get their own slot on it.
   </p>
 
   <nav class="kit">
@@ -114,7 +144,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <a class="scene" href="brb.html">
       <span class="tag">BRB</span>
       <span class="name">Be Right Back</span>
-      <span class="what">Positions paused, away timer, breathing face in the spinner ring.</span>
+      <span class="what">Positions paused, breathing face, calm rings — the quick pause board.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
@@ -148,12 +178,19 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </a>
   </nav>
 
-  <p class="klabel"><span class="y">The originals</span>&nbsp;— stingers + ticker, back in the lineup</p>
+  <p class="klabel"><span class="y">Modules</span>&nbsp;— watermark · ticker · stingers, layered over any scene</p>
   <nav class="kit k2">
+    <a class="scene" href="watermark.html">
+      <span class="tag">WM</span>
+      <span class="name">Watermark</span>
+      <span class="what">The quiet identity — bare verbatim logo, 28px margins, still by default. ?corner=tl|tr|bl|br · ?size=s|m|l|xl · ?icon=1 · ?scrim=1 · ?anim=breathe.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
     <a class="scene" href="ticker.html">
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
-      <span class="what">The stingers-era merged pill — smile cap, masked marquee, pure market data by default; ?mode=offair adds sponsors + socials. Static content, one CSS loop.</span>
+      <span class="what">The stingers-era merged pill — smile cap, masked marquee, 1920×76 bottom dock. Pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
@@ -189,22 +226,40 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </a>
   </nav>
 
+  <div class="mods">
+    <div class="zmap" aria-hidden="true">
+      <i class="z wm tl"></i><i class="z wm tr"></i><i class="z wm bl"></i><i class="z wm br"></i>
+      <i class="z sg"></i><i class="z tk"></i>
+      <span class="zl tl2">WM</span><span class="zl tr2">WM</span>
+      <span class="zl bl2">WM</span><span class="zl br2">WM</span>
+      <span class="zl sg2">STINGERS</span>
+      <span class="zl tk2">TICKER · 96PX ZONE</span>
+    </div>
+    <div class="zlegend">
+      <div class="row"><b class="y">WATERMARK</b><span>corners, 28px margins — always on, still by default, its own OBS source over any scene.</span></div>
+      <div class="row"><b class="y">TICKER</b><span>bottom dock — the 96px zone every scene keeps clear; 1920×76 transparent source.</span></div>
+      <div class="row"><b class="g">STINGERS</b><span>center stage, transient — they fire over anything and leave. Streamer.bot-ready, HTML only.</span></div>
+      <div class="row"><b>SCENE</b><span>the full-bleed stage itself — content stays out of the module zones, so modules never collide with it and future modules inherit the map.</span></div>
+      <p class="cap">Compose freely: scene on the bottom layer, then watermark / ticker / stingers as separate sources above it. Nothing inside a scene ever fights a module again.</p>
+    </div>
+  </div>
+
   <div class="foot">
     <span class="f y">VERBATIM SMILE LOGO</span>
     <span class="f">CSS-ONLY MOTION</span>
     <span class="f">1 GATED INTERVAL MAX</span>
     <span class="f">ANY WINDOW SIZE</span>
     <span class="f">OBS-FRIENDLY</span>
-    <span class="f y">STINGERS + TICKER ON BOARD</span>
+    <span class="f y">SCENES + MODULES SYSTEM</span>
   </div>
   <p class="note">
     <b>Notes:</b> pages pause their clocks while the tab is hidden and respect
     <b>prefers-reduced-motion</b> (everything freezes into a clean static frame).
     The logo and face are the real <b>Smile-Logo.svg</b> paths inlined verbatim — no redraws.
-    Stingers are <b>Streamer.bot-ready</b>, HTML only: add <code>?sb=1</code> to the source URL
-    (they listen on Streamer.bot's WebSocket server for a custom event carrying
+    <b>Modules:</b> watermark and ticker are standalone transparent sources — add them once above
+    any scene in OBS. Stingers are <b>Streamer.bot-ready</b>, HTML only: add <code>?sb=1</code> to
+    the source URL (they listen on Streamer.bot's WebSocket server for a custom event carrying
     <code>{"smile":"&lt;recipe&gt;"}</code>), or trigger with <code>?type=&lt;recipe&gt;</code>.
-    The old demo-feed market bar is retired — this ticker is the era pill.
   </p>
 </div>
 </body>
