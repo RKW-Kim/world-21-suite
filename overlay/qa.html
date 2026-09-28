@@ -1,24 +1,32 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE · Q&amp;A</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* ── Q&A — restored: the original "rising bubbles" board (lab R3, 63197D0) ──
-   The take the room asked for by name: dark transparent comment bubbles
-   drifting from the bottom edge to the top, past the smile hub in its
-   dashed orbit ring. Not the cream-card take — THIS one. The spine (bg,
-   sparks, candle skyline) ships inline; watermark + ticker stay outside
-   the page as their own OBS modules (bottom 96px + corners stay clear). */
+/* ── Q&A — the original "rising bubbles" board (lab R3, 63197D0), refined ──
+   The take the room asked for by name, brought up to (and past) the current
+   lineup standard: dark transparent comment bubbles drifting bottom → top,
+   past the smile hub in its dashed orbit. Refinements: two depth layers,
+   per-bubble sway, cycling tagline, clock chip, plain-sight signature,
+   baked candle skyline (zero runtime JS for scenery). Every moving part is
+   pure compositor CSS — transform + opacity only. JS = one gated interval
+   for the clock + one-shot ?ep=. Watermark + ticker stay outside the page
+   as their own OBS modules: corners + bottom 96px stay clear. ──────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
-  --line:#2a2a2a; --muted:#8c8c8c; --paper:#ffffff;
+  --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
   --font-display:'Manrope',system-ui,sans-serif;
   --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:96px; /* bottom module zone — the ticker module docks here */
   --ease-out:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -26,6 +34,7 @@ html,body{height:100%}
 body{background:var(--ink);color:var(--paper);font-family:var(--font-body);
   overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 svg{display:block}
+::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 .bg{position:absolute;inset:0;z-index:-2;background:
   radial-gradient(1100px 640px at 74% 18%,rgba(255,193,7,.05),transparent 62%),
@@ -46,6 +55,8 @@ svg{display:block}
 .chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow)}
 .chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
   box-shadow:0 8px 28px rgba(255,193,7,.28)}
+.chip.mono{font-family:var(--font-mono);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
+.chip.mono b{color:var(--paper);font-weight:600}
 
 .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
   box-shadow:0 0 14px rgba(255,193,7,.9),0 0 4px rgba(255,193,7,1);opacity:0;
@@ -53,6 +64,7 @@ svg{display:block}
 @keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
+/* candle skyline — baked into the HTML, one CSS sway each, zero JS */
 #skyline{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
   -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
   -webkit-mask-composite:source-in;
@@ -72,57 +84,120 @@ svg{display:block}
 .scn{position:absolute;inset:0;z-index:2;overflow:hidden}
 @keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
 @keyframes spinCW{to{transform:rotate(360deg)}}
+@keyframes spinCCW{to{transform:rotate(-360deg)}}
 @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
-.topbar{position:absolute;top:60px;left:90px;right:90px;display:flex;
+.topbar{position:absolute;top:60px;left:90px;right:90px;display:flex;gap:12px;
   justify-content:flex-end;align-items:center;z-index:6} /* top-left stays clear: watermark module docks here */
 .livechip .dot{width:9px;height:9px;border-radius:50%;background:var(--up);animation:dotPulse 1.7s ease-in-out infinite}
 
-[data-take="a"] .head{position:absolute;top:148px;left:0;right:0;text-align:center;z-index:5}
-[data-take="a"] h1{font-family:var(--font-display);font-weight:800;font-size:76px;
+.head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
+.head h1{font-family:var(--font-display);font-weight:800;font-size:76px;
   letter-spacing:-.03em;line-height:1;color:var(--paper)}
-[data-take="a"] h1 .y{color:var(--yellow)}
-[data-take="a"] .row{margin-top:26px;display:flex;gap:14px;justify-content:center}
-.hubA{position:absolute;top:366px;left:calc(50% - 180px);width:360px;height:360px;
+.head h1 .y{color:var(--yellow)}
+.head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
+
+/* cycling tagline — the lineup signature move, pure CSS */
+.tag{position:relative;height:1.6em;width:min(88vw,720px);margin:20px auto 0;overflow:hidden}
+.tag span{position:absolute;inset:0;display:block;line-height:1.6em;text-align:center;
+  font-family:var(--font-display);font-weight:500;font-size:clamp(15px,2vh,20px);
+  color:var(--muted);opacity:0;transform:translateY(12px);animation:tagCycle 12s infinite}
+.tag span b{color:var(--yellow);font-weight:700}
+.tag span:nth-child(2){animation-delay:4s}
+.tag span:nth-child(3){animation-delay:8s}
+@keyframes tagCycle{0%{opacity:0;transform:translateY(12px)}3%,27%{opacity:1;transform:none}
+  33%,100%{opacity:0;transform:translateY(-12px)}}
+
+.hubA{position:absolute;top:392px;left:calc(50% - 180px);width:360px;height:360px;
   display:grid;place-items:center;z-index:3}
 .hubA::before{content:"";position:absolute;inset:0;border:2.5px dashed rgba(255,193,7,.45);
   border-radius:50%;animation:spinCW 24s linear infinite}
-.hubA::after{content:"";position:absolute;inset:24px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
+.hubA::after{content:"";position:absolute;inset:24px;border:1px solid rgba(255,193,7,.14);
+  border-radius:50%;animation:spinCCW 40s linear infinite}
+.hubA .glow{position:absolute;inset:-60px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,193,7,.13),transparent 62%)}
 .hubA .face{width:260px;height:260px;animation:faceBob 5.6s ease-in-out infinite;
   filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
 .hubA .face svg{width:100%;height:100%}
 
-/* the comment bubbles — dark, transparent, tails — rising bottom → top */
-.bub{position:absolute;z-index:2;max-width:280px;background:rgba(20,20,20,.9);
+/* the comment bubbles — dark, transparent, tails — rising bottom → top.
+   depth: .far bubbles ride a slightly smaller scale (--sc) and sit dimmer. */
+.bub{position:absolute;z-index:2;max-width:300px;
+  animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);will-change:transform}
+.sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s);will-change:transform}
+.bcard{position:relative;background:rgba(20,20,20,.9);
   border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:13px 18px 15px;
-  box-shadow:0 12px 34px rgba(0,0,0,.42);
-  animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s)}
-.bub::after{content:"";position:absolute;bottom:-7px;left:18px;width:13px;height:13px;
+  box-shadow:0 12px 34px rgba(0,0,0,.42)}
+.bcard::after{content:"";position:absolute;bottom:-7px;left:18px;width:13px;height:13px;
   background:rgba(20,20,20,.9);border-radius:2px;transform:rotate(45deg);
   border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-.bub.flip{border-radius:18px 18px 4px 18px}
-.bub.flip::after{left:auto;right:18px;border:0;border-left:1px solid var(--line);
+.bcard.flip{border-radius:18px 18px 4px 18px}
+.bcard.flip::after{left:auto;right:18px;border:0;border-left:1px solid var(--line);
   border-bottom:1px solid var(--line)}
-.bub .h{display:block;font-family:var(--font-display);font-weight:700;font-size:12px;
-  letter-spacing:.1em;color:var(--yellow);margin-bottom:5px;text-transform:uppercase}
-.bub .q{font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper)}
+.bcard .h{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:700;
+  font-size:12px;letter-spacing:.1em;color:var(--yellow);margin-bottom:5px;text-transform:uppercase}
+.bcard .h .qno{font-family:var(--font-mono);font-weight:400;font-size:10px;letter-spacing:.14em;
+  color:var(--muted)}
+.bcard .q{font-family:var(--font-body);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper)}
 @keyframes bubRise{
-  0%{transform:translateY(430px) rotate(var(--tilt,0deg));opacity:0}
+  0%{transform:translateY(460px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
   10%{opacity:1}
   80%{opacity:1}
-  100%{transform:translateY(-830px) rotate(var(--tilt,0deg));opacity:0}
+  100%{transform:translateY(-860px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
 }
+@keyframes bubSway{from{transform:translateX(calc(var(--sw,12px) * -1))}to{transform:translateX(var(--sw,12px))}}
+.far .sway{opacity:.78}
+.far .bcard .q{font-size:15.5px}
+
+/* plain-sight brand signature — the fallback mark when the watermark
+   module isn't layered over this scene */
+.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38);
+  animation:riseIn .9s var(--ease-out) .7s both}
+.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+
+@media (max-width:1100px){.bub:nth-child(n+8){display:none}}
+@media (max-width:860px){.bub:nth-child(n+6){display:none}}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
   .rise{animation-delay:0s!important}
   .bub{animation:none;opacity:1}
-  .spark{opacity:.7}
+  .sway{animation:none}
+  .cndl{animation:none;opacity:.62}
+  .spark{opacity:.6}
+  .tag span:first-child{opacity:1;transform:none}
+  .hubA .face{animation:none}
 }
 </style></head><body>
 <div class="stage">
   <div class="bg"></div>
-  <div id="skyline"></div>
+  <div id="skyline">
+    <span class="cndl" style="left:6px;width:26px;height:128px;background:#0ECB81;--d:.5s"></span>
+    <span class="cndl" style="left:88px;width:30px;height:214px;background:#F6465D;--d:.57s"></span>
+    <span class="cndl" style="left:170px;width:22px;height:92px;background:#2e2e2e;--d:.64s"></span>
+    <span class="cndl" style="left:252px;width:34px;height:288px;background:#0ECB81;--d:.71s"></span>
+    <span class="cndl" style="left:336px;width:24px;height:156px;background:#F6465D;--d:.78s"></span>
+    <span class="cndl" style="left:416px;width:30px;height:236px;background:#FFC107;--d:.85s"></span>
+    <span class="cndl" style="left:500px;width:26px;height:108px;background:#0ECB81;--d:.92s"></span>
+    <span class="cndl" style="left:582px;width:32px;height:196px;background:#F6465D;--d:.99s"></span>
+    <span class="cndl" style="left:668px;width:24px;height:74px;background:#2e2e2e;--d:1.06s"></span>
+    <span class="cndl" style="left:748px;width:30px;height:252px;background:#0ECB81;--d:1.13s"></span>
+    <span class="cndl" style="left:834px;width:26px;height:168px;background:#F6465D;--d:1.2s"></span>
+    <span class="cndl" style="left:914px;width:22px;height:118px;background:#2e2e2e;--d:1.27s"></span>
+    <span class="cndl" style="left:996px;width:34px;height:304px;background:#0ECB81;--d:1.34s"></span>
+    <span class="cndl" style="left:1082px;width:28px;height:142px;background:#F6465D;--d:1.41s"></span>
+    <span class="cndl" style="left:1162px;width:24px;height:88px;background:#2e2e2e;--d:1.48s"></span>
+    <span class="cndl" style="left:1244px;width:32px;height:228px;background:#FFC107;--d:1.55s"></span>
+    <span class="cndl" style="left:1328px;width:26px;height:176px;background:#0ECB81;--d:1.62s"></span>
+    <span class="cndl" style="left:1410px;width:30px;height:262px;background:#F6465D;--d:1.69s"></span>
+    <span class="cndl" style="left:1494px;width:22px;height:104px;background:#2e2e2e;--d:1.76s"></span>
+    <span class="cndl" style="left:1576px;width:34px;height:296px;background:#0ECB81;--d:1.83s"></span>
+    <span class="cndl" style="left:1662px;width:26px;height:148px;background:#F6465D;--d:1.9s"></span>
+    <span class="cndl" style="left:1744px;width:30px;height:210px;background:#2e2e2e;--d:1.97s"></span>
+    <span class="cndl" style="left:1828px;width:24px;height:122px;background:#FFC107;--d:2.04s"></span>
+    <span class="cndl" style="left:1906px;width:28px;height:186px;background:#0ECB81;--d:2.11s"></span>
+  </div>
 
   <section class="scn" data-take="a">
     <span class="spark" style="left:7%;top:20%;--d:0s"></span>
@@ -133,54 +208,84 @@ svg{display:block}
     <span class="spark" style="left:63%;top:80%;--d:1.8s"></span>
 
     <div class="topbar">
+      <span class="chip mono rise" style="--rd:.2s"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
       <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>Q&amp;A · FLOOR OPEN</span>
     </div>
 
     <div class="head">
       <h1 class="rise" style="--rd:.1s">the floor is <span class="y">yours</span>.</h1>
+      <p class="tag" aria-hidden="true">
+        <span>grab the <b>mic</b> — politely.</span>
+        <span>your questions, <b>answered live</b>.</span>
+        <span>no dumb questions — <b>only good ones</b>.</span>
+      </p>
       <div class="row">
         <span class="chip solid rise" style="--rd:.2s">drop questions in chat</span>
-        <span class="chip ghost rise" style="--rd:.3s">ep <span data-ep>128</span></span>
+        <span class="chip ghost mono rise" style="--rd:.3s">EP <span data-ep>128</span></span>
       </div>
     </div>
 
-    <div class="hubA rise" style="--rd:.25s"><div class="face" aria-hidden="true">
-      <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
-      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
-        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
-        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
-        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
-        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
-      </svg>
-    </div></div>
+    <div class="hubA rise" style="--rd:.25s">
+      <span class="glow"></span>
+      <div class="face" aria-hidden="true">
+        <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
+        <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+          <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+          <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+          <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+          <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+        </svg>
+      </div>
+    </div>
 
-    <div class="bub" style="left:110px;top:520px;--bd:14s;--bdel:-3s;--tilt:-2deg">
-      <span class="h">@wanjiku</span><span class="q">how did the show start?</span>
+    <div class="bub" style="left:110px;top:520px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
+      <div class="sway"><div class="bcard"><span class="h">@wanjiku <i class="qno">Q·01</i></span><span class="q">how did the show start?</span></div></div>
     </div>
-    <div class="bub flip" style="left:330px;top:710px;--bd:17s;--bdel:-9s;--tilt:2deg">
-      <span class="h">@denno</span><span class="q">screen share setup tour?</span>
+    <div class="bub" style="left:318px;top:760px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
+      <div class="sway"><div class="bcard flip"><span class="h">@denno <i class="qno">Q·02</i></span><span class="q">screen share setup tour?</span></div></div>
     </div>
-    <div class="bub" style="left:524px;top:420px;--bd:11.5s;--bdel:-5s;--tilt:-1.5deg">
-      <span class="h">@kimanzi</span><span class="q">best part of today's ep?</span>
+    <div class="bub" style="left:560px;top:430px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
+      <div class="sway"><div class="bcard"><span class="h">@kimanzi <i class="qno">Q·03</i></span><span class="q">best part of today's ep?</span></div></div>
     </div>
-    <div class="bub flip" style="left:1235px;top:440px;--bd:12.5s;--bdel:-1.5s;--tilt:1.5deg">
-      <span class="h">@achieng</span><span class="q">hot takes round when?</span>
+    <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
+      <div class="sway"><div class="bcard flip"><span class="h">@achieng <i class="qno">Q·04</i></span><span class="q">hot takes round when?</span></div></div>
     </div>
-    <div class="bub" style="left:1465px;top:630px;--bd:16s;--bdel:-11s;--tilt:-2deg">
-      <span class="h">@biru</span><span class="q">what are you drinking?</span>
+    <div class="bub" style="left:1440px;top:660px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
+      <div class="sway"><div class="bcard"><span class="h">@biru <i class="qno">Q·05</i></span><span class="q">what are you drinking?</span></div></div>
     </div>
-    <div class="bub flip" style="left:1650px;top:450px;--bd:13s;--bdel:-7s;--tilt:2deg">
-      <span class="h">@njoro</span><span class="q">next guest?</span>
+    <div class="bub" style="left:1660px;top:430px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
+      <div class="sway"><div class="bcard flip"><span class="h">@njoro <i class="qno">Q·06</i></span><span class="q">next guest?</span></div></div>
     </div>
+    <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
+      <div class="sway"><div class="bcard"><span class="h">@shiko</span><span class="q">chart of the week pick?</span></div></div>
+    </div>
+    <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
+      <div class="sway"><div class="bcard flip"><span class="h">@moseh</span><span class="q">can we get a Q&amp;A playlist?</span></div></div>
+    </div>
+    <div class="bub far" style="left:60px;top:300px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
+      <div class="sway"><div class="bcard"><span class="h">@teo</span><span class="q">team blue or team gold?</span></div></div>
+    </div>
+
+    <p class="sig">smile<b>.co.ke</b></p>
   </section>
 </div>
 <script>
-/* one tiny job: episode number from ?ep= — nothing else runs here.
+/* one tiny job: clock (gated interval) + one-shot ?ep= — nothing else runs here.
    every moving part on this page is pure CSS on the compositor. */
 (function(){
+  var EAT=3*3600*1000; /* UTC+3 */
+  function two(n){return String(n).padStart(2,'0')}
   var eps=(location.search.match(/[?&]ep=([^&]+)/)||[])[1];
-  if(!eps)return;
-  document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+  if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+
+  var ck=document.getElementById('clock'),lastMin=-1;
+  function tick(){
+    if(document.hidden)return;
+    var m=Math.floor((Date.now()+EAT)/60000)%1440;
+    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
+  }
+  tick();setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
 })();
 </script>
 </body></html>
