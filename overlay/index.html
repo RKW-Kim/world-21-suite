@@ -182,7 +182,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <a class="scene" href="speaking.html">
       <span class="tag">MIC</span>
       <span class="name">Now Speaking</span>
-      <span class="what">The studio — smile in headphones at the boom mic, five emoji co-hosts, and an instant voice-memo waveform above every head. The huge LED wall is the reserved zone for banners, video or your screen share. ?names= · ?emojis= · ?ad= · ?adimg= · ?screen=1 · ?noad=1.</span>
+      <span class="what">The hollow studio — a fully transparent overlay. The smile goes 2.5D (true translateZ extrusion + swing) in premium cans at the boom mic; five emoji co-hosts lean in and their desk underglow, name tag and mic LED light in their own measured colour when they talk. Huge media wall for banners / video / screen share, reserved chat column, and the bottom sized to the exact ticker dock. ?names= · ?emojis= · ?ad= · ?adimg= · ?screen=1 · ?noad=1 · ?chat=right · ?nochat=1 · ?bg=studio · ?guide=1.</span>
       <span class="live red"></span>
       <span class="go">OPEN →</span>
     </a>
@@ -215,6 +215,48 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
       <span class="what">The stingers-era merged pill — smile cap, masked marquee, 1920×76 bottom dock. Pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-b.html">
+      <span class="tag">TK·B</span>
+      <span class="name">Ticker — Signal</span>
+      <span class="what">Terminal readout — black cells with hairline dividers, blinking block cursor, slow amber scan shimmer. Same 1920×76 dock + ?mode=offair · ?scale=.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-c.html">
+      <span class="tag">TK·C</span>
+      <span class="name">Ticker — Prism</span>
+      <span class="what">Skewed broadcast chyron — yellow blade, slash separators, diagonal sheen sweep. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-d.html">
+      <span class="tag">TK·D</span>
+      <span class="name">Ticker — Orbit</span>
+      <span class="what">Naked type over the stream — no pill at all, a comet scanner rides the hairline rail, text-shadow carries legibility. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-e.html">
+      <span class="tag">TK·E</span>
+      <span class="name">Ticker — Circuit</span>
+      <span class="what">HUD ruler — tick marks top and bottom, breathing level bars per cell, a cool sweep gliding the strip. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-f.html">
+      <span class="tag">TK·F</span>
+      <span class="name">Ticker — Aurora</span>
+      <span class="what">Glass pill over a drifting multi-stop gradient — the calm one; the backdrop breathes while the marquee rolls. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="ticker-g.html">
+      <span class="tag">TK·G</span>
+      <span class="name">Ticker — Hairline</span>
+      <span class="what">The quiet luxury strip — two rules, mono type, dash separators and one breathing yellow square. Same dock + ?mode=offair · ?scale=.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
@@ -268,7 +310,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </div>
     <div class="zlegend">
       <div class="row"><b class="y">WATERMARK</b><span>corners, 28px margins — always on, still by default, its own OBS source over any scene.</span></div>
-      <div class="row"><b class="y">TICKER</b><span>bottom dock — the 96px zone every scene keeps clear; 1920×76 transparent source.</span></div>
+      <div class="row"><b class="y">TICKER</b><span>bottom dock — 1920×76 transparent source, seven design takes (ticker → ticker-g); the speaking scene sizes its bottom to the exact dock.</span></div>
       <div class="row"><b class="g">STINGERS</b><span>center stage, transient — they fire over anything and leave. Streamer.bot-ready, HTML only.</span></div>
       <div class="row"><b class="y">COMING-UP</b><span>center stage, self-clearing bumper — what's next, by who, at when. Fires on load; reload to re-fire.</span></div>
       <div class="row"><b>SCENE</b><span>the full-bleed stage itself — content stays out of the module zones, so modules never collide with it and future modules inherit the map.</span></div>
@@ -325,8 +367,13 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <code>?what=</code> (default: notifications-on bell); intermission B takes
     <code>?next=</code> + <code>?host=</code>; the coming-up bumper takes
     <code>?next=</code> + <code>?who=</code> + <code>?when=</code> + <code>?hold=1</code>;
-    the studio (speaking) takes <code>?names=</code> + <code>?emojis=</code> +
-    <code>?ad=</code> / <code>?adimg=</code> / <code>?screen=1</code> / <code>?noad=1</code>;
+    the hollow studio (speaking) takes <code>?names=</code> + <code>?emojis=</code> +
+    <code>?ad=</code> / <code>?adimg=</code> / <code>?screen=1</code> / <code>?noad=1</code> +
+    <code>?chat=right</code> / <code>?nochat=1</code> + <code>?bg=studio</code> (repaint the room
+    for previews — default is a fully transparent overlay) + <code>?guide=1</code> (outlines the
+    reserved chat zone and the exact 76px ticker dock; setup only);
+    the ticker family (ticker → ticker-g) all share the 1920×76 dock and
+    <code>?mode=offair</code> + <code>?scale=</code>;
     end-credits takes <code>?ep=</code> + <code>?next=</code> + <code>?host=</code> + <code>?what=</code>.
   </p>
 </div>
