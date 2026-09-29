@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
+<title>SMILE · ticker C — PRISM skewed chyron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFC107; --ink:#0a0a0a; --up:#0ECB81; --down:#F6465D;
+  --fg:#F2F5FC; --meta:#9AA4BC;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --tks:1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:76px;overflow:hidden;background:transparent}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+::selection{background:#FFCE00;color:#1F1702}
+.tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:35;
+  pointer-events:none;padding:0 12px}
+.tk{display:flex;align-items:center;white-space:nowrap;will-change:transform;
+  animation:roll 36s linear infinite}
+.tk[hidden]{display:none}
+@keyframes roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.it{display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:12.5px;
+  font-weight:600;color:var(--fg)}
+.it .s{color:var(--meta);letter-spacing:.06em}
+.it .num{font-variant-numeric:tabular-nums}
+.it .up{color:var(--up)} .it .dn{color:var(--down)}
+.chyron{width:fit-content;max-width:1896px;height:54px;display:flex;align-items:stretch;
+  overflow:hidden;transform:scale(var(--tks));transform-origin:50% 50%;
+  background:rgba(10,12,18,.9);
+  box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.blade{flex:none;display:flex;align-items:center;gap:8px;padding:0 30px 0 18px;
+  background:linear-gradient(160deg,#FFDE5A,#FFC107 55%,#E8A800);color:#1F1702;
+  clip-path:polygon(0 0,100% 0,calc(100% - 18px) 100%,0 100%)}
+.blade svg{width:21px;height:21px;display:block}
+.blade .t{font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.2em}
+.body{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent);
+  mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent)}
+.tk{gap:0;padding:0}
+.slash{flex:none;width:2px;height:18px;margin:0 13px;transform:skewX(-24deg);
+  background:rgba(255,206,0,.5);box-shadow:0 0 8px rgba(255,206,0,.35)}
+.it .s{text-transform:uppercase;font-size:10.5px;letter-spacing:.14em}
+.sheen{position:absolute;top:-20%;bottom:-20%;left:0;width:26%;z-index:3;pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.09) 45%,transparent 70%);
+  transform:translateX(-160%) skewX(-18deg);animation:sheen 6.5s cubic-bezier(.3,.6,.4,1) 1.5s infinite}
+@keyframes sheen{0%{transform:translateX(-160%) skewX(-18deg)}
+  55%,100%{transform:translateX(520%) skewX(-18deg)}}
+.it.sponsor{background:rgba(255,206,0,.12);box-shadow:inset 0 0 0 1px rgba(255,206,0,.35);
+  border-radius:3px;padding:6px 14px;color:#FFCE00;transform:skewX(-8deg)}
+.it.social .s{color:#FFCE00}
+@media (prefers-reduced-motion:reduce){.tk,.tk *{animation:none !important}}
+</style>
+</head>
+<body>
+<div class="tkWrap">
+  <div class="chyron">
+    <div class="blade">
+      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg" aria-label="smile">
+  <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#0a0a0a"/>
+  <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#1F1702"/>
+  <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#1F1702"/>
+  <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#1F1702"/>
+</svg>
+      <span class="t">SMILE</span>
+    </div>
+    <div class="body">
+      <i class="sheen"></i>
+      <div class="tk" id="tk-market">
+        <span class="it"><span class="s">USD/KES</span><span class="num">129.42</span><span class="num up">+0.31%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">NSE 20</span><span class="num">82.41</span><span class="num up">+0.9%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">SCOM</span><span class="num">28.75 KES</span><span class="num up">+4.2%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">BTC</span><span class="num">97,240</span><span class="num dn">-1.2%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">XAU</span><span class="num">2,412</span><span class="num up">+0.6%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">EQTY</span><span class="num">52.10 KES</span><span class="num up">+2.8%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">KCB</span><span class="num">44.60 KES</span><span class="num up">+2.1%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">EABL</span><span class="num">224.00 KES</span><span class="num dn">-1.4%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">EUR/KES</span><span class="num">140.85</span><span class="num dn">-0.18%</span></span><i class="slash"></i>
+        <span class="it" aria-hidden="true"><span class="s">USD/KES</span><span class="num">129.42</span><span class="num up">+0.31%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">NSE 20</span><span class="num">82.41</span><span class="num up">+0.9%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">SCOM</span><span class="num">28.75 KES</span><span class="num up">+4.2%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">BTC</span><span class="num">97,240</span><span class="num dn">-1.2%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">XAU</span><span class="num">2,412</span><span class="num up">+0.6%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">EQTY</span><span class="num">52.10 KES</span><span class="num up">+2.8%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">KCB</span><span class="num">44.60 KES</span><span class="num up">+2.1%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">EABL</span><span class="num">224.00 KES</span><span class="num dn">-1.4%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">EUR/KES</span><span class="num">140.85</span><span class="num dn">-0.18%</span></span><i class="slash" aria-hidden="true"></i>
+      </div>
+      <div class="tk" id="tk-offair" hidden>
+        <span class="it"><span class="s">USD/KES</span><span class="num">129.42</span><span class="num up">+0.31%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">BTC</span><span class="num">97,240</span><span class="num dn">-1.2%</span></span><i class="slash"></i>
+        <span class="it sponsor"><span class="s">AD</span>SMILE QUANTUM — INVEST FROM 100 KES</span><i class="slash"></i>
+        <span class="it social"><span class="s">#TradeSmile</span>tag your setups</span><i class="slash"></i>
+        <span class="it"><span class="s">NSE 20</span><span class="num">82.41</span><span class="num up">+0.9%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">XAU</span><span class="num">2,412</span><span class="num up">+0.6%</span></span><i class="slash"></i>
+        <span class="it sponsor"><span class="s">AD</span>TREASURY BOND AUCTION — 16.8% YTM</span><i class="slash"></i>
+        <span class="it social"><span class="s">@smile.co.ke</span>the desk, everywhere</span><i class="slash"></i>
+        <span class="it"><span class="s">EQTY</span><span class="num">52.10 KES</span><span class="num up">+2.8%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">SCOM</span><span class="num">28.75 KES</span><span class="num up">+4.2%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">KCB</span><span class="num">44.60 KES</span><span class="num up">+2.1%</span></span><i class="slash"></i>
+        <span class="it"><span class="s">EABL</span><span class="num">224.00 KES</span><span class="num dn">-1.4%</span></span><i class="slash"></i>
+        <span class="it" aria-hidden="true"><span class="s">USD/KES</span><span class="num">129.42</span><span class="num up">+0.31%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">BTC</span><span class="num">97,240</span><span class="num dn">-1.2%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it sponsor" aria-hidden="true"><span class="s">AD</span>SMILE QUANTUM — INVEST FROM 100 KES</span><i class="slash" aria-hidden="true"></i>
+        <span class="it social" aria-hidden="true"><span class="s">#TradeSmile</span>tag your setups</span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">NSE 20</span><span class="num">82.41</span><span class="num up">+0.9%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">XAU</span><span class="num">2,412</span><span class="num up">+0.6%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it sponsor" aria-hidden="true"><span class="s">AD</span>TREASURY BOND AUCTION — 16.8% YTM</span><i class="slash" aria-hidden="true"></i>
+        <span class="it social" aria-hidden="true"><span class="s">@smile.co.ke</span>the desk, everywhere</span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">EQTY</span><span class="num">52.10 KES</span><span class="num up">+2.8%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">SCOM</span><span class="num">28.75 KES</span><span class="num up">+4.2%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">KCB</span><span class="num">44.60 KES</span><span class="num up">+2.1%</span></span><i class="slash" aria-hidden="true"></i>
+        <span class="it" aria-hidden="true"><span class="s">EABL</span><span class="num">224.00 KES</span><span class="num dn">-1.4%</span></span><i class="slash" aria-hidden="true"></i>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* module params only — no timers, no loops. ?mode=offair shows sponsors + socials; ?scale resizes. */
+(function(){
+  if((location.search.match(/[?&]mode=(offair|market)/)||[])[1]==='offair'){
+    document.getElementById('tk-market').hidden=true;
+    document.getElementById('tk-offair').hidden=false;
+  }
+  var sc=parseFloat((location.search.match(/[?&]scale=([\d.]+)/)||[])[1]);
+  if(!isNaN(sc)&&sc>0)document.documentElement.style.setProperty('--tks',Math.min(3,sc));
+})();
+</script>
+</body>
+</html>
