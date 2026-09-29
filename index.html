@@ -122,16 +122,18 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
         <path class="cls-2" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z"/>
       </svg>
     </span>
-    <span class="tagchip">SCENE KIT · 6 BOARDS + MODULES</span>
+    <span class="tagchip">SCENE KIT · 8 BOARDS + MODULES</span>
   </header>
 
-  <h1><span class="g">one design language,</span><br><span class="y">six scenes.</span></h1>
+  <h1><span class="g">one design language,</span><br><span class="y">eight scenes.</span></h1>
   <p class="lede">
     Every board below is a <b>standalone full-screen page</b> — open it directly, fill any window,
-    no frames, no wrappers. The <b>watermark</b>, the <b>ticker</b> and the <b>stingers</b> are not
-    baked into the scenes: they are <b>modules</b> — their own OBS browser sources, layered over any
-    scene, in any combination. Scenes keep the bottom 96px and the corners clear for them.
-    The zone map below is the law — future modules get their own slot on it.
+    no frames, no wrappers. The <b>watermark</b>, the <b>ticker</b>, the <b>stingers</b> and the
+    <b>coming-up bumper</b> are not baked into the scenes: they are <b>modules</b> — their own OBS
+    browser sources, layered over any scene, in any combination. Scenes keep the bottom 96px and
+    the corners clear for them. Every board also speaks the <b>schedule contract</b> — URL params
+    like <code>?plan=</code>, <code>?who=</code>, <code>?next=</code> — so Streamer.bot can say
+    what's coming, by who and when. The zone map below is the law.
   </p>
 
   <nav class="kit">
@@ -177,6 +179,13 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
       <span class="live red"></span>
       <span class="go">OPEN →</span>
     </a>
+    <a class="scene" href="speaking.html">
+      <span class="tag">MIC</span>
+      <span class="name">Now Speaking</span>
+      <span class="what">The voice room — red ON AIR lamp, rippling mic frame, stylised equaliser, crew chips for every shy voice. ?names=Alice,Bob · ?rotate=6 · ?active=2.</span>
+      <span class="live red"></span>
+      <span class="go">OPEN →</span>
+    </a>
     <a class="scene" href="end.html">
       <span class="tag">END</span>
       <span class="name">Session Closed</span>
@@ -199,6 +208,13 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
       <span class="what">The stingers-era merged pill — smile cap, masked marquee, 1920×76 bottom dock. Pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
+      <span class="live amber"></span>
+      <span class="go">OPEN →</span>
+    </a>
+    <a class="scene" href="coming-up.html">
+      <span class="tag">UP</span>
+      <span class="name">Coming Up Next</span>
+      <span class="what">The bumper — UP NEXT fires center stage with the title, host and time, then clears itself off. ?next= · ?who= · ?when= · ?hold=1 to pin.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
@@ -247,6 +263,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
       <div class="row"><b class="y">WATERMARK</b><span>corners, 28px margins — always on, still by default, its own OBS source over any scene.</span></div>
       <div class="row"><b class="y">TICKER</b><span>bottom dock — the 96px zone every scene keeps clear; 1920×76 transparent source.</span></div>
       <div class="row"><b class="g">STINGERS</b><span>center stage, transient — they fire over anything and leave. Streamer.bot-ready, HTML only.</span></div>
+      <div class="row"><b class="y">COMING-UP</b><span>center stage, self-clearing bumper — what's next, by who, at when. Fires on load; reload to re-fire.</span></div>
       <div class="row"><b>SCENE</b><span>the full-bleed stage itself — content stays out of the module zones, so modules never collide with it and future modules inherit the map.</span></div>
       <p class="cap">Compose freely: scene on the bottom layer, then watermark / ticker / stingers as separate sources above it. Nothing inside a scene ever fights a module again.</p>
     </div>
@@ -281,6 +298,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <span class="f">ANY WINDOW SIZE</span>
     <span class="f">OBS-FRIENDLY</span>
     <span class="f y">SCENES + MODULES SYSTEM</span>
+    <span class="f y">SCHEDULE CONTRACT</span>
     <span class="f y">SMILE MOTION LAB</span>
     <span class="f y">SCENE MUSEUM</span>
   </div>
@@ -295,6 +313,11 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     any scene in OBS. Stingers are <b>Streamer.bot-ready</b>, HTML only: add <code>?sb=1</code> to
     the source URL (they listen on Streamer.bot's WebSocket server for a custom event carrying
     <code>{"smile":"&lt;recipe&gt;"}</code>), or trigger with <code>?type=&lt;recipe&gt;</code>.
+    <b>Schedule contract:</b> starting-soon takes <code>?plan=</code> + <code>?who=</code>
+    (default: “no plan — just vibes”); end takes <code>?next=</code> + <code>?host=</code> +
+    <code>?what=</code> (default: notifications-on bell); intermission B takes
+    <code>?next=</code> + <code>?host=</code>; the coming-up bumper takes
+    <code>?next=</code> + <code>?who=</code> + <code>?when=</code> + <code>?hold=1</code>.
   </p>
 </div>
 </body>

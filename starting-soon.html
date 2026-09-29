@@ -92,6 +92,21 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 @keyframes tagCycle{0%{opacity:0;transform:translateY(12px)}3%,27%{opacity:1;transform:none}
   33%,100%{opacity:0;transform:translateY(-12px)}}
 
+/* today slate — what today's session is, who's expected, or the honest default.
+   ?plan=Trivia Night & ?who=Alice,Bob → "TODAY · Trivia Night — with Alice · Bob"
+   no params → "TODAY · no plan — just vibes" (a normal stream, zero pretence). */
+.today{display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;justify-content:center;
+  max-width:min(88vw,780px);border:1px solid var(--border);border-radius:14px;
+  background:rgba(14,14,17,.62);padding:10px 20px;
+  animation:rise .8s cubic-bezier(.2,.9,.3,1) .36s both}
+.today .tk{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.3em;
+  color:var(--yellow);text-transform:uppercase;flex:none;transform:translateY(-1px)}
+.today .tv{font-family:var(--fd);font-weight:500;font-size:clamp(13px,2vh,16px);
+  color:var(--muted);line-height:1.5}
+.today .tv b{color:var(--fg);font-weight:600}
+.today .tv .sep{color:rgba(255,193,7,.55);margin:0 7px;font-weight:600}
+@media (max-height:560px){.today{display:none}}
+
 /* ── countdown zone: tiles cross-fade into the ABOUT TO START hold ──
    default (no ?t=): hold state immediately. ?t=90 or ?t=05:00 or ?t=1:05:00
    counts down once, then holds — the board never names a clock time. */
@@ -222,6 +237,11 @@ html[data-hold="1"] .hold{opacity:1;transform:none}
       <span>Something <b>big</b> is loading.</span>
     </p>
 
+    <div class="today" id="today">
+      <span class="tk">Today</span>
+      <span class="tv" id="todayV"></span>
+    </div>
+
     <div class="cdzone">
       <div class="cdcol" id="cdWrap">
         <div class="cd">
@@ -282,6 +302,32 @@ html[data-hold="1"] .hold{opacity:1;transform:none}
 (function(){
   var EAT=3*3600*1000; /* UTC+3 */
   function two(n){return String(n).padStart(2,'0')}
+  function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]+)'))||[])[1]}
+  function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+
+  /* today slate — one-shot textContent build, never innerHTML.
+     ?plan=Quiz Friday  ?who=Alice,Bob,Cyro  ·  default: no plan, just vibes */
+  (function buildToday(){
+    var v=document.getElementById('todayV');
+    var plan=dec(get('plan')||'').trim();
+    var whoRaw=dec(get('who')||'').trim();
+    v.textContent='';
+    if(!plan&&!whoRaw){
+      v.appendChild(document.createTextNode('no plan \u2014 '));
+      var b=document.createElement('b');b.textContent='just vibes';v.appendChild(b);
+      return;
+    }
+    if(plan){var bp=document.createElement('b');bp.textContent=plan;v.appendChild(bp);}
+    var names=whoRaw?whoRaw.split(',').map(function(s){return s.trim()})
+      .filter(function(s){return s.length>0}).slice(0,6):[];
+    if(names.length){
+      v.appendChild(document.createTextNode(plan?' \u2014 with ':'with '));
+      names.forEach(function(nm,i){
+        if(i>0){var s=document.createElement('span');s.className='sep';s.textContent='\u00b7';v.appendChild(s);}
+        var b=document.createElement('b');b.textContent=nm;v.appendChild(b);
+      });
+    }
+  })();
 
   var ck=document.getElementById('clock'),lastMin=-1;
   function tickClock(){

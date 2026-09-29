@@ -224,7 +224,7 @@ html[data-hold="1"] .stv .stA{opacity:0;transform:translateY(-8px)}
         </div>
         <div class="drow">
           <span class="k">Next session</span><span class="lead"></span>
-          <span class="v">Episode <b data-ep>128</b> · Markets Desk</span>
+          <span class="v">Episode <b data-ep>128</b><span id="nxTail"> · Markets Desk</span></span>
         </div>
         <div class="drow">
           <span class="k">Status</span><span class="lead"></span>
@@ -256,6 +256,20 @@ html[data-hold="1"] .stv .stA{opacity:0;transform:translateY(-8px)}
 
   var eps=(location.search.match(/[?&]ep=([^&]+)/)||[])[1];
   if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
+
+  /* schedule wire — ?next=Trivia Night & ?host=Alice retitle the NEXT SESSION row.
+     one-shot, textContent only. */
+  (function nx(){
+    function g(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]+)'))||[])[1]}
+    function d(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+    var nxt=d(g('next')||'').trim(),hst=d(g('host')||'').trim();
+    if(!nxt&&!hst)return;
+    var tail=document.getElementById('nxTail');if(!tail)return;
+    var t=' \u00b7 ';
+    if(nxt)t+=nxt;
+    if(hst)t+=(nxt?' \u2014 w/ ':'w/ ')+hst;
+    tail.textContent=t;
+  })();
 
   var ck=document.getElementById('clock'),lastMin=-1;
   function tickClock(){
