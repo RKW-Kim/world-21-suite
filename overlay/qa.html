@@ -18,7 +18,7 @@
    baked candle skyline (zero runtime JS for scenery). Every moving part is
    pure compositor CSS — transform + opacity only. JS = one gated interval
    for the clock + one-shot ?ep=. Watermark + ticker stay outside the page
-   as their own OBS modules: corners + bottom 96px stay clear. ──────────── */
+   as their own OBS modules: corners + bottom 76px stay clear. ──────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
   --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
@@ -26,7 +26,7 @@
   --font-display:'Manrope',system-ui,sans-serif;
   --font-body:'Inter',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:96px; /* bottom module zone — the ticker module docks here */
+  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
   --ease-out:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -142,7 +142,11 @@ svg{display:block}
 @keyframes bubRise{
   0%{transform:translateY(460px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
   10%{opacity:1}
-  80%{opacity:1}
+  /* fade out EARLY and leave the top band empty: the clock chip + live chip
+     own the top-right, and the h1 owns the top-centre. Bubbles that stay
+     opaque all the way to -860px drove straight through both. */
+  62%{opacity:1}
+  80%{opacity:0}
   100%{transform:translateY(-860px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
 }
 @keyframes bubSway{from{transform:translateX(calc(var(--sw,12px) * -1))}to{transform:translateX(var(--sw,12px))}}
@@ -250,10 +254,10 @@ svg{display:block}
     <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
       <div class="sway"><div class="bcard flip"><span class="h">@achieng <i class="qno">Q·04</i></span><span class="q">hot takes round when?</span></div></div>
     </div>
-    <div class="bub" style="left:1440px;top:660px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
+    <div class="bub" style="left:1440px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
       <div class="sway"><div class="bcard"><span class="h">@biru <i class="qno">Q·05</i></span><span class="q">what are you drinking?</span></div></div>
     </div>
-    <div class="bub" style="left:1660px;top:430px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
+    <div class="bub" style="left:1620px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
       <div class="sway"><div class="bcard flip"><span class="h">@njoro <i class="qno">Q·06</i></span><span class="q">next guest?</span></div></div>
     </div>
     <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">

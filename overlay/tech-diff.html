@@ -20,7 +20,7 @@
    plain-sight signature. JS = one gated interval (clock + elapsed + ?t
    flip). Every moving part is compositor CSS — transform/opacity plus the
    tiny color cycles on the chips. Modules live outside this page: corners
-   + bottom 96px stay clear. ────────────────────────────────────────────── */
+   + bottom 76px stay clear. ────────────────────────────────────────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
   --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
@@ -28,7 +28,7 @@
   --font-display:'Manrope',system-ui,sans-serif;
   --font-body:'Inter',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:96px; /* bottom module zone — the ticker module docks here */
+  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
   --ease-out:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}

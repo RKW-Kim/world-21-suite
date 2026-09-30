@@ -19,13 +19,13 @@
    Same hold contract as A: default 10:00, ?t= overrides, ?t=0 pre-stages
    the hold, at zero the flap row cross-fades into BACK ANY MOMENT and the
    STATUS row flips BOARDING → FINAL CALL. Modules live outside this page:
-   bottom 96px + corners stay clear. ────────────────────────────────────── */
+   bottom 76px + corners stay clear. ────────────────────────────────────── */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
   --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:96px; /* bottom module zone — the ticker module docks here */
+  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -71,11 +71,16 @@ svg{display:block}
   animation:rise .9s cubic-bezier(.2,.9,.3,1) .12s both}
 .hanger .rail{width:min(560px,58vw);height:1px;margin-bottom:clamp(10px,2vh,18px);
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.16) 16%,rgba(255,255,255,.16) 84%,transparent)}
-.hanger .lines{position:relative;width:clamp(120px,14vh,168px);height:clamp(52px,9vh,92px);margin-bottom:-34px}
+/* the cables and the face bob as ONE assembly — bobbing only the face
+   left the face sliding out from under its mount and the two cable
+   stubs read as stray scratches floating above it. */
+.hanger .lines{position:relative;width:clamp(120px,14vh,168px);height:clamp(52px,9vh,92px);
+  margin-bottom:calc(-1 * clamp(52px,9vh,92px) + 16px);
+  animation:bob 6.5s ease-in-out infinite}
 .hanger .lines::before,.hanger .lines::after{content:"";position:absolute;top:0;height:100%;width:1.5px;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.24))}
-.hanger .lines::before{left:30%;transform:rotate(7deg);transform-origin:50% 0}
-.hanger .lines::after{right:30%;transform:rotate(-7deg);transform-origin:50% 0}
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.14))}
+.hanger .lines::before{left:32%;transform:rotate(4deg);transform-origin:50% 0}
+.hanger .lines::after{right:32%;transform:rotate(-4deg);transform-origin:50% 0}
 .hanger .face{width:clamp(88px,13vh,126px);height:clamp(88px,13vh,126px);
   filter:drop-shadow(0 14px 34px rgba(0,0,0,.55));animation:bob 6.5s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
