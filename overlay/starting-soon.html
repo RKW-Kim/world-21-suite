@@ -12,7 +12,7 @@
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#9b9ba4;
   --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
@@ -85,7 +85,8 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   -webkit-background-clip:text;background-clip:text;color:transparent;
   opacity:0;transform:translateY(12px);animation:tagCycle 12s infinite}
 .tag span b{-webkit-text-fill-color:var(--ink);color:var(--ink);
-  background:var(--yellow);border-radius:5px;padding:0 7px;
+  display:inline-block;line-height:1.02;padding:2px 8px 3px;vertical-align:baseline;
+  background:var(--yellow);border-radius:5px;
   -webkit-box-decoration-break:clone;box-decoration-break:clone}
 .tag span:nth-child(2){animation-delay:4s}
 .tag span:nth-child(3){animation-delay:8s}
