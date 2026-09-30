@@ -131,12 +131,10 @@ svg{display:block}
 @keyframes facePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.035)}}
 .fA svg{width:100%;height:100%}
 .spinner{position:absolute;inset:0;z-index:4;animation:ringSpin 18s linear infinite;will-change:transform}
+.satellites{position:absolute;inset:0;z-index:5}
+/* chips sit OUTSIDE .spinner on purpose — inside it they inherit the ring's
+   continuous rotation and tumble with it. */
 .satPos{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(210px)}
-/* LIVE FIX: this used to counter-spin continuously, so the NET rotation on the
-   chip was the spin itself and the diagnostic chips slowly TUMBLED around
-   the ring instead of riding it level. They now sit at a fixed angle with
-   a counter-rotation only. The ring still spins (.spinner) — that is the
-   part that was meant to move. */
 .satSpin{position:absolute;left:0;top:0;width:0;height:0}
 .satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
 
@@ -276,11 +274,12 @@ svg{display:block}
             <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
           </svg>
         </div>
-        <div class="spinner">
+        <div class="satellites">
           <div class="satPos" style="--a:0deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:1.2s"><i class="dot"></i><em>01</em><span class="dlab"><i class="bas">MIC</i><i class="okv">MIC — OK</i></span></div></div></div></div>
           <div class="satPos" style="--a:120deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:3.4s"><i class="dot"></i><em>02</em><span class="dlab"><i class="bas">CAM</i><i class="okv">CAM — OK</i></span></div></div></div></div>
           <div class="satPos" style="--a:240deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:5.6s"><i class="dot"></i><em>03</em><span class="dlab"><i class="bas">SIGNAL</i><i class="okv">SIGNAL — OK</i></span></div></div></div></div>
         </div>
+        <div class="spinner"></div>
       </div>
     </div>
 
