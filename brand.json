@@ -47,10 +47,9 @@
         "index.html",
         "intermission-b.html",
         "intermission.html",
-        "smile-lab.html",
-        "starting-soon.html"
+        "smile-lab.html"
       ],
-      "uses": 7
+      "uses": 6
     },
     "hairline": {
       "token": "--border",
@@ -62,10 +61,9 @@
         "intermission-b.html",
         "intermission.html",
         "smile-lab.html",
-        "speaking.html",
-        "starting-soon.html"
+        "speaking.html"
       ],
-      "uses": 9
+      "uses": 8
     },
     "market-down": {
       "token": "--down",
@@ -146,9 +144,10 @@
       "defined_in": [
         "end-credits.html",
         "qa.html",
+        "starting-soon.html",
         "tech-diff.html"
       ],
-      "uses": 3
+      "uses": 4
     },
     "text-muted": {
       "token": "--muted",
@@ -174,9 +173,10 @@
         "end-credits.html",
         "end.html",
         "qa.html",
+        "starting-soon.html",
         "tech-diff.html"
       ],
-      "uses": 4
+      "uses": 5
     },
     "market-up": {
       "token": "--up",

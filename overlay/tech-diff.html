@@ -132,8 +132,12 @@ svg{display:block}
 .fA svg{width:100%;height:100%}
 .spinner{position:absolute;inset:0;z-index:4;animation:ringSpin 18s linear infinite;will-change:transform}
 .satPos{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(210px)}
-.satSpin{position:absolute;left:0;top:0;width:0;height:0;animation:satBack 18s linear infinite}
-@keyframes satBack{to{transform:rotate(-360deg)}}
+/* LIVE FIX: this used to counter-spin continuously, so the NET rotation on the
+   chip was the spin itself and the diagnostic chips slowly TUMBLED around
+   the ring instead of riding it level. They now sit at a fixed angle with
+   a counter-rotation only. The ring still spins (.spinner) — that is the
+   part that was meant to move. */
+.satSpin{position:absolute;left:0;top:0;width:0;height:0}
 .satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
 
 /* satellite check-off — one shared CSS cycle (19.5s), staggered by --ck.

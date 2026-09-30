@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE · starting soon</title>
@@ -10,355 +10,431 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
+/* ── STARTING SOON — the buffer ────────────────────────────────────────────
+   THE SCREEN BEFORE THE BELL. Not a countdown to the open: the open can
+   slip, and if it does you stay on this screen. So the hero object is an
+   ELAPSED BUFFER CLOCK — "on air for 00:14:32" — which never resolves and
+   never lies. Same honest grammar as tech-diff's "TIME SINCE FAULT", in a
+   different key.
+
+   Built on tech-diff's skeleton: left-weighted headline block, one hero
+   instrument, status chips attached to it, data texture along the bottom.
+   Cut from the old scene: the duplicate status pills and the rotating
+   tagline. Kept: the checklist, the platform row, the socials — they carry
+   real information.
+
+   ?inst=a|b|c   which hero instrument to compare (default a)
+     a  the buffer clock   — digits, tabular, no resolution
+     b  the dial           — clock face, radar demoted to a corner detail
+     c  the radar          — tech-diff's instrument, repurposed pre-open
+   ?opens=09:00  Nairobi wall-clock open (shown as a second line, never
+                 the hero — it can slip, so it must not be the thing the
+                 audience is watching)
+   ?ad=  ?adimg=  sponsor slot in the right column
+
+   Contract: no canvas, no rAF, one gated interval (the clock). Compositor
+   CSS only. Bottom 76px is the ticker's dock; top-left is the watermark's. */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#9b9ba4;
-  --up:#0ECB81; --down:#F6465D;
-  --fd:'Space Grotesk',system-ui,sans-serif;
-  --fm:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
+  --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
+  --line:#2A2A2A; --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px; --eo:cubic-bezier(.2,.9,.3,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
-  overflow:hidden;-webkit-font-smoothing:antialiased}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  -webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
 ::selection{background:var(--yellow);color:var(--ink)}
+.page{position:relative;width:100vw;height:100vh;overflow:hidden}
 
-/* ── page frame: full-bleed, any window ── */
-.page{position:relative;display:flex;flex-direction:column;height:100%}
+/* ── backdrop: dot grid + warm pool, the mission-control floor ── */
+.bg{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1300px 800px at 58% 44%,rgba(255,193,7,.055),transparent 62%),
+    radial-gradient(900px 600px at 12% 88%,rgba(63,182,255,.03),transparent 60%),
+    var(--ink)}
+.bg::after{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:44px 44px}
 
-/* ── ambient (static paint, zero filters) ── */
-.ambient{position:absolute;inset:0;pointer-events:none}
-.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
-  background-size:26px 26px;
-  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
-          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
-.spot{position:absolute;inset:0;background:radial-gradient(ellipse 64% 44% at 50% -10%,rgba(255,255,255,.09),transparent 70%)}
-.aura{position:absolute;left:50%;top:38%;width:780px;height:520px;transform:translate(-50%,-50%);
-  background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 64%)}
-.vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 56%,rgba(0,0,0,.5) 100%)}
+/* ── data texture: the market floor, along the bottom edge ── */
+/* the floor is TEXTURE, not content: it sits behind everything, is short
+   enough to clear the checklist row, and never competes for attention. */
+.floor{position:absolute;left:0;right:0;bottom:0;height:186px;z-index:1;pointer-events:none;
+  display:flex;align-items:flex-end;gap:8px;padding:0 10px;opacity:.5;
+  -webkit-mask-image:linear-gradient(0deg,#000 0 52%,transparent 96%);
+          mask-image:linear-gradient(0deg,#000 0 52%,transparent 96%)}
+.floor i{width:26px;border-radius:2px 2px 0 0;background:var(--c);
+  height:var(--h);animation:cndl 3.4s ease-in-out infinite var(--d,0s)}
+@keyframes cndl{0%,100%{transform:scaleY(1);filter:brightness(1)}
+  50%{transform:scaleY(.82);filter:brightness(1.22)}}
 
-/* ── topbar ── */
-.topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:flex-end;
-  padding:22px clamp(18px,4vw,48px)}
-.clockchip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;
-  font-family:var(--fm);font-size:11px;letter-spacing:.18em;color:var(--muted)}
+/* ── top bar ── */
+.topbar{position:absolute;top:34px;left:44px;right:44px;z-index:8;
+  display:flex;justify-content:space-between;align-items:center}
+.clockchip{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:999px;
+  background:rgba(18,18,18,.86);border:1px solid var(--line);
+  font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
 .clockchip b{color:var(--fg);font-weight:600}
+.prepill{display:inline-flex;align-items:center;gap:10px;padding:9px 20px;border-radius:999px;
+  background:linear-gradient(135deg,var(--yellow),var(--hot));color:#1F1702;
+  font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.24em;
+  box-shadow:0 8px 28px rgba(255,193,7,.28)}
 
-/* ── hero ── */
-.hero{position:relative;z-index:4;flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:clamp(12px,2.2vh,22px);text-align:center;padding:0 24px calc(8px + var(--safe-b))}
-@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.eyebrow{display:inline-flex;align-items:center;gap:9px;border-radius:999px;
-  border:1px solid rgba(255,193,7,.35);background:rgba(255,193,7,.06);color:var(--yellow);
-  padding:7px 16px;font-family:var(--fm);font-size:10px;letter-spacing:.32em;text-transform:uppercase;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .05s both}
-.dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--yellow)}
-.dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;
-  animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
-@keyframes ping{0%{transform:scale(1);opacity:.7}80%,100%{transform:scale(2.6);opacity:0}}
+/* ── left column: the headline block ── */
+.lcol{position:absolute;left:120px;top:150px;z-index:5;max-width:640px}
+.lcol h1{font-family:var(--font-display);font-weight:800;font-size:clamp(56px,6.6vw,92px);
+  line-height:1.04;letter-spacing:-.03em;margin-top:22px}
+.lcol h1 .y{color:var(--yellow)}
+.lcol .chips{margin-top:26px;display:flex;gap:11px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:9px;padding:10px 19px;border-radius:999px;
+  border:1.5px solid var(--yellow);color:var(--yellow);
+  font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.12em;
+  white-space:nowrap;background:rgba(255,193,7,.06)}
+.chip .mk{font-size:13px}
+.chip.plain{border-color:var(--line);color:var(--muted);background:transparent}
 
-.mascot{position:relative;display:inline-flex;animation:rise .9s cubic-bezier(.2,.9,.3,1) .12s both}
-.mascot .halo{position:absolute;inset:-38px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,193,7,.15),transparent 62%)}
-.mascot .face{position:relative;width:clamp(96px,17vh,150px);height:clamp(96px,17vh,150px);
-  filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));
-  animation:bob 4.5s ease-in-out 1s infinite}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.mascot svg{width:100%;height:100%}
+.fault{margin-top:28px;display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.26em;color:var(--muted)}
+.fault b{color:var(--fg);font-weight:600}
+.fault .ddot{width:8px;height:8px;border-radius:50%;background:var(--up);
+  box-shadow:0 0 10px rgba(14,203,129,.8);animation:ddotP 1.7s ease-in-out infinite}
+@keyframes ddotP{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.45}}
 
-h1{font-family:var(--fd);font-weight:700;font-size:clamp(44px,10.5vh,96px);
-  line-height:1.02;letter-spacing:-.035em;animation:rise .9s cubic-bezier(.2,.9,.3,1) .22s both}
-h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* ── hero instrument, shared shell; ?inst picks which fills it ── */
+.stage{position:absolute;left:calc(58% - 300px);top:calc(50% - 300px);width:600px;height:600px;z-index:4}
+.inst{position:absolute;inset:0;display:none}
+.inst.on{display:block}
 
-/* rotating tagline — pure CSS, three stacked lines */
-.tag{position:relative;height:1.5em;width:min(88vw,760px);overflow:hidden;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .32s both}
-.tag span{position:absolute;inset:0;display:block;line-height:1.5em;text-align:center;
-  font-family:var(--fd);font-weight:500;font-size:clamp(14px,2.3vh,20px);
-  background:linear-gradient(180deg,#e8e8ec 20%,#9a9aa2 95%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  opacity:0;transform:translateY(12px);animation:tagCycle 12s infinite}
-.tag span b{-webkit-text-fill-color:var(--ink);color:var(--ink);
-  display:inline-block;line-height:1.02;padding:2px 8px 3px;vertical-align:baseline;
-  background:var(--yellow);border-radius:5px;
-  -webkit-box-decoration-break:clone;box-decoration-break:clone}
-.tag span:nth-child(2){animation-delay:4s}
-.tag span:nth-child(3){animation-delay:8s}
-@keyframes tagCycle{0%{opacity:0;transform:translateY(12px)}3%,27%{opacity:1;transform:none}
-  33%,100%{opacity:0;transform:translateY(-12px)}}
+/* (a) THE BUFFER CLOCK — big tabular digits, no ring, no resolution */
+.clockFace{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px}
+.digits{font-family:var(--font-display);font-weight:800;
+  font-size:clamp(58px,5.4vw,86px);line-height:1;letter-spacing:-.045em;
+  color:var(--fg);font-variant-numeric:tabular-nums;
+  filter:drop-shadow(0 18px 60px rgba(255,193,7,.16))}
+.digits .sep{color:var(--yellow);margin:0 2px}
+.digits .ms{font-size:.42em;color:var(--yellow);letter-spacing:0;vertical-align:super}
+.clockLbl{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.3em;
+  color:var(--muted);margin-bottom:14px}
+.openAt{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.24em;
+  color:var(--faint);margin-top:16px;text-align:center}
+.openAt b{color:var(--muted);font-weight:600}
 
-/* today slate — what today's session is, who's expected, or the honest default.
-   ?plan=Trivia Night & ?who=Alice,Bob → "TODAY · Trivia Night — with Alice · Bob"
-   no params → "TODAY · no plan — just vibes" (a normal stream, zero pretence). */
-.today{display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;justify-content:center;
-  max-width:min(88vw,780px);border:1px solid var(--border);border-radius:14px;
-  background:rgba(14,14,17,.62);padding:10px 20px;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .36s both}
-.today .tk{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.3em;
-  color:var(--yellow);text-transform:uppercase;flex:none;transform:translateY(-1px)}
-.today .tv{font-family:var(--fd);font-weight:500;font-size:clamp(13px,2vh,16px);
-  color:var(--muted);line-height:1.5}
-.today .tv b{color:var(--fg);font-weight:600}
-.today .tv .sep{color:rgba(255,193,7,.55);margin:0 7px;font-weight:600}
-@media (max-height:560px){.today{display:none}}
+/* (b) THE DIAL — clock face; radar demoted to a corner detail */
+.dial{position:absolute;inset:34px;border-radius:50%;
+  border:2px solid rgba(255,193,7,.34);
+  background:radial-gradient(circle at 50% 42%,rgba(255,193,7,.07),transparent 62%)}
+.dialTicks{position:absolute;inset:34px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,193,7,.3) 0deg 1deg,transparent 1deg 30deg);
+  -webkit-mask-image:radial-gradient(circle,transparent 0 262px,#000 263px 276px,transparent 277px);
+          mask-image:radial-gradient(circle,transparent 0 262px,#000 263px 276px,transparent 277px)}
+.dialHand{position:absolute;left:50%;top:50%;width:2px;height:262px;
+  background:linear-gradient(180deg,var(--yellow),rgba(255,193,7,.12));
+  transform-origin:50% 0;transform:translate(-50%,0) rotate(0deg);
+  animation:dialSpin 60s linear infinite;border-radius:2px}
+@keyframes dialSpin{to{transform:translate(-50%,0) rotate(360deg)}}
+.dialHub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:16px;height:16px;border-radius:50%;background:var(--yellow);
+  box-shadow:0 0 14px rgba(255,193,7,.9)}
+.dialFace{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
+.dialFace .d{font-family:var(--font-display);font-weight:800;font-size:clamp(46px,4.6vw,70px);
+  line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.dialFace .l{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.3em;
+  color:var(--muted);margin-top:12px}
+.dialFace .o{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.22em;
+  color:var(--faint);margin-top:6px}
 
-/* ── countdown zone: tiles cross-fade into the ABOUT TO START hold ──
-   default (no ?t=): hold state immediately. ?t=90 or ?t=05:00 or ?t=1:05:00
-   counts down once, then holds — the board never names a clock time. */
-.cdzone{display:grid;place-items:center;min-height:calc(clamp(22px,4.2vh,36px) + 64px);width:100%}
-.cdzone>*{grid-area:1/1}
-.cdcol{display:flex;flex-direction:column;align-items:center;gap:12px;
-  transition:opacity .7s cubic-bezier(.2,.9,.3,1),transform .7s cubic-bezier(.2,.9,.3,1)}
-.cd{display:flex;gap:10px}
-.cd .cell{display:flex;flex-direction:column;gap:6px;align-items:center;
-  border:1px solid var(--border);border-radius:14px;background:rgba(14,14,17,.7);
-  padding:12px 0;width:clamp(64px,9vw,92px)}
-.cd .n{font-family:var(--fm);font-weight:600;font-size:clamp(22px,4.2vh,36px);line-height:1;
-  font-variant-numeric:tabular-nums}
-.cd .t{font-family:var(--fm);font-size:9px;letter-spacing:.26em;color:var(--faint)}
-.cd .lbl{font-family:var(--fm);font-size:9.5px;letter-spacing:.3em;color:var(--muted)}
-html[data-hold="1"] .cdcol{opacity:0;transform:scale(.92);pointer-events:none}
-.hold{display:inline-flex;align-items:center;gap:11px;border-radius:999px;
-  border:1px solid rgba(255,193,7,.5);background:rgba(255,193,7,.1);
-  padding:12px 26px;font-family:var(--fm);font-weight:600;font-size:clamp(12px,1.9vh,15px);
-  letter-spacing:.3em;color:var(--yellow);text-transform:uppercase;
-  opacity:0;transform:scale(.92);transition:opacity .7s cubic-bezier(.2,.9,.3,1) .25s,transform .7s cubic-bezier(.2,.9,.3,1) .25s}
-.hold .dot{width:9px;height:9px}
-html[data-hold="1"] .hold{opacity:1;transform:none}
+/* (c) THE RADAR — tech-diff's instrument, repurposed pre-open */
+.ring{position:absolute;inset:70px;border:2px dashed rgba(255,193,7,.42);border-radius:50%;
+  animation:ringSpin 30s linear infinite}
+.ring2{position:absolute;inset:112px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
+.rticks{position:absolute;inset:70px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(255,193,7,.14) 0deg .5deg,transparent .5deg 30deg);
+  -webkit-mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px);
+          mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px)}
+.sweep{position:absolute;inset:71px;border-radius:50%;z-index:1;
+  background:conic-gradient(from 0deg,rgba(255,193,7,.15),transparent 85deg);
+  animation:ringSpin 7s linear infinite;will-change:transform}
+@keyframes ringSpin{to{transform:rotate(360deg)}}
+.sweep2{position:absolute;inset:71px;border-radius:50%;z-index:1;
+  background:conic-gradient(from 180deg,rgba(255,193,7,.05),transparent 60deg);
+  animation:ringSpinCCW 11s linear infinite;will-change:transform}
+@keyframes ringSpinCCW{to{transform:rotate(-360deg)}}
+.blip{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
+  box-shadow:0 0 10px rgba(255,193,7,.85);z-index:2;
+  animation:blipP 3.4s ease-in-out infinite var(--bd,0s)}
+@keyframes blipP{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:.85;transform:scale(1.15)}}
+.rFace{position:absolute;left:50%;top:50%;width:280px;height:280px;z-index:3;
+  transform:translate(-50%,-50%);animation:facePulse 4.6s ease-in-out infinite;
+  filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
+@keyframes facePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}
+  50%{transform:translate(-50%,-50%) scale(1.035)}}
+.rFace svg{width:100%;height:100%}
+.rDigits{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);z-index:5;
+  font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.2em;
+  color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap;
+  padding:8px 18px;border-radius:999px;background:rgba(18,18,18,.9);border:1px solid var(--line)}
 
-/* status tiles — loading → ready cascade, pure CSS */
-.tiles{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .52s both}
-.tile{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:12px;
-  background:rgba(14,14,17,.62);padding:10px 16px;animation:tileReady 16s infinite}
-.tile .ico{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:1.8;
-  stroke-linecap:round;stroke-linejoin:round}
-.tile b{font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.22em;color:var(--muted)}
-.tile .st{position:relative;width:52px;height:14px;font-family:var(--fm);font-size:9px;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-.tile .st i{position:absolute;inset:0;font-style:normal;display:flex;align-items:center;gap:5px}
-.tile .st .ld::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--faint);
-  animation:soft 1.2s infinite}
-.tile .st .ok{color:var(--yellow);opacity:0}
-.tile .st .ok::before{content:"";width:7px;height:4px;border-left:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg) translateY(-1px)}
-.tile:nth-child(2){animation-delay:1.1s}.tile:nth-child(3){animation-delay:2.2s}.tile:nth-child(4){animation-delay:3.3s}
-@keyframes tileReady{0%,9%{border-color:var(--border)}12%,90%{border-color:rgba(255,193,7,.38)}
-  95%,100%{border-color:var(--border)}}
-.tile .st i{animation:swapSt 16s infinite}
-.tile:nth-child(2) .st i{animation-delay:1.1s}.tile:nth-child(3) .st i{animation-delay:2.2s}
-.tile:nth-child(4) .st i{animation-delay:3.3s}
-@keyframes swapSt{0%,8%{opacity:0}9%{opacity:0}10%,89%{opacity:1}94%,100%{opacity:0}}
-.tile .st .ld{opacity:1;animation:swapLd 16s infinite}
-.tile:nth-child(2) .st .ld{animation-delay:1.1s}.tile:nth-child(3) .st .ld{animation-delay:2.2s}
-.tile:nth-child(4) .st .ld{animation-delay:3.3s}
-@keyframes swapLd{0%,9%{opacity:1}12%,88%{opacity:0}94%,100%{opacity:1}}
-.tile .st .ok{animation:swapOk 16s infinite}
-.tile:nth-child(2) .st .ok{animation-delay:1.1s}.tile:nth-child(3) .st .ok{animation-delay:2.2s}
-.tile:nth-child(4) .st .ok{animation-delay:3.3s}
-@keyframes swapOk{0%,9%{opacity:0}12%,88%{opacity:1}94%,100%{opacity:0}}
-@keyframes soft{0%,100%{opacity:1}50%{opacity:.25}}
+/* ── satellite chips: setup checks riding one shared 21s cycle ── */
+.sat{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(224px);z-index:6}
+.satSpin{position:absolute;left:0;top:0;width:0;height:0}
+/* counter-rotate only — NO orbit spin, or the chip tumbles instead of
+   riding the ring level (this is a live bug in tech-diff.html). */
+.satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
+.satChip{display:inline-flex;align-items:center;gap:9px;padding:10px 20px;border-radius:999px;
+  background:rgba(18,18,18,.94);border:1.5px solid var(--line);
+  font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.12em;
+  color:var(--muted);white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  animation:ck 21s linear infinite var(--ck,0s)}
+@keyframes ck{
+  0%,8%{border-color:var(--line);color:var(--muted);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  12%,80%{border-color:var(--yellow);color:var(--yellow);
+    box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
+  86%,100%{border-color:var(--line);color:var(--muted);box-shadow:0 10px 30px rgba(0,0,0,.45)}}
+.satChip i{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
 
-/* watch-on row — the space the old baked ticker used to eat */
-.watch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
-  animation:rise .8s cubic-bezier(.2,.9,.3,1) .58s both}
-.watch .wl{font-family:var(--fm);font-size:9px;letter-spacing:.3em;color:var(--faint)}
-.soc{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:999px;
-  background:rgba(14,14,17,.72);padding:8px 15px;font-family:var(--fm);font-size:10px;
-  letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
-.soc svg{width:12px;height:12px;color:var(--muted);fill:currentColor;stroke:none;flex:none}
-.soc b{color:var(--fg);font-weight:600}
+/* ── right column: ad slot + where to find us ── */
+.rcol{position:absolute;right:56px;top:132px;z-index:5;width:330px}
+.adslot{border:1.5px solid var(--line);border-radius:16px;background:rgba(20,20,23,.72);
+  padding:34px 24px;text-align:center;min-height:190px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.adslot .adT{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.28em;
+  color:var(--faint)}
+.adslot .adM{font-family:var(--font-display);font-weight:700;font-size:19px;line-height:1.28;
+  color:var(--fg)}
+.adslot .adM .y{color:var(--yellow)}
+.adslot img{max-width:100%;border-radius:8px}
+.find{margin-top:26px;display:flex;flex-direction:column;gap:11px}
+.find .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tag{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(18,18,18,.8);
+  font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.16em;color:var(--muted)}
+.tag.on{border-color:rgba(255,193,7,.5);color:var(--yellow)}
+.findLbl{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.28em;
+  color:var(--faint);text-align:right;margin-bottom:3px}
 
-.chips{display:flex;gap:10px;animation:rise .8s cubic-bezier(.2,.9,.3,1) .62s both}
-.chipx{border:1px solid var(--border);border-radius:999px;background:rgba(9,9,11,.6);
-  padding:7px 14px;font-family:var(--fm);font-size:10px;letter-spacing:.2em;color:var(--muted);
-  text-transform:uppercase}
-.chipx b{color:var(--fg);font-weight:600}
-.onemore{font-size:12.5px;font-style:italic;color:var(--muted);
-  animation:showUp 1s ease 3.4s both}
-.onemore b{color:var(--yellow);font-style:normal;font-weight:600}
-@keyframes showUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ── the checklist, kept — it carries the "we're setting up" idea ── */
+.steps{position:absolute;left:120px;bottom:calc(var(--safe-b) + 26px);z-index:6;
+  display:flex;gap:10px;flex-wrap:wrap}
+.step{display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;
+  border:1.5px solid var(--line);background:rgba(12,12,15,.94);
+  font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.1em;
+  color:var(--muted);white-space:nowrap}
+.step b{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.16em}
+.step.ok{border-color:var(--yellow);color:var(--yellow);background:rgba(255,193,7,.07)}
+.step .mk{font-size:12px}
 
-@media (max-width:720px){.tiles .tile:nth-child(3),.tiles .tile:nth-child(4){display:none}}
-
-/* ── plain-sight brand signature ────────────────────────────────────────
-   The fallback mark: when the watermark module is not layered over this
-   scene, the brand still leads to smile.co.ke — centered in the
-   composition, in plain sight, quiet enough to never distract. ───────── */
-.sig{font-family:var(--fm);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38);
-  text-align:center;animation:rise .8s cubic-bezier(.2,.9,.3,1) .5s both}
+/* ── plain-sight signature ── */
+.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 6px);z-index:7;text-align:center;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38)}
 .sig b{font-weight:600;color:rgba(255,193,7,.62)}
-.sig .d{display:inline-block;width:4px;height:4px;border-radius:50%;background:rgba(255,193,7,.5);
-  vertical-align:middle;margin:0 10px}
+
+/* ═══ ?guide=1 — setup-only zone map ═══ */
+.g-tk{position:absolute;left:0;right:0;bottom:0;height:76px;z-index:9;display:none;
+  border-top:1px dashed rgba(255,193,7,.5);align-items:center;justify-content:center}
+.g-chat{position:absolute;left:28px;top:28px;width:300px;height:150px;z-index:9;display:none;
+  border:1px dashed rgba(255,193,7,.5);border-radius:10px}
+body.guide .g-tk,body.guide .g-chat{display:flex}
+body.guide .g-chat::after{content:"CHAT SOURCE";position:absolute;left:10px;top:10px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;color:rgba(255,193,7,.8)}
+
+@media (max-width:1500px){.rcol{display:none}}
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none !important;transition:none !important}
-  .tag span:first-child{opacity:1;transform:none}
-  .tile .st .ld{display:none}.tile .st .ok{opacity:1}
-  html[data-hold="1"] .cdcol{display:none}
-  html:not([data-hold]) .hold{opacity:0}
-}
+  *,*::before,*::after{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="ambient" aria-hidden="true">
-    <div class="dots"></div><div class="spot"></div><div class="aura"></div><div class="vig"></div>
-  </div>
+
+  <div class="bg"></div>
+  <div class="floor" id="floor" aria-hidden="true"></div>
 
   <header class="topbar">
     <span class="clockchip"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
+    <span class="prepill"><span class="dot" aria-hidden="true">●</span> PRE-MARKET · BUFFER</span>
   </header>
 
-  <main class="hero">
-    <span class="eyebrow"><span class="dot"></span>Pre-Market · Stream Loading</span>
+  <!-- ══ LEFT — headline block ══ -->
+  <section class="lcol">
+    <h1>markets open<br><span class="y">soon.</span></h1>
+    <div class="chips">
+      <span class="chip"><span class="mk">◗</span>CHARTS <b style="color:var(--yellow)">READY</b></span>
+      <span class="chip"><span class="mk">◔</span>CANDLES <b style="color:var(--yellow)">READY</b></span>
+      <span class="chip plain"><span class="mk">◑</span>COFFEE · LOADING</span>
+    </div>
+    <p class="fault"><i class="ddot"></i>ON AIR FOR <b class="num" id="fault">00:00:00</b> · WE'RE GETTING READY</p>
+  </section>
 
-    <div class="mascot">
-      <span class="halo"></span>
-      <span class="face" aria-hidden="true">
-        <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
+  <!-- ══ CENTRE — the hero instrument, three ways ══ -->
+  <div class="stage" id="stage">
+
+    <!-- (a) THE BUFFER CLOCK -->
+    <div class="inst" id="instA">
+      <div class="clockFace">
+        <div class="clockLbl">ON AIR FOR</div>
+        <div class="digits num" id="bigClock">00:00:00<span class="ms">.0</span></div>
+        <div class="openAt">MARKET OPENS <b id="opensAt">09:00</b> EAT · WE START WHEN WE'RE READY</div>
+      </div>
+    </div>
+
+    <!-- (b) THE DIAL -->
+    <div class="inst" id="instB">
+      <div class="dial"></div>
+      <div class="dialTicks"></div>
+      <div class="dialHand"></div>
+      <div class="dialHub"></div>
+      <div class="dialFace">
+        <div class="d num" id="dialClock">00:00:00</div>
+        <div class="l">ON AIR FOR</div>
+        <div class="o">OPENS <b id="opensAt2">09:00</b> EAT</div>
+      </div>
+      <div class="sat" style="--a:-60deg">
+        <div class="satSpin" style="animation-duration:26s">
+          <div class="satFix"><span class="satChip" style="--ck:0s"><i></i>MARKETS</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- (c) THE RADAR -->
+    <div class="inst" id="instC">
+      <div class="ring2"></div>
+      <div class="ring"></div>
+      <div class="rticks"></div>
+      <div class="sweep"></div>
+      <div class="sweep2"></div>
+      <div class="rFace">
+        <!-- smile face — verbatim crop of Smile-Logo.svg (same 4 paths) -->
         <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
           <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
           <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
           <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
           <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
         </svg>
-      </span>
-    </div>
-
-    <h1><span class="g">markets</span> <span class="g">open</span> <span class="y">soon.</span></h1>
-
-    <p class="tag" aria-hidden="true">
-      <span>The opening bell deserves an <b>entrance</b>.</span>
-      <span>Fresh candles. Brewed coffee. <b>Zero</b> rush.</span>
-      <span>Something <b>big</b> is loading.</span>
-    </p>
-
-    <div class="today" id="today">
-      <span class="tk">Today</span>
-      <span class="tv" id="todayV"></span>
-    </div>
-
-    <div class="cdzone">
-      <div class="cdcol" id="cdWrap">
-        <div class="cd">
-          <div class="cell"><span class="n num" id="cdH">00</span><span class="t">HRS</span></div>
-          <div class="cell"><span class="n num" id="cdM">00</span><span class="t">MIN</span></div>
-          <div class="cell"><span class="n num" id="cdS">00</span><span class="t">SEC</span></div>
+      </div>
+      <span class="blip" style="left:78%;top:22%;--bd:-.4s"></span>
+      <span class="blip" style="left:22%;top:31%;--bd:-1.4s;background:var(--sky);box-shadow:0 0 10px rgba(63,182,255,.8)"></span>
+      <span class="blip" style="left:64%;top:76%;--bd:-2.3s;background:var(--up);box-shadow:0 0 10px rgba(14,203,129,.8)"></span>
+      <span class="blip" style="left:34%;top:70%;--bd:-3s;background:var(--hot);box-shadow:0 0 10px rgba(245,166,35,.8)"></span>
+      <div class="sat" style="--a:-24deg">
+        <div class="satSpin" style="animation-duration:21s">
+          <div class="satFix"><span class="satChip" style="--ck:0s"><i></i>01 MIC</span></div>
         </div>
-        <span class="lbl">GOING LIVE — ANY MOMENT NOW</span>
       </div>
-      <div class="hold" id="hold"><span class="dot"></span>STREAM ABOUT TO START</div>
+      <div class="sat" style="--a:104deg">
+        <div class="satSpin" style="animation-duration:21s">
+          <div class="satFix"><span class="satChip" style="--ck:7s"><i></i>02 CAM</span></div>
+        </div>
+      </div>
+      <div class="sat" style="--a:198deg">
+        <div class="satSpin" style="animation-duration:21s">
+          <div class="satFix"><span class="satChip" style="--ck:14s"><i></i>03 DESK</span></div>
+        </div>
+      </div>
+      <div class="rDigits" id="radarClock">ON AIR 00:00:00</div>
     </div>
+  </div>
 
-    <div class="tiles">
-      <div class="tile">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M3.5 17 9 10.5 12.5 14 20.5 5.5"/></svg>
-        <b>CHARTS</b>
-        <span class="st"><i class="ld">loading</i><i class="ok">ready</i></span>
+  <!-- ══ RIGHT — ad slot + where to find us ══ -->
+  <aside class="rcol">
+    <div class="adslot" id="adslot">
+      <span class="adT">AD SPACE</span>
+      <span class="adM">Your brand could<br>live <span class="y">here</span>.</span>
+    </div>
+    <div class="find">
+      <span class="findLbl">FIND US</span>
+      <div class="row">
+        <span class="tag on">@SMILEKE</span><span class="tag">SMILE.CO.KE</span><span class="tag">#SMILESQUAD</span>
       </div>
-      <div class="tile">
-        <svg class="ico" viewBox="0 0 24 24"><rect x="8.5" y="7" width="7" height="10" rx="1.5"/><path d="M12 3v4M12 17v4"/></svg>
-        <b>CANDLES</b>
-        <span class="st"><i class="ld">loading</i><i class="ok">ready</i></span>
-      </div>
-      <div class="tile">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M5 10h11v5a5 5 0 0 1-11 0z"/><path d="M16 11h2.5a2.5 2.5 0 0 1 0 5H16"/></svg>
-        <b>COFFEE</b>
-        <span class="st"><i class="ld">loading</i><i class="ok">ready</i></span>
-      </div>
-      <div class="tile">
-        <svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.9 5.4L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.6z"/></svg>
-        <b>VIBES</b>
-        <span class="st"><i class="ld">loading</i><i class="ok">ready</i></span>
+      <span class="findLbl" style="margin-top:10px">WATCH ON</span>
+      <div class="row">
+        <span class="tag">YOUTUBE</span><span class="tag">TWITCH</span><span class="tag">TIKTOK</span>
       </div>
     </div>
+  </aside>
 
-    <div class="watch">
-      <span class="wl">WATCH ON</span>
-      <span class="soc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 12s0-3.85-.49-5.7a3 3 0 0 0-2.1-2.1C18.56 3.7 12 3.7 12 3.7s-6.56 0-8.4.5a3 3 0 0 0-2.11 2.1C1 8.15 1 12 1 12s0 3.85.49 5.7a3 3 0 0 0 2.1 2.1c1.85.5 8.41.5 8.41.5s6.56 0 8.4-.5a3 3 0 0 0 2.11-2.1C23 15.85 23 12 23 12zM9.75 15.02V8.98L15.5 12z"/></svg><b>YouTube</b></span>
-      <span class="soc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 2 1.714 6.286v15.428h5.143V26l4.286-4.286h3.428L22.286 14V2zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V3.714h13.714z"/></svg><b>Twitch</b></span>
-      <span class="soc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg><b>TikTok</b></span>
-    </div>
+  <!-- ══ LEFT-BOTTOM — the checklist, kept ══ -->
+  <div class="steps" id="steps">
+    <span class="step ok"><span class="mk">✓</span>CHARTS</span>
+    <span class="step ok"><span class="mk">✓</span>CANDLES</span>
+    <span class="step" id="sMic"><span class="mk">◔</span>MIC CHECK</span>
+    <span class="step" id="sCam"><span class="mk">◔</span>CAMERA</span>
+    <span class="step"><span class="mk">◑</span>VIBES</span>
+  </div>
 
-    <div class="chips">
-      <span class="chipx"><b>@smileke</b></span>
-      <span class="chipx">smile.co.ke</span>
-      <span class="chipx"><b>#SmileSquad</b></span>
-    </div>
-
-    <p class="onemore">one more thing… <b>the vibes are free.</b></p>
-    <p class="sig">smile<b>.co.ke</b></p>
-  </main>
+  <i class="g-tk" aria-hidden="true"></i>
+  <i class="g-chat" aria-hidden="true"></i>
+  <p class="sig">smile<b>.co.ke</b></p>
 </div>
 
 <script>
-/* one gated interval — clock + (optional) countdown → hold. no rAF, no loops, nothing else.
-   Contract: no ?t= → holds at ABOUT TO START immediately (never names a time).
-             ?t=90 | ?t=05:00 | ?t=1:05:00 → counts down once, then holds forever. */
+/* one gated interval — the clock. no rAF, no canvas. everything else is
+   compositor CSS or a one-shot param bake at load.
+
+   Contract:
+     (no params)      → ?inst=a, the buffer clock
+     ?inst=a|b|c      → which hero instrument (default a)
+     ?opens=09:00     → Nairobi wall-clock open, shown as context only
+     ?ad=TEXT         → ad slot headline
+     ?adimg=URL       → ad slot image
+     ?guide=1         → outline the reserved chat + ticker zones
+   The clock is ELAPSED, never a countdown. The open can slip, and when it
+   does the producer stays on this screen — a timer that resolves to zero
+   would have nowhere to go. That is tech-diff's failure mode and this
+   scene is explicitly not it. */
 (function(){
-  var EAT=3*3600*1000; /* UTC+3 */
-  function two(n){return String(n).padStart(2,'0')}
-  function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]+)'))||[])[1]}
-  function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+  function get(k){var m=location.search.match(new RegExp('[?&]'+k+'=([^&]*)'));return m?decodeURIComponent(m[1].replace(/\+/g,' ')):'';}
+  function dec(s){try{return decodeURIComponent(s)}catch(e){return s}}
+  function pad(n){return n<10?'0'+n:''+n}
+  function hhmmss(ms){var s=Math.max(0,Math.floor(ms/1000));
+    return pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
 
-  /* today slate — one-shot textContent build, never innerHTML.
-     ?plan=Quiz Friday  ?who=Alice,Bob,Cyro  ·  default: no plan, just vibes */
-  (function buildToday(){
-    var v=document.getElementById('todayV');
-    var plan=dec(get('plan')||'').trim();
-    var whoRaw=dec(get('who')||'').trim();
-    v.textContent='';
-    if(!plan&&!whoRaw){
-      v.appendChild(document.createTextNode('no plan \u2014 '));
-      var b=document.createElement('b');b.textContent='just vibes';v.appendChild(b);
-      return;
-    }
-    if(plan){var bp=document.createElement('b');bp.textContent=plan;v.appendChild(bp);}
-    var names=whoRaw?whoRaw.split(',').map(function(s){return s.trim()})
-      .filter(function(s){return s.length>0}).slice(0,6):[];
-    if(names.length){
-      v.appendChild(document.createTextNode(plan?' \u2014 with ':'with '));
-      names.forEach(function(nm,i){
-        if(i>0){var s=document.createElement('span');s.className='sep';s.textContent='\u00b7';v.appendChild(s);}
-        var b=document.createElement('b');b.textContent=nm;v.appendChild(b);
-      });
-    }
-  })();
+  var T0 = Date.now();
 
-  var ck=document.getElementById('clock'),lastMin=-1;
-  function tickClock(){
-    var m=Math.floor((Date.now()+EAT)/60000)%1440;
-    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
+  /* ── the market floor, baked once ── */
+  var floor=document.getElementById('floor'),h='';
+  var heights=[128,214,92,288,156,236,108,196,74,252,168,118,304,142,88,228,176,262,104,296,148,210,122,186];
+  var cols=['var(--up)','var(--down)','#2e2e2e','var(--yellow)','var(--sky)'];
+  for(var i=0;i<26;i++){
+    h+='<i style="--h:'+heights[i%heights.length]+'px;--d:'+((i*0.13)%3).toFixed(2)+'s;'
+      +'--c:'+cols[i%cols.length]+'"></i>';
   }
+  floor.innerHTML=h;
 
-  var raw=(location.search.match(/[?&]t=([\d:]+)/)||[])[1],END=null;
-  if(raw){
-    var p=raw.split(':').map(Number);
-    var secs=p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0];
-    if(secs>0)END=Date.now()+secs*1000;
-  }
-  var H=document.getElementById('cdH'),M=document.getElementById('cdM'),S=document.getElementById('cdS');
+  /* ── which hero instrument ── */
+  var inst=(get('inst')||get('i')||'a').toLowerCase();
+  if(['a','b','c'].indexOf(inst)===-1) inst='a';
+  document.getElementById('inst'+inst.toUpperCase()).classList.add('on');
 
-  function goHold(){
-    if(document.documentElement.dataset.hold!=='1')document.documentElement.dataset.hold='1';
-  }
-  if(!END)goHold(); /* no countdown requested: it's about to start, full stop */
+  /* ── ad slot, one-shot ── */
+  var ad=get('ad'),adimg=get('adimg');
+  var slot=document.getElementById('adslot');
+  if(adimg){slot.innerHTML='<img src="'+dec(adimg)+'" alt="">';}
+  else if(ad){slot.innerHTML='<span class="adT">AD SPACE</span><span class="adM">'+dec(ad)+'</span>';}
 
+  /* ── the open, as context only ── */
+  var opens=(get('opens')||'09:00').trim();
+  ['opensAt','opensAt2'].forEach(function(id){
+    var el=document.getElementById(id); if(el)el.textContent=opens;});
+
+  if(get('guide')==='1') document.body.classList.add('guide');
+
+  /* ── the single gated interval ── */
   function tick(){
     if(document.hidden)return;
-    tickClock();
-    if(END){
-      var left=Math.max(0,Math.round((END-Date.now())/1000));
-      H.textContent=two(Math.floor(left/3600));
-      M.textContent=two(Math.floor(left%3600/60));
-      S.textContent=two(left%60);
-      if(left<=0){END=null;goHold();}
-    }
+    var ms=Date.now()-T0, t=hhmmss(ms);
+    var f=document.getElementById('fault'); if(f)f.textContent=t;
+    var bc=document.getElementById('bigClock');
+    if(bc)bc.innerHTML=t+'<span class="ms">.'+Math.floor((ms%1000)/100)+'</span>';
+    var dc=document.getElementById('dialClock'); if(dc)dc.textContent=t;
+    var rc=document.getElementById('radarClock'); if(rc)rc.textContent='ON AIR '+t;
+    var c=document.getElementById('clock');
+    if(c){var d=new Date();
+      c.textContent=pad(d.getHours())+':'+pad(d.getMinutes());}
   }
   tick();setInterval(tick,1000);
   document.addEventListener('visibilitychange',tick);
