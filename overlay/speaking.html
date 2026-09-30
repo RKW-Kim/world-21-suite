@@ -23,7 +23,7 @@
      dominant non-yellow pixel (Noto Color Emoji, sampled):
        SMILE #FFC107 brand · GIGGLES 😂 #2BB2F5 (tears) · HYPE 🤩 #FF5A47
        (open mouth) · BANKS 🤑 #1FD24F (dollar signs) · HALO 😇 #7CD9F9
-       (halo) · PROF 🤔 #A78BFA (glyph has no second colour — chosen).
+       (halo) · PROF 🎤 #A78BFA (mic is monochrome grey — chosen).
    · the flat art goes 2.5D without canvas: the smile face is EXTRUDED —
      five verbatim copies stacked on true translateZ planes inside a
      perspective, swinging gently so the layers parallax like a real
@@ -225,7 +225,14 @@ body.nochat .wall{left:28px;right:28px}
 .av{font-family:var(--fe);font-size:clamp(46px,9vh,98px);line-height:1;
   animation:avbob var(--bd,5.6s) ease-in-out var(--bdel,0s) infinite;will-change:transform;
   filter:drop-shadow(0 10px 20px rgba(0,0,0,.5))}
-@keyframes avbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes avbob{0%,100%{transform:rotate(var(--arot,0deg)) scale(var(--asc,1)) translateY(0)}
+  50%{transform:rotate(var(--arot,0deg)) scale(var(--asc,1)) translateY(-6px)}}
+/* PROF's mic: Noto draws 🎤 lying on a ~40° diagonal, so an upright mic
+   would break the row of round faces. Upright it in place — the rotation
+   rides INSIDE the bob keyframes and the extrusion layers inherit it, so
+   all three depth planes stay stacked. Scaled back a touch: once vertical
+   the glyph is taller than the square seat. */
+.r6 .av{--arot:-40deg;--asc:.84;font-size:clamp(42px,8.2vh,90px)}
 .hostset .f0{animation:bob 4.6s ease-in-out 1s infinite;will-change:transform}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 
@@ -660,9 +667,9 @@ body.guide .cfoot{display:none}
       <div class="set guest r6">
         <div class="head"><i class="halo"></i>
           <div class="head3d">
-            <i class="ex e2"><span class="av">🤔</span></i>
-            <i class="ex e1"><span class="av">🤔</span></i>
-            <span class="f0"><span class="av">🤔</span></span>
+            <i class="ex e2"><span class="av">🎤</span></i>
+            <i class="ex e1"><span class="av">🎤</span></i>
+            <span class="f0"><span class="av">🎤</span></span>
           </div>
         </div>
         <div class="desk">

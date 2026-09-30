@@ -56,6 +56,9 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .scene:hover .go{color:var(--yellow)}
 .scene .live{flex:none;width:7px;height:7px;border-radius:50%;background:var(--up)}
 .scene .live.amber{background:var(--yellow)}
+.scene .live.gray{background:#4a4a52}
+.scene .name .arch{font-style:normal;font-family:var(--fm);font-size:9px;font-weight:400;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
 .scene .live.red{background:var(--down)}
 
 .klabel{display:flex;align-items:center;gap:14px;margin:44px 0 0;
@@ -214,50 +217,15 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <a class="scene" href="ticker.html">
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
-      <span class="what">The stingers-era merged pill — smile cap, masked marquee, 1920×76 bottom dock. Pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
+      <span class="what">The pill, wearing Prism's coat — the era's merged capsule shape, Prism's gradient smile cap, Space Grotesk cap label, diagonal sheen sweep and skewed sponsor cells. The slash separators are gone: cells ride a 26px gutter instead. 1920×76 bottom dock, pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
-    <a class="scene" href="ticker-b.html">
-      <span class="tag">TK·B</span>
-      <span class="name">Ticker — Signal</span>
-      <span class="what">Terminal readout — black cells with hairline dividers, blinking block cursor, slow amber scan shimmer. Same 1920×76 dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-c.html">
+    <a class="scene" href="archive/2026-09-lab/lab/tickers/ticker-c-prism.html">
       <span class="tag">TK·C</span>
-      <span class="name">Ticker — Prism</span>
-      <span class="what">Skewed broadcast chyron — yellow blade, slash separators, diagonal sheen sweep. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-d.html">
-      <span class="tag">TK·D</span>
-      <span class="name">Ticker — Orbit</span>
-      <span class="what">Naked type over the stream — no pill at all, a comet scanner rides the hairline rail, text-shadow carries legibility. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-e.html">
-      <span class="tag">TK·E</span>
-      <span class="name">Ticker — Circuit</span>
-      <span class="what">HUD ruler — tick marks top and bottom, breathing level bars per cell, a cool sweep gliding the strip. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-f.html">
-      <span class="tag">TK·F</span>
-      <span class="name">Ticker — Aurora</span>
-      <span class="what">Glass pill over a drifting multi-stop gradient — the calm one; the backdrop breathes while the marquee rolls. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-g.html">
-      <span class="tag">TK·G</span>
-      <span class="name">Ticker — Hairline</span>
-      <span class="what">The quiet luxury strip — two rules, mono type, dash separators and one breathing yellow square. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
+      <span class="name">Ticker — Prism <i class="arch">· archived, merged into TK</i></span>
+      <span class="what">The source take for the current ticker — skewed broadcast chyron, yellow blade, diagonal sheen. Kept for reference; the slash separators it used are what the live TK dropped. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live gray"></span>
       <span class="go">OPEN →</span>
     </a>
     <a class="scene" href="coming-up.html">
@@ -310,7 +278,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </div>
     <div class="zlegend">
       <div class="row"><b class="y">WATERMARK</b><span>corners, 28px margins — always on, still by default, its own OBS source over any scene.</span></div>
-      <div class="row"><b class="y">TICKER</b><span>bottom dock — 1920×76 transparent source, seven design takes (ticker → ticker-g); the speaking scene sizes its bottom to the exact dock.</span></div>
+      <div class="row"><b class="y">TICKER</b><span>bottom dock — 1920×76 transparent source, one live take (ticker.html: the pill shape with Prism's craft); the speaking scene sizes its bottom to the exact dock. Five other takes and the Prism original are archived under the lab.</span></div>
       <div class="row"><b class="g">STINGERS</b><span>center stage, transient — they fire over anything and leave. Streamer.bot-ready, HTML only.</span></div>
       <div class="row"><b class="y">COMING-UP</b><span>center stage, self-clearing bumper — what's next, by who, at when. Fires on load; reload to re-fire.</span></div>
       <div class="row"><b>SCENE</b><span>the full-bleed stage itself — content stays out of the module zones, so modules never collide with it and future modules inherit the map.</span></div>
@@ -372,7 +340,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <code>?chat=right</code> / <code>?nochat=1</code> + <code>?bg=studio</code> (repaint the room
     for previews — default is a fully transparent overlay) + <code>?guide=1</code> (outlines the
     reserved chat zone and the exact 76px ticker dock; setup only);
-    the ticker family (ticker → ticker-g) all share the 1920×76 dock and
+    the ticker module (ticker.html) is a 1920×76 dock with
     <code>?mode=offair</code> + <code>?scale=</code>;
     end-credits takes <code>?ep=</code> + <code>?next=</code> + <code>?host=</code> + <code>?what=</code>.
   </p>
