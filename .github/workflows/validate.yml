@@ -69,3 +69,22 @@ jobs:
             html-validate --config .github/html-validate.json "$f" || echo "::warning file=$f::Archive HTML has issues (non-blocking)."
           done
           echo "Archive smoke-check complete."
+
+      - name: brand.json must match overlay CSS (hard fail on drift)
+        run: |
+          set -e
+          python3 scripts/sync-brand-tokens.py --check
+          echo "=== Extracted tokens ==="
+          python3 - <<'PY'
+          import json
+          d = json.load(open('brand.json'))
+          for k, v in sorted(d['colors'].items()):
+              src = d['provenance'][k]
+              print(f"  {k:<20} {v:<10} <- {src['token']}  ({len(src['defined_in'])} pages)")
+          if d['conflicts']:
+              print("\n::error::Conflicting token values across pages:")
+              for c in d['conflicts']:
+                  print(f"  {c['token']}: {c['values']}")
+              raise SystemExit(1)
+          print(f"\n{len(d['colors'])} tokens, no conflicts.")
+          PY
