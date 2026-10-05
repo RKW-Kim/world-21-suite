@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · styleguide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<style>
+/* THE STYLEGUIDE — the single place the kit is defined and looked at.
+   Everything below is live markup, not a picture of it: if a component changes
+   here, this page is where you find out. Load kit.css to see it against the
+   real shared source rather than these local copies. */
+:root{
+  /* ---- CANONICAL TOKENS. one name, one meaning, kit-wide. ---- */
+  --ink:#0A0A0A;          /* page ground                        */
+  --fg:#FAFAFA;           /* primary text                       */
+  --muted:#A1A1AA;        /* secondary text                     */
+  --faint:#9B9BA4;        /* tertiary / meta                    */
+  --line:#2a2a2a;         /* hairline + chip border (ONE name)  */
+  --yellow:#FFC107;       /* the brand yellow. accents + live   */
+  --hot:#F5A623;          /* the warm ramp above yellow         */
+  --up:#0ECB81;           /* good / ready / long                */
+  --down:#F6465D;         /* bad / short / alert                */
+  --sky:#3FB6FF;          /* info / neutral data                */
+  --paper:#ffffff;        /* inverted surfaces, tech-diff only  */
+
+  --fd:'Space Grotesk',system-ui,sans-serif;   /* display + body */
+  --fm:'IBM Plex Mono',ui-monospace,monospace; /* meta + data    */
+
+  --safe-b:76px;          /* ticker dock height. never overlap. */
+
+  /* ---- MOTION. two curves, named by role. ---- */
+  --eo:cubic-bezier(.32,.72,0,1);   /* MOVE  — anything travelling. settles, no bounce */
+  --eio:cubic-bezier(.4,0,.2,1);    /* FADE  — anything appearing. symmetric          */
+
+  --r:14px;               /* container radius */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--fg);font-family:var(--fd);
+  -webkit-font-smoothing:antialiased;line-height:1.45}
+::selection{background:var(--yellow);color:var(--ink)}
+code,.k{font-family:var(--fm)}
+
+/* ================= shell ================= */
+.wrap{display:grid;grid-template-columns:250px 1fr;max-width:1560px;margin:0 auto;gap:0}
+nav{position:sticky;top:0;align-self:start;height:100vh;padding:40px 22px;
+  border-right:1px solid var(--line);overflow-y:auto}
+nav .brand{display:flex;align-items:center;gap:11px;margin-bottom:34px}
+nav .brand svg{width:30px;height:30px;flex:0 0 auto}
+nav .brand b{font-size:15px;font-weight:700;letter-spacing:-.01em}
+nav ol{list-style:none;padding:0;display:flex;flex-direction:column;gap:2px}
+nav a{display:block;padding:8px 11px;border-radius:8px;text-decoration:none;
+  color:var(--faint);font-family:var(--fm);font-size:11px;letter-spacing:.1em;
+  transition:color 140ms ease-out,background 140ms ease-out}
+nav a:hover{color:var(--fg);background:rgba(255,255,255,.05)}
+main{padding:44px 52px 140px;min-width:0}
+
+header.top{display:flex;align-items:flex-end;justify-content:space-between;
+  gap:40px;padding-bottom:30px;border-bottom:1px solid var(--line);margin-bottom:14px}
+header.top h1{font-size:clamp(38px,4.4vw,62px);font-weight:800;letter-spacing:-.04em;line-height:1}
+header.top p{margin-top:14px;color:var(--muted);font-size:15px;max-width:52ch}
+
+section{padding:54px 0;border-bottom:1px solid var(--line)}
+section:last-child{border-bottom:0}
+.sec-h{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+.sec-h h2{font-size:24px;font-weight:800;letter-spacing:-.025em}
+.sec-h .n{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--yellow)}
+.sec-note{color:var(--muted);font-size:14px;max-width:64ch;margin-bottom:26px}
+h3{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.2em;
+  color:var(--faint);margin:30px 0 13px;text-transform:uppercase}
+h3:first-of-type{margin-top:0}
+
+/* ================= colour ================= */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:11px}
+.sw{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#101014}
+.sw .fill{height:62px;display:flex;align-items:flex-end;padding:8px 11px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.1em}
+.sw .meta{padding:10px 11px}
+.sw .meta b{display:block;font-family:var(--fm);font-size:11.5px;font-weight:600}
+.sw .meta span{display:block;font-family:var(--fm);font-size:10px;color:var(--faint);margin-top:3px}
+
+/* ================= type ================= */
+.spec{border-left:2px solid var(--line);padding-left:18px;margin-bottom:26px}
+.spec .k{font-size:10.5px;letter-spacing:.14em;color:var(--yellow);display:block;margin-bottom:9px}
+.t-display{font-size:clamp(40px,4vw,62px);font-weight:800;letter-spacing:-.045em;line-height:.94}
+.t-h1{font-size:clamp(30px,2.9vw,44px);font-weight:800;letter-spacing:-.035em;line-height:1}
+.t-h2{font-size:clamp(22px,2vw,30px);font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.t-lead{font-size:19px;font-weight:500;color:var(--muted)}
+.t-body{font-size:15px;color:var(--muted);max-width:60ch}
+.t-meta{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--muted)}
+.t-wide{font-size:15px;letter-spacing:.42em;color:#EDEDF2}
+
+/* ================= motion ================= */
+.eases{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:13px}
+.ease{border:1px solid var(--line);border-radius:var(--r);padding:15px 16px 17px;background:#101014}
+.ease .track{position:relative;height:36px;margin:12px 0 11px}
+.ease .dot{position:absolute;top:6px;left:0;width:24px;height:24px;border-radius:50%;
+  background:var(--yellow);box-shadow:0 0 16px rgba(255,193,7,.5);
+  animation:slide 2.1s infinite alternate}
+@keyframes slide{from{left:0}to{left:calc(100% - 24px)}}
+.ease .k{font-size:10.5px;font-weight:600;letter-spacing:.12em}
+.ease p{font-size:12px;color:var(--faint);margin-top:5px;line-height:1.4}
+.ease[data-c=move] .dot{animation-timing-function:var(--eo)}
+.ease[data-c=fade] .dot{animation-duration:3.1s;animation-timing-function:var(--eio)}
+
+/* ================= containers ================= */
+.row{display:flex;flex-wrap:wrap;gap:11px;align-items:center}
+.cell{border:1px solid var(--line);border-radius:var(--r);padding:18px;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.03),transparent 60%),#0e0e12}
+
+/* --- the naming collision zone, laid out so the choice is obvious --- */
+.pillchip{display:inline-flex;align-items:center;gap:9px;padding:10px 17px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);
+  font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em}
+.pillchip.on{border-color:rgba(255,193,7,.45);color:var(--yellow);background:rgba(255,193,7,.07)}
+.pillchip .mk{width:16px;height:16px;flex:0 0 auto}
+.pillchip .mk svg{width:100%;height:100%}
+.pillchip.st{position:relative;overflow:hidden}
+.pillchip.st::after{content:"";position:absolute;inset:-1px;border-radius:14px;
+  pointer-events:none;opacity:.5;box-shadow:0 0 22px -6px currentColor}
+.pillchip.st[data-p=youtube]{color:rgba(255,0,51,.85)}
+.pillchip.st[data-p=twitch]{color:rgba(145,70,255,.85)}
+.pillchip.st[data-p=facebook]{color:rgba(24,119,242,.85)}
+.pillchip.st[data-p=tiktok]{color:rgba(37,244,238,.75)}
+
+.kicker{display:inline-flex;align-items:center;gap:11px;padding:9px 20px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.38);background:rgba(255,193,7,.06);
+  font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.26em;color:var(--yellow)}
+.led{width:9px;height:9px;border-radius:50%;background:var(--yellow);
+  box-shadow:0 0 12px rgba(255,193,7,.85);animation:pulse 2.6s var(--eio) infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+
+.checklist{display:inline-flex;align-items:center;gap:11px;padding:12px 20px;border-radius:12px;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.checklist .ic{width:17px;height:17px;flex:0 0 auto;color:var(--faint)}
+.checklist .ic svg{width:100%;height:100%}
+.checklist .nm{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--fg)}
+.checklist .st{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--up)}
+.checklist .st::before{content:"✓ ";color:var(--up)}
+
+.btn{display:inline-flex;align-items:center;gap:11px;padding:14px 30px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.45);background:rgba(255,193,7,.07);color:var(--yellow);
+  font-family:var(--fm);font-size:13px;font-weight:600;letter-spacing:.26em;
+  box-shadow:0 0 34px -12px rgba(255,193,7,.6)}
+
+/* ================= surfaces ================= */
+.dots{height:150px;border:1px solid var(--line);border-radius:var(--r);position:relative;overflow:hidden;
+  background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:34px 34px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 45%,#000,transparent 78%);
+          mask-image:radial-gradient(ellipse 70% 60% at 50% 45%,#000,transparent 78%)}
+.dots.lit{background-image:radial-gradient(rgba(255,193,7,.13) 1px,transparent 1px)}
+
+/* ================= chrome ================= */
+.chrome{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.chrome .cell{position:relative;min-height:112px;display:flex;align-items:center;justify-content:center}
+.clockchip{position:absolute;top:12px;right:12px;display:inline-flex;align-items:center;gap:10px;
+  padding:8px 16px;border-radius:999px;background:rgba(10,10,12,.9);border:1px solid var(--line);
+  font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
+.clockchip b{color:var(--fg);font-weight:600}
+.sig{font-family:var(--fm);font-size:13px;font-weight:600;letter-spacing:.34em;color:rgba(250,250,250,.34)}
+.sig b{color:var(--yellow);font-weight:600}
+.zone{position:absolute;inset:0;border:1px dashed rgba(255,193,7,.5);pointer-events:none}
+.zone span{position:absolute;left:8px;top:6px;font-family:var(--fm);font-size:9.5px;
+  letter-spacing:.16em;color:rgba(255,193,7,.85)}
+
+/* ================= zone map ================= */
+.zonewrap{position:relative;aspect-ratio:16/9;max-width:920px;border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;background:#0b0b0e}
+.zbox{position:absolute;border:1px dashed rgba(255,193,7,.42);border-radius:6px}
+.zbox span{position:absolute;left:9px;top:7px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.14em;color:rgba(255,193,7,.9)}
+.zbox.f{background:rgba(255,193,7,.05)}
+
+.note{border:1px solid var(--line);border-left:2px solid var(--yellow);border-radius:var(--r);
+  padding:16px 19px;background:#101014;margin-top:16px}
+.note b{font-family:var(--fm);font-size:11px;letter-spacing:.14em;color:var(--yellow);display:block;margin-bottom:8px}
+.note p{font-size:14px;color:var(--muted);line-height:1.55}
+.note code{color:var(--fg);font-size:13px}
+
+@media (max-width:1080px){
+  .wrap{grid-template-columns:1fr}
+  nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav ol{flex-direction:row;flex-wrap:wrap}
+  main{padding:32px 22px 90px}
+  .chrome{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">
+    <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+      <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+      <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+      <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+      <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+    </svg>
+    <b>styleguide</b>
+  </div>
+  <ol>
+    <li><a href="#colour">01 colour</a></li>
+    <li><a href="#type">02 type</a></li>
+    <li><a href="#motion">03 motion</a></li>
+    <li><a href="#containers">04 containers</a></li>
+    <li><a href="#surfaces">05 surfaces</a></li>
+    <li><a href="#chrome">06 chrome</a></li>
+    <li><a href="#zone">07 zone map</a></li>
+    <li><a href="#rules">08 the rules</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top">
+  <div>
+    <h1>the kit, in one place.</h1>
+    <p>Every token, every component, live. This page exists so a name is only
+       ever invented once — right now the kit carries two naming systems for
+       fonts, borders and easing, and that is what produced the
+       <code>--muted</code> drift.</p>
+  </div>
+  <div class="t-meta" style="text-align:right">1920 × 1080<br>76PX DOCK</div>
+</header>
+
+<section id="colour">
+  <div class="sec-h"><span class="n">01</span><h2>Colour</h2></div>
+  <p class="sec-note">One name per role. If a scene needs a shade that isn't here,
+     it is a scene-local token — it does not get promoted into the kit without a
+     reason that applies everywhere.</p>
+  <div class="swatches" id="swatches"></div>
+  <div class="note">
+    <b>THE ALIASES THAT HAVE TO GO</b>
+    <p><code>--border</code> → <code>--line</code> (8 pages vs 5, same meaning — this pair
+       is what let the border value drift silently). <code>--font-display</code> /
+       <code>--font-body</code> / <code>--font-mono</code> → <code>--fd</code> /
+       <code>--fm</code>. <code>--ease-out</code> → <code>--eo</code>. The warm yellows
+       <code>--yellow-hot</code> and <code>--ember</code> fold into <code>--hot</code>.</p>
+  </div>
+</section>
+
+<section id="type">
+  <div class="sec-h"><span class="n">02</span><h2>Type</h2></div>
+  <p class="sec-note">Two families only. Display and body share
+     <code>--fd</code>; everything small, spaced or numeric is <code>--fm</code>.
+     Tracking is size-specific — never one value for the whole page.</p>
+
+  <div class="spec"><span class="k">DISPLAY · --fd 800 · tracking −0.045em · leading 0.94</span>
+    <div class="t-display">markets open <span style="color:var(--yellow)">soon.</span></div></div>
+
+  <div class="spec"><span class="k">HEADING 1 · --fd 800 · tracking −0.035em</span>
+    <div class="t-h1">welcome to <span style="color:var(--yellow)">smileTV</span></div></div>
+
+  <div class="spec"><span class="k">HEADING 2 · --fd 700 · tracking −0.025em</span>
+    <div class="t-h2">the desk is open</div></div>
+
+  <div class="spec"><span class="k">LEAD · --fd 500</span>
+    <div class="t-lead">Fresh candles. Brewed coffee. Zero rush.</div></div>
+
+  <div class="spec"><span class="k">BODY · --fd · muted</span>
+    <div class="t-body">One font family carries the whole reading experience. The
+      display sizes tighten as they grow; body copy sits near zero and lets the
+      size do the work.</div></div>
+
+  <div class="spec"><span class="k">META · --fm 600 · tracking +0.20em</span>
+    <div class="t-meta">EPISODE 128 · STREAM LIVE</div></div>
+
+  <div class="spec"><span class="k">WIDE · tracking +0.42em · the poster voice</span>
+    <div class="t-wide">COMING SOON</div></div>
+</section>
+
+<section id="motion">
+  <div class="sec-h"><span class="n">03</span><h2>Motion</h2></div>
+  <p class="sec-note">Two curves, named by what they do. Nothing overshoots — the
+     kit is critically damped throughout. Bounce is only ever justified by a
+     gesture that carried momentum, and this kit has no gestures.</p>
+  <div class="eases">
+    <div class="ease" data-c="move">
+      <div class="track"><div class="dot"></div></div>
+      <div class="k">--eo · MOVE</div>
+      <p>cubic-bezier(.32,.72,0,1). Anything travelling: rises, merges, draws.
+         Front-loaded, long tail, lands without bounce.</p>
+    </div>
+    <div class="ease" data-c="fade">
+      <div class="track"><div class="dot"></div></div>
+      <div class="k">--eio · FADE</div>
+      <p>cubic-bezier(.4,0,.2,1). Anything appearing: opacity and colour only.
+         Symmetric in and out.</p>
+    </div>
+  </div>
+  <div class="note">
+    <b>DURATIONS IN USE</b>
+    <p>120–200ms feedback · 260–340ms a component arriving · 440–520ms a card
+       turning · 620ms a merge · 760–900ms the mark resolving. Anything over
+       1s is a sequence, not a transition.</p>
+  </div>
+</section>
+
+<section id="containers">
+  <div class="sec-h"><span class="n">04</span><h2>Containers</h2></div>
+  <p class="sec-note">This is where the naming went wrong — the same pill was
+     <code>kicker</code>, <code>pill</code>, <code>chip</code>, <code>tag</code>,
+     <code>chk</code> and <code>badge</code> across sixteen files. Four distinct
+     roles, four names:</p>
+
+  <h3>KICKER · status line above a headline</h3>
+  <div class="cell"><div class="kicker"><i class="led"></i>PRE-MARKET · STREAM LOADING</div></div>
+
+  <h3>PILLCHIP · a destination or a handle</h3>
+  <div class="cell"><div class="row">
+    <span class="pillchip">@SMILEKE</span>
+    <span class="pillchip">SMILE.CO.KE</span>
+    <span class="pillchip on">YOUTUBE</span>
+  </div></div>
+
+  <h3>PILLCHIP.ST · platform stingers, carrying their own colour</h3>
+  <div class="cell"><div class="row">
+    <span class="pillchip st" data-p="youtube"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span>YOUTUBE</span>
+    <span class="pillchip st" data-p="twitch"><span class="mk"><svg viewBox="0 0 24 24"><g transform="translate(0 1.4)"><path fill="#9146FF" d="M11.571 4.714h1.715v5.143h-1.715zm4.715 0H18v5.143h-1.714zM6 0 1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></g></svg></span>TWITCH</span>
+    <span class="pillchip st" data-p="facebook"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><path fill="#1877F2" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span>FACEBOOK</span>
+    <span class="pillchip st" data-p="tiktok"><span class="mk"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.6 0) scale(.9)"><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></span>TIKTOK</span>
+  </div></div>
+
+  <h3>CHECKLIST · a named thing with a state</h3>
+  <div class="cell"><div class="row">
+    <span class="checklist"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 17l5-6 4 4 6-8"/></svg></span><span class="nm">CHARTS</span><span class="st">READY</span></span>
+    <span class="checklist"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><path stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 2v4M12 18v4M4.9 4.9l2.9 2.9M16.2 16.2l2.9 2.9M2 12h4M18 12h4M4.9 19.1l2.9-2.9M16.2 7.8l2.9-2.9"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg></span><span class="nm">CANDLES</span><span class="st">READY</span></span>
+  </div></div>
+
+  <h3>BUTTON · the one call to action</h3>
+  <div class="cell"><div class="row"><span class="btn"><i class="led"></i>STREAM ABOUT TO START</span></div></div>
+</section>
+
+<section id="surfaces">
+  <div class="sec-h"><span class="n">05</span><h2>Surfaces</h2></div>
+  <p class="sec-note">The dot field is the kit's only texture. It is a mask over
+     a radial-gradient, so it never reaches the edges and never needs opacity
+     fudging. Eight scenes already share it — it should be one class.</p>
+  <div class="dots"></div>
+  <div class="dots lit" style="margin-top:11px"></div>
+</section>
+
+<section id="chrome">
+  <div class="sec-h"><span class="n">06</span><h2>Chrome</h2></div>
+  <p class="sec-note">The fixed furniture. Watermark pill, top-<b>right</b>.
+     Signature, bottom-centre above the dock.</p>
+  <div class="chrome">
+    <div class="cell"><span class="clockchip"><b>20:30</b> · NAIROBI DESK · EAT</span></div>
+    <div class="cell"><span class="sig">smile<b>.co.ke</b></span></div>
+  </div>
+</section>
+
+<section id="zone">
+  <div class="sec-h"><span class="n">07</span><h2>Zone map</h2></div>
+  <p class="sec-note">The layout contract every scene obeys. Load any scene with
+     <code>?guide=1</code> to see it in place.</p>
+  <div class="zonewrap">
+    <div class="zbox f" style="left:2.3%;top:3.1%;width:9.5%;height:5.6%"><span>WATERMARK</span></div>
+    <div class="zbox" style="left:16%;top:9%;width:68%;height:62%"><span>SCENE — safe centre</span></div>
+    <div class="zbox" style="left:2.3%;bottom:9%;width:95.4%;height:14%"><span>QUIET BAND — nothing structural</span></div>
+    <div class="zbox f" style="left:0;bottom:0;width:100%;height:7%"><span>TICKER DOCK — 76px, always reserved</span></div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="sec-h"><span class="n">08</span><h2>The rules</h2></div>
+  <div class="note"><b>ONE NAME PER ROLE</b>
+    <p>If two names mean the same thing, one of them is wrong and it is not the
+       majority's. <code>--line</code> beats <code>--border</code> because it is the
+       older, shorter name — but the rule is the point, not the winner.</p></div>
+  <div class="note"><b>YELLOW NAMES A LIVE STATE</b>
+    <p>Not decoration. A yellow pill, led or underline means the thing it labels
+       is happening or ready right now. If nothing is live, nothing is yellow.</p></div>
+  <div class="note"><b>NO CANVAS, NO rAF</b>
+    <p>One gated <code>setInterval</code> per scene, for the clock. Everything else
+       is a CSS keyframe on the compositor. Animations must be scrubbable — that
+       is what <code>?t=</code> and <code>--freeze</code> are for.</p></div>
+  <div class="note"><b>RESOLVE ONCE, NEVER REVERT TO ZERO</b>
+    <p>A timer that counts past zero and keeps showing zero is correct. A
+       producer holding a scene for forty minutes should never see it turn
+       hostile or count into negatives.</p></div>
+  <div class="note"><b>THE BRAND TOKEN GUARD IS NOT OPTIONAL</b>
+    <p><code>scripts/sync-brand-tokens.py</code> reads every scene's CSS and fails
+       CI when two files disagree about the same token. It has caught real drift
+       twice. Run it before every commit that touches a scene.</p></div>
+</section>
+</main>
+</div>
+
+<script>
+/* swatches are generated from the live tokens so this page can never drift
+   from the values it is documenting */
+(function(){
+  var box=document.getElementById('swatches');
+  var cs=getComputedStyle(document.documentElement);
+  var list=[['--ink','page ground'],['--fg','primary text'],['--muted','secondary text'],
+    ['--faint','tertiary / meta'],['--line','hairline + chip border'],['--yellow','the brand yellow'],
+    ['--hot','warm ramp'],['--up','good / ready'],['--down','bad / short'],['--sky','info / neutral']];
+  box.innerHTML=list.map(function(p){
+    var v=cs.getPropertyValue(p[0]).trim();
+    var dark=['--ink','--line'].indexOf(p[0])>-1;
+    return '<div class="sw"><div class="fill" style="background:'+v+';color:'+(dark?'#FAFAFA':'#0A0A0A')+'">'+v.toUpperCase()+'</div>'+
+      '<div class="meta"><b>'+p[0]+'</b><span>'+p[1]+'</span></div></div>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

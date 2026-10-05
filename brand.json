@@ -78,10 +78,13 @@
         "qa.html",
         "smile-lab.html",
         "speaking.html",
+        "starting.html",
+        "styleguide.html",
         "tech-diff.html",
+        "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 10
+      "uses": 13
     },
     "ember": {
       "token": "--ember",
@@ -94,6 +97,7 @@
       "token": "--faint",
       "defined_in": [
         "brb.html",
+        "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
@@ -101,15 +105,16 @@
         "smile-lab.html",
         "speaking.html",
         "starting-soon.html",
-        "starting.html"
+        "starting.html",
+        "styleguide.html"
       ],
-      "uses": 9
+      "uses": 11
     },
     "text-primary": {
       "token": "--paper",
       "defined_in": [
-        "end-credits.html",
         "qa.html",
+        "styleguide.html",
         "tech-diff.html"
       ],
       "uses": 3
@@ -119,6 +124,7 @@
       "defined_in": [
         "brb.html",
         "coming-up.html",
+        "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
@@ -126,9 +132,10 @@
         "smile-lab.html",
         "speaking.html",
         "starting-soon.html",
-        "starting.html"
+        "starting.html",
+        "styleguide.html"
       ],
-      "uses": 10
+      "uses": 12
     },
     "canvas": {
       "token": "--ink",
@@ -145,10 +152,12 @@
         "speaking.html",
         "starting-soon.html",
         "starting.html",
+        "styleguide.html",
         "tech-diff.html",
+        "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 14
+      "uses": 16
     },
     "hairline-soft": {
       "token": "--line",
@@ -157,9 +166,10 @@
         "qa.html",
         "starting-soon.html",
         "starting.html",
+        "styleguide.html",
         "tech-diff.html"
       ],
-      "uses": 5
+      "uses": 6
     },
     "text-muted": {
       "token": "--muted",
@@ -176,6 +186,7 @@
         "speaking.html",
         "starting-soon.html",
         "starting.html",
+        "styleguide.html",
         "tech-diff.html"
       ],
       "uses": 13
@@ -183,9 +194,9 @@
     "market-alt": {
       "token": "--sky",
       "defined_in": [
-        "end-credits.html",
         "end.html",
         "qa.html",
+        "styleguide.html",
         "tech-diff.html"
       ],
       "uses": 4
@@ -202,10 +213,12 @@
         "smile-lab.html",
         "speaking.html",
         "starting.html",
+        "styleguide.html",
         "tech-diff.html",
+        "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 11
+      "uses": 13
     },
     "brand": {
       "token": "--yellow",
@@ -222,22 +235,47 @@
         "speaking.html",
         "starting-soon.html",
         "starting.html",
+        "styleguide.html",
         "tech-diff.html",
+        "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 14
+      "uses": 16
     },
     "yellow-hot": {
       "token": "--yellow-hot",
       "defined_in": [
-        "end-credits.html",
         "qa.html",
         "tech-diff.html"
       ],
-      "uses": 3
+      "uses": 2
     }
   },
-  "conflicts": [],
+  "conflicts": [
+    {
+      "token": "--muted",
+      "values": {
+        "#a1a1aa": 13,
+        "#8c8c8c": 1
+      },
+      "pages": [
+        "brb.html",
+        "coming-up.html",
+        "end-credits.html",
+        "end.html",
+        "index.html",
+        "intermission-b.html",
+        "intermission.html",
+        "qa.html",
+        "smile-lab.html",
+        "speaking.html",
+        "starting-soon.html",
+        "starting.html",
+        "styleguide.html",
+        "tech-diff.html"
+      ]
+    }
+  ],
   "handles": {
     "@smileke": "@smileke",
     "smile.co.ke": "smile.co.ke",
