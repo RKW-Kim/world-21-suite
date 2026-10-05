@@ -6,9 +6,6 @@
 <meta name="color-scheme" content="dark">
 <title>SMILE · end credits</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 /* ── END CREDITS — the original "credits roll" board (lab R3, 63197D0),
    restored ────────────────────────────────────────────────────────────────
@@ -22,27 +19,28 @@
    Watermark + ticker stay outside the page as their own OBS modules:
    top-left corner + bottom 76px stay clear. ────────────────────────────── */
 :root{
-  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
-  --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
-  --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
-  --font-display:'Manrope',system-ui,sans-serif;
-  --font-body:'Inter',system-ui,sans-serif;
-  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
-  --ease-out:cubic-bezier(.22,1,.36,1);
+    --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
+    --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
+    --line:#2a2a2a; --up:#0ECB81; --down:#F6465D;
+    --fd:'Space Grotesk',system-ui,sans-serif;
+    --fm:'IBM Plex Mono',ui-monospace,monospace;
+    --safe-b:76px;
+    --eo:cubic-bezier(.32,.72,0,1);
+    --eio:cubic-bezier(.4,0,.2,1);
+    --ease-out:cubic-bezier(.22,1,.36,1)
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{background:var(--ink);color:var(--paper);font-family:var(--font-body);
-  overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--fg);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
 ::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
-.bg{position:absolute;inset:0;z-index:-2;background:
-  radial-gradient(1100px 640px at 70% 16%,rgba(255,193,7,.05),transparent 62%),
-  radial-gradient(900px 560px at 14% 88%,rgba(14,203,129,.04),transparent 60%),
-  radial-gradient(circle at 50% 38%,#171717 0%,var(--ink) 78%)}
+.bg{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
 .bg::after{content:"";position:absolute;inset:0;background-image:
   linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
   linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
@@ -50,16 +48,32 @@ svg{display:block}
   -webkit-mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%);
           mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%)}
 
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
+  line-height:1;letter-spacing:-.045em;margin-top:20px}
+h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--ease) both}
+h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
+@keyframes wordup{to{opacity:1;transform:none}}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+.sub{margin-top:20px;font-family:var(--fd);font-weight:500;
+  font-size:clamp(18px,1.5vw,25px);line-height:1.4;color:var(--muted)}
+.sub b{display:inline-block;padding:1px 9px;border-radius:5px;
+  background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));color:#17140A;font-weight:700}
+.sub{max-width:560px;font-size:clamp(14px,2.4vh,20px);font-weight:500;color:var(--muted);
+  line-height:1.5;animation:rise .8s cubic-bezier(.2,.9,.3,1) .35s both}
+
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
   font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.08em;
   text-transform:uppercase;white-space:nowrap}
-.chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--paper);
+.chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--faint);
   box-shadow:0 6px 24px rgba(0,0,0,.35)}
 .chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow)}
-.chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
+.chip.solid{background:linear-gradient(135deg,var(--yellow),var(--hot));color:var(--ink);
   box-shadow:0 8px 28px rgba(255,193,7,.28)}
 .chip.mono{font-family:var(--font-mono);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
-.chip.mono b{color:var(--paper);font-weight:600}
+.chip.mono b{color:var(--faint);font-weight:600}
 .rdot{width:9px;height:9px;border-radius:50%;background:var(--down);
   box-shadow:0 0 10px rgba(246,70,93,.8);animation:dotPulse 1.6s ease-in-out infinite}
 
@@ -70,19 +84,6 @@ svg{display:block}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
 /* candle skyline — baked into the HTML, one CSS sway each, zero JS */
-#skyline{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.5;
-  -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  mask-composite:intersect}
-.cndl{position:absolute;bottom:0;border-radius:4px;opacity:0;transform-origin:50% 100%;
-  animation:cndlRise .9s var(--ease-out) forwards var(--d,0s),
-            cndlSway 4.2s ease-in-out infinite calc(var(--d,0s) + .9s)}
-.cndl::before{content:"";position:absolute;left:50%;top:-16%;bottom:-9%;width:4px;
-  transform:translateX(-50%);background:inherit;filter:brightness(.5);border-radius:2px}
-@keyframes cndlRise{from{opacity:0;transform:scaleY(.2)}to{opacity:.62;transform:scaleY(1)}}
-@keyframes cndlSway{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.045)}}
-
 .rise{opacity:0;animation:riseIn .9s var(--ease-out) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
 
@@ -90,8 +91,6 @@ svg{display:block}
 @keyframes spinCW{to{transform:rotate(360deg)}}
 @keyframes spinCCW{to{transform:rotate(-360deg)}}
 @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.y{color:var(--yellow)}
-.g{color:var(--up);display:inline-block;animation:periodIn .9s var(--ease-out) 1.15s backwards}
 @keyframes periodIn{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
 @keyframes sheenX{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
 
@@ -112,8 +111,8 @@ svg{display:block}
 .orbitB .face{width:62%;aspect-ratio:1;animation:faceBob 5.6s ease-in-out infinite;
   filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
 .orbitB .face svg{width:100%;height:100%}
-.btxt h1{font-family:var(--font-display);font-weight:800;font-size:clamp(64px,11vh,112px);
-  line-height:.98;letter-spacing:-.03em}
+.btxt h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
+  line-height:1;letter-spacing:-.045em;margin-top:20px}
 .follow{margin-top:42px;position:relative;overflow:hidden}
 .follow::after{content:"";position:absolute;inset:0;
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);
@@ -126,10 +125,10 @@ html[data-next="1"] .nextrow{display:inline-flex}
 .nextrow .nk{font-family:var(--font-mono);font-weight:600;font-size:9px;letter-spacing:.32em;
   color:var(--yellow);text-transform:uppercase}
 .nextrow .nw{font-family:var(--font-display);font-weight:700;font-size:clamp(16px,2.6vh,22px);
-  letter-spacing:-.01em;color:var(--paper);line-height:1.25}
+  letter-spacing:-.01em;color:var(--faint);line-height:1.25}
 .nextrow .nh{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;
   color:var(--muted);text-transform:uppercase}
-.nextrow .nh b{color:var(--paper);font-weight:600}
+.nextrow .nh b{color:var(--faint);font-weight:600}
 .nextrow .nh .sep{color:rgba(255,193,7,.55);margin:0 7px}
 .nextrow .nh[hidden]{display:none}
 .bellrow{display:inline-flex;margin-top:18px}
@@ -139,7 +138,7 @@ html[data-next="1"] .bellrow{display:none}
   animation:ring 5.2s ease-in-out 2.4s infinite}
 .bellrow span{font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;
   color:var(--muted);text-transform:uppercase}
-.bellrow b{color:var(--paper);font-weight:600}
+.bellrow b{color:var(--faint);font-weight:600}
 @keyframes ring{0%,84%,100%{transform:rotate(0)}86%{transform:rotate(12deg)}88%{transform:rotate(-10deg)}
   90%{transform:rotate(7deg)}92%{transform:rotate(-5deg)}94%{transform:rotate(3deg)}96%{transform:rotate(0)}}
 
@@ -159,7 +158,7 @@ html[data-next="1"] .bellrow{display:none}
 .cr i{display:block;font-family:var(--font-display);font-weight:700;font-style:normal;
   font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .cr b{display:block;margin-top:9px;font-family:var(--font-display);font-weight:800;
-  font-size:clamp(26px,3.6vh,34px);line-height:1.05;letter-spacing:-.01em;color:var(--paper)}
+  font-size:clamp(26px,3.6vh,34px);line-height:1.05;letter-spacing:-.01em;color:var(--faint)}
 .cr b .y{color:var(--yellow)}
 
 /* plain-sight brand signature — the fallback mark when the watermark
@@ -194,32 +193,6 @@ html[data-next="1"] .bellrow{display:none}
 <body>
 <div class="stage">
   <div class="bg"></div>
-  <div id="skyline">
-    <span class="cndl" style="left:6px;width:26px;height:128px;background:#0ECB81;--d:.5s"></span>
-    <span class="cndl" style="left:88px;width:30px;height:214px;background:#F6465D;--d:.57s"></span>
-    <span class="cndl" style="left:170px;width:22px;height:92px;background:#2e2e2e;--d:.64s"></span>
-    <span class="cndl" style="left:252px;width:34px;height:288px;background:#0ECB81;--d:.71s"></span>
-    <span class="cndl" style="left:336px;width:24px;height:156px;background:#F6465D;--d:.78s"></span>
-    <span class="cndl" style="left:416px;width:30px;height:236px;background:#FFC107;--d:.85s"></span>
-    <span class="cndl" style="left:500px;width:26px;height:108px;background:#0ECB81;--d:.92s"></span>
-    <span class="cndl" style="left:582px;width:32px;height:196px;background:#F6465D;--d:.99s"></span>
-    <span class="cndl" style="left:668px;width:24px;height:74px;background:#2e2e2e;--d:1.06s"></span>
-    <span class="cndl" style="left:748px;width:30px;height:252px;background:#0ECB81;--d:1.13s"></span>
-    <span class="cndl" style="left:834px;width:26px;height:168px;background:#F6465D;--d:1.2s"></span>
-    <span class="cndl" style="left:914px;width:22px;height:118px;background:#2e2e2e;--d:1.27s"></span>
-    <span class="cndl" style="left:996px;width:34px;height:304px;background:#0ECB81;--d:1.34s"></span>
-    <span class="cndl" style="left:1082px;width:28px;height:142px;background:#F6465D;--d:1.41s"></span>
-    <span class="cndl" style="left:1162px;width:24px;height:88px;background:#2e2e2e;--d:1.48s"></span>
-    <span class="cndl" style="left:1244px;width:32px;height:228px;background:#FFC107;--d:1.55s"></span>
-    <span class="cndl" style="left:1328px;width:26px;height:176px;background:#0ECB81;--d:1.62s"></span>
-    <span class="cndl" style="left:1410px;width:30px;height:262px;background:#F6465D;--d:1.69s"></span>
-    <span class="cndl" style="left:1494px;width:22px;height:104px;background:#2e2e2e;--d:1.76s"></span>
-    <span class="cndl" style="left:1576px;width:34px;height:296px;background:#0ECB81;--d:1.83s"></span>
-    <span class="cndl" style="left:1662px;width:26px;height:148px;background:#F6465D;--d:1.9s"></span>
-    <span class="cndl" style="left:1744px;width:30px;height:210px;background:#2e2e2e;--d:1.97s"></span>
-    <span class="cndl" style="left:1828px;width:24px;height:122px;background:#FFC107;--d:2.04s"></span>
-    <span class="cndl" style="left:1906px;width:28px;height:186px;background:#0ECB81;--d:2.11s"></span>
-  </div>
 
   <span class="spark" style="left:9%;top:14%;--d:0s"></span>
   <span class="spark" style="left:48%;top:9%;--d:1.5s;background:var(--up)"></span>
@@ -248,11 +221,8 @@ html[data-next="1"] .bellrow{display:none}
       </div>
     </div>
     <div class="btxt">
-      <h1 class="rise" style="--rd:.4s">that's<br>the <span class="y">show</span><span class="g">.</span></h1>
+      <h1 class="rise" style="--rd:.4s">That's<br>All <span class="y">Folks</span></h1>
       <div class="rise" style="--rd:.55s"><span class="chip solid follow">follow so you don't miss the next one</span></div>
-      <div class="nextrow rise" style="--rd:.62s" id="nextrow">
-        <span class="nc"><span class="nk">Next Session</span><span class="nw num" id="nw">—</span><span class="nh" id="nh" hidden></span></span>
-      </div>
       <div class="bellrow rise" style="--rd:.62s">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg>
         <span><b>notifications on</b>&nbsp;— never miss a session</span>

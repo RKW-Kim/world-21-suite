@@ -8,27 +8,20 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* ── TECHNICAL DIFFICULTIES — the radar take (lab R3, 63197D0), refined ──
+/* ── TECHNICAL DIFFICULTIES — restored: the radar take (lab R3, 63197D0) ──
    "diagnostic orbit": the smile hub holds center while a radar sweep loops
-   around it looking for the fault; MIC / CAM / SIGNAL satellites check off
-   "— OK" one by one, then the cycle resets. Refinements: the check-off loop
-   and the status line are now pure CSS keyframe cycles (no JS chains), a
-   faint counter-sweep + tick ring + two blip contacts give the radar depth,
-   the candle skyline is baked into the HTML, and the page carries the
-   plain-sight signature. JS = one gated interval (clock + elapsed + ?t
-   flip). Every moving part is compositor CSS — transform/opacity plus the
-   tiny color cycles on the chips. Modules live outside this page: corners
-   + bottom 76px stay clear. ────────────────────────────────────────────── */
+   around it looking for the fault; MIC / CAM / SIGNAL satellites ride the
+   dashed ring and check off "— OK" one by one, then the cycle resets. A
+   typewriter status line mutters under the orbit. The spine (bg, sparks,
+   candle skyline) ships inline; watermark + ticker stay outside the page
+   as their own OBS modules (bottom 96px + corners stay clear). ────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
-  --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
+  --line:#2a2a2a; --muted:#8c8c8c; --paper:#ffffff;
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
   --font-display:'Manrope',system-ui,sans-serif;
   --font-body:'Inter',system-ui,sans-serif;
-  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
   --ease-out:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -36,7 +29,6 @@ html,body{height:100%}
 body{background:var(--ink);color:var(--paper);font-family:var(--font-body);
   overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 svg{display:block}
-::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 .bg{position:absolute;inset:0;z-index:-2;background:
   radial-gradient(1100px 640px at 74% 18%,rgba(255,193,7,.05),transparent 62%),
@@ -57,8 +49,6 @@ svg{display:block}
 .chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow)}
 .chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
   box-shadow:0 8px 28px rgba(255,193,7,.28)}
-.chip.mono{font-family:var(--font-mono);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
-.chip.mono b{color:var(--paper);font-weight:600}
 
 .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
   box-shadow:0 0 14px rgba(255,193,7,.9),0 0 4px rgba(255,193,7,1);opacity:0;
@@ -66,7 +56,6 @@ svg{display:block}
 @keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
-/* candle skyline — baked into the HTML, one CSS sway each, zero JS */
 #skyline{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
   -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
   -webkit-mask-composite:source-in;
@@ -87,150 +76,65 @@ svg{display:block}
 [hidden]{display:none!important}
 .y{color:var(--yellow)}
 @keyframes ringSpin{to{transform:rotate(360deg)}}
-@keyframes ringSpinCCW{to{transform:rotate(-360deg)}}
 
 .topbar{position:absolute;top:56px;left:120px;right:120px;display:flex;
   justify-content:flex-end;align-items:center;z-index:6} /* top-left stays clear: watermark module docks here */
+.evt{font-variant-numeric:tabular-nums;color:var(--yellow)}
 
 .lcol{position:absolute;left:120px;top:168px;z-index:5;max-width:620px}
 .lcol h1{font-family:var(--font-display);font-weight:800;font-size:64px;line-height:1.04;
   letter-spacing:-.03em;margin-top:22px}
 .lcol .chips{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
-.fault{margin-top:26px;display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--font-mono);font-size:11px;letter-spacing:.26em;color:var(--muted)}
-.fault b{color:var(--paper);font-weight:600;font-variant-numeric:tabular-nums}
-.fault .ddot{width:8px;height:8px;border-radius:50%;background:var(--down);
-  box-shadow:0 0 10px rgba(246,70,93,.8);animation:ddotP 1.6s ease-in-out infinite}
-@keyframes ddotP{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.45}}
 
 .orbitWrap{position:absolute;left:calc(55% - 280px);top:calc(48% - 280px);width:560px;height:560px;z-index:4}
 .orbitStage{position:absolute;inset:0}
 .ring{position:absolute;inset:70px;border:2px dashed rgba(255,193,7,.42);border-radius:50%;
   animation:ringSpin 30s linear infinite}
 .ring2{position:absolute;inset:112px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
-/* static range ticks — twelve faint marks on the outer band */
-.ticks{position:absolute;inset:70px;border-radius:50%;
-  background:repeating-conic-gradient(rgba(255,193,7,.14) 0deg .5deg,transparent .5deg 30deg);
-  -webkit-mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px);
-          mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px)}
 /* the radar sweep — loops around the smile looking for the fault */
 .sweep{position:absolute;inset:71px;border-radius:50%;
   background:conic-gradient(from 0deg,rgba(255,193,7,.15),transparent 85deg);
   animation:ringSpin 7s linear infinite;z-index:1;will-change:transform}
-/* faint counter-sweep, slower — depth without cost */
-.sweep2{position:absolute;inset:71px;border-radius:50%;
-  background:conic-gradient(from 180deg,rgba(255,193,7,.05),transparent 60deg);
-  animation:ringSpinCCW 11s linear infinite;z-index:1;will-change:transform}
-.blip{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
-  box-shadow:0 0 10px rgba(255,193,7,.85);z-index:2;
-  animation:blipP 3.4s ease-in-out infinite var(--bd,0s)}
-@keyframes blipP{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:.85;transform:scale(1.15)}}
-.fA{position:absolute;left:50%;top:50%;width:280px;height:280px;z-index:3;
+.fA{position:absolute;left:50%;top:50%;width:280px;height:280px;z-index:2;
   transform:translate(-50%,-50%);animation:facePulse 4.6s ease-in-out infinite;
   filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
 @keyframes facePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.035)}}
 .fA svg{width:100%;height:100%}
-.spinner{position:absolute;inset:0;z-index:4;animation:ringSpin 18s linear infinite;will-change:transform}
-.satellites{position:absolute;inset:0;z-index:5}
-/* chips sit OUTSIDE .spinner on purpose — inside it they inherit the ring's
-   continuous rotation and tumble with it. */
+.spinner{position:absolute;inset:0;z-index:3;animation:ringSpin 18s linear infinite;will-change:transform}
 .satPos{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(210px)}
-.satSpin{position:absolute;left:0;top:0;width:0;height:0}
+.satSpin{position:absolute;left:0;top:0;width:0;height:0;animation:satBack 18s linear infinite}
+@keyframes satBack{to{transform:rotate(-360deg)}}
 .satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
-
-/* satellite check-off — one shared CSS cycle (19.5s), staggered by --ck.
-   chip color cycle + dot fill + label swap all ride the same clock. */
 .dchip{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:999px;
   background:rgba(18,18,18,.92);border:1.5px solid var(--line);font-family:var(--font-display);
   font-weight:700;font-size:15px;letter-spacing:.12em;color:#e3e3e3;white-space:nowrap;
   box-shadow:0 10px 30px rgba(0,0,0,.45);
-  animation:chipOk 19.5s linear infinite var(--ck,0s)}
-@keyframes chipOk{
-  0%,9%{border-color:var(--line);color:#e3e3e3;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-  13%,78%{border-color:var(--yellow);color:var(--yellow);
-    box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
-  84%,100%{border-color:var(--line);color:#e3e3e3;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-}
-.dchip em{font-style:normal;font-size:11px;color:inherit;opacity:.6;letter-spacing:.18em}
+  transition:border-color .35s,color .35s,box-shadow .35s}
+.dchip em{font-style:normal;font-size:11px;color:var(--muted);letter-spacing:.18em;transition:color .35s}
 .dchip .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line);background:transparent;
-  animation:dotOk 19.5s linear infinite var(--ck,0s)}
-@keyframes dotOk{
-  0%,9%{background:transparent;border-color:var(--line);box-shadow:none}
-  13%,78%{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,193,7,.95)}
-  84%,100%{background:transparent;border-color:var(--line);box-shadow:none}
-}
-.dlab{display:inline-grid;text-align:left}
-.dlab i{grid-area:1/1;font-style:normal}
-.dlab .bas{animation:labBase 19.5s linear infinite var(--ck,0s)}
-.dlab .okv{opacity:0;animation:labOk 19.5s linear infinite var(--ck,0s)}
-@keyframes labOk{0%,10%{opacity:0}14%,78%{opacity:1}83%,100%{opacity:0}}
-@keyframes labBase{0%,10%{opacity:1}14%,78%{opacity:0}83%,100%{opacity:1}}
+  transition:background .35s,border-color .35s,box-shadow .35s}
+.dchip.ok{border-color:var(--yellow);color:var(--yellow);
+  box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
+.dchip.ok em{color:rgba(255,193,7,.75)}
+.dchip.ok .dot{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,193,7,.95)}
 
-/* status line — three mutters cross-fading, pure CSS */
-.status{position:absolute;left:calc(55% - 230px);top:calc(48% + 298px);width:460px;
-  z-index:5;font-size:19px;font-weight:500;color:#c9c9c9;text-align:center}
-.status .tag{position:relative;height:1.6em;overflow:hidden}
-.status .tag span{position:absolute;inset:0;display:block;line-height:1.6em;
-  opacity:0;transform:translateY(10px);animation:tagCycle 12s infinite}
-.status .tag span:nth-child(2){animation-delay:4s}
-.status .tag span:nth-child(3){animation-delay:8s}
-@keyframes tagCycle{0%{opacity:0;transform:translateY(10px)}3%,27%{opacity:1;transform:none}
-  33%,100%{opacity:0;transform:translateY(-10px)}}
-
-/* plain-sight brand signature */
-.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
-  font-family:var(--font-mono);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38);
-  animation:riseIn .9s var(--ease-out) .8s both}
-.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+.status{position:absolute;left:calc(55% - 230px);top:calc(48% + 298px);width:460px;text-align:center;
+  z-index:5;font-size:19px;font-weight:500;color:#c9c9c9;min-height:26px}
+.caret{display:inline-block;width:2px;height:1.05em;background:var(--yellow);margin-left:4px;
+  vertical-align:-2px;animation:caretB 1s steps(1) infinite}
+@keyframes caretB{50%{opacity:0}}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
   .rise{animation-delay:0s!important}
-  .cndl{animation:none;opacity:.62}
-  .spark{opacity:.6}
-  .sweep{animation:none;opacity:.55}
-  .sweep2,.blip{display:none}
-  .ring,.fA,.spinner{animation:none}
-  .dchip{animation:none;border-color:var(--yellow);color:var(--yellow);
-    box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
-  .dchip .dot{animation:none;background:var(--yellow);border-color:var(--yellow);
-    box-shadow:0 0 12px rgba(255,193,7,.95)}
-  .dlab .bas{display:none}
-  .dlab .okv{animation:none;opacity:1}
-  .fault .ddot{animation:none}
-  .status .tag span:first-child{opacity:1;transform:none}
+  .caret{animation:none}
 }
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="bg"></div>
-  <div id="skyline">
-    <span class="cndl" style="left:6px;width:26px;height:128px;background:#0ECB81;--d:.5s"></span>
-    <span class="cndl" style="left:88px;width:30px;height:214px;background:#F6465D;--d:.57s"></span>
-    <span class="cndl" style="left:170px;width:22px;height:92px;background:#2e2e2e;--d:.64s"></span>
-    <span class="cndl" style="left:252px;width:34px;height:288px;background:#0ECB81;--d:.71s"></span>
-    <span class="cndl" style="left:336px;width:24px;height:156px;background:#F6465D;--d:.78s"></span>
-    <span class="cndl" style="left:416px;width:30px;height:236px;background:#FFC107;--d:.85s"></span>
-    <span class="cndl" style="left:500px;width:26px;height:108px;background:#0ECB81;--d:.92s"></span>
-    <span class="cndl" style="left:582px;width:32px;height:196px;background:#F6465D;--d:.99s"></span>
-    <span class="cndl" style="left:668px;width:24px;height:74px;background:#2e2e2e;--d:1.06s"></span>
-    <span class="cndl" style="left:748px;width:30px;height:252px;background:#0ECB81;--d:1.13s"></span>
-    <span class="cndl" style="left:834px;width:26px;height:168px;background:#F6465D;--d:1.2s"></span>
-    <span class="cndl" style="left:914px;width:22px;height:118px;background:#2e2e2e;--d:1.27s"></span>
-    <span class="cndl" style="left:996px;width:34px;height:304px;background:#0ECB81;--d:1.34s"></span>
-    <span class="cndl" style="left:1082px;width:28px;height:142px;background:#F6465D;--d:1.41s"></span>
-    <span class="cndl" style="left:1162px;width:24px;height:88px;background:#2e2e2e;--d:1.48s"></span>
-    <span class="cndl" style="left:1244px;width:32px;height:228px;background:#FFC107;--d:1.55s"></span>
-    <span class="cndl" style="left:1328px;width:26px;height:176px;background:#0ECB81;--d:1.62s"></span>
-    <span class="cndl" style="left:1410px;width:30px;height:262px;background:#F6465D;--d:1.69s"></span>
-    <span class="cndl" style="left:1494px;width:22px;height:104px;background:#2e2e2e;--d:1.76s"></span>
-    <span class="cndl" style="left:1576px;width:34px;height:296px;background:#0ECB81;--d:1.83s"></span>
-    <span class="cndl" style="left:1662px;width:26px;height:148px;background:#F6465D;--d:1.9s"></span>
-    <span class="cndl" style="left:1744px;width:30px;height:210px;background:#2e2e2e;--d:1.97s"></span>
-    <span class="cndl" style="left:1828px;width:24px;height:122px;background:#FFC107;--d:2.04s"></span>
-    <span class="cndl" style="left:1906px;width:28px;height:186px;background:#0ECB81;--d:2.11s"></span>
-  </div>
+  <div id="skyline"></div>
 
   <section class="scn">
     <span class="spark" style="left:38%;top:15%;--d:0s"></span>
@@ -240,7 +144,7 @@ svg{display:block}
     <span class="spark" style="left:31%;top:79%;--d:2.9s;background:var(--sky)"></span>
 
     <header class="topbar">
-      <span class="chip mono rise" style="--rd:.55s"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
+      <span class="chip dark rise" style="--rd:.55s">DOWN FOR&nbsp;<span class="evt" data-elapsed>00:00</span></span>
     </header>
 
     <div class="lcol">
@@ -252,19 +156,14 @@ svg{display:block}
       <div class="chips rise" style="--rd:.46s">
         <span class="chip ghost">@smileke</span><span class="chip ghost">smile.co.ke</span><span class="chip ghost">#SmileSquad</span>
       </div>
-      <div class="fault rise" style="--rd:.56s"><i class="ddot"></i>TIME SINCE FAULT — <b data-elapsed>00:00</b></div>
-      <div class="chips rise" style="--rd:.66s" data-when-live hidden><span class="chip solid">● WE'RE BACK — ROLLING</span></div>
+      <div class="chips rise" style="--rd:.56s" data-when-live hidden><span class="chip solid">● WE'RE BACK — ROLLING</span></div>
     </div>
 
     <div class="orbitWrap rise" style="--rd:.28s">
       <div class="orbitStage">
-        <div class="ticks"></div>
         <div class="ring"></div>
         <div class="ring2"></div>
         <div class="sweep"></div>
-        <div class="sweep2"></div>
-        <span class="blip" style="left:26%;top:30%;--bd:0s"></span>
-        <span class="blip" style="left:68%;top:64%;--bd:1.7s"></span>
         <div class="fA" aria-hidden="true">
           <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
           <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
@@ -274,70 +173,104 @@ svg{display:block}
             <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
           </svg>
         </div>
-        <div class="satellites">
-          <div class="satPos" style="--a:0deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:1.2s"><i class="dot"></i><em>01</em><span class="dlab"><i class="bas">MIC</i><i class="okv">MIC — OK</i></span></div></div></div></div>
-          <div class="satPos" style="--a:120deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:3.4s"><i class="dot"></i><em>02</em><span class="dlab"><i class="bas">CAM</i><i class="okv">CAM — OK</i></span></div></div></div></div>
-          <div class="satPos" style="--a:240deg"><div class="satSpin"><div class="satFix"><div class="dchip" style="--ck:5.6s"><i class="dot"></i><em>03</em><span class="dlab"><i class="bas">SIGNAL</i><i class="okv">SIGNAL — OK</i></span></div></div></div></div>
+        <div class="spinner">
+          <div class="satPos" style="--a:0deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="MIC"><i class="dot"></i><em>01</em><span class="dlab">MIC</span></div></div></div></div>
+          <div class="satPos" style="--a:120deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="CAM"><i class="dot"></i><em>02</em><span class="dlab">CAM</span></div></div></div></div>
+          <div class="satPos" style="--a:240deg"><div class="satSpin"><div class="satFix"><div class="dchip" data-base="SIGNAL"><i class="dot"></i><em>03</em><span class="dlab">SIGNAL</span></div></div></div></div>
         </div>
-        <div class="spinner"></div>
       </div>
     </div>
 
-    <div class="status rise" style="--rd:.6s">
-      <p class="tag" aria-hidden="true">
-        <span>everything is fine — hold on…</span>
-        <span>fixing a wire…</span>
-        <span>still here — smile intact.</span>
-      </p>
-    </div>
-
-    <p class="sig">smile<b>.co.ke</b></p>
+    <div class="status rise" style="--rd:.6s"><span id="typeTxt"></span><span class="caret"></span></div>
   </section>
 </div>
 
 <script>
-/* one gated interval — clock + elapsed up-counter + optional ?t= flip to
-   WE'RE BACK. that's the whole script; the radar, satellites and status
-   line are pure CSS. */
+/* two tiny loops, both document.hidden-gated — that's the whole script.
+   radar + satellites are pure CSS on the compositor. */
 (function(){
-  var EAT=3*3600*1000; /* UTC+3 */
   function P2(n){return String(n).padStart(2,'0')}
 
-  var qs=new URLSearchParams(location.search);
-  var eps=qs.get('ep');
-  if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
-
-  var ck=document.getElementById('clock'),lastMin=-1;
-  function tickClock(){
-    var m=Math.floor((Date.now()+EAT)/60000)%1440;
-    if(m!==lastMin){lastMin=m;ck.textContent=P2(Math.floor(m/60))+':'+P2(m%60);}
+  /* candle skyline (static build, one-time) */
+  var sky=document.getElementById('skyline');
+  if(sky){
+    var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#FFC107'];
+    for(var i=0;i<24;i++){
+      var c=document.createElement('span');c.className='cndl';
+      c.style.left=(i*82+Math.random()*24)+'px';
+      c.style.width=(20+Math.random()*16)+'px';
+      c.style.height=(60+Math.random()*250)+'px';
+      c.style.background=cols[i%6];
+      c.style.setProperty('--d',(0.5+i*0.07).toFixed(2)+'s');
+      sky.appendChild(c);
+    }
   }
 
+  /* elapsed up-counter (mm:ss) — starts at 0 or ?elapsed= seconds */
+  var qs=new URLSearchParams(location.search);
+  var eps=qs.get('ep');if(eps){document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});}
   var e0=parseInt(qs.get('elapsed')||'0',10)||0;
   var t0=Date.now()-e0*1000;
   var els=document.querySelectorAll('[data-elapsed]');
+  setInterval(function(){
+    if(document.hidden||!els.length)return;
+    var s=Math.max(0,Math.floor((Date.now()-t0)/1000));
+    var txt=P2(Math.floor(s/60))+':'+P2(s%60);
+    els.forEach(function(e){e.textContent=txt;});
+  },1000);
 
-  var tp=qs.get('t'),target=null;
+  /* ?t= — flip to WE'RE BACK when the countdown expires */
+  var tp=qs.get('t');
   if(tp){
-    var v=/^\d+$/.test(tp)?Date.now()+parseInt(tp,10)*1000:new Date(tp).getTime();
-    if(!isNaN(v))target=v;
+    var target=/^\d+$/.test(tp)?Date.now()+parseInt(tp,10)*1000:new Date(tp).getTime();
+    if(!isNaN(target)){
+      setInterval(function(){
+        if(document.hidden)return;
+        if(Date.now()>=target){
+          document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
+        }
+      },1000);
+    }
   }
 
-  function tick(){
-    if(document.hidden)return;
-    tickClock();
-    if(els.length){
-      var s=Math.max(0,Math.floor((Date.now()-t0)/1000));
-      var txt=P2(Math.floor(s/60))+':'+P2(s%60);
-      els.forEach(function(e){e.textContent=txt;});
-    }
-    if(target!==null&&Date.now()>=target){
-      target=null;
-      document.querySelectorAll('[data-when-live]').forEach(function(e){e.removeAttribute('hidden');});
-    }
+  /* diagnostic check loop: MIC → CAM → SIGNAL, hold, reset, loop */
+  var chips=document.querySelectorAll('.dchip');
+  var idx=0;
+  function resetAll(){
+    chips.forEach(function(ch){ch.classList.remove('ok');ch.querySelector('.dlab').textContent=ch.getAttribute('data-base');});
+    idx=0;
+    setTimeout(checkNext,700);
   }
-  tick();setInterval(tick,1000);
-  document.addEventListener('visibilitychange',tick);
+  function checkNext(){
+    if(document.hidden){setTimeout(checkNext,1200);return;} /* paused while hidden */
+    if(idx>=chips.length){setTimeout(resetAll,3000);return;}
+    var ch=chips[idx];
+    ch.classList.add('ok');
+    ch.querySelector('.dlab').textContent=ch.getAttribute('data-base')+' — OK';
+    idx++;
+    if(idx>=chips.length){setTimeout(resetAll,3000);}else{setTimeout(checkNext,2200);}
+  }
+  if(chips.length){setTimeout(checkNext,1800);}
+
+  /* typewriter status line */
+  var lines=['everything is fine — hold on…','fixing a wire…','still here — smile intact.'];
+  var tt=document.getElementById('typeTxt');
+  if(tt){
+    (function type(li,ci,del){
+      if(document.hidden){setTimeout(function(){type(li,ci,del)},1200);return;} /* paused while hidden */
+      var L=lines[li];
+      tt.textContent=L.slice(0,ci);
+      if(!del){
+        var nx=ci+1;
+        if(nx>L.length){setTimeout(function(){type(li,L.length,true)},1500);return;}
+        setTimeout(function(){type(li,nx,false)},36);
+      }else{
+        var dx=ci-1;
+        if(dx<0){setTimeout(function(){type((li+1)%lines.length,0,false)},420);return;}
+        setTimeout(function(){type(li,dx,true)},16);
+      }
+    })(0,0,false);
+  }
 })();
 </script>
 </body>

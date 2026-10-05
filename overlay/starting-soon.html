@@ -4,439 +4,526 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>SMILE · starting soon</title>
+<title>SMILE — starting soon</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* ── STARTING SOON — the buffer ────────────────────────────────────────────
-   THE SCREEN BEFORE THE BELL. Not a countdown to the open: the open can
-   slip, and if it does you stay on this screen. So the hero object is an
-   ELAPSED BUFFER CLOCK — "on air for 00:14:32" — which never resolves and
-   never lies. Same honest grammar as tech-diff's "TIME SINCE FAULT", in a
-   different key.
+/* STARTING SOON — the last sixty seconds.
+   Hold the long buffer on starting.html. Cut to this when the crew is ready.
 
-   Built on tech-diff's skeleton: left-weighted headline block, one hero
-   instrument, status chips attached to it, data texture along the bottom.
-   Cut from the old scene: the duplicate status pills and the rotating
-   tagline. Kept: the checklist, the platform row, the socials — they carry
-   real information.
+   The stage is the blackhole poster: one dark sphere with a bright rim and the
+   words laid across its lower half. That is the whole composition until zero.
+   It is deliberately featureless — the mark is not on it, nothing smiles at you
+   while you wait.
 
-   ?inst=a|b|c   which hero instrument to compare (default a)
-     a  the buffer clock   — digits, tabular, no resolution
-     b  the dial           — clock face, radar demoted to a corner detail
-     c  the radar          — tech-diff's instrument, repurposed pre-open
-   ?opens=09:00  Nairobi wall-clock open (shown as a second line, never
-                 the hero — it can slip, so it must not be the thing the
-                 audience is watching)
-   ?ad=  ?adimg=  sponsor slot in the right column
+   A doomsday flip clock sits on the sphere's centre. When it reaches 00:00 the
+   four cards turn over one at a time, left to right, each landing on the mark.
+   Then they run together like water: the outer two run into their neighbours,
+   and the last two fall into each other and drop out of frame. The centre is
+   left empty, the sphere rises and becomes the mark, the eyes blink, the mouth
+   draws, and the stream is open.
 
-   Contract: no canvas, no rAF, one gated interval (the clock). Compositor
-   CSS only. Bottom 76px is the ticker's dock; top-left is the watermark's. */
+   Motion language is Apple/Linear: critically damped decel, no overshoot,
+   size-specific optical tracking, type that rises rather than fades up.
+
+   Contract: no canvas, no rAF, one gated interval (the clock). Every animation
+   is a CSS keyframe on the compositor. Bottom 76px is the ticker dock. */
 :root{
-  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
+  --yellow:#FFC107; --hot:#F5A623; --ember:#FF8A1F; --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
-  --line:#2A2A2A; --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
-  --font-display:'Space Grotesk',system-ui,sans-serif;
-  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --safe-b:76px; --eo:cubic-bezier(.2,.9,.3,1);
+  --line:#2a2a2a;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px;
+  --eo:cubic-bezier(.32,.72,0,1);
+  --eio:cubic-bezier(.4,0,.2,1);
+
+  --sun:clamp(340px,32vw,620px);        /* the sphere */
+  --mark:calc(var(--sun)*.62);          /* the mark it resolves into */
+  --cw:calc(var(--sun)*.215);           /* flip card width  */
+  --ch:calc(var(--cw)*1.42);            /* flip card height */
+  --cgap:calc(var(--cw)*.11);
+  --cdim:calc(var(--ch)*.80);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden}
-body{background:var(--ink);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
-  -webkit-font-smoothing:antialiased}
+body{background:var(--ink);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
 ::selection{background:var(--yellow);color:var(--ink)}
 .page{position:relative;width:100vw;height:100vh;overflow:hidden}
 
-/* ── backdrop: dot grid + warm pool, the mission-control floor ── */
-.bg{position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(1300px 800px at 58% 44%,rgba(255,193,7,.055),transparent 62%),
-    radial-gradient(900px 600px at 12% 88%,rgba(63,182,255,.03),transparent 60%),
-    var(--ink)}
-.bg::after{content:"";position:absolute;inset:0;opacity:.5;
-  background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);
-  background-size:44px 44px}
-
-/* ── data texture: the market floor, along the bottom edge ── */
-/* the floor is TEXTURE, not content: it sits behind everything, is short
-   enough to clear the checklist row, and never competes for attention. */
-.floor{position:absolute;left:0;right:0;bottom:0;height:186px;z-index:1;pointer-events:none;
-  display:flex;align-items:flex-end;gap:8px;padding:0 10px;opacity:.5;
-  -webkit-mask-image:linear-gradient(0deg,#000 0 52%,transparent 96%);
-          mask-image:linear-gradient(0deg,#000 0 52%,transparent 96%)}
-.floor i{width:26px;border-radius:2px 2px 0 0;background:var(--c);
-  height:var(--h);animation:cndl 3.4s ease-in-out infinite var(--d,0s)}
-@keyframes cndl{0%,100%{transform:scaleY(1);filter:brightness(1)}
-  50%{transform:scaleY(.82);filter:brightness(1.22)}}
-
-/* ── top bar ── */
-.topbar{position:absolute;top:34px;left:44px;right:44px;z-index:8;
-  display:flex;justify-content:space-between;align-items:center}
-.clockchip{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:999px;
-  background:rgba(18,18,18,.86);border:1px solid var(--line);
-  font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
+/* ---- watermark corner, moved to the right ---- */
+.clockchip{position:absolute;top:34px;right:44px;z-index:30;display:inline-flex;align-items:center;gap:10px;
+  padding:9px 18px;border-radius:999px;background:rgba(10,10,12,.82);border:1px solid var(--line);
+  font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
 .clockchip b{color:var(--fg);font-weight:600}
-.prepill{display:inline-flex;align-items:center;gap:10px;padding:9px 20px;border-radius:999px;
-  background:linear-gradient(135deg,var(--yellow),var(--hot));color:#1F1702;
-  font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.24em;
-  box-shadow:0 8px 28px rgba(255,193,7,.28)}
 
-/* ── left column: the headline block ── */
-.lcol{position:absolute;left:120px;top:150px;z-index:5;max-width:640px}
-.lcol h1{font-family:var(--font-display);font-weight:800;font-size:clamp(56px,6.6vw,92px);
-  line-height:1.04;letter-spacing:-.03em;margin-top:22px}
-.lcol h1 .y{color:var(--yellow)}
-.lcol .chips{margin-top:26px;display:flex;gap:11px;flex-wrap:wrap}
-.chip{display:inline-flex;align-items:center;gap:9px;padding:10px 19px;border-radius:999px;
-  border:1.5px solid var(--yellow);color:var(--yellow);
-  font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.12em;
-  white-space:nowrap;background:rgba(255,193,7,.06)}
-.chip .mk{font-size:13px}
-.chip.plain{border-color:var(--line);color:var(--muted);background:transparent}
+/* ---- the sphere. A dark ball lit from above with a bright rim riding its top
+        edge: a sun not quite up, or an eclipse holding something back. ---- */
+.holder{position:absolute;left:50%;top:48%;width:0;height:0;z-index:1}
+.holder>*{position:absolute;left:50%;top:0;transform:translate(-50%,-50%)}
+.rim{z-index:0;width:var(--sun);height:var(--sun);border-radius:50%;pointer-events:none;
+  box-shadow:0 -16px 66px 4px rgba(255,150,50,.42),0 -4px 20px 1px rgba(255,206,130,.40);
+  transition:opacity 600ms var(--eio),box-shadow 700ms var(--eio)}
+.sun{z-index:1;width:var(--sun);height:var(--sun);border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 24%,rgba(255,180,90,.13),transparent 58%),
+    radial-gradient(circle at 50% 40%,#1d1608 0%,#100c05 54%,#050402 100%);
+  box-shadow:inset 0 20px 56px rgba(255,140,40,.24),inset 0 -28px 66px rgba(0,0,0,.78)}
 
-.fault{margin-top:28px;display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.26em;color:var(--muted)}
-.fault b{color:var(--fg);font-weight:600}
-.fault .ddot{width:8px;height:8px;border-radius:50%;background:var(--up);
-  box-shadow:0 0 10px rgba(14,203,129,.8);animation:ddotP 1.7s ease-in-out infinite}
-@keyframes ddotP{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.45}}
+/* ---- the words, laid across the sphere's lower half as in the poster ---- */
+.words{position:absolute;left:0;right:0;top:70%;z-index:6;
+  display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;
+  transition:opacity 520ms var(--eio)}
+.coming{font-family:var(--fd);font-weight:500;font-size:clamp(28px,2.5vw,46px);
+  letter-spacing:.42em;color:#EDEDF2;text-indent:.42em}
+.brand{font-family:var(--fm);font-size:clamp(10px,.82vw,15px);font-weight:600;
+  letter-spacing:.62em;color:rgba(255,138,31,.92);text-indent:.62em}
 
-/* ── hero instrument, shared shell; ?inst picks which fills it ── */
-.stage{position:absolute;left:calc(58% - 300px);top:calc(50% - 300px);width:600px;height:600px;z-index:4}
-.inst{position:absolute;inset:0;display:none}
-.inst.on{display:block}
+/* ================= the doomsday flip clock =================
+   Four chunky tiles with a hard split down the middle. Amber rather than red:
+   the sphere is already warm, and a second alarm colour would fight it. */
+.flip{position:absolute;left:0;right:0;top:48%;transform:translateY(-50%);z-index:8;
+  display:flex;align-items:center;justify-content:center;gap:var(--cgap);perspective:1400px}
+.card{position:relative;width:var(--cw);height:var(--ch);transform-style:preserve-3d}
+.in3d{position:absolute;inset:0;transform-style:preserve-3d}
+.side{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;
+  display:grid;place-items:center;overflow:hidden;
+  background:linear-gradient(180deg,#100d07,#060503);
+  box-shadow:inset 0 0 0 2px rgba(255,138,31,.22),0 18px 40px rgba(0,0,0,.6)}
+.side::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;
+  background:#000;z-index:3;box-shadow:0 0 0 1px rgba(255,138,31,.14)}
+.dg{font-family:var(--fd);font-weight:800;font-size:var(--cdim);line-height:1;
+  color:var(--ember);text-shadow:0 0 26px rgba(255,138,31,.55)}
+.side.back{transform:rotateX(180deg);background:none;box-shadow:none}
+.side.back svg{width:100%;height:100%}
+/* a digit turning: the card is edge-on and invisible at the halfway point, so
+   the glyph can be swapped underneath it without anyone seeing the seam */
+.card.turn .in3d{animation:cardTurn 240ms linear both}
+@keyframes cardTurn{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0)}}
+.card[data-i="0"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(0ms - var(--freeze,0s))}
+.card[data-i="1"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(150ms - var(--freeze,0s))}
+.card[data-i="2"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(300ms - var(--freeze,0s))}
+.card[data-i="3"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(450ms - var(--freeze,0s))}
+@keyframes cardFlip{from{transform:rotateX(0)}to{transform:rotateX(180deg)}}
+.colon{display:flex;flex-direction:column;gap:22px;padding:0 4px}
+.colon i{width:11px;height:11px;border-radius:50%;background:var(--ember);
+  box-shadow:0 0 16px rgba(255,138,31,.7)}
 
-/* (a) THE BUFFER CLOCK — big tabular digits, no ring, no resolution */
-.clockFace{position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px}
-.digits{font-family:var(--font-display);font-weight:800;
-  font-size:clamp(58px,5.4vw,86px);line-height:1;letter-spacing:-.045em;
-  color:var(--fg);font-variant-numeric:tabular-nums;
-  filter:drop-shadow(0 18px 60px rgba(255,193,7,.16))}
-.digits .sep{color:var(--yellow);margin:0 2px}
-.digits .ms{font-size:.42em;color:var(--yellow);letter-spacing:0;vertical-align:super}
-.clockLbl{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.3em;
-  color:var(--muted);margin-bottom:14px}
-.openAt{font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.24em;
-  color:var(--faint);margin-top:16px;text-align:center}
-.openAt b{color:var(--muted);font-weight:600}
+/* ---- the resolve choreography ----
+   Delays are calc(base - var(--freeze)) so QA can park any beat on demand. */
+body.zero .words{opacity:.34}
 
-/* (b) THE DIAL — clock face; radar demoted to a corner detail */
-.dial{position:absolute;inset:34px;border-radius:50%;
-  border:2px solid rgba(255,193,7,.34);
-  background:radial-gradient(circle at 50% 42%,rgba(255,193,7,.07),transparent 62%)}
-.dialTicks{position:absolute;inset:34px;border-radius:50%;
-  background:repeating-conic-gradient(rgba(255,193,7,.3) 0deg 1deg,transparent 1deg 30deg);
-  -webkit-mask-image:radial-gradient(circle,transparent 0 262px,#000 263px 276px,transparent 277px);
-          mask-image:radial-gradient(circle,transparent 0 262px,#000 263px 276px,transparent 277px)}
-.dialHand{position:absolute;left:50%;top:50%;width:2px;height:262px;
-  background:linear-gradient(180deg,var(--yellow),rgba(255,193,7,.12));
-  transform-origin:50% 0;transform:translate(-50%,0) rotate(0deg);
-  animation:dialSpin 60s linear infinite;border-radius:2px}
-@keyframes dialSpin{to{transform:translate(-50%,0) rotate(360deg)}}
-.dialHub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:16px;height:16px;border-radius:50%;background:var(--yellow);
-  box-shadow:0 0 14px rgba(255,193,7,.9)}
-.dialFace{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}
-.dialFace .d{font-family:var(--font-display);font-weight:800;font-size:clamp(46px,4.6vw,70px);
-  line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-.dialFace .l{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.3em;
-  color:var(--muted);margin-top:12px}
-.dialFace .o{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.22em;
-  color:var(--faint);margin-top:6px}
+/* 1 · every card turns over, left to right, each landing on the mark */
 
-/* (c) THE RADAR — tech-diff's instrument, repurposed pre-open */
-.ring{position:absolute;inset:70px;border:2px dashed rgba(255,193,7,.42);border-radius:50%;
-  animation:ringSpin 30s linear infinite}
-.ring2{position:absolute;inset:112px;border:1px solid rgba(255,193,7,.14);border-radius:50%}
-.rticks{position:absolute;inset:70px;border-radius:50%;
-  background:repeating-conic-gradient(rgba(255,193,7,.14) 0deg .5deg,transparent .5deg 30deg);
-  -webkit-mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px);
-          mask-image:radial-gradient(circle,transparent 0 196px,#000 197px 208px,transparent 209px)}
-.sweep{position:absolute;inset:71px;border-radius:50%;z-index:1;
-  background:conic-gradient(from 0deg,rgba(255,193,7,.15),transparent 85deg);
-  animation:ringSpin 7s linear infinite;will-change:transform}
-@keyframes ringSpin{to{transform:rotate(360deg)}}
-.sweep2{position:absolute;inset:71px;border-radius:50%;z-index:1;
-  background:conic-gradient(from 180deg,rgba(255,193,7,.05),transparent 60deg);
-  animation:ringSpinCCW 11s linear infinite;will-change:transform}
-@keyframes ringSpinCCW{to{transform:rotate(-360deg)}}
-.blip{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
-  box-shadow:0 0 10px rgba(255,193,7,.85);z-index:2;
-  animation:blipP 3.4s ease-in-out infinite var(--bd,0s)}
-@keyframes blipP{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:.85;transform:scale(1.15)}}
-.rFace{position:absolute;left:50%;top:50%;width:280px;height:280px;z-index:3;
-  transform:translate(-50%,-50%);animation:facePulse 4.6s ease-in-out infinite;
-  filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
-@keyframes facePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}
-  50%{transform:translate(-50%,-50%) scale(1.035)}}
-.rFace svg{width:100%;height:100%}
-.rDigits{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);z-index:5;
-  font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.2em;
-  color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap;
-  padding:8px 18px;border-radius:999px;background:rgba(18,18,18,.9);border:1px solid var(--line)}
+/* 2 · the outer two run into their neighbours like water finding its level */
+.card[data-i="0"].mrg{animation:runL 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="1"].mrg{animation:absorb 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="3"].mrg{animation:runR 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="2"].mrg{animation:absorb 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+@keyframes runL{0%{transform:translateX(0) scale(1);opacity:1}
+  55%{transform:translateX(calc(var(--cw)*.52)) scale(.94,.9);opacity:1}
+  100%{transform:translateX(calc(var(--cw)*.68)) scale(.5,.42);opacity:0}}
+@keyframes runR{0%{transform:translateX(0) scale(1);opacity:1}
+  55%{transform:translateX(calc(var(--cw)*-.52)) scale(.94,.9);opacity:1}
+  100%{transform:translateX(calc(var(--cw)*-.68)) scale(.5,.42);opacity:0}}
+@keyframes absorb{0%{transform:scale(1)}45%{transform:scale(1.09,1.05)}
+  100%{transform:scale(1)}}
 
-/* ── satellite chips: setup checks riding one shared 21s cycle ── */
-.sat{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(224px);z-index:6}
-.satSpin{position:absolute;left:0;top:0;width:0;height:0}
-/* counter-rotate only — NO orbit spin, or the chip tumbles instead of
-   riding the ring level (this is a live bug in tech-diff.html). */
-.satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
-.satChip{display:inline-flex;align-items:center;gap:9px;padding:10px 20px;border-radius:999px;
-  background:rgba(18,18,18,.94);border:1.5px solid var(--line);
-  font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.12em;
-  color:var(--muted);white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.45);
-  animation:ck 21s linear infinite var(--ck,0s)}
-@keyframes ck{
-  0%,8%{border-color:var(--line);color:var(--muted);box-shadow:0 10px 30px rgba(0,0,0,.45)}
-  12%,80%{border-color:var(--yellow);color:var(--yellow);
-    box-shadow:0 0 0 1px rgba(255,193,7,.28),0 8px 30px rgba(255,193,7,.18)}
-  86%,100%{border-color:var(--line);color:var(--muted);box-shadow:0 10px 30px rgba(0,0,0,.45)}}
-.satChip i{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+/* 3 · the last two fall into each other and drop out, leaving the centre bare */
+.card[data-i="1"].void{animation:voidL 900ms cubic-bezier(.5,0,.75,0) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+.card[data-i="2"].void{animation:voidR 900ms cubic-bezier(.5,0,.75,0) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+@keyframes voidL{0%{transform:scale(1) translateX(0);opacity:1}
+  100%{transform:scale(.06) translateX(calc(var(--cw)*.5));opacity:0}}
+@keyframes voidR{0%{transform:scale(1) translateX(0);opacity:1}
+  100%{transform:scale(.06) translateX(calc(var(--cw)*-.5));opacity:0}}
+body.voided .colon{animation:voidOut 700ms var(--eio) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+@keyframes voidOut{to{opacity:0;transform:scale(.4)}}
 
-/* ── right column: ad slot + where to find us ── */
-.rcol{position:absolute;right:56px;top:132px;z-index:5;width:330px}
-.adslot{border:1.5px solid var(--line);border-radius:16px;background:rgba(20,20,23,.72);
-  padding:34px 24px;text-align:center;min-height:190px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-.adslot .adT{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.28em;
-  color:var(--faint)}
-.adslot .adM{font-family:var(--font-display);font-weight:700;font-size:19px;line-height:1.28;
-  color:var(--fg)}
-.adslot .adM .y{color:var(--yellow)}
-.adslot img{max-width:100%;border-radius:8px}
-.find{margin-top:26px;display:flex;flex-direction:column;gap:11px}
-.find .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.tag{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:999px;
-  border:1px solid var(--line);background:rgba(18,18,18,.8);
-  font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.16em;color:var(--muted)}
-.tag.on{border-color:rgba(255,193,7,.5);color:var(--yellow)}
-.findLbl{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.28em;
-  color:var(--faint);text-align:right;margin-bottom:3px}
+/* 4 · the sphere rises and becomes the mark */
+body.risen .rim{animation:rimLit 900ms var(--eio) both;
+  animation-delay:calc(2900ms - var(--freeze,0s))}
+body.risen .sun{animation:sunRise 900ms var(--eo) both;
+  animation-delay:calc(2900ms - var(--freeze,0s))}
+body.risen .mark{opacity:1;animation:markIn 760ms var(--eo) both;
+  animation-delay:calc(2960ms - var(--freeze,0s))}
+@keyframes rimLit{0%{opacity:1;box-shadow:0 -16px 66px 4px rgba(255,150,50,.42),0 -4px 20px 1px rgba(255,206,130,.40)}
+  to{opacity:0;box-shadow:0 -10px 90px 12px rgba(255,193,7,.40),0 0 210px 34px rgba(255,193,7,.16)}}
+@keyframes sunRise{0%{opacity:1;transform:translate(-50%,-50%) translateY(46px) scale(.94)}
+  to{opacity:0;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+@keyframes markIn{from{opacity:0;transform:translate(-50%,-50%) translateY(30px) scale(.86)}
+  to{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+body.risen .words{opacity:0}
 
-/* ── the checklist, kept — it carries the "we're setting up" idea ── */
-.steps{position:absolute;left:120px;bottom:calc(var(--safe-b) + 26px);z-index:6;
-  display:flex;gap:10px;flex-wrap:wrap}
-.step{display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;
-  border:1.5px solid var(--line);background:rgba(12,12,15,.94);
-  font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.1em;
-  color:var(--muted);white-space:nowrap}
-.step b{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.16em}
-.step.ok{border-color:var(--yellow);color:var(--yellow);background:rgba(255,193,7,.07)}
-.step .mk{font-size:12px}
+/* 5 · the mark itself. Paths verbatim from assets/smile-face.svg; only the
+       eye transform and the mouth clip are animated, nothing is redrawn. */
+.mark{z-index:5;width:var(--mark);height:var(--mark);opacity:0;
+  filter:drop-shadow(0 0 34px rgba(255,193,7,.34))}
+.mark svg{width:100%;height:100%;overflow:visible}
+.f-eye,.f-mouth{transform-box:fill-box;transform-origin:center}
+.mark .f-eye{opacity:0}
+.mark.eyes .f-eye{animation:fEyeIn 260ms var(--eo) both;
+  animation-delay:calc(3860ms - var(--freeze,0s))}
+@keyframes fEyeIn{from{opacity:0}to{opacity:1}}
+/* THE BLINK, recovered from logo-motion.html study B — 90ms shut / 90ms open,
+   right eye 140ms behind. Eyes only; the study's mouth pulse is dropped. */
+.mark.blink .f-eye-l{animation:fBlink 180ms linear both;
+  animation-delay:calc(4180ms - var(--freeze,0s))}
+.mark.blink .f-eye-r{animation:fBlink 180ms linear both;
+  animation-delay:calc(4320ms - var(--freeze,0s))}
+@keyframes fBlink{0%{transform:scaleY(1)}50%{transform:scaleY(.06)}100%{transform:scaleY(1)}}
+/* THE DRAW, recovered from logo-motion.html study A — mouth wipes L to R over
+   480ms. The -8% vertical inset is what keeps the stroke ends off the clip. */
+.mark .f-mouth{clip-path:inset(-8% 100% -8% -2%)}
+.mark.mouth .f-mouth{animation:fMouthDraw 480ms var(--eo) both;
+  animation-delay:calc(4420ms - var(--freeze,0s))}
+@keyframes fMouthDraw{from{clip-path:inset(-8% 100% -8% -2%)}
+  to{clip-path:inset(-8% -2% -8% -2%)}}
 
-/* ── plain-sight signature ── */
-.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 6px);z-index:7;text-align:center;
-  font-family:var(--font-mono);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38)}
-.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+/* ================= welcome ================= */
+.welcome{position:absolute;left:0;right:0;top:72%;z-index:12;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  opacity:0;pointer-events:none}
+.w-kick{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.5em;
+  color:var(--yellow);padding-left:.5em}
+.w-title{font-family:var(--fd);font-weight:800;font-size:clamp(40px,4.8vw,74px);
+  line-height:.94;letter-spacing:-.045em;margin-top:18px}
+.w-title .y{color:var(--yellow)}
+.w-sub{font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.3em;
+  color:var(--muted);margin-top:20px}
+.w-rule{width:56px;height:2px;background:var(--yellow);opacity:.55;margin-top:26px;
+  transform:scaleX(0);transform-origin:center}
+.stingers{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
+.stinger{position:relative;display:inline-flex;align-items:center;gap:10px;
+  padding:10px 18px 10px 14px;border-radius:14px;
+  border:1px solid var(--line);background:rgba(255,255,255,.035);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.stinger .mk{width:18px;height:18px;flex:0 0 auto;display:block}
+.stinger .mk svg{width:100%;height:100%}
+.stinger .nm{font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em;
+  color:var(--muted)}
+.stinger::after{content:"";position:absolute;inset:-1px;border-radius:14px;
+  pointer-events:none;opacity:.5;box-shadow:0 0 22px -6px currentColor}
+.stinger[data-p="youtube"]{color:rgba(255,0,51,.8)}
+.stinger[data-p="twitch"] {color:rgba(145,70,255,.8)}
+.stinger[data-p="facebook"]{color:rgba(24,119,242,.8)}
+.stinger[data-p="tiktok"] {color:rgba(37,244,238,.7)}
+.stinger[data-p="youtube"] .nm{color:#FF5A78}
+.stinger[data-p="twitch"] .nm{color:#B18AFF}
+.stinger[data-p="facebook"] .nm{color:#6BA6FF}
+.stinger[data-p="tiktok"] .nm{color:#7FE9E4}
+.w-url{font-family:var(--fm);font-size:14px;font-weight:600;letter-spacing:.2em;
+  color:rgba(250,250,250,.72);margin-top:28px}
+.w-url b{color:var(--yellow);font-weight:600}
 
-/* ═══ ?guide=1 — setup-only zone map ═══ */
-.g-tk{position:absolute;left:0;right:0;bottom:0;height:76px;z-index:9;display:none;
+body.landed .welcome{pointer-events:auto;
+  animation:wFade 520ms var(--eio) both;
+  animation-delay:calc(5000ms - var(--freeze,0s))}
+body.landed .w-kick  {animation:rise 560ms var(--eo) both;animation-delay:calc(5080ms - var(--freeze,0s))}
+body.landed .w-title {animation:rise 640ms var(--eo) both;animation-delay:calc(5170ms - var(--freeze,0s))}
+body.landed .w-sub   {animation:rise 560ms var(--eo) both;animation-delay:calc(5300ms - var(--freeze,0s))}
+body.landed .w-rule  {animation:ruleIn 520ms var(--eo) both;animation-delay:calc(5390ms - var(--freeze,0s))}
+body.landed .stingers{animation:rise 620ms var(--eo) both;animation-delay:calc(5460ms - var(--freeze,0s))}
+body.landed .w-url   {animation:rise 560ms var(--eo) both;animation-delay:calc(5600ms - var(--freeze,0s))}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wFade{from{opacity:0}to{opacity:1}}
+@keyframes ruleIn{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:.55}}
+
+/* QA park */
+body.freeze *{animation-play-state:paused !important}
+
+/* ---- producer controls. Never on air by accident: ?ui=1 or press C. ---- */
+.pctl{position:absolute;right:44px;bottom:calc(var(--safe-b) + 24px);z-index:30;
+  display:flex;gap:8px;opacity:0;pointer-events:none;transition:opacity 200ms var(--eio)}
+body.ui .pctl{opacity:1;pointer-events:auto}
+.pctl button{font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.16em;
+  color:var(--faint);background:rgba(10,10,12,.92);border:1px solid var(--line);
+  border-radius:999px;padding:10px 18px;cursor:pointer;
+  transition:color 120ms ease-out,border-color 120ms ease-out,transform 100ms ease-out}
+.pctl button:hover{color:var(--fg);border-color:rgba(255,193,7,.4)}
+.pctl button:active{transform:scale(.96)}
+.pctl button.go{color:var(--yellow);border-color:rgba(255,193,7,.5);background:rgba(255,193,7,.08)}
+.pctl .keys{margin-left:6px;padding:10px 14px;color:rgba(250,250,250,.3);
+  border-style:dashed;cursor:default}
+.pctl .keys:hover{color:rgba(250,250,250,.3);border-color:var(--line)}
+
+.g-tk{position:absolute;left:0;right:0;bottom:0;height:76px;z-index:10;display:none;
   border-top:1px dashed rgba(255,193,7,.5);align-items:center;justify-content:center}
-.g-chat{position:absolute;left:28px;top:28px;width:300px;height:150px;z-index:9;display:none;
-  border:1px dashed rgba(255,193,7,.5);border-radius:10px}
-body.guide .g-tk,body.guide .g-chat{display:flex}
-body.guide .g-chat::after{content:"CHAT SOURCE";position:absolute;left:10px;top:10px;
-  font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;color:rgba(255,193,7,.8)}
+body.guide .g-tk{display:flex}
 
-@media (max-width:1500px){.rcol{display:none}}
+/* Reduced motion keeps the idea, loses every bit of travel. */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none !important;transition:none !important}}
+  *,*::before,*::after{animation:none !important}
+  .flip,.words,.rim{display:none}
+  .sun{opacity:0}
+  .mark{opacity:1}
+  .mark .f-eye{opacity:1;transform:none}
+  .mark .f-mouth{clip-path:inset(-8% -2% -8% -2%)}
+  .welcome{opacity:1}
+  .w-rule{transform:scaleX(1);opacity:.55}
+}
 </style>
 </head>
 <body>
 <div class="page">
+  <span class="clockchip"><b class="num" id="clock">--:--</b> &middot; NAIROBI DESK &middot; EAT</span>
 
-  <div class="bg"></div>
-  <div class="floor" id="floor" aria-hidden="true"></div>
+  <div class="holder">
+    <div class="rim" aria-hidden="true"></div>
+    <div class="sun" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <span class="clockchip"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
-    <span class="prepill"><span class="dot" aria-hidden="true">●</span> PRE-MARKET · BUFFER</span>
-  </header>
-
-  <!-- ══ LEFT — headline block ══ -->
-  <section class="lcol">
-    <h1>markets open<br><span class="y">soon.</span></h1>
-    <div class="chips">
-      <span class="chip"><span class="mk">◗</span>CHARTS <b style="color:var(--yellow)">READY</b></span>
-      <span class="chip"><span class="mk">◔</span>CANDLES <b style="color:var(--yellow)">READY</b></span>
-      <span class="chip plain"><span class="mk">◑</span>COFFEE · LOADING</span>
-    </div>
-    <p class="fault"><i class="ddot"></i>ON AIR FOR <b class="num" id="fault">00:00:00</b> · WE'RE GETTING READY</p>
-  </section>
-
-  <!-- ══ CENTRE — the hero instrument, three ways ══ -->
-  <div class="stage" id="stage">
-
-    <!-- (a) THE BUFFER CLOCK -->
-    <div class="inst" id="instA">
-      <div class="clockFace">
-        <div class="clockLbl">ON AIR FOR</div>
-        <div class="digits num" id="bigClock">00:00:00<span class="ms">.0</span></div>
-        <div class="openAt">MARKET OPENS <b id="opensAt">09:00</b> EAT · WE START WHEN WE'RE READY</div>
-      </div>
-    </div>
-
-    <!-- (b) THE DIAL -->
-    <div class="inst" id="instB">
-      <div class="dial"></div>
-      <div class="dialTicks"></div>
-      <div class="dialHand"></div>
-      <div class="dialHub"></div>
-      <div class="dialFace">
-        <div class="d num" id="dialClock">00:00:00</div>
-        <div class="l">ON AIR FOR</div>
-        <div class="o">OPENS <b id="opensAt2">09:00</b> EAT</div>
-      </div>
-      <div class="sat" style="--a:-60deg">
-        <div class="satSpin" style="animation-duration:26s">
-          <div class="satFix"><span class="satChip" style="--ck:0s"><i></i>MARKETS</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- (c) THE RADAR -->
-    <div class="inst" id="instC">
-      <div class="ring2"></div>
-      <div class="ring"></div>
-      <div class="rticks"></div>
-      <div class="sweep"></div>
-      <div class="sweep2"></div>
-      <div class="rFace">
-        <!-- smile face — verbatim crop of Smile-Logo.svg (same 4 paths) -->
-        <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
-          <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
-          <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
-          <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
-          <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
-        </svg>
-      </div>
-      <span class="blip" style="left:78%;top:22%;--bd:-.4s"></span>
-      <span class="blip" style="left:22%;top:31%;--bd:-1.4s;background:var(--sky);box-shadow:0 0 10px rgba(63,182,255,.8)"></span>
-      <span class="blip" style="left:64%;top:76%;--bd:-2.3s;background:var(--up);box-shadow:0 0 10px rgba(14,203,129,.8)"></span>
-      <span class="blip" style="left:34%;top:70%;--bd:-3s;background:var(--hot);box-shadow:0 0 10px rgba(245,166,35,.8)"></span>
-      <div class="sat" style="--a:-24deg">
-        <div class="satSpin" style="animation-duration:21s">
-          <div class="satFix"><span class="satChip" style="--ck:0s"><i></i>01 MIC</span></div>
-        </div>
-      </div>
-      <div class="sat" style="--a:104deg">
-        <div class="satSpin" style="animation-duration:21s">
-          <div class="satFix"><span class="satChip" style="--ck:7s"><i></i>02 CAM</span></div>
-        </div>
-      </div>
-      <div class="sat" style="--a:198deg">
-        <div class="satSpin" style="animation-duration:21s">
-          <div class="satFix"><span class="satChip" style="--ck:14s"><i></i>03 DESK</span></div>
-        </div>
-      </div>
-      <div class="rDigits" id="radarClock">ON AIR 00:00:00</div>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="5 10.8 23.8 23.8" xmlns="http://www.w3.org/2000/svg">
+        <path class="f-disc" d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path class="f-eye f-eye-l" d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path class="f-eye f-eye-r" d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path class="f-mouth" d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg>
     </div>
   </div>
 
-  <!-- ══ RIGHT — ad slot + where to find us ══ -->
-  <aside class="rcol">
-    <div class="adslot" id="adslot">
-      <span class="adT">AD SPACE</span>
-      <span class="adM">Your brand could<br>live <span class="y">here</span>.</span>
-    </div>
-    <div class="find">
-      <span class="findLbl">FIND US</span>
-      <div class="row">
-        <span class="tag on">@SMILEKE</span><span class="tag">SMILE.CO.KE</span><span class="tag">#SMILESQUAD</span>
-      </div>
-      <span class="findLbl" style="margin-top:10px">WATCH ON</span>
-      <div class="row">
-        <span class="tag">YOUTUBE</span><span class="tag">TWITCH</span><span class="tag">TIKTOK</span>
-      </div>
-    </div>
-  </aside>
+  <div class="flip" id="flip">
+    <div class="card" data-i="0"><div class="in3d">
+      <div class="side front"><span class="dg" id="d0">0</span></div>
+      <div class="side back"><svg viewBox="5 10.8 23.8 23.8" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg></div>
+    </div></div>
+    <div class="card" data-i="1"><div class="in3d">
+      <div class="side front"><span class="dg" id="d1">0</span></div>
+      <div class="side back"><svg viewBox="5 10.8 23.8 23.8" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg></div>
+    </div></div>
+    <div class="colon"><i></i><i></i></div>
+    <div class="card" data-i="2"><div class="in3d">
+      <div class="side front"><span class="dg" id="d2">0</span></div>
+      <div class="side back"><svg viewBox="5 10.8 23.8 23.8" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg></div>
+    </div></div>
+    <div class="card" data-i="3"><div class="in3d">
+      <div class="side front"><span class="dg" id="d3">0</span></div>
+      <div class="side back"><svg viewBox="5 10.8 23.8 23.8" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg></div>
+    </div></div>
+  </div>
 
-  <!-- ══ LEFT-BOTTOM — the checklist, kept ══ -->
-  <div class="steps" id="steps">
-    <span class="step ok"><span class="mk">✓</span>CHARTS</span>
-    <span class="step ok"><span class="mk">✓</span>CANDLES</span>
-    <span class="step" id="sMic"><span class="mk">◔</span>MIC CHECK</span>
-    <span class="step" id="sCam"><span class="mk">◔</span>CAMERA</span>
-    <span class="step"><span class="mk">◑</span>VIBES</span>
+  <div class="words" aria-hidden="true">
+    <div class="coming">COMING SOON</div>
+    <div class="brand">SMILE.CO.KE</div>
+  </div>
+
+  <div class="welcome">
+    <div class="w-kick">THE DESK IS OPEN</div>
+    <h1 class="w-title">welcome to <span class="y">smileTV</span></h1>
+    <div class="w-sub">EPISODE <span class="num" id="ep">128</span> &middot; STREAM LIVE</div>
+    <div class="w-rule"></div>
+    <div class="stingers">
+      <span class="stinger" data-p="youtube">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span>
+        <span class="nm">YOUTUBE</span>
+      </span>
+      <span class="stinger" data-p="twitch">
+        <span class="mk"><svg viewBox="0 0 24 24"><g transform="translate(0 1.4)"><path fill="#9146FF" d="M11.571 4.714h1.715v5.143h-1.715zm4.715 0H18v5.143h-1.714zM6 0 1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></g></svg></span>
+        <span class="nm">TWITCH</span>
+      </span>
+      <span class="stinger" data-p="facebook">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><path fill="#1877F2" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span>
+        <span class="nm">FACEBOOK</span>
+      </span>
+      <span class="stinger" data-p="tiktok">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.6 0) scale(.9)"><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></span>
+        <span class="nm">TIKTOK</span>
+      </span>
+    </div>
+    <div class="w-url">smile<b>.co.ke</b></div>
+  </div>
+
+  <div class="pctl" aria-hidden="true">
+    <button class="go" id="btnGo" type="button">GO LIVE</button>
+    <button id="btnReplay" type="button">REPLAY</button>
+    <span class="keys">SPACE / G / ENTER &middot; R REPLAY &middot; C PANEL</span>
   </div>
 
   <i class="g-tk" aria-hidden="true"></i>
-  <i class="g-chat" aria-hidden="true"></i>
-  <p class="sig">smile<b>.co.ke</b></p>
 </div>
 
 <script>
-/* one gated interval — the clock. no rAF, no canvas. everything else is
-   compositor CSS or a one-shot param bake at load.
+/* ONE gated interval — the clock. No rAF, no canvas.
+   Sixty seconds, then it STOPS resolving further. It never goes negative and
+   never nags: once the resolve starts the scene ends on the welcome and stays
+   there, so an open that slips costs nothing.
 
-   Contract:
-     (no params)      → ?inst=a, the buffer clock
-     ?inst=a|b|c      → which hero instrument (default a)
-     ?opens=09:00     → Nairobi wall-clock open, shown as context only
-     ?ad=TEXT         → ad slot headline
-     ?adimg=URL       → ad slot image
-     ?guide=1         → outline the reserved chat + ticker zones
-   The clock is ELAPSED, never a countdown. The open can slip, and when it
-   does the producer stays on this screen — a timer that resolves to zero
-   would have nowhere to go. That is tech-diff's failure mode and this
-   scene is explicitly not it. */
+   The resolve is a fixed choreography driven by CSS classes. The only JS is the
+   clock itself and the per-tick card flip, which swaps its glyph while the card
+   is edge-on and therefore invisible.
+
+   SPACE G ENTER   resolve now, skip the wait   (also GO LIVE)
+   R               replay the countdown        (also REPLAY)
+   C               show/hide the panel         (?ui=1 opens it)
+
+   ?m=60&s=0  countdown length   ?ep=128  episode
+   ?ui=1      open the panel     ?guide=1 zone map
+   ?t=zero|flip|merge|void|rise|eyes|blink|mouth|welcome   park a beat (QA) */
 (function(){
   function get(k){var m=location.search.match(new RegExp('[?&]'+k+'=([^&]*)'));return m?decodeURIComponent(m[1].replace(/\+/g,' ')):'';}
-  function dec(s){try{return decodeURIComponent(s)}catch(e){return s}}
   function pad(n){return n<10?'0'+n:''+n}
-  function hhmmss(ms){var s=Math.max(0,Math.floor(ms/1000));
-    return pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
 
-  var T0 = Date.now();
-
-  /* ── the market floor, baked once ── */
-  var floor=document.getElementById('floor'),h='';
-  var heights=[128,214,92,288,156,236,108,196,74,252,168,118,304,142,88,228,176,262,104,296,148,210,122,186];
-  var cols=['var(--up)','var(--down)','#2e2e2e','var(--yellow)','var(--sky)'];
-  for(var i=0;i<26;i++){
-    h+='<i style="--h:'+heights[i%heights.length]+'px;--d:'+((i*0.13)%3).toFixed(2)+'s;'
-      +'--c:'+cols[i%cols.length]+'"></i>';
-  }
-  floor.innerHTML=h;
-
-  /* ── which hero instrument ── */
-  var inst=(get('inst')||get('i')||'a').toLowerCase();
-  if(['a','b','c'].indexOf(inst)===-1) inst='a';
-  document.getElementById('inst'+inst.toUpperCase()).classList.add('on');
-
-  /* ── ad slot, one-shot ── */
-  var ad=get('ad'),adimg=get('adimg');
-  var slot=document.getElementById('adslot');
-  if(adimg){slot.innerHTML='<img src="'+dec(adimg)+'" alt="">';}
-  else if(ad){slot.innerHTML='<span class="adT">AD SPACE</span><span class="adM">'+dec(ad)+'</span>';}
-
-  /* ── the open, as context only ── */
-  var opens=(get('opens')||'09:00').trim();
-  ['opensAt','opensAt2'].forEach(function(id){
-    var el=document.getElementById(id); if(el)el.textContent=opens;});
-
+  document.getElementById('ep').textContent = get('ep') || '128';
   if(get('guide')==='1') document.body.classList.add('guide');
 
-  /* ── the single gated interval ── */
-  function tick(){
-    if(document.hidden)return;
-    var ms=Date.now()-T0, t=hhmmss(ms);
-    var f=document.getElementById('fault'); if(f)f.textContent=t;
-    var bc=document.getElementById('bigClock');
-    if(bc)bc.innerHTML=t+'<span class="ms">.'+Math.floor((ms%1000)/100)+'</span>';
-    var dc=document.getElementById('dialClock'); if(dc)dc.textContent=t;
-    var rc=document.getElementById('radarClock'); if(rc)rc.textContent='ON AIR '+t;
-    var c=document.getElementById('clock');
-    if(c){var d=new Date();
-      c.textContent=pad(d.getHours())+':'+pad(d.getMinutes());}
+  var cards=[0,1,2,3].map(function(i){return document.querySelector('.card[data-i="'+i+'"]')});
+  var dgs=[0,1,2,3].map(function(i){return document.getElementById('d'+i)});
+  var flip=document.getElementById('flip');
+  var mark=document.querySelector('.mark');
+
+  var mins=parseInt(get('m'),10); if(!(mins>=0)) mins=1;
+  var secs=parseInt(get('s'),10); if(!(secs>=0&&secs<60)) secs=0;
+  var SPAN=(mins*60+secs)*1000;
+  if(SPAN<=0) SPAN=60000;
+  var HOLD=600;                 /* the beat. 00:00 sits before it resolves. */
+  var T0=Date.now();
+  var atZero=false, zeroAt=0, resolving=false, done=false, landTimer=0;
+  var last='';
+
+  var clock=document.getElementById('clock');
+
+  /* A card is invisible at the halfway point of its turn, so the glyph can be
+     replaced underneath it and nobody sees a seam. */
+  function setDigits(s){
+    if(s===last) return;
+    var first = last==='';
+    last=s;
+    for(var i=0;i<4;i++){
+      var ch=s.charAt(i);
+      if(dgs[i].textContent===ch) continue;
+      if(first||done){ dgs[i].textContent=ch; continue; }
+      (function(card,dg,ch){
+        card.classList.remove('turn');
+        void card.offsetWidth;                 /* restart the keyframe */
+        card.classList.add('turn');
+        setTimeout(function(){ dg.textContent=ch; },110);
+      })(cards[i],dgs[i],ch);
+    }
   }
-  tick();setInterval(tick,1000);
+
+  /* One way in, so whichever fires first the scene resolves exactly once. */
+  function reachZero(){
+    if(atZero) return;
+    atZero=true; zeroAt=Date.now();
+    setDigits('0000');
+    document.body.classList.add('zero');
+  }
+  function resolve(){
+    if(resolving) return;
+    resolving=true;
+    reachZero();
+    cards.forEach(function(c){c.classList.remove('turn')});
+    /* the phases are pure CSS: flip, merge, void, rise, eyes, blink, mouth */
+    var at=function(ms,fn){return setTimeout(fn,ms)};
+    at(1120,function(){ cards.forEach(function(c){c.classList.add('mrg')}) });
+    at(1880,function(){ cards[1].classList.add('void'); cards[2].classList.add('void');
+                        document.body.classList.add('voided') });
+    at(2900,function(){ document.body.classList.add('risen') });
+    at(3860,function(){ mark.classList.add('eyes') });
+    at(4180,function(){ mark.classList.add('blink') });
+    at(4420,function(){ mark.classList.add('mouth') });
+    at(5000,function(){ done=true; document.body.classList.add('landed') });
+  }
+  function go(){ if(resolving) return; reachZero(); clearTimeout(landTimer); landTimer=setTimeout(resolve,HOLD); }
+
+  function replay(){
+    clearTimeout(landTimer);
+    cards.forEach(function(c){c.className='card'});
+    mark.className='mark';
+    document.body.className=document.body.className.replace(/\b(zero|voided|risen|landed)\b/g,'').replace(/\s+/g,' ').trim();
+    if(get('guide')==='1') document.body.classList.add('guide');
+    void document.body.offsetWidth;
+    resolving=false; atZero=false; zeroAt=0; done=false; last='';
+    T0=Date.now();
+  }
+
+  function tick(){
+    if(document.hidden) return;
+    var d=new Date();
+    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+
+    if(resolving) return;
+
+    var rem=SPAN-(Date.now()-T0);
+    if(rem>0){
+      var t=Math.ceil(rem/1000);
+      setDigits(pad(Math.floor(t/60))+pad(t%60));
+      return;
+    }
+    reachZero();
+    if((Date.now()-zeroAt)>=HOLD) resolve();
+  }
+
+  /* QA park — pauses the whole choreography at a chosen wall-clock moment.
+     Each beat adds ONLY the phases that have happened by then, and pins the
+     digits to 00:00, or the parked frame lies about where it is. */
+  var PARK={zero:'0.05s',flip:'0.60s',merge:'1.55s',void:'2.50s',rise:'3.50s',
+            eyes:'4.00s',blink:'4.28s',mouth:'4.66s',welcome:'6.00s'};
+  var t=get('t');
+  if(PARK[t]){
+    var order=['zero','flip','merge','void','rise','eyes','blink','mouth','welcome'];
+    var upto=order.indexOf(t);
+    atZero=true; resolving=true; zeroAt=0; last='0000';
+    for(var i=0;i<4;i++) dgs[i].textContent='0';
+    document.body.classList.add('zero');
+    if(upto>=1) cards.forEach(function(c){c.classList.add('flip')});
+    if(upto>=2) cards.forEach(function(c){c.classList.add('mrg')});
+    if(upto>=3){ cards[1].classList.add('void'); cards[2].classList.add('void');
+                 document.body.classList.add('voided'); }
+    if(upto>=4) document.body.classList.add('risen');
+    if(upto>=5) mark.classList.add('eyes');
+    if(upto>=6) mark.classList.add('blink');
+    if(upto>=7) mark.classList.add('mouth');
+    if(upto>=8){ done=true; document.body.classList.add('landed'); }
+    document.body.classList.add('freeze');
+    document.body.style.setProperty('--freeze',PARK[t]);
+  }
+
+  if(get('ui')==='1') document.body.classList.add('ui');
+  document.getElementById('btnGo').addEventListener('click',go);
+  document.getElementById('btnReplay').addEventListener('click',replay);
+
+  document.addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    var k=e.key.toLowerCase();
+    if(k===' '||k==='spacebar'||k==='enter'||k==='g'||k==='arrowup'){ go(); e.preventDefault(); }
+    else if(k==='r'){ replay(); e.preventDefault(); }
+    else if(k==='c'){ document.body.classList.toggle('ui'); e.preventDefault(); }
+  });
+
+  tick();
+  setInterval(tick,250);
   document.addEventListener('visibilitychange',tick);
 })();
 </script>

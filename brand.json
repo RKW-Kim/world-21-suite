@@ -7,6 +7,7 @@
     "surface-sunken": "#09090b",
     "hairline": "#27272a",
     "market-down": "#f6465d",
+    "ember": "#ff8a1f",
     "text-faint": "#9b9ba4",
     "text-primary": "#ffffff",
     "brand-hot": "#f5a623",
@@ -27,6 +28,7 @@
     "surface-sunken": "#09090b",
     "hairline": "#27272a",
     "market-down": "#f6465d",
+    "ember": "#ff8a1f",
     "text-faint": "#9b9ba4",
     "text-primary": "#ffffff",
     "brand-hot": "#f5a623",
@@ -76,11 +78,17 @@
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "tech-diff.html",
         "ticker.html"
       ],
-      "uses": 11
+      "uses": 10
+    },
+    "ember": {
+      "token": "--ember",
+      "defined_in": [
+        "starting-soon.html"
+      ],
+      "uses": 1
     },
     "text-faint": {
       "token": "--faint",
@@ -92,9 +100,10 @@
         "intermission.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html"
+        "starting-soon.html",
+        "starting.html"
       ],
-      "uses": 8
+      "uses": 9
     },
     "text-primary": {
       "token": "--paper",
@@ -116,9 +125,10 @@
         "intermission.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html"
+        "starting-soon.html",
+        "starting.html"
       ],
-      "uses": 9
+      "uses": 10
     },
     "canvas": {
       "token": "--ink",
@@ -134,10 +144,11 @@
         "smile-lab.html",
         "speaking.html",
         "starting-soon.html",
+        "starting.html",
         "tech-diff.html",
         "ticker.html"
       ],
-      "uses": 13
+      "uses": 14
     },
     "hairline-soft": {
       "token": "--line",
@@ -145,9 +156,10 @@
         "end-credits.html",
         "qa.html",
         "starting-soon.html",
+        "starting.html",
         "tech-diff.html"
       ],
-      "uses": 4
+      "uses": 5
     },
     "text-muted": {
       "token": "--muted",
@@ -163,9 +175,10 @@
         "smile-lab.html",
         "speaking.html",
         "starting-soon.html",
+        "starting.html",
         "tech-diff.html"
       ],
-      "uses": 12
+      "uses": 13
     },
     "market-alt": {
       "token": "--sky",
@@ -173,10 +186,9 @@
         "end-credits.html",
         "end.html",
         "qa.html",
-        "starting-soon.html",
         "tech-diff.html"
       ],
-      "uses": 5
+      "uses": 4
     },
     "market-up": {
       "token": "--up",
@@ -189,7 +201,7 @@
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
+        "starting.html",
         "tech-diff.html",
         "ticker.html"
       ],
@@ -209,10 +221,11 @@
         "smile-lab.html",
         "speaking.html",
         "starting-soon.html",
+        "starting.html",
         "tech-diff.html",
         "ticker.html"
       ],
-      "uses": 13
+      "uses": 14
     },
     "yellow-hot": {
       "token": "--yellow-hot",

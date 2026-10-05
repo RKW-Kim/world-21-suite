@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE — starting</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<style>
+/* STARTING — the long hold.
+   Cut to starting-soon.html for the last sixty seconds. This one has to sit on
+   screen for as long as it takes the crew to actually get ready, so it does the
+   opposite job: it states the plan, shows the run of show is on track, and puts
+   every place the stream lives in front of the viewer.
+
+   Composition rebuilt to the reference frame: mark over a single stacked
+   column, one focal point, everything on one vertical axis.
+
+   Contract: no canvas, no rAF. Bottom 76px is the ticker dock; the watermark
+   pill sits top-right. */
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
+  --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
+  --line:#2a2a2a; --up:#0ECB81; --down:#F6465D;
+  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px;
+  --eo:cubic-bezier(.32,.72,0,1);
+  --eio:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--fg);
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
+.page{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* a faint dot field so the black is not dead flat on a big screen */
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
+.aura{position:absolute;left:50%;top:42%;width:760px;height:500px;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 64%)}
+
+/* ---- watermark corner, right ---- */
+.clockchip{position:absolute;top:34px;right:44px;z-index:30;display:inline-flex;align-items:center;gap:10px;
+  padding:9px 18px;border-radius:999px;background:rgba(10,10,12,.82);border:1px solid var(--line);
+  font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
+.clockchip b{color:var(--fg);font-weight:600}
+.stack{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 40px calc(var(--safe-b) / 2);z-index:2}
+
+/* ---- Pill ---- */
+.pill{margin-top:18px;display:inline-flex;align-items:center;gap:11px;padding:9px 20px;border-radius:999px;
+  border:1px solid rgba(255,193,7,.38);background:rgba(255,193,7,.06);
+  font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.26em;color:var(--yellow)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--yellow);
+  box-shadow:0 0 12px rgba(255,193,7,.85);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
+
+/* ---- the mark ---- */
+.mark{margin-bottom:60px;position:relative;width:340px;height:340px;border-radius:50%;padding:11px;
+  filter:drop-shadow(0 0 60px rgba(255,193,7,0.7))}
+.mark svg{width:100%;height:100%;overflow:visible}
+
+/* ---- headline ---- */
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
+  line-height:1;letter-spacing:-.045em;margin-top:20px}
+h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--ease) both}
+h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
+@keyframes wordup{to{opacity:1;transform:none}}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+.sub{margin-top:20px;font-family:var(--fd);font-weight:500;
+  font-size:clamp(18px,1.5vw,25px);line-height:1.4;color:var(--muted)}
+.sub b{display:inline-block;padding:1px 9px;border-radius:5px;
+  background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));color:#17140A;font-weight:700}
+.sub{max-width:560px;font-size:clamp(14px,2.4vh,20px);font-weight:500;color:var(--muted);
+  line-height:1.5;animation:rise .8s cubic-bezier(.2,.9,.3,1) .35s both}
+
+
+/* ---- run of show ---- */
+.checks{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+.chk{display:inline-flex;align-items:center;gap:11px;padding:12px 20px;border-radius:12px;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.chk .ic{width:28px;height:28px;flex:0 0 auto;color:var(--faint)}
+.chk .ic svg{width:100%;height:100%}
+.chk .nm{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--fg)}
+.chk .st{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--up)}
+.chk .st::before{content:"✓ ";color:var(--up)}
+
+/* ---- where to watch ---- */
+.watch{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:30px}
+.watch .lbl{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.24em;
+  color:rgba(250,250,250,.30)}
+.chip{display:inline-flex;align-items:center;gap:9px;padding:9px 17px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.035);
+  font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--muted)}
+.chip .mk{width:16px;height:16px;flex:0 0 auto}
+.chip .mk svg{width:100%;height:100%}
+.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px}
+.handles .chip{color:rgba(250,250,250,.5)}
+
+.onemore{margin-top:34px;font-family:var(--fd);font-weight:500;
+  font-size:clamp(15px,1.15vw,19px);color:var(--muted)}
+.onemore b{color:var(--yellow);font-weight:700}
+.sig{margin-top:26px;font-family:var(--fm);font-size:13px;font-weight:600;
+  letter-spacing:.34em;color:rgba(250,250,250,.34)}
+.sig b{color:var(--yellow);font-weight:600}
+
+/* restrained entrance so the scene assembles rather than appearing */
+.rise{opacity:0;animation:rise 760ms var(--eo) both}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important}
+  .rise{opacity:1}
+}
+
+/* ==== Ring ==== */
+.bell-frame{margin-bottom:50px;position:relative;width:340px;height:340px;border-radius:50%;padding:11px;filter:drop-shadow(0 0 34px rgba(255,193,7,0.5));
+  background:conic-gradient(from 215deg,#FFaa00,#FFaa00 12%,#FFaa00 22%,#FFaa00 38%,#ffaa00 52%,#FFaa00 66%,#FFaa00 80%,#FFaa00);
+  box-shadow:0 34px 70px rgba(0,0,0,.6),0 0 60px rgba(255,193,7,.14),
+             inset 0 10px 7px rgba(255,255,255,.5),inset 0 -3px 8px rgba(0,0,0,.55)}
+.bell-frame svg.disc{width:100%;height:100%;border-radius:100%}
+.bell-frame .engrave{position:absolute;inset:13px;border-radius:100%;pointer-events:none;
+  box-shadow:inset 0 12px 26px rgba(0,0,0,.30),inset 0 8px 20px rgba(255,255,255,.16),inset 0 0 0 2px rgba(122,90,20,.35)}
+
+/* quiet companions — no away clock, just a soft pulse + the usual promise */
+.meta{display:flex;align-items:center;gap:1px;animation:rise .8s cubic-bezier(.2,.9,.3,1) .45s both}
+.bnc{display:flex;gap:20px}
+.bnc i{width:8px;height:8px;border-radius:50%;background:var(--yellow);animation:bnc 1.4s ease-in-out infinite}
+.bnc i:nth-child(2){animation-delay:.2s;background:var(--up)}
+.bnc i:nth-child(3){animation-delay:.4s;background:var(--down)}
+@keyframes bnc{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-14px);opacity:1}}
+
+/* ambient: slow light sweep every ~21s */
+.sweep{position:absolute;top:-10%;bottom:-10%;left:0;width:46%;z-index:8;pointer-events:none;
+  background:linear-gradient(100deg,transparent 20%,rgba(255,240,200,.05) 46%,rgba(255,244,214,.08) 50%,rgba(255,240,200,.05) 54%,transparent 80%);
+  transform:translateX(-700px) skewX(-12deg);
+  animation:sweepk 15s ease-in-out infinite}
+@keyframes sweepk{
+  0%{transform:translateX(-700px) skewX(-12deg);opacity:0}
+  6%{opacity:1}
+  24%{opacity:1}
+  30%{transform:translateX(2600px) skewX(-12deg);opacity:0}
+  100%{transform:translateX(2600px) skewX(-12deg);opacity:0}}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="dots" aria-hidden="false"></div>
+    <div class="sweep"></div>
+  <span class="clockchip"><b class="num" id="clock">--:--</b> &middot; NAIROBI DESK &middot; EAT</span>
+
+  <main class="stack">
+
+    <div class="">
+      <svg class="mark" viewBox="5.38 10.7 23.8 23.8" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Smile">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#FFC107"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg>
+      <span class=""></span>
+    </div>
+
+    <div class="meta">
+        <span class="bnc" aria-hidden="true"><i></i><i></i><i></i></span>
+    </div>
+
+    <h1 class="rise" style="animation-delay:220ms"><span class="g">Markets Open</span> <span class="y">Soon.</span></h1>
+
+    <p class="sub rise" style="animation-delay:320ms">Fresh candles. Brewed coffee. <b>Zero</b> rush. </p>
+
+    <div class="checks rise" class="watch rise" style="animation-delay:560ms">
+      <span class="watch"><span class="lbl">WATCH ON</span>
+      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span><span class="nm">YOUTUBE</span><span class="st">LIVE</span></span>
+      <span class="chk"><span class="ic"><svg viewBox="0 0 24 28" fill="#6E9BFF"><path d="M13.42 20.6v-6.9h2.32l.35-2.7h-2.67V9.25c0-.78.22-1.32 1.34-1.32h1.43V5.52c-.25-.03-1.1-.11-2.08-.11-2.06 0-3.47 1.26-3.47 3.57V11H8.32v2.7h2.32v6.9z"/></svg></span><span class="nm">FACEBOOK</span><span class="st">LIVE</span></span>
+      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><span class="nm">TWITTER/X</span><span class="st">LIVE</span></span>
+      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#3AE4E7"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></span><span class="nm">TIKTOK</span><span class="st">LIVE</span></span>
+    </div>
+
+    <div class="handles rise" style="animation-delay:740ms">
+      <span class="chip">@SMILEKE</span>
+      <span class="chip">@WORLD·21</span>
+      <span class="chip">@HOTWIRE</span>
+    </div>
+
+    <p class="sig rise" style="animation-delay:900ms">smile<b>.co.ke</b></p>
+  </main>
+</div>
+
+<script>
+/* One gated interval — the clock. No rAF, no canvas. */
+(function(){
+  function pad(n){return n<10?'0'+n:''+n}
+  var clock=document.getElementById('clock');
+  function tick(){
+    if(document.hidden) return;
+    var d=new Date();
+    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+  tick();
+  setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
+})();
+</script>
+</body>
+</html>
