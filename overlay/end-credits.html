@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
+     not a fonts.googleapis.com link: OBS loads these from file:// on machines
+     with unreliable internet, and a stalled webfont request does not fail, it
+     hangs, leaving the headline in a fallback face for ~20s. -->
+<link rel="stylesheet" href="fonts/fonts.css">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE · end credits</title>
@@ -48,7 +53,7 @@ svg{display:block}
   -webkit-mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%);
           mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%)}
 
-h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
+h1{font-family:var(--fd);font-weight:700;font-size:clamp(62px,7.4vw,124px);
   line-height:1;letter-spacing:-.045em;margin-top:20px}
 h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}
 h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
@@ -110,7 +115,7 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 .orbitB .face{width:62%;aspect-ratio:1;animation:faceBob 5.6s ease-in-out infinite;
   filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
 .orbitB .face svg{width:100%;height:100%}
-.btxt h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
+.btxt h1{font-family:var(--fd);font-weight:700;font-size:clamp(62px,7.4vw,124px);
   line-height:1;letter-spacing:-.045em;margin-top:20px}
 .follow{margin-top:42px;position:relative;overflow:hidden}
 .follow::after{content:"";position:absolute;inset:0;
@@ -144,7 +149,7 @@ html[data-next="1"] .bellrow{display:none}
 /* ── right: THE CREDITS BOX — the restored hero ── */
 .credits{position:absolute;right:4.5%;top:clamp(120px,16vh,176px);bottom:calc(var(--safe-b) + 84px);
   width:min(520px,38vw);z-index:3}
-.chead{display:flex;align-items:center;gap:16px;font-family:var(--font-display);font-weight:800;
+.chead{display:flex;align-items:center;gap:16px;font-family:var(--font-display);font-weight:700;
   font-size:13px;letter-spacing:.26em;text-transform:uppercase;color:#d8d8d8}
 .chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
 .chead .ep{color:var(--muted);letter-spacing:.18em}
@@ -156,7 +161,7 @@ html[data-next="1"] .bellrow{display:none}
 .cr{flex:none;padding:25px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
 .cr i{display:block;font-family:var(--font-display);font-weight:700;font-style:normal;
   font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
-.cr b{display:block;margin-top:9px;font-family:var(--font-display);font-weight:800;
+.cr b{display:block;margin-top:9px;font-family:var(--font-display);font-weight:700;
   font-size:clamp(26px,3.6vh,34px);line-height:1.05;letter-spacing:-.01em;color:var(--faint)}
 .cr b .y{color:var(--yellow)}
 

@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
+     not a fonts.googleapis.com link: OBS loads these from file:// on machines
+     with unreliable internet, and a stalled webfont request does not fail, it
+     hangs, leaving the headline in a fallback face for ~20s. -->
+<link rel="stylesheet" href="fonts/fonts.css">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE — starting</title>
@@ -70,7 +75,7 @@ svg{display:block}
 /* ---- headline ---- */
 /* 96px, which is what the original reference frame resolved to. Fixing this at
    124 made the acrostics run the full width and left no air for anything else. */
-h1{font-family:var(--fd);font-weight:800;font-size:96px;
+h1{font-family:var(--fd);font-weight:700;font-size:96px;
   line-height:1;letter-spacing:-.045em;margin-top:20px;
   max-width:100%;white-space:nowrap}
 h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}

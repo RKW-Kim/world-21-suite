@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
+     not a fonts.googleapis.com link: OBS loads these from file:// on machines
+     with unreliable internet, and a stalled webfont request does not fail, it
+     hangs, leaving the headline in a fallback face for ~20s. -->
+<link rel="stylesheet" href="fonts/fonts.css">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE — off air</title>
@@ -83,7 +88,7 @@ svg{display:block}
    bearings, so at 168px a negative value pulls the pair together and "11"
    reads as one blob. Tabular figures plus a hair of positive space keeps every
    pair distinct. ---- */
-.clock{margin-top:34px;font-family:var(--fd);font-weight:800;
+.clock{margin-top:34px;font-family:var(--fd);font-weight:700;
   font-size:clamp(76px,10vw,168px);line-height:.94;letter-spacing:.012em;
   background:linear-gradient(180deg,#fafafa 22%,#7e7e86 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent}

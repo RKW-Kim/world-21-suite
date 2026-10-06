@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
+     not a fonts.googleapis.com link: OBS loads these from file:// on machines
+     with unreliable internet, and a stalled webfont request does not fail, it
+     hangs, leaving the headline in a fallback face for ~20s. -->
+<link rel="stylesheet" href="fonts/fonts.css">
 <title>SMILE · Watermark</title>
 <!-- DARK THEME, DELIBERATELY WITHOUT A color-scheme META TAG
      The whole kit is dark and stays dark — that is the brand, and every
