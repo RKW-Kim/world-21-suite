@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · meet</title>
+<!-- DARK THEME, DELIBERATELY WITHOUT A color-scheme META TAG
+     This page composites OVER a Google Meet window capture, so the root canvas
+     must stay transparent. color-scheme makes Chromium paint the root canvas
+     opaque, which would turn the overlay into a black rectangle on top of the
+     call instead of a layer over it. Theme lives in the CSS; transparency
+     lives in the root background. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3C/svg%3E">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE MEET OVERLAY — a window capture of Google Meet with SmileTV chrome on
+   top of it.
+
+   WHAT IT IS FOR. You window-capture the Meet call as one OBS source, then add
+   this as a second source above it, transparent. The result reads as SmileTV:
+   the call is the content, the brand is the frame, and nobody watching needs to
+   know a browser is involved.
+
+   WHY THE CHROME IS IFRAMED RATHER THAN COPIED IN. The watermark and the
+   ticker already exist as standalone OBS modules, and the whole point of a
+   module is that it is identical everywhere it appears. Pasting their markup
+   and CSS into this page would create a second copy that immediately starts
+   drifting from the first — the ticker's cell list, the clock format, the
+   watermark's size scale. So both are embedded as their real pages and this
+   scene inherits them exactly. Change watermark.html and this scene changes
+   with it; there is nothing here to keep in sync.
+
+   The ticker iframe is 1920×76 and the watermark iframe is full-frame with the
+   mark positioned inside it at 28px, so neither needs re-layout here.
+
+   THE YOUTUBE PANEL. This is the part you move. ?yt= takes a video id, a
+   watch URL or a /embed/ URL and normalises all three. It autoplays by default
+   and is MUTED by default, which is not a styling choice: an unmuted autoplay
+   is blocked by the browser until there is a user gesture, and there is nobody
+   to click in an OBS browser source. Muted autoplay is the reliable path. If
+   you want the video's own audio, set ?mute=0 and press play once in the OBS
+   source with the browser devtools open, or drive it from Streamer.bot.
+
+   Geometry is exposed because Google's own layout changes and there is no
+   position that is correct forever: ?ywx= ?ywy= ?yww= ?ywh= override any edge.
+
+   Contract: no canvas, no rAF, no timers. One style mutation at load.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
+  --fg:#FAFAFA; --muted:#A1A1AA; --faint:#8A8A94;
+  --line:#2a2a2a; --fd:'Space Grotesk',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --dock:76px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:transparent}
+body{font-family:var(--fd);color:var(--fg);-webkit-font-smoothing:antialiased}
+svg{display:block}
+::selection{background:var(--yellow);color:var(--ink)}
+
+.stage{position:absolute;inset:0;overflow:hidden}
+
+/* Chrome: full-frame iframes, transparent, stacked under the video panel.
+   pointer-events:none throughout — this layer must never swallow a click that
+   belongs to OBS or to the capture beneath it. */
+iframe.chrome{position:absolute;border:0;background:transparent;pointer-events:none}
+#wmFrame{left:0;top:0;width:1920px;height:1080px;z-index:2}
+#tkFrame{left:0;bottom:0;width:1920px;height:var(--dock);z-index:3}
+
+/* ── the YouTube panel ── */
+.vp{position:absolute;z-index:4;overflow:hidden;
+  background:linear-gradient(180deg,rgba(12,12,15,.94),rgba(8,8,10,.96));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;
+  box-shadow:0 26px 70px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.5)}
+.vp .tag[hidden],.vp .empty[hidden]{display:none !important}
+/* the frame's own dot field, so the panel belongs to the kit rather than
+   looking like a pasted-on browser window */
+.vp .tex{position:absolute;inset:38px 0 0 0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.06) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 26%,#000 74%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 26%,#000 74%,transparent)}
+.vp .screen{position:absolute;left:0;right:0;top:38px;bottom:0}
+.vp iframe{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
+
+/* header bar — deliberately outside the video area */
+.vp .tag{position:absolute;left:0;right:0;top:0;height:38px;z-index:2;display:flex;align-items:center;
+  gap:10px;padding:0 13px;pointer-events:none;border-bottom:1px solid rgba(255,255,255,.08)}
+.vp .dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);flex:none;
+  box-shadow:0 0 10px rgba(255,193,7,.85)}
+.vp .lab{font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--fg)}
+.vp .sub{font-family:var(--fm);font-weight:600;font-size:10px;letter-spacing:.14em;
+  color:var(--muted);margin-left:auto;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:62%}
+
+/* empty state — so you can stand the layout up and show the shape of the
+   broadcast before there is a video to put in it */
+.vp .empty{position:absolute;left:0;right:0;top:38px;bottom:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:11px;text-align:center;padding:26px}
+.vp .empty .big{font-family:var(--fm);font-weight:600;font-size:12px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted)}
+.vp .empty .hint{font-family:var(--fm);font-weight:400;font-size:11px;line-height:1.7;
+  letter-spacing:.04em;color:var(--faint)}
+.vp .empty .hint b{color:var(--yellow);font-weight:600}
+.vp .empty .play{width:46px;height:32px;opacity:.5}
+
+/* ── setup guide: outlines every zone so you can position things once ── */
+.guide{position:absolute;inset:0;z-index:9;pointer-events:none;display:none}
+html[data-guide="1"] .guide{display:block}
+.guide i{position:absolute;border:1px dashed rgba(255,193,7,.55);border-radius:10px}
+.guide i::after{content:attr(data-l);position:absolute;left:8px;bottom:5px;
+  font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--yellow)}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- the real modules, embedded — not copied -->
+  <iframe class="chrome" id="wmFrame" title="watermark" scrolling="no"></iframe>
+  <iframe class="chrome" id="tkFrame" title="ticker" scrolling="no"></iframe>
+
+  <div class="vp" id="vp">
+    <div class="tex" aria-hidden="true"></div>
+    <div class="screen"></div>
+    <div class="tag" id="tag" hidden>
+      <span class="dot" aria-hidden="true"></span>
+      <span class="lab" id="tagLab">now playing</span>
+      <span class="sub" id="tagSub"></span>
+    </div>
+    <div class="empty" id="empty">
+      <svg class="play" viewBox="0 0 46 32" aria-hidden="true">
+        <rect x=".8" y=".8" width="44.4" height="30.4" rx="5" fill="none" stroke="#FFC107" stroke-width="1.4"/>
+        <path d="M19 10.4v11.2L29.4 16z" fill="#FFC107"/>
+      </svg>
+      <span class="big">video goes here</span>
+      <span class="hint">add <b>?yt=</b> with an id or a YouTube URL<br>it plays automatically, muted</span>
+    </div>
+  </div>
+
+  <div class="guide" aria-hidden="true">
+    <i data-l="watermark · tl" style="left:20px;top:20px;width:340px;height:104px"></i>
+    <i data-l="youtube panel" id="gVp" style=""></i>
+    <i data-l="ticker dock · 76px" style="left:20px;bottom:16px;right:20px;height:56px"></i>
+  </div>
+
+</div>
+
+<script>
+/* One pass at load. The chrome iframes are pointed at the existing module pages
+   with their own params forwarded, so this scene never has its own idea of what
+   the watermark or the ticker look like. */
+(function(){
+  function q(k,d){var v=(location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1];return v===undefined?d:v}
+  function num(k,d,lo,hi){
+    var v=parseFloat(q(k,''));if(isNaN(v))return d;
+    return Math.max(lo,Math.min(hi,v));
+  }
+  function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+
+  if(q('guide')==='1')document.documentElement.dataset.guide='1';
+
+  /* ── chrome ──
+     watermark: top-left is its own default, forwarded only when overridden.
+     scrim is on because the Meet window behind can be a bright shared
+     document, and the mark is gold on transparent. */
+  var wmExtra=[];
+  /* Meet owns the top 72px with the meeting title in it, and the watermark's
+     own 28px inset puts the mark straight through it. dy=64 drops the mark
+     below that bar. Overridable because Meet's header is not a fixed height. */
+  wmExtra.push('dy='+num('wmdy',64,-400,400));
+  wmExtra.push('scrim=1');
+  var wsize=q('wsize',''); if(wsize!=='') wmExtra.push('size='+wsize);
+  var wcorner=q('wcorner',''); if(wcorner!=='') wmExtra.push('corner='+wcorner);
+  var wm=q('wm','1');
+  var wmFrame=document.getElementById('wmFrame');
+  wmFrame.style.display = (wm==='0')?'none':'';
+  wmFrame.src='watermark.html'+(wmExtra.length?'?'+wmExtra.join('&'):'');
+
+  var tk=q('tk','1');
+  var tkFrame=document.getElementById('tkFrame');
+  tkFrame.style.display = (tk==='0')?'none':'';
+  /* live=0 would freeze it; live data is the point on a call, so it defaults on */
+  tkFrame.src='ticker.html'+(q('tklive','')==='0'?'?live=0':'');
+
+  /* ── the video panel ── */
+  var raw=dec(q('yt','')).trim();
+  /* accept a bare id, a watch URL or an embed URL and reduce all three to an id */
+  var id='';
+  if(raw){
+    var m=raw.match(/(?:v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{6,})/);
+    id = m?m[1] : (/^[A-Za-z0-9_-]{6,}$/.test(raw)?raw:'');
+  }
+
+  var vp=document.getElementById('vp');
+  var W=num('yww',640,160,1600);
+  var H=num('ywh',Math.round(W*9/16),90,900);
+  var X=num('ywx',1920-W-44,0,1920-W);
+  var Y=num('ywy',300,84,1080-76-H);
+  var HEAD=38;                       /* header bar, not part of the video */
+  vp.style.left=X+'px'; vp.style.top=Y+'px';
+  vp.style.width=W+'px'; vp.style.height=(H+HEAD)+'px';
+  var scr=document.querySelector('.vp .screen');
+  if(scr)scr.style.cssText='left:0;right:0;top:'+HEAD+'px;height:'+H+'px';
+  document.getElementById('gVp').style.cssText=
+    'left:'+X+'px;top:'+Y+'px;width:'+W+'px;height:'+H+'px';
+
+  var lab=dec(q('lab','now playing')).trim();
+  var sub=dec(q('cap','')).trim();
+  document.getElementById('tagLab').textContent=lab||'now playing';
+  var subEl=document.getElementById('tagSub');
+  subEl.textContent=sub; subEl.hidden=!sub;
+
+  if(id){
+    var play=q('play','1')!=='0';
+    var mute=q('mute','1')!=='0';
+    var list=q('list','')!=='';
+    var src='https://www.youtube.com/embed/'+encodeURIComponent(id)+
+      '?autoplay='+(play?1:0)+'&mute='+(mute?1:0)+
+      '&playsinline=1&rel=0&modestbranding=1&controls='+(q('ctl','0')!=='0'?1:0)+
+      (list?'&playlist='+encodeURIComponent(dec(q('list',''))):'');
+    var f=document.createElement('iframe');
+    f.src=src; f.allow='autoplay; encrypted-media; picture-in-picture';
+    f.allowFullscreen=true; f.title=lab||'video';
+    /* into .screen, not .vp — .vp is now header+video tall, so an iframe
+       sized 100% of .vp would overhang the bottom by the header height */
+    document.querySelector('.vp .screen').appendChild(f);
+    document.getElementById('empty').hidden=true;
+    document.getElementById('tag').hidden=false;
+  }
+})();
+</script>
+</body>
+</html>

@@ -2,11 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
-     not a fonts.googleapis.com link: OBS loads these from file:// on machines
-     with unreliable internet, and a stalled webfont request does not fail, it
-     hangs, leaving the headline in a fallback face for ~20s. -->
-<link rel="stylesheet" href="fonts/fonts.css">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE — starting</title>
@@ -86,7 +81,15 @@ h1 .w1{animation-delay:.04s}h1 .w2{animation-delay:.12s}h1 .w3{animation-delay:.
    enough to read as punctuation first and a hidden word second. */
 h1 .ac{font-style:normal;
   background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  /* A plain dark drop shadow is invisible on a #0A0A0A ground, so the depth
+     comes from three stacked shadows: a hard contact shadow that lifts the
+     letter off the background, a tighter amber one that reads as the gold's
+     own edge, and a wide soft bloom. filter applies to the clipped text, so
+     this shadows the glyph and not its box. */
+  filter:drop-shadow(0 7px 9px rgba(0,0,0,.62))
+         drop-shadow(0 2px 2px rgba(120,72,0,.55))
+         drop-shadow(0 0 26px rgba(255,193,7,.3))}
 @keyframes wordup{to{opacity:1;transform:none}}
 h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
