@@ -57,7 +57,14 @@
 
  .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
    z-index:35;pointer-events:none;padding:0 var(--dockpad,12px)}
- .tkPill{width:fit-content;max-width:100%;height:54px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
+ /* width:100%, NOT fit-content. fit-content lets the pill resolve to the
+    intrinsic width of its contents — and the marquee track inside .clip is
+    ~4600px of nowrap text. It happened to settle at exactly the container
+    width on a 1920 canvas, but at other source widths the pill grew past the
+    frame and body{overflow:hidden} clipped the clock cap off the right edge
+    with nothing in the DOM reporting an overflow. width:100% cannot exceed its
+    container by construction, which is the only reliable fix. */
+ .tkPill{width:100%;max-width:100%;height:54px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
    transform:scale(var(--tks));transform-origin:50% 50%;
    background:rgba(0,0,0,.93);
    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,206,0,.2)}
@@ -65,7 +72,7 @@
     their own content, so the left measured 187px and the right 140px — two
     different cap widths on one strip, which reads as an accident rather than
     a decision. The clock cap now has exactly as much room as the brand cap. */
- .tkPill .cap{flex:none;width:var(--capw);display:flex;align-items:center;
+ .tkPill .cap{flex:0 0 var(--capw);width:var(--capw);display:flex;align-items:center;
    justify-content:center;gap:9px;padding:0 22px;
    background:linear-gradient(0deg,#FFAE5A,#FFC107 100%,#F8A800);color:#1F1702;
    clip-path:polygon(0 0,100% 0,calc(100% - 20px) 100%,0 100%)}
@@ -97,7 +104,11 @@
     — and over a bright video the hard cut against the dark pill looked like a
     rendering fault. 108px is about eight characters: enough that whatever is
     leaving is already unreadable before it reaches the cap. */
- .clip{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
+ /* min-width:0 stated rather than inherited. A flex item's automatic minimum
+    size is its content's min-content width, and with a nowrap marquee inside
+    that is enormous. overflow:hidden happens to zero it today; saying so
+    means it stays zero if the overflow is ever changed. */
+ .clip{flex:1 1 0%;min-width:0;display:flex;align-items:center;overflow:hidden;position:relative;
    -webkit-mask:linear-gradient(90deg,transparent,#000 var(--fade) calc(100% - var(--fade)),transparent);
    mask:linear-gradient(90deg,transparent,#000 var(--fade) calc(100% - var(--fade)),transparent)}
  .sheen{position:absolute;top:-20%;bottom:-20%;left:0;width:26%;z-index:3;pointer-events:none;
