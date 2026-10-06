@@ -42,7 +42,7 @@
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
-  --capw:200px;
+  --capw:232px;
   --fade:108px;        /* marquee edge fade; ?fade= overrides */
  }
  *{box-sizing:border-box;margin:0;padding:0}
@@ -71,7 +71,7 @@
     frame and body{overflow:hidden} clipped the clock cap off the right edge
     with nothing in the DOM reporting an overflow. width:100% cannot exceed its
     container by construction, which is the only reliable fix. */
- .tkPill{width:100%;max-width:100%;height:76%;max-height:54px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
+ .tkPill{width:100%;max-width:100%;height:88%;max-height:66px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
    transform:scale(var(--tks));transform-origin:50% 50%;
    background:rgba(0,0,0,.93);
    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,206,0,.2)}
@@ -100,11 +100,65 @@
     watch. Hours and minutes alone, digits large and alone in their own block,
     with EAT as a quiet caption underneath instead of competing beside it on a
     single line. */
- .tkPill .cap.r{flex-direction:column;gap:2px}
- .tkPill .cap.r .face-t{font-family:var(--fd);font-weight:700;font-size:26px;
-   line-height:1;letter-spacing:.005em;font-variant-numeric:tabular-nums;color:#17140A}
- .tkPill .cap.r .zone{font-family:var(--fm);font-weight:600;font-size:8.5px;
-   letter-spacing:.24em;color:rgba(23,20,10,.6)}
+ /* THE CLOCK — the iPhone Standby layout, its font left behind.
+    The language being borrowed is the arrangement, not the face:
+      · one large time, left
+      · a tight right-aligned column of small secondary facts
+      · the secondary block set apart by extra space, icon above its value
+      · one soft gradient carries the time, the rest is flat
+    Same shape, Liberation Sans via the same --fd the rest of the kit uses —
+    which is what starting.html already resolves to.
+    The gold cap inverts Apple's black field: the time is the darkest thing on
+    it and the secondary text steps back, so the hierarchy survives the flip. */
+ /* position:relative so the bubble's percentages resolve against the CAP.
+    Without it the absolute containing block is .tkWrap and the bubble came out
+    4378px wide — 120% of the 1920 wrapper rather of 120% of the 214px cap. */
+ .tkPill .cap.r{position:relative;flex-direction:row;gap:14px;overflow:hidden;padding:0 20px}
+ .tkPill .cap.r .face-t{font-family:var(--fd);font-weight:700;font-size:34px;
+   line-height:.82;letter-spacing:-.012em;font-variant-numeric:tabular-nums;
+   color:#17140A;flex:none;
+   background:linear-gradient(168deg,#4A3A05 0%,#17140A 62%);
+   -webkit-background-clip:text;background-clip:text;color:transparent;
+   animation:drop .82s cubic-bezier(.22,1.16,.36,1) .1s both}
+ .tkPill .cap.r .col{display:flex;flex-direction:column;align-items:flex-end;
+   justify-content:center;gap:0;min-width:0}
+ /* day + date, sitting above the session block like THU 17 sits above 5:30AM */
+ .tkPill .cap.r .d{font-family:var(--fd);font-weight:700;font-size:11.5px;
+   line-height:1.15;letter-spacing:.12em;text-transform:uppercase;
+   color:rgba(23,20,10,.72);white-space:nowrap;
+   animation:drop .62s cubic-bezier(.22,1.16,.36,1) .26s both}
+ /* the alarm block: extra space above it, icon stacked over the value */
+ .tkPill .cap.r .n{display:flex;flex-direction:column;align-items:flex-end;
+   gap:3px;margin-top:10px;white-space:nowrap;
+   animation:drop .66s cubic-bezier(.22,1.16,.36,1) .4s both}
+ .tkPill .cap.r .n[hidden]{display:none !important}
+ .tkPill .cap.r .ni{width:14px;height:14px;stroke:#17140A;fill:none;
+   stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+ .tkPill .cap.r .nt{font-family:var(--fd);font-weight:700;font-size:13.5px;
+   line-height:1;letter-spacing:.03em;color:#17140A;
+   font-variant-numeric:tabular-nums}
+
+ /* the drop: falls in, overshoots, settles. One overshoot past the target and
+    a small rebound, which is what reads as weight rather than a fade. */
+ @keyframes drop{
+   0%{opacity:0;transform:translateY(-17px) scale(.82)}
+   52%{opacity:1;transform:translateY(3px) scale(1.07)}
+   76%{transform:translateY(-1.6px) scale(.985)}
+   100%{opacity:1;transform:translateY(0) scale(1)}}
+
+ /* the bubble: a soft highlight that opens once behind the time, the way the
+    Dynamic Island swells before it settles */
+ .tkPill .cap.r .bub{position:absolute;left:-18%;top:50%;width:136%;height:210%;
+   transform:translateY(-50%);pointer-events:none;border-radius:50%;
+   background:radial-gradient(ellipse at 30% 45%,rgba(255,255,255,.55),transparent 62%);
+   animation:bub .95s cubic-bezier(.2,.8,.3,1) .06s both}
+ @keyframes bub{from{opacity:.9;transform:translateY(-50%) scale(.25)}
+   to{opacity:0;transform:translateY(-50%) scale(1.9)}}
+ /* and a very slow breath so a long-lived strip is not perfectly dead */
+ .tkPill .cap.r .face-t{animation:drop .82s cubic-bezier(.22,1.16,.36,1) .1s both,
+   breathe 7s ease-in-out 1.1s infinite}
+ @keyframes breathe{0%,100%{transform:translateY(0) scale(1)}
+   50%{transform:translateY(-1px) scale(1.012)}}
  /* The edge fade is the whole reason the marquee reads as a ticker instead of
     a list being chopped. At 30px it was barely two characters wide, so cells
     were sliced mid-value right beside each cap — "SOL 120.93 +0" then the gold
@@ -134,7 +188,13 @@
  .it .num{font-variant-numeric:tabular-nums}
  .it .up{color:var(--up)} .it .dn{color:var(--down)}
  @keyframes sp-tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
- @media (prefers-reduced-motion:reduce){.tk,.sheen{animation:none !important}}
+ @media (prefers-reduced-motion:reduce){
+   /* the clock's drop, its bounce and its bubble are motion too — they were
+      missed here when the standby clock was added */
+   .tk,.sheen,.tkPill .cap.r .face-t,.tkPill .cap.r .d,.tkPill .cap.r .n,
+   .tkPill .cap.r .bub{animation:none !important}
+   .tkPill .cap.r .face-t,.tkPill .cap.r .d,.tkPill .cap.r .n{opacity:1;transform:none}
+   .tkPill .cap.r .bub{display:none}}
 </style>
 </head>
 <body>
@@ -206,8 +266,19 @@
       </div>
     </div>
     <div class="cap r">
-      <b class="face-t" id="tkclock">--:--</b>
-      <span class="zone">EAT</span>
+      <i class="bub" aria-hidden="true"></i>
+      <b class="face-t num" id="tkclock">--:--</b>
+      <span class="col">
+        <span class="d" id="tkday">-- --</span>
+        <span class="n" id="tkNextBlk">
+          <svg class="ni" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="13" r="7.4"/>
+            <path d="M12 9.6V13l2.4 1.5"/>
+            <path d="M4.4 4.2 7.7 7.5M19.6 4.2l-3.3 3.3"/>
+          </svg>
+          <span class="nt num" id="tknext">--:--</span>
+        </span>
+      </span>
     </div>
   </div>
 </div>
@@ -275,15 +346,71 @@
   var fxEvery=num(/[?&]fx=(\d+)/,60,300);   /* FX */
 
   function pad(n){return n<10?'0'+n:''+n}
+  /* one param reader, used for the clock's ?next= below */
+  function q(k,d){var v=(location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1];
+    return v===undefined?d:v;}
   var clock=document.getElementById('tkclock');
+  var dayEl=document.getElementById('tkday');
+  var nextEl=document.getElementById('tknext');
+  var nextBlk=document.getElementById('tkNextBlk');
+
+  /* EAT is UTC+3 and Nairobi does not observe DST, so a fixed offset is
+     correct and cheaper than a timezone lookup. */
+  var EAT=3*3600*1000;
+
+  /* ?next= is a target time, not a countdown: "when the next session is",
+     the way an alarm clock shows the hour it will ring. Accepts 21:00,
+     9:00PM, 9pm. Default 21:00 — the weekly session. ?next=0 hides the block. */
+  function readNext(v){
+    /* decoded first: ?next=9%3A00PM arrives still percent-encoded, and the
+       colon is part of what we are matching on */
+    try{v=decodeURIComponent(String(v||'21:00'))}catch(e){v=String(v||'21:00')}
+    v=v.trim().toLowerCase().replace(/\s+/g,'');
+    if(v==='0'||v==='off'||v==='none')return null;
+    var m=v.match(/^(\d{1,2})(?::(\d{2}))?(am|pm)?$/);
+    if(!m)return null;
+    var h=parseInt(m[1],10), mi=parseInt(m[2]||'0',10);
+    if(m[3]==='pm'&&h<12)h+=12;
+    if(m[3]==='am'&&h===12)h=0;
+    if(!(h>=0&&h<24)||mi>59)return null;
+    return {h:h,m:mi};
+  }
+  var NEXT=readNext(q('next',''));
+  nextBlk.hidden=!NEXT;
+
+  /* Next occurrence, rolling over to tomorrow once today's has passed —
+     which is what an alarm does, and why it never shows a time in the past. */
+  function fmt12(h,m){
+    var ap=h>=12?'PM':'AM', hh=h%12; if(hh===0)hh=12;
+    return hh+':'+pad(m)+ap;
+  }
+  function paintClock(){
+    var now=new Date(Date.now()+EAT);
+    clock.textContent=pad(now.getHours())+':'+pad(now.getMinutes());
+    var dow=['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+    dayEl.textContent=dow+' '+pad(now.getDate());
+    if(NEXT){
+      var mins=now.getHours()*60+now.getMinutes();
+      var t=(NEXT.h*60+NEXT.m);
+      var rolled=t<=mins;
+      nextEl.textContent=fmt12(NEXT.h,NEXT.m);
+      /* a tag on the value tells you it is tomorrow without another line */
+      nextEl.setAttribute('title', rolled?'tomorrow':'today');
+    }
+  }
   /* a DECLARATION, not a named function expression: the name of a named
      function expression is only bound inside its own body, so setInterval could
      not see it — and the throw aborted the rest of the IIFE, which is why every
      cell sat at -- */
+  /* Only the minute changes, so the interval is cheap and the DOM writes are
+     guarded rather than unconditional. */
+  var lastMin=-1;
   function tickClock(){
     if(document.hidden)return;
-    var d=new Date();
-    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+    var m=Math.floor((Date.now()+EAT)/60000);
+    if(m===lastMin)return;
+    lastMin=m;
+    paintClock();
   }
   tickClock();
   setInterval(tickClock,1000);
