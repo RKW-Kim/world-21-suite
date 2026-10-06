@@ -46,7 +46,7 @@
   --fade:108px;        /* marquee edge fade; ?fade= overrides */
  }
  *{box-sizing:border-box;margin:0;padding:0}
- html,body{width:1920px;height:76px;overflow:hidden;background:transparent}
+ html,body{width:1920px;height:76px;max-width:1920px;overflow:hidden;background:transparent}
  body{font-family:var(--fd);-webkit-font-smoothing:antialiased}
  ::selection{background:#FFCE00;color:#1F1702}
 
@@ -55,7 +55,15 @@
    -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
            mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
 
- .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ /* Fixed box, own clip. inset:0 previously resolved against the viewport, so
+    the strip's width was whatever the host canvas happened to be — which is
+    how a cap ended up outside the frame at all. The wrapper is now pinned to
+    1920x76 and clips its own contents, so no host width, zoom or DPR can move
+    the caps. If the canvas is wider than 1920 you get empty space at the edge,
+    which is correct; if it is narrower, the strip is clipped rather than
+    having a cap sliced off. */
+ .tkWrap{position:absolute;left:0;top:0;width:1920px;height:76px;overflow:hidden;
+   display:flex;align-items:center;justify-content:center;
    z-index:35;pointer-events:none;padding:0 var(--dockpad,12px)}
  /* width:100%, NOT fit-content. fit-content lets the pill resolve to the
     intrinsic width of its contents — and the marquee track inside .clip is

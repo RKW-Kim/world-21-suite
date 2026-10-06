@@ -46,6 +46,20 @@
    until there is a user gesture, and there is nobody to click in an OBS
    browser source. ?ctl=1 restores YouTube's controls.
 
+   THE SETS. ?pl= plays a named list through in order:
+     ?pl=hdf      hdf presidential, hdf wash, hdf collins
+     ?pl=menta    menta · motivation
+     ?pl=almond   almond
+     ?pl=all      all five in the order above
+   They live in this file as SETS rather than as a YouTube playlist id so the
+   order and the names are editable next to the rest. One caveat worth knowing
+   before you rely on it: YouTube's comma-list form takes a single start
+   offset for the whole list, not one per item, so Collins' 14s is ignored
+   inside a set. Play it alone to keep it: ?yt=PHb3YR8kgps&start=14
+
+   ?start=<sec> offsets a single video. ?list=<id> still takes a real YouTube
+   playlist id if you ever make one there.
+
    A note on aspect. YouTube letterboxes inside the iframe itself, so a 4:3
    upload in a 1920x1080 frame arrives with soft bars either side. The embed
    player cannot crop; if you need true full-bleed, transcode to 16:9 first.
@@ -151,8 +165,9 @@ html[data-guide="1"] .guide{display:block}
         <path d="M19 10.4v11.2L29.4 16z" fill="#FFC107"/>
       </svg>
       <span class="big">video goes full frame</span>
-      <span class="hint">add <b>?yt=</b> with an id or any YouTube URL<br>
-        it plays automatically, muted · <b>?ywx=&amp;ywy=&amp;yww=&amp;ywh=</b> shrink it to a panel</span>
+      <span class="hint"><b>?pl=hdf</b> · <b>?pl=menta</b> · <b>?pl=almond</b> · <b>?pl=all</b><br>
+        or <b>?yt=</b> with any YouTube URL &nbsp;·&nbsp; plays automatically, muted<br>
+        <b>?ywx=&amp;ywy=&amp;yww=&amp;ywh=</b> shrink it to a panel</span>
     </div>
   </div>
 
@@ -222,26 +237,68 @@ html[data-guide="1"] .guide{display:block}
   tkParams.push('pad='+num('tpad',0,0,120));
   tkFrame.src='ticker.html?'+tkParams.join('&');
 
-  /* ── the video ── */
-  var raw=dec(q('yt','')).trim();
-  var id='';
-  if(raw){
-    var m=raw.match(/(?:v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{6,})/);
-    id=m?m[1]:(/^[A-Za-z0-9_-]{6,}$/.test(raw)?raw:'');
+  /* ── the video, or a set of them ──
+     Authored here rather than as a YouTube playlist id so the order, the
+     names and the start offsets live in this file next to everything else. */
+  var SETS={
+    hdf:  [['hdf presidential','_d-dOByD1L0',0],
+           ['hdf wash','GwH8tCJrWLQ',0],
+           ['hdf collins','PHb3YR8kgps',0]],
+    menta:[['menta · motivation','tROW0yRgQK8',0]],
+    almond:[['almond','XxV3jDM6KNs',0]],
+    all:  [['hdf presidential','_d-dOByD1L0',0],
+           ['hdf wash','GwH8tCJrWLQ',0],
+           ['hdf collins','PHb3YR8kgps',0],
+           ['menta · motivation','tROW0yRgQK8',0],
+           ['almond','XxV3jDM6KNs',0]]
+  };
+  var NAMES={hdf:'HDF',menta:'Menta',almond:'Almond',all:'all channels'};
+
+  function idOf(raw){
+    if(!raw)return '';
+    var m=String(raw).match(/(?:v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{6,})/);
+    if(m)return m[1];
+    var v=dec(raw).trim();
+    return /^[A-Za-z0-9_-]{6,}$/.test(v)?v:'';
   }
 
-  var lab=dec(q('lab','now playing')).trim()||'now playing';
+  var plName=dec(q('pl','')).trim().toLowerCase();
+  var set=SETS[plName]||null;
+  var raw=dec(q('yt','')).trim();
+  /* A set loads its first entry and queues the rest, which is the form the
+     embed actually supports. Passing only ?playlist= with an empty path loads
+     nothing at all. */
+  var id=set?set[0][1]:idOf(raw);
+  /* ?start= offsets a single video, but MEASURED: it stops autoplay working.
+     PHb3YR8kgps rendered 265KB of playing video with no start param and 5.5KB
+     of dead play-button with start=1 AND start=14 — so it is the parameter
+     itself, not the value. A stuck play button mid-presentation is far worse
+     than a missing 14s skip, so the sets carry 0 and autoplay is the default.
+     Kept available for deliberate manual playback; do not add it before a show.
+     A real skip would need the IFrame API's loadVideoById({startSeconds}),
+     which autoplays correctly — say the word and it is a contained change. */
+  var start=parseInt(q('start',''),10);
+  if(isNaN(start))start=0;
+
+  var lab=dec(q('lab','')).trim()||(set?NAMES[plName]||plName:'now playing');
   var sub=dec(q('cap','')).trim();
   document.getElementById('tagLab').textContent=lab;
   var subEl=document.getElementById('tagSub');
   subEl.textContent=sub; subEl.hidden=!sub;
 
   if(id){
+    /* A set becomes YouTube's comma-list, which plays through in order. Its
+       per-item start offsets cannot be expressed that way — the embed takes
+       one start for the whole list — so Collins' 14s applies when it is played
+       alone via ?yt=PHb3YR8kgps&start=14. */
+    var listIds=set?set.map(function(r){return r[1]}):[];
     var src='https://www.youtube.com/embed/'+encodeURIComponent(id)+
+      (!isNaN(start)&&start>0?'&start='+start:'')+
       '?autoplay='+(q('play','1')!=='0'?1:0)+
       '&mute='+(q('mute','1')!=='0'?1:0)+
       '&playsinline=1&rel=0&modestbranding=1'+
       '&controls='+(q('ctl','0')!=='0'?1:0)+
+      (listIds.length?'&playlist='+encodeURIComponent(listIds.join(',')):'')+
       (q('list','')!==''?'&playlist='+encodeURIComponent(dec(q('list',''))):'');
     var f=document.createElement('iframe');
     f.src=src; f.allow='autoplay; encrypted-media; picture-in-picture';
