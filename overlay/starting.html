@@ -75,18 +75,15 @@ svg{display:block}
 /* ---- headline ---- */
 /* 96px, which is what the original reference frame resolved to. Fixing this at
    124 made the acrostics run the full width and left no air for anything else. */
-/* Two lines of short words. The SMILE acrostic is five words; set as one
-   line it is either ~1900px of type or a wall, so it breaks after the third
-   word instead. Size and weight are the user's own choice and untouched. */
+/* Three words, one line. Size and weight are the user's own and untouched. */
 h1{font-family:var(--fd);font-weight:800;font-size:126px;
-  line-height:1.04;letter-spacing:-.045em;margin-top:18px;
-  max-width:100%}
-h1 .ln{display:block;white-space:nowrap;opacity:0;transform:translateY(40px);
+  line-height:1.02;letter-spacing:-.045em;margin-top:20px;
+  max-width:100%;white-space:nowrap}
+h1 .w{display:inline-block;opacity:0;transform:translateY(40px);
   animation:wordup .85s var(--eo) both}
-h1 .l1{animation-delay:.05s}
-h1 .l2{animation-delay:.15s}
-/* the easter egg: the five letters that spell SMILE, in the gold ramp.
-   Sized to read as punctuation first and a hidden word second. */
+h1 .w1{animation-delay:.04s}h1 .w2{animation-delay:.12s}h1 .w3{animation-delay:.20s}
+/* the easter egg: one s, one m, one i, one l, one e, in the gold ramp. Small
+   enough to read as punctuation first and a hidden word second. */
 h1 .ac{font-style:normal;
   background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
   -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -232,22 +229,37 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   var clock=document.getElementById('clock');
   var h1=document.getElementById('headline');
 
-  /* Five words each, initials spelling S-M-I-L-E. Authored, not generated.
-     Line 1 carries S M I, line 2 carries L E. */
+  /* Three words each. The phrase is in the register of the thing people
+     actually say — "business unusual" — rather than a slogan about a
+     platform. Five letters get picked out across the three words, one each
+     of s m i l e, in whatever order they happen to land; they are not
+     spelled out in sequence, because spelling them out stops being an
+     easter egg and starts being a subtitle.
+
+     Format: [word, [charIndexesToHighlight], ...]
+     e.g. ['Business,',[2]] highlights the s in "Business,"                */
   var HL=[
-    ['Sharp Markets Invite',   'Live Entries'],
-    ['Smart Money, Insight',   'Lasting Equity'],
-    ['Smile Markets Illuminate','Live Energy'],
-    ['Signal Mastery, Insight','Leads Execution'],
-    ['Signals Matter, Insight','Live Endeavour'],
-    ['Smiles Matter Insight',  'Leads Execute']
+    [['Business,',[2]],   ['Made',[0,3]],   ['Live',[0,1]]],
+    [['Markets',[0,6]],   ['Made',[3]],     ['Simple',[1,4]]],
+    [['Smile',[0,4]],     ['Markets',[0]],  ['Live',[0,1]]],
+    [['Something',[0]],   ['Made',[0,3]],   ['Live',[0,1]]],
+    [['Make',[0]],        ['Markets',[6]],  ['Smile',[2,3,4]]],
+    [['Stay',[0]],        ['Smart,',[1]],   ['Live',[0,1]], ['Easy',[0]]]
   ];
-  /* Asserted, not trusted: three of the first draft were authored as
-     S-I-M and quietly spelled SIMLE. Cheap to check, invisible if wrong. */
-  HL.forEach(function(l,i){
-    var ac=(l[0]+' '+l[1]).split(' ').map(function(w){return w[0]}).join('');
-    if(ac!=='SMILE') console.error('starting.html: headline '+(i+1)+' spells '+ac+', not SMILE');
+
+  /* Asserted, because this is authored by hand and the failure is invisible:
+     a mis-indexed highlight still renders, it just stops saying SMILE. */
+  HL.forEach(function(line,i){
+    var picked=[];
+    line.forEach(function(w){w[1].forEach(function(k){picked.push(w[0][k].toLowerCase())})});
+    var set=picked.slice().sort().join('');
+    var want='eilms';
+    if(picked.length!==5||set!==want){
+      console.error('starting.html: headline '+(i+1)+' highlights "'+set+'" ('+picked.length+
+        '), not five letters spelling s m i l e');
+    }
   });
+
   var q=(location.search.match(/[?&]hl=([^&]*)/)||[])[1];
   var idx=0;
   if(q==='random'){
@@ -256,26 +268,24 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
     idx=parseInt(seed,10)||0;
   } else if(q){idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
 
-  /* Gold the initial of every word, then split the five words across two
-     lines: three on top, two beneath. */
-  function render(line){
-    return line.split(' ').map(function(w,i){
-      return (i?' ':'')+'<i class="ac">'+esc(w[0])+'</i>'+esc(w.slice(1));
-    }).join('');
-  }
-  h1.innerHTML='<span class="ln l1">'+render(HL[idx][0])+'</span>'+
-               '<span class="ln l2">'+render(HL[idx][1])+'</span>';
+  h1.innerHTML=HL[idx].map(function(w,i){
+    var idxs=w[1]||[], out='';
+    for(var k=0;k<w[0].length;k++){
+      out += idxs.indexOf(k)>=0
+        ? '<i class="ac">'+esc(w[0][k])+'</i>'
+        : esc(w[0][k]);
+    }
+    return '<span class="w w'+(i+1)+'">'+out+'</span>';
+  }).join(' ');
 
-  /* Fit the LONGER of the two lines, then apply one size to both so the pair
-     stays optically matched — fitting each line independently is what makes
-     two-line headlines look accidental. */
+  /* Fit the one line to the frame. Size is the user's 126px; this only steps
+     down if a phrase would otherwise run past the edge, and never below 84px
+     because at that point it has stopped being a headline. */
   function fit(){
     var max=parseFloat(getComputedStyle(h1).fontSize);
-    var l1=h1.querySelector('.l1'), l2=h1.querySelector('.l2');
     var box=h1.clientWidth, size=max;
     h1.style.fontSize=size+'px';
-    function over(){return Math.max(l1.scrollWidth,l2.scrollWidth)>box+1}
-    while(size>100&&over()){size-=2;h1.style.fontSize=size+'px';}
+    while(size>84&&h1.scrollWidth>box+1){size-=2;h1.style.fontSize=size+'px';}
   }
   fit();
   window.addEventListener('resize',fit);
