@@ -20,7 +20,7 @@
   --fm:'IBM Plex Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+body{background:var(--bg);color:var(--fg);font-family:var(--fd);
   min-height:100vh;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .wrap{max-width:880px;margin:0 auto;padding:64px 24px 90px}
@@ -40,6 +40,10 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .lede{max-width:640px;color:var(--muted);font-size:15.5px;line-height:1.65;margin-bottom:44px;
   animation:rise .7s cubic-bezier(.2,.9,.3,1) .16s both}
 .lede b{color:var(--fg);font-weight:600}
+/* Base rule so the ~31 bare <code> runs in the docs body land on Plex Mono.
+   With none they fell through to the generic `monospace` keyword, which is
+   whatever fontconfig picks — the one place this page was off-brand. */
+code{font-family:var(--fm)}
 .lede code{font-family:var(--fm);font-size:12.5px;color:var(--yellow);background:rgba(255,193,7,.07);
   border:1px solid rgba(255,193,7,.2);border-radius:5px;padding:1px 7px}
 
