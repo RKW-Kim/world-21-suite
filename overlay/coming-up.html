@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <!-- Kit fonts, bundled locally. See fonts/fonts.css for why this is
      not a fonts.googleapis.com link: OBS loads these from file:// on machines
      with unreliable internet, and a stalled webfont request does not fail, it
@@ -9,147 +9,254 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>SMILE · up next — the coming-up stinger</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<title>SMILE · up next</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.4c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
 <style>
-/* ─────────────────────────────────────────────────────────────────────────
-   THE COMING-UP STINGER — a transient bumper, the kit's fifth module.
-   Fires center stage, says what's coming, and clears itself: a one-shot
-   CSS sequence (entrance → hold ~6s → exit to fully transparent), zero
-   timers, zero rAF. Add as a 1920×1080 transparent OBS browser source;
-   Streamer.bot (or you) reloads it to fire again. ?hold=1 pins it.
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE COMING-UP BUMPER — a transient full-bleed band.
 
-   Params: ?next=Trivia Night  ?who=Alice  ?when=8PM EAT  ?hold=1  ?preview=1
-   The page background is transparent — no backdrop blur anywhere (nothing
-   behind a transparent source to sample); the card carries its own glass.
-   ───────────────────────────────────────────────────────────────────────── */
+   WHY A BAND AND NOT A CARD. Every other scene in this kit is a centred
+   cluster, so a centred glass card here made this page the least distinctive
+   thing in the set. A bumper is also a different job from a holding scene: it
+   is read once, in about four seconds, between two segments. That argues for a
+   graphic with the width to let a long title stay on ONE line, and for motion
+   that reads as a broadcast wipe rather than a card popping in.
+
+   Composition, left to right:
+     flag  — gold, carries the mark and the words UP NEXT. The only gold in the
+             scene that is not type, so the eye lands there first.
+     title — the segment. Space Grotesk 700, auto-fitted to one line.
+     meta  — host and clock time, mono, quiet.
+     cdown — optional ?in= countdown, mono, tabular. Absent by default.
+
+   Geometry contract:
+     · full bleed horizontally, so the band reads as part of the frame rather
+       than an object floating on it
+     · its bottom edge sits --dock above the canvas bottom, leaving the 76px
+       ticker module's zone completely clear
+     · the page background is transparent, so this composites over whatever is
+       underneath as its own OBS source
+     · no backdrop-filter anywhere — a transparent source has nothing behind it
+       to sample, so it would be pure GPU cost for no visible gain
+
+   Motion is one wipe in, one wipe out, both clip-path on the compositor. No
+   timers for the sequence itself: CSS keyframes carry it, so the bumper fires
+   on load with no JS at all. JS is used only for the optional countdown, and
+   only when ?in= is present.
+
+   Params:
+     ?next=Trivia Night     the segment title
+     ?who=Alice             host, renders "with Alice"
+     ?when=8PM EAT          clock time
+     ?in=90                 seconds until it starts; renders a live countdown
+     ?hold=1                pin it on screen, no auto-exit
+     ?preview=1             opaque backdrop so you can see it alone
+
+   Contract: no canvas, no rAF. One gated interval, and only if ?in= is set.
+   ───────────────────────────────────────────────────────────────────────────── */
 :root{
-  --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --border:#27272a; --fg:#fafafa; --muted:#a1a1aa;
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
+  --fg:#FAFAFA; --muted:#A1A1AA; --faint:#8A8A94;
+  --line:#2a2a2a;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --dock:76px;
+  --eo:cubic-bezier(.32,.72,0,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:transparent}
+body{color:var(--fg);font-family:var(--fd);-webkit-font-smoothing:antialiased}
 svg{display:block}
 ::selection{background:var(--yellow);color:var(--ink)}
-body.preview{background:#09090b;
+body.preview{background:#09090B;
   background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);
   background-size:26px 26px}
 
-.stage{position:absolute;inset:0;display:grid;place-items:center;padding:0 4vw}
+.stage{position:absolute;inset:0;overflow:hidden}
 
-.bumper{position:relative;width:min(880px,92vw);border-radius:20px;
-  border:1px solid rgba(255,193,7,.45);background:rgba(10,10,13,.9);
-  box-shadow:0 34px 90px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);
-  padding:clamp(22px,4.5vh,40px) clamp(26px,4.5vw,52px);
-  display:flex;flex-direction:column;align-items:center;gap:clamp(9px,1.8vh,16px);
-  text-align:center;overflow:hidden;
-  animation:bIn .62s cubic-bezier(.2,.9,.3,1) .3s both,
-            bOut .6s cubic-bezier(.6,.05,.75,.4) 7.4s forwards}
+/* The band. --in / --out drive the two clip-path keyframes; both are
+   animation-driven so the whole sequence needs no JS. */
+.band{position:absolute;left:0;right:0;bottom:var(--dock);z-index:2;
+  display:flex;align-items:stretch;
+  background:linear-gradient(180deg,rgba(12,12,15,.96),rgba(8,8,10,.97));
+  border-top:1px solid rgba(255,255,255,.09);
+  box-shadow:0 -26px 70px rgba(0,0,0,.62);
+  animation:inWipe .58s var(--eo) .18s both,
+            outWipe .5s cubic-bezier(.55,0,.75,.35) 7.2s forwards}
+@keyframes inWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes outWipe{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 0 100%)}}
+html[data-hold="1"] .band{animation:inWipe .58s var(--eo) .18s both}
 
-/* the one-shot entrance */
-@keyframes bIn{from{opacity:0;transform:translateY(44px) scale(.96)}to{opacity:1;transform:none}}
-/* the exit — the card leaves, the source returns to fully transparent */
-@keyframes bOut{to{opacity:0;transform:translateY(30px) scale(.97);visibility:hidden}}
-html[data-hold="1"] .bumper{animation:bIn .62s cubic-bezier(.2,.9,.3,1) .3s both}
+/* dot field, masked to the band so it reads as a surface, not wallpaper */
+.band::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.055) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
 
-/* flare — a light band sweeps the card once as it lands */
-.flare{position:absolute;top:-20%;bottom:-20%;left:0;width:34%;pointer-events:none;
-  background:linear-gradient(105deg,transparent,rgba(255,224,138,.16) 45%,rgba(255,224,138,.05) 60%,transparent);
-  transform:translateX(-140%);animation:flare 1.1s cubic-bezier(.3,.6,.4,1) .55s forwards}
-@keyframes flare{to{transform:translateX(440%)}}
+/* ── the flag ── */
+.flag{position:relative;flex:none;width:186px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:11px;
+  padding:18px 12px;color:#17140A;
+  background:linear-gradient(150deg,#FFDE7A 0%,var(--yellow) 52%,var(--hot) 100%);
+  clip-path:polygon(0 0,100% 0,calc(100% - 26px) 100%,0 100%);
+  animation:flagPop .5s cubic-bezier(.34,1.4,.64,1) .34s both}
+@keyframes flagPop{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+.flag svg{width:52px;height:52px;filter:drop-shadow(0 3px 9px rgba(0,0,0,.3))}
+/* a hairline inside the flag, so the gold is a surface rather than a void */
+.flag::after{content:"";position:absolute;left:14px;right:40px;top:14px;bottom:14px;
+  border:1px solid rgba(23,20,10,.18);border-radius:4px;pointer-events:none}
+.flag{position:relative}
+.flag span{font-family:var(--fm);font-weight:700;font-size:12px;letter-spacing:.24em;
+  text-transform:uppercase;white-space:nowrap}
 
-.row1{display:inline-flex;align-items:center;gap:12px;
-  animation:pop .5s cubic-bezier(.34,1.56,.64,1) .42s both}
-@keyframes pop{from{opacity:0;transform:scale(1.5)}to{opacity:1;transform:scale(1)}}
-.row1 .face{width:clamp(26px,4.4vh,34px);height:clamp(26px,4.4vh,34px);
-  filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));
-  animation:faceIn .8s cubic-bezier(.34,1.56,.64,1) .34s both}
-@keyframes faceIn{from{opacity:0;transform:rotate(-160deg) scale(.2)}to{opacity:1;transform:none}}
-.row1 .un{font-family:var(--fm);font-weight:600;font-size:clamp(10px,1.7vh,12px);
-  letter-spacing:.34em;color:var(--ink);background:linear-gradient(135deg,var(--yellow),var(--hot));
-  border-radius:8px;padding:7px 15px 7px 18px;text-transform:uppercase}
+/* ── the body ── */
+.body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;
+  gap:10px;padding:20px 40px}
 
-.title{font-family:var(--fd);font-weight:700;font-size:clamp(30px,6.4vh,58px);
-  line-height:1.04;letter-spacing:-.03em;color:var(--fg);
-  background:linear-gradient(180deg,#ffffff 30%,#c9c9cf 95%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:tIn .55s cubic-bezier(.2,.9,.3,1) .62s both;max-width:100%;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-@keyframes tIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+/* Title. Kept on one line and scaled to fit rather than truncated: a bumper
+   that silently clips its own message is worse than one with smaller type.
+   fitTitle() in the script measures the real string and steps down to fit. */
+.title{font-family:var(--fd);font-weight:700;
+  font-size:clamp(38px,4.3vw,82px);line-height:1.02;letter-spacing:-.04em;
+  white-space:nowrap;color:var(--fg);
+  animation:slideUp .55s var(--eo) .44s both}
+@keyframes slideUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.title .hl{background:linear-gradient(180deg,#FFDE7A 8%,var(--yellow) 52%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
 
-.rule{width:min(320px,60%);height:2px;border-radius:2px;transform-origin:center;
-  background:linear-gradient(90deg,transparent,var(--yellow),transparent);
-  transform:scaleX(0);animation:rule .6s cubic-bezier(.2,.9,.3,1) .95s forwards}
-@keyframes rule{to{transform:scaleX(1)}}
+.meta{display:flex;align-items:center;gap:11px;flex-wrap:wrap;
+  font-family:var(--fm);font-weight:600;font-size:13px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);
+  animation:slideUp .5s var(--eo) .6s both}
+.meta b{color:var(--fg);font-weight:600}
+.meta .sep{width:4px;height:4px;border-radius:50%;background:rgba(255,193,7,.6)}
 
-.meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
-  font-family:var(--fm);font-size:clamp(10px,1.9vh,13px);letter-spacing:.22em;
-  color:var(--muted);text-transform:uppercase;animation:mIn .5s cubic-bezier(.2,.9,.3,1) 1.12s both}
-.meta b{color:var(--yellow);font-weight:600}
-.meta .sep{width:4px;height:4px;border-radius:50%;background:rgba(255,193,7,.5)}
-@keyframes mIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* ── the optional countdown ── */
+.cdown{flex:none;align-self:center;padding:0 42px 0 30px;text-align:right;
+  border-left:1px solid rgba(255,255,255,.1);
+  animation:slideUp .5s var(--eo) .68s both}
+.cdown .k{display:block;font-family:var(--fm);font-weight:600;font-size:10px;
+  letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+.cdown .v{display:block;margin-top:5px;font-family:var(--fm);font-weight:700;
+  font-size:clamp(30px,2.9vw,50px);line-height:1;letter-spacing:-.01em;
+  color:var(--yellow);font-variant-numeric:tabular-nums}
 
-/* reduced motion: no sequence — the card simply is, and it stays */
+/* a hairline that runs the seam between flag and body — the only ornament */
+.seam{position:absolute;top:0;bottom:0;left:186px;width:1px;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.22),transparent)}
+
+/* reduced motion: no wipe, no slide — the band is simply there, and it stays */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important}
-  .bumper,.row1,.row1 .face,.title,.meta{opacity:1;transform:none}
-  .rule{transform:scaleX(1)}
-  .flare{display:none}
+  .band{clip-path:none}
+  .flag,.title,.meta,.cdown{opacity:1;transform:none}
 }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="bumper" id="bump" role="status">
-    <i class="flare" aria-hidden="true"></i>
-    <div class="row1">
-      <span class="face" aria-hidden="true">
-        <!-- smile face — verbatim crop of the real logo (same 4 paths, tight viewBox) -->
-        <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
-          <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
-          <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
-          <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
-          <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
-        </svg>
-      </span>
-      <span class="un">Up Next</span>
+  <section class="band" role="status" aria-live="polite">
+    <div class="flag" aria-hidden="true">
+      <!-- smile face — verbatim crop of the real logo, same four paths as Smile-Logo.svg -->
+      <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
+        <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
+        <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
+        <path d="m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z" fill="#0A0900"/>
+        <path d="m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z" fill="#0A0900"/>
+      </svg>
+      <span>Up&nbsp;Next</span>
     </div>
-    <div class="title" id="tTitle">Something good</div>
-    <div class="rule" aria-hidden="true"></div>
-    <div class="meta" id="tMeta"><span>the smile squad returns</span></div>
-  </div>
+    <i class="seam" aria-hidden="true"></i>
+
+    <div class="body">
+      <h1 class="title" id="tTitle">Something good</h1>
+      <div class="meta" id="tMeta"><b>the smile squad returns</b></div>
+    </div>
+
+    <div class="cdown" id="cdown" hidden>
+      <span class="k">starts in</span>
+      <span class="v num" id="cdVal">--:--</span>
+    </div>
+  </section>
 </div>
 
 <script>
-/* one-shot param bake — textContent everywhere, zero timers, zero intervals. */
+/* Param bake only. textContent everywhere, no innerHTML on user input, so a
+   title containing & or < cannot break the page. The wipe sequence is pure CSS
+   and does not depend on anything here. */
 (function(){
-  function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]+)'))||[])[1]}
+  function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1]}
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+  function trim(v){return dec(v||'').trim()}
 
   if(get('hold')==='1')document.documentElement.dataset.hold='1';
   if(get('preview')==='1')document.body.classList.add('preview');
 
-  var title=dec(get('next')||'').trim();
-  if(title)document.getElementById('tTitle').textContent=title;
+  /* ── title ── */
+  var title=trim(get('next'));
+  var el=document.getElementById('tTitle');
+  if(title)el.textContent=title;
 
-  var who=dec(get('who')||'').trim(),when=dec(get('when')||'').trim();
+  /* Fit one line. The band is 196px flag + padding + optional countdown, so the
+     usable width depends on which of those are present — measure, do not guess.
+     Floor at 24px: below that it is no longer a title. */
+  function fit(){
+    var max=parseFloat(getComputedStyle(el).fontSize);
+    var floor=24, box=el.parentNode.clientWidth-80, size=max;
+    el.style.fontSize=size+'px';
+    while(size>floor&&el.scrollWidth>box){size-=2;el.style.fontSize=size+'px';}
+  }
+  fit();
+  window.addEventListener('resize',fit);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
+
+  /* ── meta line ──
+     Host renders as "with Alice" so the param stays a bare name and the
+     grammar cannot come out wrong. */
+  var who=trim(get('who')), when=trim(get('when'));
   var meta=document.getElementById('tMeta');
   meta.textContent='';
-  var parts=[];
-  if(who)parts.push({pre:'with ',txt:who,b:true});
-  if(when)parts.push({pre:'',txt:when,b:true});
-  if(parts.length){
-    parts.forEach(function(p,i){
-      if(i>0){var s=document.createElement('i');s.className='sep';meta.appendChild(s);}
-      var sp=document.createElement('span');
-      if(p.pre)sp.appendChild(document.createTextNode(p.pre));
-      var b=document.createElement('b');b.textContent=p.txt;sp.appendChild(b);
-      meta.appendChild(sp);
-    });
-  }else{
-    var sp=document.createElement('span');sp.textContent='the smile squad returns';meta.appendChild(sp);
+  function span(txt,strong){var s=document.createElement('span');
+    if(strong){var b=document.createElement('b');b.textContent=txt;s.appendChild(b);}
+    else s.textContent=txt;
+    return s;}
+  function sep(){var s=document.createElement('i');s.className='sep';return s;}
+
+  var bits=[];
+  if(who)bits.push(span('with ',false),span(who,true));
+  if(when)bits.push(span(when,true));
+  if(!bits.length)bits.push(span('the smile squad returns',false));
+  bits.forEach(function(n,i){
+    if(i&&n.className!=='sep'&&bits[i-1].className!=='sep')meta.appendChild(sep());
+    meta.appendChild(n);});
+
+  /* ── optional countdown ──
+     Only here, only with ?in=. A gated interval: it early-returns while the
+     page is hidden, and it stops itself at zero rather than counting negative. */
+  var raw=get('in');
+  if(raw!==undefined&&raw!==''){
+    var secs=parseInt(raw,10);
+    if(secs>=0){
+      var box2=document.getElementById('cdown'), val=document.getElementById('cdVal');
+      box2.hidden=false;
+      function two(n){return n<10?'0'+n:''+n}
+      function paint(){
+        if(secs<=0){
+          val.textContent='now';
+          clearInterval(iv);
+          return;
+        }
+        var h=Math.floor(secs/3600), m=Math.floor(secs%3600/60), s=secs%60;
+        val.textContent=h?h+':'+two(m)+':'+two(s):m+':'+two(s);
+      }
+      var iv=setInterval(function(){
+        if(document.hidden)return;
+        secs--;paint();
+      },1000);
+      paint();
+      fit();
+    }
   }
 })();
 </script>
