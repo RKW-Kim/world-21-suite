@@ -62,6 +62,15 @@
    background:linear-gradient(0deg,#FFAE5A,#FFC107 100%,#F8A800);color:#1F1702;
    clip-path:polygon(0 0,100% 0,calc(100% - 20px) 100%,0 100%)}
 
+ /* Right cap is the left cap mirrored: the slope leans right at the top on
+    BOTH, so the two cuts run parallel and the strip reads as one channel.
+    The outer edge is deliberately left square here — .tkPill's own 999px
+    radius plus overflow:hidden rounds it. Clipping it with a polygon too
+    would flatten the end and the caps would no longer close into a clean
+    pill when the middle is removed. */
+ .tkPill .cap.r{padding:0 18px 0 24px;
+    clip-path:polygon(20px 0,100% 0,100% 100%,0 100%)}
+
  .tkPill .cap svg{width:29px;height:29px;display:block;filter:drop-shadow(0 1px 5px rgba(0,0,0,0.65))}
  .tkPill .cap .t{font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.2em}
  .clip{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
@@ -164,17 +173,39 @@
 <script>
 /* Module params + LIVE MARKET DATA.
    ?scale=0.5  resize the pill        ?live=0  freeze it at the baked values
-   ?every=20   refresh seconds (min 10, to stay inside free-tier limits)
+   ?every=2    crypto refresh seconds (min 1)
+   ?fx=300     FX refresh seconds (min 60)
 
-   Endpoints — all free, no API key, CORS enabled, verified reachable:
-     Binance    api.binance.com/api/v3/ticker/24hr    one call, all crypto pairs
-     open.er-api open.er-api.com/v6/latest/USD        one call, every FX rate
+   TWO CADENCES, ON PURPOSE. These are different instruments and the sources
+   do not behave alike, so they are not polled on one shared interval:
 
-   What is deliberately NOT here: NSE 20, SCOM, EQTY, KCB and XAU. There is no
-   free public endpoint for Nairobi or metals — api.nse.com.ng does not answer
-   and every metals feed wants a key. Those cells were static, which on a live
-   stream is the same as lying, so they are gone rather than faked. Add them
-   back as a hand-kept watchlist if you want them.
+     crypto  Binance publishes a rolling 24h window, so a 2s poll returns
+             genuinely new data and the strip is alive.
+     FX      No free source carries intraday FX at all -- every one of them is
+             a once-daily reference rate. Measured: 10 polls of fxratesapi
+             /latest across 20 seconds returned ONE distinct value. Polling
+             it every 2s would render +0.00% forever and burn the quota into
+             a 429 with no Retry-After that had still not recovered 11 minutes
+             later. So FX is percentage-accurate but slow, which is honest.
+
+   Percentages are 24h for every cell that shows one. Where a source cannot
+   supply a 24h figure the cell shows nothing rather than a derived one --
+   see the gold note below.
+
+   Endpoints — all free, no API key, verified by fetching from a real
+   Chromium context (curl-based CORS checks lie; both a curl-pass/Chromium-fail
+   and a curl-fail/Chromium-pass case turned up in testing):
+     Binance      api.binance.com/api/v3/ticker/24hr      360ms  native 24h %
+     fxratesapi   .../timeseries                          300ms  24h % derived
+     gold-api     api.gold-api.com/price/XAU              300ms  price only
+
+   What is deliberately NOT here: NSE 20, SCOM, EQTY, KCB, EABL, ABG, the
+   global indices, DXY, VIX, WTI and Brent. Every one of those endpoints is
+   CORS-blocked to a browser origin, and the free tiers that do answer
+   (CoinGecko 429s past ~5 rapid polls; Twelve Data free is 8 calls/min) will
+   not survive a 2s cadence. There is no free keyless way to show them in an
+   OBS browser source. They are absent rather than frozen on screen, because
+   a static number under a live-ticking strip is the same as lying.
 
    Every cell updates in ONE pass per cycle, so the row can never show a BTC
    price from one minute next to an FX rate from the next. A failed fetch keeps
@@ -185,8 +216,12 @@
   if(!isNaN(sc)&&sc>0)document.documentElement.style.setProperty('--tks',Math.min(3,sc));
 
   var LIVE=(location.search.match(/[?&]live=([^&]*)/)||[])[1]!=='0';
-  var every=parseInt((location.search.match(/[?&]every=(\d+)/)||[])[1],10);
-  if(!(every>=10))every=20;
+  function num(re,lo,dflt){
+    var v=parseInt((location.search.match(re)||[])[1],10);
+    return v>=lo?v:dflt;
+  }
+  var every=num(/[?&]every=(\d+)/,1,2);     /* crypto */
+  var fxEvery=num(/[?&]fx=(\d+)/,60,300);   /* FX */
 
   function pad(n){return n<10?'0'+n:''+n}
   var clock=document.getElementById('tkclock');
@@ -233,42 +268,62 @@
       .finally(function(){clearTimeout(t)});
   }
 
-  function refresh(){
-    var cG=groups('c'), fG=groups('f');
-    /* both in flight together, painted together */
+  /* ── crypto: rolling 24h window, so a fast poll is genuinely new data ── */
+  function refreshCrypto(){
     get('https://api.binance.com/api/v3/ticker/24hr?symbols='+
         encodeURIComponent(JSON.stringify(['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','AVAXUSDT'])))
       .then(function(rows){
+        var cG=groups('c');
         rows.forEach(function(r){
           var set=cG[r.symbol.replace('USDT','')]; if(!set)return;
           paint(set,parseFloat(r.lastPrice),parseFloat(r.priceChangePercent));
         });
       })
       .catch(function(){});          /* keep last good */
+  }
 
-    get('https://open.er-api.com/v6/latest/USD')
+  /* ── FX: daily buckets, newest first, base currency omitted from rates ──
+     fxratesapi /timeseries returns rates keyed by ISO timestamp DESCENDING:
+       rates["2026-10-05T23:59:00.000Z"] = {EUR,GBP,JPY,KES}   <- current
+       rates["2026-10-04T23:59:00.000Z"] = {EUR,GBP,JPY,KES}   <- baseline
+     base=USD so there is no USD entry; a quote of X/KES is KES divided by X,
+     with X==1 for USD. Percent is therefore against the previous DAILY fix,
+     which is the honest reading of "24h" for a daily reference rate. */
+  function isoBack(n){var d=new Date(Date.now()-n*864e5);return d.toISOString().slice(0,10)}
+  function refreshFX(){
+    var url='https://api.fxratesapi.com/timeseries?start_date='+isoBack(6)+
+            '&end_date='+isoBack(0)+'&base=USD&currencies=KES,EUR,GBP,JPY';
+    get(url)
       .then(function(j){
-        if(!j||j.result!=='success')return;
-        var kes=j.rates.KES; if(!kes)return;
-        var fx={'USD/KES':1,'EUR/KES':1/ j.rates.EUR,'GBP/KES':1/j.rates.GBP,'JPY/KES':1/j.rates.JPY};
-        Object.keys(fx).forEach(function(k){
-          var set=fG[k]; if(!set)return;
-          /* open.er-api gives no 24h delta, so the second slot reads the day
-             honestly rather than inventing a percentage */
-          var nums=set[0].querySelectorAll('.num');
-          set.forEach(function(el){
-            var n=el.querySelectorAll('.num');
-            n[0].textContent=(kes*fx[k]).toFixed(2);
-            n[1].textContent='EAT'; n[1].className='num';
-          });
+        if(!j||!j.success||!j.rates)return;
+        var days=Object.keys(j.rates).sort().reverse();   /* newest first */
+        if(days.length<2)return;
+        var cur=j.rates[days[0]], base=j.rates[days[1]];
+        var fG=groups('f');
+        /* leg[0] is the numerator in KES, leg[1] the optional denominator */
+        var legs={'USD/KES':['KES'],'EUR/KES':['KES','EUR'],
+                  'GBP/KES':['KES','GBP'],'JPY/KES':['KES','JPY']};
+        Object.keys(legs).forEach(function(pair){
+          var L=legs[pair], set=fG[pair];
+          if(!set||!cur[L[0]]||!base[L[0]])return;
+          if(L[1]&&(!cur[L[1]]||!base[L[1]]))return;
+          var spot=cur[L[0]]/(L[1]?cur[L[1]]:1);
+          var prev=base[L[0]]/(L[1]?base[L[1]]:1);
+          if(!prev)return;
+          paint(set,spot,(spot/prev-1)*100);
         });
       })
       .catch(function(){});
   }
 
-  refresh();
-  setInterval(refresh, every*1000);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh()});
+  refreshCrypto();
+  refreshFX();
+  setInterval(refreshCrypto, every*1000);
+  setInterval(refreshFX, fxEvery*1000);
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden)return;
+    refreshCrypto();refreshFX();
+  });
 })();
 </script>
 </body>
