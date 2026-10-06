@@ -63,12 +63,14 @@ svg{display:block}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
 
 /* ---- the mark ---- */
-.mark{margin-bottom:60px;position:relative;width:340px;height:340px;border-radius:50%;padding:11px;
-  filter:drop-shadow(0 0 60px rgba(255,193,7,0.7))}
+.mark{margin-bottom:54px;position:relative;width:300px;height:300px;border-radius:50%;padding:10px;
+  filter:drop-shadow(0 0 48px rgba(255,193,7,.62))}
 .mark svg{width:100%;height:100%;overflow:visible}
 
 /* ---- headline ---- */
-h1{font-family:var(--fd);font-weight:800;font-size:124px;
+/* 96px, which is what the original reference frame resolved to. Fixing this at
+   124 made the acrostics run the full width and left no air for anything else. */
+h1{font-family:var(--fd);font-weight:800;font-size:96px;
   line-height:1;letter-spacing:-.045em;margin-top:20px;
   max-width:100%;white-space:nowrap}
 h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}
@@ -79,7 +81,7 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
 /* was declared twice; the second won, so the intended 25px never applied */
-.sub{margin-top:20px;max-width:560px;font-family:var(--fd);font-weight:500;
+.sub{margin-top:24px;max-width:560px;font-family:var(--fd);font-weight:500;
   font-size:clamp(16px,1.7vw,23px);line-height:1.5;color:var(--muted);
   animation:rise .8s var(--eo) .35s both}
 .sub b{display:inline-block;padding:1px 9px;border-radius:5px;
@@ -87,7 +89,7 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 
 
 /* ---- run of show ---- */
-.checks{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;}
+.checks{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:40px}
 .chk{display:inline-flex;align-items:center;gap:11px;padding:12px 20px;border-radius:12px;
   border:1px solid var(--line);background:rgba(255,255,255,.03);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
@@ -106,13 +108,13 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--muted)}
 .chip .mk{width:16px;height:16px;flex:0 0 auto}
 .chip .mk svg{width:100%;height:100%}
-.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px}
+.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px}
 .handles .chip{color:rgba(250,250,250,.5)}
 
 .onemore{margin-top:34px;font-family:var(--fd);font-weight:500;
   font-size:clamp(15px,1.15vw,19px);color:var(--muted)}
 .onemore b{color:var(--yellow);font-weight:700}
-.sig{margin-top:26px;font-family:var(--fm);font-size:13px;font-weight:600;
+.sig{margin-top:36px;font-family:var(--fm);font-size:13px;font-weight:600;
   letter-spacing:.34em;color:rgba(250,250,250,.34)}
 .sig b{color:var(--yellow);font-weight:600}
 
@@ -189,8 +191,10 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span><span class="nm">YOUTUBE</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span><span class="nm">FACEBOOK</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><span class="nm">TWITTER/X</span><span class="st">LIVE</span></span>
-      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#3AE4E7"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></span><span class="nm">TIKTOK</span><span class="st">LIVE</span></span>
-      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="1.85"><rect x="2.9" y="2.9" width="18.2" height="18.2" rx="5.2"/><circle cx="12" cy="12" r="4.3"/></svg><circle cx="17.4" cy="6.6" r="1.2" fill="#E1306C" stroke="none"/></svg></span><span class="nm">INSTAGRAM</span><span class="st">SOON</span></span>
+      <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)">
+<path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+<path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+</g></svg></span><span class="nm">TIKTOK</span><span class="st">LIVE</span></span>
     </div>
 
     <div class="handles rise" style="animation-delay:740ms">
@@ -205,14 +209,18 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 
 <script>
 /* One gated interval — the clock. No rAF, no canvas.
-   ?hl=1..6  which SMILE acrostic. ?hl=random picks one per session and keeps
-   it (sessionStorage) so a reload does not change the line under you. */
+   Default headline is the original three-word line. The SMILE acrostics are an
+   experiment parked behind ?hl=1..6 / ?hl=random — six long sentences run the
+   full frame width and read as busy on the long hold, so they are opt-in. */
 (function(){
   function pad(n){return n<10?'0'+n:''+n}
   var clock=document.getElementById('clock');
+  var h1=document.getElementById('headline');
 
-  /* Every line's first letters spell S-M-I-L-E. Authored, not generated, so
-     none of them reads like filler. */
+  /* Short, calm, one line. Grey word, grey word, gold word. */
+  var SHORT=[['markets','g'],['open','g'],['soon.','y']];
+
+  /* Every line's first letters spell S-M-I-L-E. Authored, not generated. */
   var HL=[
     ['Sharp Markets. ','Instinct, Liquidity, Edge.'],
     ['Smile Markets. ','Investing, Learning, Earning.'],
@@ -222,31 +230,35 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
     ['Session Markets ','In Live Energy.']
   ];
   var q=(location.search.match(/[?&]hl=([^&]*)/)||[])[1];
-  var idx=0;
-  if(q==='random'){
-    var seed=sessionStorage.getItem('smile-hl');
-    if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
-    idx=parseInt(seed,10)||0;
-  } else if(q){idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
-  var h1=document.getElementById('headline');
-  h1.innerHTML='<span class="g">'+HL[idx][0]+'</span> <span class="y">'+HL[idx][1]+'</span>';
 
-  /* Auto-fit to one line. The six acrostics run from 34 to 46 characters, and
-     at 124px the long ones wrap — which pushes the signature past the 76px
-     ticker dock. Rather than hand-tune a size per variant, measure and scale
-     down until it fits. Floor at 62px so it can never become a caption. */
-  function fitOneLine(el, max, min){
-    var size=max;
-    while(size>min){
+  if(q){
+    var idx=0;
+    if(q==='random'){
+      var seed=sessionStorage.getItem('smile-hl');
+      if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
+      idx=parseInt(seed,10)||0;
+    } else {idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
+    h1.innerHTML='<span class="w"><span class="g">'+HL[idx][0]+'</span> <span class="y">'+HL[idx][1]+'</span></span>';
+    /* The acrostics run 34-46 characters. Measure and scale down rather than
+       hand-tune six sizes. Floor at 52px so it can never become a caption. */
+    function fitOneLine(el,max,min){
+      var size=max;
+      while(size>min){
+        el.style.fontSize=size+'px';
+        if(el.scrollWidth<=el.clientWidth+1) break;
+        size-=2;
+      }
       el.style.fontSize=size+'px';
-      if(el.scrollWidth<=el.clientWidth+1) break;
-      size-=2;
     }
-    el.style.fontSize=size+'px';
+    fitOneLine(h1,96,52);
+    window.addEventListener('resize',function(){fitOneLine(h1,96,52)});
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){fitOneLine(h1,96,52);});
+  } else {
+    h1.innerHTML=SHORT.map(function(w,i){
+      return '<span class="w w'+(i+1)+' '+w[1]+'">'+w[0]+'</span>';
+    }).join(' ');
   }
-  fitOneLine(h1, 124, 62);
-  window.addEventListener('resize',function(){fitOneLine(h1,124,62)});
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){fitOneLine(h1,124,62);});
+
   function tick(){
     if(document.hidden) return;
     var d=new Date();
