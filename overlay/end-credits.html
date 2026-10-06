@@ -11,7 +11,7 @@
    restored ────────────────────────────────────────────────────────────────
    The take the room asked for by name: the credits box pinned on the right,
    rolling a seamless loop, while the smile orbits "that's the show." on the
-   left. Refinements to lineup standard: baked candle skyline, clock chip,
+   left. Refinements to lineup standard: dot field, clock chip,
    schedule contract (?next=/?host=/?what= fills a credit row + the chip
    under the follow line; no schedule → notifications-on bell), plain-sight
    signature. Every moving part is pure compositor CSS — transform +
@@ -83,7 +83,6 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 @keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
-/* candle skyline — baked into the HTML, one CSS sway each, zero JS */
 .rise{opacity:0;animation:riseIn .9s var(--ease-out) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
 
@@ -183,8 +182,7 @@ html[data-next="1"] .bellrow{display:none}
     transition:none !important;animation-delay:0s !important}
   .ctrack{animation:none !important}
   .spark{opacity:.7;animation:none}
-  .cndl{animation:none;opacity:.62}
-  .orbitB .face{animation:none}
+.orbitB .face{animation:none}
   .g{animation:none}
   .bellrow svg{animation:none}
 }

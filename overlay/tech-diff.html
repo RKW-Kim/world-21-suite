@@ -14,7 +14,7 @@
    around it looking for the fault; MIC / CAM / SIGNAL satellites ride the
    dashed ring and check off "— OK" one by one, then the cycle resets. A
    typewriter status line mutters under the orbit. The spine (bg, sparks,
-   candle skyline) ships inline; watermark + ticker stay outside the page
+   dot field) ships inline; watermark + ticker stay outside the page
    as their own OBS modules (bottom 96px + corners stay clear). ────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
@@ -35,9 +35,10 @@ svg{display:block}
   radial-gradient(900px 560px at 12% 88%,rgba(14,203,129,.04),transparent 60%),
   radial-gradient(circle at 50% 38%,#171717 0%,var(--ink) 78%)}
 .bg::after{content:"";position:absolute;inset:0;background-image:
-  linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
-  background-size:96px 96px;
+  radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
   -webkit-mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%);
           mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%)}
 
@@ -56,18 +57,8 @@ svg{display:block}
 @keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
-#skyline{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
-  -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  mask-composite:intersect}
-.cndl{position:absolute;bottom:0;border-radius:4px;opacity:0;transform-origin:50% 100%;
-  animation:cndlRise .9s var(--ease-out) forwards var(--d,0s),
-            cndlSway 4.2s ease-in-out infinite calc(var(--d,0s) + .9s)}
-.cndl::before{content:"";position:absolute;left:50%;top:-16%;bottom:-9%;width:4px;
-  transform:translateX(-50%);background:inherit;filter:brightness(.5);border-radius:2px}
-@keyframes cndlRise{from{opacity:0;transform:scaleY(.2)}to{opacity:.62;transform:scaleY(1)}}
-@keyframes cndlSway{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.045)}}
+to{opacity:.62;transform:scaleY(1)}}
+50%{transform:scaleY(1.045)}}
 
 .rise{opacity:0;animation:riseIn .9s var(--ease-out) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
@@ -124,17 +115,12 @@ svg{display:block}
   vertical-align:-2px;animation:caretB 1s steps(1) infinite}
 @keyframes caretB{50%{opacity:0}}
 
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
-  .rise{animation-delay:0s!important}
-  .caret{animation:none}
-}
+
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="bg"></div>
-  <div id="skyline"></div>
 
   <section class="scn">
     <span class="spark" style="left:38%;top:15%;--d:0s"></span>
@@ -191,20 +177,6 @@ svg{display:block}
 (function(){
   function P2(n){return String(n).padStart(2,'0')}
 
-  /* candle skyline (static build, one-time) */
-  var sky=document.getElementById('skyline');
-  if(sky){
-    var cols=['#0ECB81','#F6465D','#2e2e2e','#0ECB81','#F6465D','#FFC107'];
-    for(var i=0;i<24;i++){
-      var c=document.createElement('span');c.className='cndl';
-      c.style.left=(i*82+Math.random()*24)+'px';
-      c.style.width=(20+Math.random()*16)+'px';
-      c.style.height=(60+Math.random()*250)+'px';
-      c.style.background=cols[i%6];
-      c.style.setProperty('--d',(0.5+i*0.07).toFixed(2)+'s');
-      sky.appendChild(c);
-    }
-  }
 
   /* elapsed up-counter (mm:ss) — starts at 0 or ?elapsed= seconds */
   var qs=new URLSearchParams(location.search);

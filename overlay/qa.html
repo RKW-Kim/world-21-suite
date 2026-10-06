@@ -12,7 +12,7 @@
    lineup standard: dark transparent comment bubbles drifting bottom → top,
    past the smile hub in its dashed orbit. Refinements: two depth layers,
    per-bubble sway, cycling tagline, clock chip, plain-sight signature,
-   baked candle skyline (zero runtime JS for scenery). Every moving part is
+   dot field (zero runtime JS for scenery). Every moving part is
    pure compositor CSS — transform + opacity only. JS = one gated interval
    for the clock + one-shot ?ep=. Watermark + ticker stay outside the page
    as their own OBS modules: corners + bottom 76px stay clear. ──────────── */
@@ -61,19 +61,8 @@ svg{display:block}
 @keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
   12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
-/* candle skyline — baked into the HTML, one CSS sway each, zero JS */
-#skyline{position:absolute;left:0;right:0;bottom:0;height:330px;z-index:1;opacity:.55;
-  -webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(90deg,rgba(0,0,0,.28),rgba(0,0,0,.72) 55%,#000),linear-gradient(180deg,transparent,#000 34%);
-  mask-composite:intersect}
-.cndl{position:absolute;bottom:0;border-radius:4px;opacity:0;transform-origin:50% 100%;
-  animation:cndlRise .9s var(--ease-out) forwards var(--d,0s),
-            cndlSway 4.2s ease-in-out infinite calc(var(--d,0s) + .9s)}
-.cndl::before{content:"";position:absolute;left:50%;top:-16%;bottom:-9%;width:4px;
-  transform:translateX(-50%);background:inherit;filter:brightness(.5);border-radius:2px}
-@keyframes cndlRise{from{opacity:0;transform:scaleY(.2)}to{opacity:.62;transform:scaleY(1)}}
-@keyframes cndlSway{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.045)}}
+to{opacity:.62;transform:scaleY(1)}}
+50%{transform:scaleY(1.045)}}
 
 .rise{opacity:0;animation:riseIn .9s var(--ease-out) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
@@ -157,15 +146,14 @@ svg{display:block}
   animation:riseIn .9s var(--ease-out) .7s both}
 .sig b{font-weight:600;color:rgba(255,193,7,.62)}
 
-@media (max-width:1100px){.bub:nth-child(n+8){display:none}}
-@media (max-width:860px){.bub:nth-child(n+6){display:none}}
+
+
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
   .rise{animation-delay:0s!important}
   .bub{animation:none;opacity:1}
   .sway{animation:none}
-  .cndl{animation:none;opacity:.62}
   .spark{opacity:.6}
   .tag span:first-child{opacity:1;transform:none}
   .hubA .face{animation:none}
@@ -173,32 +161,7 @@ svg{display:block}
 </style></head><body>
 <div class="stage">
   <div class="bg"></div>
-  <div id="skyline">
-    <span class="cndl" style="left:6px;width:26px;height:128px;background:#0ECB81;--d:.5s"></span>
-    <span class="cndl" style="left:88px;width:30px;height:214px;background:#F6465D;--d:.57s"></span>
-    <span class="cndl" style="left:170px;width:22px;height:92px;background:#2e2e2e;--d:.64s"></span>
-    <span class="cndl" style="left:252px;width:34px;height:288px;background:#0ECB81;--d:.71s"></span>
-    <span class="cndl" style="left:336px;width:24px;height:156px;background:#F6465D;--d:.78s"></span>
-    <span class="cndl" style="left:416px;width:30px;height:236px;background:#FFC107;--d:.85s"></span>
-    <span class="cndl" style="left:500px;width:26px;height:108px;background:#0ECB81;--d:.92s"></span>
-    <span class="cndl" style="left:582px;width:32px;height:196px;background:#F6465D;--d:.99s"></span>
-    <span class="cndl" style="left:668px;width:24px;height:74px;background:#2e2e2e;--d:1.06s"></span>
-    <span class="cndl" style="left:748px;width:30px;height:252px;background:#0ECB81;--d:1.13s"></span>
-    <span class="cndl" style="left:834px;width:26px;height:168px;background:#F6465D;--d:1.2s"></span>
-    <span class="cndl" style="left:914px;width:22px;height:118px;background:#2e2e2e;--d:1.27s"></span>
-    <span class="cndl" style="left:996px;width:34px;height:304px;background:#0ECB81;--d:1.34s"></span>
-    <span class="cndl" style="left:1082px;width:28px;height:142px;background:#F6465D;--d:1.41s"></span>
-    <span class="cndl" style="left:1162px;width:24px;height:88px;background:#2e2e2e;--d:1.48s"></span>
-    <span class="cndl" style="left:1244px;width:32px;height:228px;background:#FFC107;--d:1.55s"></span>
-    <span class="cndl" style="left:1328px;width:26px;height:176px;background:#0ECB81;--d:1.62s"></span>
-    <span class="cndl" style="left:1410px;width:30px;height:262px;background:#F6465D;--d:1.69s"></span>
-    <span class="cndl" style="left:1494px;width:22px;height:104px;background:#2e2e2e;--d:1.76s"></span>
-    <span class="cndl" style="left:1576px;width:34px;height:296px;background:#0ECB81;--d:1.83s"></span>
-    <span class="cndl" style="left:1662px;width:26px;height:148px;background:#F6465D;--d:1.9s"></span>
-    <span class="cndl" style="left:1744px;width:30px;height:210px;background:#2e2e2e;--d:1.97s"></span>
-    <span class="cndl" style="left:1828px;width:24px;height:122px;background:#FFC107;--d:2.04s"></span>
-    <span class="cndl" style="left:1906px;width:28px;height:186px;background:#0ECB81;--d:2.11s"></span>
-  </div>
+  
 
   <section class="scn" data-take="a">
     <span class="spark" style="left:7%;top:20%;--d:0s"></span>
