@@ -68,8 +68,9 @@ svg{display:block}
 .mark svg{width:100%;height:100%;overflow:visible}
 
 /* ---- headline ---- */
-h1{font-family:var(--fd);font-weight:800;font-size:clamp(62px,7.4vw,124px);
-  line-height:1;letter-spacing:-.045em;margin-top:20px}
+h1{font-family:var(--fd);font-weight:800;font-size:124px;
+  line-height:1;letter-spacing:-.045em;margin-top:20px;
+  max-width:100%;white-space:nowrap}
 h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}
 h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
 @keyframes wordup{to{opacity:1;transform:none}}
@@ -105,8 +106,8 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--muted)}
 .chip .mk{width:16px;height:16px;flex:0 0 auto}
 .chip .mk svg{width:100%;height:100%}
-.sep{width:1px;height:26px;background:var(--line);margin:0 4px}
-.checks .chip{color:rgba(250,250,250,.5)}
+.handles{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px}
+.handles .chip{color:rgba(250,250,250,.5)}
 
 .onemore{margin-top:34px;font-family:var(--fd);font-weight:500;
   font-size:clamp(15px,1.15vw,19px);color:var(--muted)}
@@ -138,13 +139,12 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
    worse than nothing — motion with no meaning reads as a loading state. They
    now say what they always should have: one dot per platform, filled when the
    stream is live there, a hairline ring when it is not. Toggle .off per dot. */
-.bnc{display:inline-flex;align-items:center;gap:14px}
-.bnc i{width:9px;height:9px;border-radius:50%;background:var(--c);
-  box-shadow:0 0 10px -1px var(--c)}
-.bnc i.off{background:transparent;box-shadow:none;
-  border:1px solid rgba(250,250,250,.22)}
-.bnc .cap{font-family:var(--fm);font-size:9.5px;font-weight:600;letter-spacing:.26em;
-  color:rgba(250,250,250,.30);padding-left:4px}
+/* was three bouncing dots. Motion with no meaning reads as a loading state,
+   so this is now just the separator it was standing in for, in the same gold
+   ramp the headline uses. */
+.meta{display:flex;justify-content:center}
+.rule{display:block;width:78px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,193,7,.65),transparent)}
 @keyframes bnc{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-14px);opacity:1}}
 
 /* ambient: slow light sweep every ~21s */
@@ -179,29 +179,21 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
       <span class=""></span>
     </div>
 
-    <div class="meta">
-        <span class="bnc" aria-label="live on youtube, twitch, facebook and tiktok; instagram not live">
-          <i style="--c:#FF0033"></i>
-          <i style="--c:#9146FF"></i>
-          <i style="--c:#1877F2"></i>
-          <i style="--c:#25F4EE"></i>
-          <i class="off" style="--c:#E1306C"></i>
-          <span class="cap">LIVE ON</span>
-        </span>
-    </div>
+    <div class="meta" aria-hidden="true"><i class="rule"></i></div>
 
-    <h1 class="rise" style="animation-delay:220ms"><span class="g">Markets Open</span> <span class="y">Soon.</span></h1>
+    <h1 class="rise" id="headline" style="animation-delay:220ms"></h1>
 
     <p class="sub rise" style="animation-delay:320ms">Fresh candles. Brewed coffee. <b>Zero</b> rush. </p>
 
-    <div class="checks rise" class="watch rise" style="animation-delay:560ms">
-      <span class="watch"><span class="lbl">WATCH ON</span>
+    <div class="checks rise" style="animation-delay:560ms">
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span><span class="nm">YOUTUBE</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span><span class="nm">FACEBOOK</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span><span class="nm">TWITTER/X</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="#3AE4E7"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg></span><span class="nm">TIKTOK</span><span class="st">LIVE</span></span>
       <span class="chk"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="1.85"><rect x="2.9" y="2.9" width="18.2" height="18.2" rx="5.2"/><circle cx="12" cy="12" r="4.3"/></svg><circle cx="17.4" cy="6.6" r="1.2" fill="#E1306C" stroke="none"/></svg></span><span class="nm">INSTAGRAM</span><span class="st">SOON</span></span>
-      <span class="sep" aria-hidden="true"></span>
+    </div>
+
+    <div class="handles rise" style="animation-delay:740ms">
       <span class="chip">@SMILEKE</span>
       <span class="chip">@WORLD·21</span>
       <span class="chip">@HOTWIRE</span>
@@ -212,10 +204,49 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 </div>
 
 <script>
-/* One gated interval — the clock. No rAF, no canvas. */
+/* One gated interval — the clock. No rAF, no canvas.
+   ?hl=1..6  which SMILE acrostic. ?hl=random picks one per session and keeps
+   it (sessionStorage) so a reload does not change the line under you. */
 (function(){
   function pad(n){return n<10?'0'+n:''+n}
   var clock=document.getElementById('clock');
+
+  /* Every line's first letters spell S-M-I-L-E. Authored, not generated, so
+     none of them reads like filler. */
+  var HL=[
+    ['Sharp Markets. ','Instinct, Liquidity, Edge.'],
+    ['Smile Markets. ','Investing, Learning, Earning.'],
+    ['Signals Matter. ','In Live, Everything.'],
+    ['Spread Markets ','Into Long Entries.'],
+    ['Stream Markets ','Into Live Experiences.'],
+    ['Session Markets ','In Live Energy.']
+  ];
+  var q=(location.search.match(/[?&]hl=([^&]*)/)||[])[1];
+  var idx=0;
+  if(q==='random'){
+    var seed=sessionStorage.getItem('smile-hl');
+    if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
+    idx=parseInt(seed,10)||0;
+  } else if(q){idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
+  var h1=document.getElementById('headline');
+  h1.innerHTML='<span class="g">'+HL[idx][0]+'</span> <span class="y">'+HL[idx][1]+'</span>';
+
+  /* Auto-fit to one line. The six acrostics run from 34 to 46 characters, and
+     at 124px the long ones wrap — which pushes the signature past the 76px
+     ticker dock. Rather than hand-tune a size per variant, measure and scale
+     down until it fits. Floor at 62px so it can never become a caption. */
+  function fitOneLine(el, max, min){
+    var size=max;
+    while(size>min){
+      el.style.fontSize=size+'px';
+      if(el.scrollWidth<=el.clientWidth+1) break;
+      size-=2;
+    }
+    el.style.fontSize=size+'px';
+  }
+  fitOneLine(h1, 124, 62);
+  window.addEventListener('resize',function(){fitOneLine(h1,124,62)});
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){fitOneLine(h1,124,62);});
   function tick(){
     if(document.hidden) return;
     var d=new Date();
