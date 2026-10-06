@@ -57,7 +57,6 @@
       "token": "--border",
       "defined_in": [
         "brb.html",
-        "coming-up.html",
         "end.html",
         "index.html",
         "intermission-b.html",
@@ -65,7 +64,7 @@
         "smile-lab.html",
         "speaking.html"
       ],
-      "uses": 8
+      "uses": 7
     },
     "market-down": {
       "token": "--down",
@@ -97,6 +96,7 @@
       "token": "--faint",
       "defined_in": [
         "brb.html",
+        "coming-up.html",
         "countdown.html",
         "end-credits.html",
         "end.html",
@@ -109,7 +109,7 @@
         "starting.html",
         "styleguide.html"
       ],
-      "uses": 12
+      "uses": 13
     },
     "text-primary": {
       "token": "--paper",
@@ -165,6 +165,7 @@
     "hairline-soft": {
       "token": "--line",
       "defined_in": [
+        "coming-up.html",
         "countdown.html",
         "end-credits.html",
         "offair.html",
@@ -173,7 +174,7 @@
         "styleguide.html",
         "tech-diff.html"
       ],
-      "uses": 7
+      "uses": 8
     },
     "text-muted": {
       "token": "--muted",
@@ -194,7 +195,7 @@
         "styleguide.html",
         "tech-diff.html"
       ],
-      "uses": 14
+      "uses": 15
     },
     "market-alt": {
       "token": "--sky",
@@ -258,32 +259,7 @@
       "uses": 2
     }
   },
-  "conflicts": [
-    {
-      "token": "--muted",
-      "values": {
-        "#a1a1aa": 14,
-        "#8c8c8c": 1
-      },
-      "pages": [
-        "brb.html",
-        "coming-up.html",
-        "countdown.html",
-        "end-credits.html",
-        "end.html",
-        "index.html",
-        "intermission-b.html",
-        "intermission.html",
-        "offair.html",
-        "qa.html",
-        "smile-lab.html",
-        "speaking.html",
-        "starting.html",
-        "styleguide.html",
-        "tech-diff.html"
-      ]
-    }
-  ],
+  "conflicts": [],
   "handles": {
     "@smileke": "@smileke",
     "smile.co.ke": "smile.co.ke",
