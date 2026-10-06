@@ -89,7 +89,7 @@
     "ember": {
       "token": "--ember",
       "defined_in": [
-        "starting-soon.html"
+        "countdown.html"
       ],
       "uses": 1
     },
@@ -97,18 +97,19 @@
       "token": "--faint",
       "defined_in": [
         "brb.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html"
       ],
-      "uses": 11
+      "uses": 12
     },
     "text-primary": {
       "token": "--paper",
@@ -124,72 +125,76 @@
       "defined_in": [
         "brb.html",
         "coming-up.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html"
       ],
-      "uses": 12
+      "uses": 13
     },
     "canvas": {
       "token": "--ink",
       "defined_in": [
         "brb.html",
         "coming-up.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html",
         "tech-diff.html",
         "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 16
+      "uses": 17
     },
     "hairline-soft": {
       "token": "--line",
       "defined_in": [
+        "countdown.html",
         "end-credits.html",
+        "offair.html",
         "qa.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html",
         "tech-diff.html"
       ],
-      "uses": 6
+      "uses": 7
     },
     "text-muted": {
       "token": "--muted",
       "defined_in": [
         "brb.html",
         "coming-up.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html",
         "tech-diff.html"
       ],
-      "uses": 13
+      "uses": 14
     },
     "market-alt": {
       "token": "--sky",
@@ -209,6 +214,7 @@
         "end.html",
         "index.html",
         "intermission.html",
+        "offair.html",
         "qa.html",
         "smile-lab.html",
         "speaking.html",
@@ -218,29 +224,30 @@
         "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 13
+      "uses": 14
     },
     "brand": {
       "token": "--yellow",
       "defined_in": [
         "brb.html",
         "coming-up.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html",
         "tech-diff.html",
         "ticker-wm.html",
         "ticker.html"
       ],
-      "uses": 16
+      "uses": 17
     },
     "yellow-hot": {
       "token": "--yellow-hot",
@@ -255,21 +262,22 @@
     {
       "token": "--muted",
       "values": {
-        "#a1a1aa": 13,
+        "#a1a1aa": 14,
         "#8c8c8c": 1
       },
       "pages": [
         "brb.html",
         "coming-up.html",
+        "countdown.html",
         "end-credits.html",
         "end.html",
         "index.html",
         "intermission-b.html",
         "intermission.html",
+        "offair.html",
         "qa.html",
         "smile-lab.html",
         "speaking.html",
-        "starting-soon.html",
         "starting.html",
         "styleguide.html",
         "tech-diff.html"
