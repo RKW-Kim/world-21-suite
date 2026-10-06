@@ -133,6 +133,24 @@ svg{display:block}
 .vp .empty .hint b{color:var(--yellow);font-weight:600}
 .vp .empty .play{width:52px;height:36px;opacity:.45}
 
+.vp .warn{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:15px;text-align:center;padding:44px;
+  background:radial-gradient(ellipse at 50% 45%,#131316,#0A0A0A 72%)}
+.vp .warn[hidden]{display:none !important}
+.vp .warn .wbig{font-family:var(--fm);font-weight:600;font-size:15px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--yellow)}
+.vp .warn .whint{max-width:780px;font-family:var(--fm);font-weight:400;font-size:13px;
+  line-height:1.9;letter-spacing:.02em;color:var(--muted)}
+.vp .warn .whint b{color:var(--fg);font-weight:600}
+.vp .warn .wcmd{font-family:var(--fm);font-weight:600;font-size:19px;letter-spacing:.06em;
+  color:var(--fg);background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.45);
+  padding:12px 28px;border-radius:10px}
+.vp .warn .wthen{font-family:var(--fm);font-weight:400;font-size:13px;line-height:1.8;
+  letter-spacing:.02em;color:var(--muted);max-width:720px}
+.vp .warn .wthen b{color:var(--fg);font-weight:600}
+.vp .warn .wnote{max-width:720px;font-family:var(--fm);font-weight:400;font-size:11.5px;
+  line-height:1.85;letter-spacing:.02em;color:var(--faint);opacity:.85}
+
 /* ── chrome: full-frame iframes stacked ABOVE the player ──
    pointer-events:none so this layer never swallows a click meant for OBS. */
 iframe.chrome{position:absolute;border:0;background:transparent;pointer-events:none}
@@ -159,6 +177,22 @@ html[data-guide="1"] .guide{display:block}
       <span class="lab" id="tagLab">now playing</span>
       <span class="sub" id="tagSub"></span>
     </div>
+    <!-- Shown only on file://. YouTube answers an embed from file:// with a
+         bare "Error 153" and two buttons, which explains nothing. -->
+    <div class="warn" id="warn" hidden>
+      <span class="wbig">you opened this as a file</span>
+      <span class="whint">youtube will not start an embedded player from a
+        <b>file://</b> page &mdash; there is no referrer to send, so it answers
+        <b>error 153</b>. nothing is wrong with these scenes. the watermark and
+        ticker around this are the real ones and they are working right now.</span>
+      <span class="wcmd">./serve.sh</span>
+      <span class="wthen">then open the <b>http://127.0.0.1:8017</b> address it
+        prints, instead of the file path</span>
+      <span class="wnote">firefox and librewolf require this. desktop chromium
+        happens to tolerate a file:// embed, which is why a chromium test looks
+        fine while this page fails.</span>
+    </div>
+
     <div class="empty" id="empty">
       <svg class="play" viewBox="0 0 46 32" aria-hidden="true">
         <rect x=".8" y=".8" width="44.4" height="30.4" rx="5" fill="none" stroke="#FFC107" stroke-width="1.4"/>
@@ -286,11 +320,22 @@ html[data-guide="1"] .guide{display:block}
   var subEl=document.getElementById('tagSub');
   subEl.textContent=sub; subEl.hidden=!sub;
 
+  /* On file:// there is no referrer, so YouTube's player refuses to start and
+     paints "Error 153" over the whole frame with no explanation. Say it here
+     instead. The chrome still loads either way: those are same-directory
+     file:// iframes, which Firefox is happy with — it is only the remote
+     player that needs a real origin. */
+  if(id&&location.protocol==='file:'){
+    document.getElementById('empty').hidden=true;
+    document.getElementById('warn').hidden=false;
+    document.getElementById('tag').hidden=false;
+    return;
+  }
+
   if(id){
-    /* A set becomes YouTube's comma-list, which plays through in order. Its
-       per-item start offsets cannot be expressed that way — the embed takes
-       one start for the whole list — so Collins' 14s applies when it is played
-       alone via ?yt=PHb3YR8kgps&start=14. */
+    /* A set becomes YouTube's comma-list, which plays through in order.
+       Per-item offsets cannot be expressed in that form, and ?start= has its
+       own problem — see the note where start is parsed. */
     var listIds=set?set.map(function(r){return r[1]}):[];
     var src='https://www.youtube.com/embed/'+encodeURIComponent(id)+
       (!isNaN(start)&&start>0?'&start='+start:'')+
