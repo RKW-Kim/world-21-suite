@@ -28,10 +28,11 @@
    URLs, so this scene inherits any change to either and has nothing to sync.
 
    TWO LAYOUTS FROM ONE SET OF PARAMS.
-     default   — the player fills 1920x1080. Watermark top-left, ticker in the
+     default   — the player fills the frame. Watermark top-left, ticker in the
                  dock, label chip top-right. Nothing framed, because a border
                  around the whole canvas is a border around the screen.
-     ?ywx= ?ywy= ?yww= ?ywh=  — shrink it and it becomes a floating panel: it
+     ?w= ?h= ?x= ?y=  — percentages of the viewport. Shrink it and it becomes a
+                 floating panel: it
                  grows a hairline, a radius, a drop shadow and its own header
                  bar, because at that size a bare rectangle reads as a pasted
                  screenshot rather than something designed.
@@ -61,8 +62,13 @@
    playlist id if you ever make one there.
 
    A note on aspect. YouTube letterboxes inside the iframe itself, so a 4:3
-   upload in a 1920x1080 frame arrives with soft bars either side. The embed
-   player cannot crop; if you need true full-bleed, transcode to 16:9 first.
+   upload arrives with soft bars either side. The embed player cannot crop; if
+   you need true full-bleed, transcode to 16:9 first.
+
+   NOTHING HERE KNOWS THE CANVAS SIZE. The player, the chrome iframes and the
+   dock are all percentages, so the same file is right in a 1920x1080 OBS
+   browser source, a 16:9 preview window, or a browser tab at any zoom. The dock
+   is 7vh, which is exactly the 76px design height at 1080 and scales with it.
 
    Contract: no canvas, no rAF, no timers. One pass at load.
    ───────────────────────────────────────────────────────────────────────────── */
@@ -71,7 +77,7 @@
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#8A8A94;
   --line:#2a2a2a; --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
-  --dock:76px;
+  --dock:7vh;   /* 7% of the viewport: exactly 76px at 1080, and it scales */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:transparent}
@@ -154,8 +160,13 @@ svg{display:block}
 /* ── chrome: full-frame iframes stacked ABOVE the player ──
    pointer-events:none so this layer never swallows a click meant for OBS. */
 iframe.chrome{position:absolute;border:0;background:transparent;pointer-events:none}
-#wmFrame{left:0;top:0;width:1920px;height:1080px;z-index:5}
-#tkFrame{left:0;bottom:0;width:1920px;height:var(--dock);z-index:6}
+#wmFrame{inset:0;width:100%;height:100%;z-index:5}
+ /* width:100% is REQUIRED, not redundant. An iframe is a replaced element:
+    for an absolutely positioned replaced box, width:auto resolves to the
+    INTRINSIC width — the 300px default — and left/right are then ignored.
+    That silently crushed the strip into a 300px corner. Caught by rendering
+    at 1600x900 rather than only at 1920. */
+ #tkFrame{left:0;right:0;bottom:0;width:100%;height:var(--dock);z-index:6}
 
 /* ── setup guide ── */
 .guide{position:absolute;inset:0;z-index:9;pointer-events:none;display:none}
@@ -201,7 +212,7 @@ html[data-guide="1"] .guide{display:block}
       <span class="big">video goes full frame</span>
       <span class="hint"><b>?pl=hdf</b> · <b>?pl=menta</b> · <b>?pl=almond</b> · <b>?pl=all</b><br>
         or <b>?yt=</b> with any YouTube URL &nbsp;·&nbsp; plays automatically, muted<br>
-        <b>?ywx=&amp;ywy=&amp;yww=&amp;ywh=</b> shrink it to a panel</span>
+        <b>?w=&amp;h=&amp;x=&amp;y=</b> shrink it to a panel</span>
     </div>
   </div>
 
@@ -210,9 +221,9 @@ html[data-guide="1"] .guide{display:block}
   <iframe class="chrome" id="tkFrame" title="ticker" scrolling="no"></iframe>
 
   <div class="guide" aria-hidden="true">
-    <i data-l="player · 1920×1080" id="gVp" style=""></i>
+    <i data-l="player" id="gVp" style=""></i>
     <i data-l="watermark · tl" style="left:20px;top:20px;width:340px;height:104px"></i>
-    <i data-l="ticker dock · 76px" style="left:20px;bottom:16px;right:20px;height:56px"></i>
+    <i data-l="ticker dock" style="left:20px;bottom:1%;right:20px;height:7%"></i>
   </div>
 
 </div>
@@ -221,9 +232,11 @@ html[data-guide="1"] .guide{display:block}
 /* One pass at load. */
 (function(){
   function q(k,d){var v=(location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1];return v===undefined?d:v}
-  function num(k,d,lo,hi){
+  /* every geometry param is a percentage of the viewport, so there is no
+     canvas size to know about and nothing to recalculate when it changes */
+  function pct(k,d){
     var v=parseFloat(q(k,''));if(isNaN(v))return d;
-    return Math.max(lo,Math.min(hi,v));
+    return Math.max(0,Math.min(100,v));
   }
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
 
@@ -234,16 +247,13 @@ html[data-guide="1"] .guide{display:block}
      gets the framed treatment automatically, so there is one decision to make
      (how big) rather than two (how big, and does it have a border). */
   var vp=document.getElementById('vp');
-  var W=num('yww',1920,160,1920);
-  var H=num('ywh',1080,90,1080);
-  var X=num('ywx',0,0,Math.max(0,1920-W));
-  var Y=num('ywy',0,0,Math.max(0,1080-76-H));
-  var full=(W>=1920&&H>=1080);
-  vp.style.left=X+'px'; vp.style.top=Y+'px';
-  vp.style.width=W+'px';  vp.style.height=H+'px';
+  var W=pct('w',100), H=pct('h',100), X=pct('x',0), Y=pct('y',0);
+  vp.style.left=X+'%'; vp.style.top=Y+'%';
+  vp.style.width=W+'%'; vp.style.height=H+'%';
+  var full=(W>=100&&H>=100);
   vp.dataset.frame=full?'0':'1';
   document.getElementById('gVp').style.cssText=
-    'left:'+X+'px;top:'+Y+'px;width:'+W+'px;height:'+H+'px';
+    'left:'+X+'%;top:'+Y+'%;width:'+W+'%;height:'+H+'%';
 
   /* ── chrome ── */
   var wmExtra=[];
@@ -251,7 +261,8 @@ html[data-guide="1"] .guide{display:block}
      background, not another app's window. When you DO lay this over a raw
      Meet capture, Meet owns the top 72px with the meeting title in it, so pass
      ?wmdy=64 to drop the mark clear of that bar. */
-  wmExtra.push('dy='+num('wmdy',0,-400,400));
+  var dy=parseInt(q('wmdy',''),10); if(isNaN(dy))dy=0;
+  wmExtra.push('dy='+dy);
   /* a scrim by default: in full frame the gold mark sits on live video and
      will vanish over anything bright without it */
   if(q('scrim','1')!=='0')wmExtra.push('scrim=1');
@@ -268,7 +279,8 @@ html[data-guide="1"] .guide{display:block}
      ?tpad= overrides it if you want the inset back. */
   var tkParams=[];
   if(q('tklive','')==='0')tkParams.push('live=0');
-  tkParams.push('pad='+num('tpad',0,0,120));
+  var tpad=parseInt(q('tpad',''),10); if(isNaN(tpad))tpad=0;
+  tkParams.push('pad='+Math.max(0,Math.min(120,tpad)));
   tkFrame.src='ticker.html?'+tkParams.join('&');
 
   /* ── the video, or a set of them ──
