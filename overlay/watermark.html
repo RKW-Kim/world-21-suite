@@ -34,10 +34,10 @@
    Zero timers, zero rAF, zero canvas — the only style mutation happens
    once at load. With no ?anim, literally nothing animates: a perfectly
    still compositor layer. ─────────────────────────────────────────── */
-:root{--h:72px;--op:.95}
+:root{--fd:'Space Grotesk',system-ui,sans-serif;--h:72px;--op:.95}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:transparent}
-body{font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{font-family:var(--fd);-webkit-font-smoothing:antialiased}
 
 .wm{position:absolute;z-index:40;display:flex;align-items:center;gap:calc(var(--h)*.22);
   opacity:var(--op);pointer-events:none;will-change:auto}

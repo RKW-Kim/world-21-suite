@@ -21,15 +21,14 @@
    as their own OBS modules (bottom 96px + corners stay clear). ────────── */
 :root{
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
-  --line:#2a2a2a; --muted:#8c8c8c; --paper:#ffffff;
+  --line:#2a2a2a; --muted:#A1A1AA; --paper:#ffffff;
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
-  --font-display:'Manrope',system-ui,sans-serif;
-  --font-body:'Inter',system-ui,sans-serif;
+  --fd:'Space Grotesk',system-ui,sans-serif;
   --ease-out:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{background:var(--ink);color:var(--paper);font-family:var(--font-body);
+body{background:var(--ink);color:var(--paper);font-family:var(--fd);
   overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 svg{display:block}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
@@ -46,7 +45,7 @@ svg{display:block}
           mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%)}
 
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
-  font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:.08em;
+  font-family:var(--fd);font-weight:700;font-size:14px;letter-spacing:.08em;
   text-transform:uppercase;white-space:nowrap}
 .chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--paper);
   box-shadow:0 6px 24px rgba(0,0,0,.35)}
@@ -76,7 +75,7 @@ to{opacity:.62;transform:scaleY(1)}}
 .evt{font-variant-numeric:tabular-nums;color:var(--yellow)}
 
 .lcol{position:absolute;left:120px;top:168px;z-index:5;max-width:620px}
-.lcol h1{font-family:var(--font-display);font-weight:700;font-size:64px;line-height:1.04;
+.lcol h1{font-family:var(--fd);font-weight:700;font-size:64px;line-height:1.04;
   letter-spacing:-.03em;margin-top:22px}
 .lcol .chips{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
 
@@ -100,7 +99,7 @@ to{opacity:.62;transform:scaleY(1)}}
 @keyframes satBack{to{transform:rotate(-360deg)}}
 .satFix{position:absolute;left:0;top:0;transform:translate(-50%,-50%) rotate(calc(var(--a) * -1))}
 .dchip{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:999px;
-  background:rgba(18,18,18,.92);border:1.5px solid var(--line);font-family:var(--font-display);
+  background:rgba(18,18,18,.92);border:1.5px solid var(--line);font-family:var(--fd);
   font-weight:700;font-size:15px;letter-spacing:.12em;color:#e3e3e3;white-space:nowrap;
   box-shadow:0 10px 30px rgba(0,0,0,.45);
   transition:border-color .35s,color .35s,box-shadow .35s}
