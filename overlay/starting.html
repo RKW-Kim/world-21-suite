@@ -75,11 +75,21 @@ svg{display:block}
 /* ---- headline ---- */
 /* 96px, which is what the original reference frame resolved to. Fixing this at
    124 made the acrostics run the full width and left no air for anything else. */
-h1{font-family:var(--fd);font-weight:700;font-size:96px;
-  line-height:1;letter-spacing:-.045em;margin-top:20px;
-  max-width:100%;white-space:nowrap}
-h1 .w{display:inline-block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}
-h1 .w1{animation-delay:.05s}h1 .w2{animation-delay:.14s}h1 .w3{animation-delay:.23s}
+/* Two lines of short words. The SMILE acrostic is five words; set as one
+   line it is either ~1900px of type or a wall, so it breaks after the third
+   word instead. Size and weight are the user's own choice and untouched. */
+h1{font-family:var(--fd);font-weight:800;font-size:126px;
+  line-height:1.04;letter-spacing:-.045em;margin-top:18px;
+  max-width:100%}
+h1 .ln{display:block;white-space:nowrap;opacity:0;transform:translateY(40px);
+  animation:wordup .85s var(--eo) both}
+h1 .l1{animation-delay:.05s}
+h1 .l2{animation-delay:.15s}
+/* the easter egg: the five letters that spell SMILE, in the gold ramp.
+   Sized to read as punctuation first and a hidden word second. */
+h1 .ac{font-style:normal;
+  background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
 @keyframes wordup{to{opacity:1;transform:none}}
 h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
@@ -149,9 +159,6 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 /* was three bouncing dots. Motion with no meaning reads as a loading state,
    so this is now just the separator it was standing in for, in the same gold
    ramp the headline uses. */
-.meta{display:flex;justify-content:center}
-.rule{display:block;width:78px;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,193,7,.65),transparent)}
 @keyframes bnc{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-14px);opacity:1}}
 
 /* ambient: slow light sweep every ~21s */
@@ -186,8 +193,6 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
       <span class=""></span>
     </div>
 
-    <div class="meta" aria-hidden="true"><i class="rule"></i></div>
-
     <h1 class="rise" id="headline" style="animation-delay:220ms"></h1>
 
     <p class="sub rise" style="animation-delay:320ms">Fresh candles. Brewed coffee. <b>Zero</b> rush. </p>
@@ -214,55 +219,67 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 
 <script>
 /* One gated interval — the clock. No rAF, no canvas.
-   Default headline is the original three-word line. The SMILE acrostics are an
-   experiment parked behind ?hl=1..6 / ?hl=random — six long sentences run the
-   full frame width and read as busy on the long hold, so they are opt-in. */
+   The headline IS the SMILE acrostic. Five short words, broken across two
+   lines, with the five initials in the gold ramp so the word is there for
+   anyone who looks and invisible to anyone who doesn't.
+
+   It used to be a full sentence per line, which at 126px is either 1400px of
+   type or a wall — neither of which is a headline. Five words is the shortest
+   thing that can still spell a five-letter word. */
 (function(){
   function pad(n){return n<10?'0'+n:''+n}
+  function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
   var clock=document.getElementById('clock');
   var h1=document.getElementById('headline');
 
-  /* Short, calm, one line. Grey word, grey word, gold word. */
-  var SHORT=[['markets','g'],['open','g'],['soon.','y']];
-
-  /* Every line's first letters spell S-M-I-L-E. Authored, not generated. */
+  /* Five words each, initials spelling S-M-I-L-E. Authored, not generated.
+     Line 1 carries S M I, line 2 carries L E. */
   var HL=[
-    ['Sharp Markets. ','Instinct, Liquidity, Edge.'],
-    ['Smile Markets. ','Investing, Learning, Earning.'],
-    ['Signals Matter. ','In Live, Everything.'],
-    ['Spread Markets ','Into Long Entries.'],
-    ['Stream Markets ','Into Live Experiences.'],
-    ['Session Markets ','In Live Energy.']
+    ['Sharp Markets Invite',   'Live Entries'],
+    ['Smart Money, Insight',   'Lasting Equity'],
+    ['Smile Markets Illuminate','Live Energy'],
+    ['Signal Mastery, Insight','Leads Execution'],
+    ['Signals Matter, Insight','Live Endeavour'],
+    ['Smiles Matter Insight',  'Leads Execute']
   ];
+  /* Asserted, not trusted: three of the first draft were authored as
+     S-I-M and quietly spelled SIMLE. Cheap to check, invisible if wrong. */
+  HL.forEach(function(l,i){
+    var ac=(l[0]+' '+l[1]).split(' ').map(function(w){return w[0]}).join('');
+    if(ac!=='SMILE') console.error('starting.html: headline '+(i+1)+' spells '+ac+', not SMILE');
+  });
   var q=(location.search.match(/[?&]hl=([^&]*)/)||[])[1];
+  var idx=0;
+  if(q==='random'){
+    var seed=sessionStorage.getItem('smile-hl');
+    if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
+    idx=parseInt(seed,10)||0;
+  } else if(q){idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
 
-  if(q){
-    var idx=0;
-    if(q==='random'){
-      var seed=sessionStorage.getItem('smile-hl');
-      if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
-      idx=parseInt(seed,10)||0;
-    } else {idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
-    h1.innerHTML='<span class="w"><span class="g">'+HL[idx][0]+'</span> <span class="y">'+HL[idx][1]+'</span></span>';
-    /* The acrostics run 34-46 characters. Measure and scale down rather than
-       hand-tune six sizes. Floor at 52px so it can never become a caption. */
-    function fitOneLine(el,max,min){
-      var size=max;
-      while(size>min){
-        el.style.fontSize=size+'px';
-        if(el.scrollWidth<=el.clientWidth+1) break;
-        size-=2;
-      }
-      el.style.fontSize=size+'px';
-    }
-    fitOneLine(h1,96,52);
-    window.addEventListener('resize',function(){fitOneLine(h1,96,52)});
-    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){fitOneLine(h1,96,52);});
-  } else {
-    h1.innerHTML=SHORT.map(function(w,i){
-      return '<span class="w w'+(i+1)+' '+w[1]+'">'+w[0]+'</span>';
-    }).join(' ');
+  /* Gold the initial of every word, then split the five words across two
+     lines: three on top, two beneath. */
+  function render(line){
+    return line.split(' ').map(function(w,i){
+      return (i?' ':'')+'<i class="ac">'+esc(w[0])+'</i>'+esc(w.slice(1));
+    }).join('');
   }
+  h1.innerHTML='<span class="ln l1">'+render(HL[idx][0])+'</span>'+
+               '<span class="ln l2">'+render(HL[idx][1])+'</span>';
+
+  /* Fit the LONGER of the two lines, then apply one size to both so the pair
+     stays optically matched — fitting each line independently is what makes
+     two-line headlines look accidental. */
+  function fit(){
+    var max=parseFloat(getComputedStyle(h1).fontSize);
+    var l1=h1.querySelector('.l1'), l2=h1.querySelector('.l2');
+    var box=h1.clientWidth, size=max;
+    h1.style.fontSize=size+'px';
+    function over(){return Math.max(l1.scrollWidth,l2.scrollWidth)>box+1}
+    while(size>100&&over()){size-=2;h1.style.fontSize=size+'px';}
+  }
+  fit();
+  window.addEventListener('resize',fit);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
 
   function tick(){
     if(document.hidden) return;

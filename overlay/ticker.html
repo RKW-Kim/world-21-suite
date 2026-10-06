@@ -47,6 +47,7 @@
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
+  --capw:200px;
  }
  *{box-sizing:border-box;margin:0;padding:0}
  html,body{width:1920px;height:76px;overflow:hidden;background:transparent}
@@ -63,7 +64,12 @@
    transform:scale(var(--tks));transform-origin:50% 50%;
    background:rgba(0,0,0,.93);
    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,206,0,.2)}
- .tkPill .cap{flex:none;display:flex;align-items:center;gap:5px;padding:0 24px 0 18px;
+ /* Both caps are a hard, identical width. They used to be flex:none sized by
+    their own content, so the left measured 187px and the right 140px — two
+    different cap widths on one strip, which reads as an accident rather than
+    a decision. The clock cap now has exactly as much room as the brand cap. */
+ .tkPill .cap{flex:none;width:var(--capw);display:flex;align-items:center;
+   justify-content:center;gap:9px;padding:0 22px;
    background:linear-gradient(0deg,#FFAE5A,#FFC107 100%,#F8A800);color:#1F1702;
    clip-path:polygon(0 0,100% 0,calc(100% - 20px) 100%,0 100%)}
 
@@ -73,11 +79,21 @@
     radius plus overflow:hidden rounds it. Clipping it with a polygon too
     would flatten the end and the caps would no longer close into a clean
     pill when the middle is removed. */
- .tkPill .cap.r{padding:0 18px 0 24px;
-    clip-path:polygon(20px 0,100% 0,100% 100%,0 100%)}
+ .tkPill .cap.r{clip-path:polygon(20px 0,100% 0,100% 100%,0 100%)}
 
  .tkPill .cap svg{width:29px;height:29px;display:block;filter:drop-shadow(0 1px 5px rgba(0,0,0,0.65))}
  .tkPill .cap .t{font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.2em}
+
+ /* The clock is meant to read as a bedside alarm clock, not a stopwatch, and
+    the seconds field was the entire problem: a stopwatch is something you
+    watch. Hours and minutes alone, digits large and alone in their own block,
+    with EAT as a quiet caption underneath instead of competing beside it on a
+    single line. */
+ .tkPill .cap.r{flex-direction:column;gap:2px}
+ .tkPill .cap.r .face-t{font-family:var(--fd);font-weight:700;font-size:26px;
+   line-height:1;letter-spacing:.005em;font-variant-numeric:tabular-nums;color:#17140A}
+ .tkPill .cap.r .zone{font-family:var(--fm);font-weight:600;font-size:8.5px;
+   letter-spacing:.24em;color:rgba(23,20,10,.6)}
  .clip{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
    -webkit-mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent);
    mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent)}
@@ -168,10 +184,9 @@
         <span class="it" data-live="f"><span class="s">JPY/KES</span><span class="num">--</span><span class="num up">--</span></span>
       </div>
     </div>
-    <div class="cap r" aria-hidden="true">
-      <b id="tkclock">--:--:--</b>
-      <i class="sep"></i>
-      <span class="s" style="color:rgba(31,23,2,.6);font-size:10px;letter-spacing:.16em">EAT</span>
+    <div class="cap r">
+      <b class="face-t" id="tkclock">--:--</b>
+      <span class="zone">EAT</span>
     </div>
   </div>
 </div>
@@ -237,7 +252,7 @@
   function tickClock(){
     if(document.hidden)return;
     var d=new Date();
-    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
   }
   tickClock();
   setInterval(tickClock,1000);
