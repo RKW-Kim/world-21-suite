@@ -68,28 +68,13 @@ svg{display:block}
 .mark svg{width:100%;height:100%;overflow:visible}
 
 /* ---- headline ---- */
-/* 96px, which is what the original reference frame resolved to. Fixing this at
-   124 made the acrostics run the full width and left no air for anything else. */
-/* Three words, one line. Size and weight are the user's own and untouched. */
+/* Size and weight are the user's own; only the text changed. */
 h1{font-family:var(--fd);font-weight:800;font-size:126px;
   line-height:1.02;letter-spacing:-.045em;margin-top:20px;
   max-width:100%;white-space:nowrap}
 h1 .w{display:inline-block;opacity:0;transform:translateY(40px);
   animation:wordup .85s var(--eo) both}
 h1 .w1{animation-delay:.04s}h1 .w2{animation-delay:.12s}h1 .w3{animation-delay:.20s}
-/* the easter egg: one s, one m, one i, one l, one e, in the gold ramp. Small
-   enough to read as punctuation first and a hidden word second. */
-h1 .ac{font-style:normal;
-  background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  /* A plain dark drop shadow is invisible on a #0A0A0A ground, so the depth
-     comes from three stacked shadows: a hard contact shadow that lifts the
-     letter off the background, a tighter amber one that reads as the gold's
-     own edge, and a wide soft bloom. filter applies to the clipped text, so
-     this shadows the glyph and not its box. */
-  filter:drop-shadow(0 7px 9px rgba(0,0,0,.62))
-         drop-shadow(0 2px 2px rgba(120,72,0,.55))
-         drop-shadow(0 0 26px rgba(255,193,7,.3))}
 @keyframes wordup{to{opacity:1;transform:none}}
 h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
@@ -218,72 +203,21 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 </div>
 
 <script>
-/* One gated interval — the clock. No rAF, no canvas.
-   The headline IS the SMILE acrostic. Five short words, broken across two
-   lines, with the five initials in the gold ramp so the word is there for
-   anyone who looks and invisible to anyone who doesn't.
-
-   It used to be a full sentence per line, which at 126px is either 1400px of
-   type or a wall — neither of which is a headline. Five words is the shortest
-   thing that can still spell a five-letter word. */
+/* One gated interval — the clock. No rAF, no canvas. */
 (function(){
   function pad(n){return n<10?'0'+n:''+n}
-  function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
   var clock=document.getElementById('clock');
   var h1=document.getElementById('headline');
 
-  /* Three words each. The phrase is in the register of the thing people
-     actually say — "business unusual" — rather than a slogan about a
-     platform. Five letters get picked out across the three words, one each
-     of s m i l e, in whatever order they happen to land; they are not
-     spelled out in sequence, because spelling them out stops being an
-     easter egg and starts being a subtitle.
-
-     Format: [word, [charIndexesToHighlight], ...]
-     e.g. ['Business,',[2]] highlights the s in "Business,"                */
-  var HL=[
-    [['Business,',[2]],   ['Made',[0,3]],   ['Live',[0,1]]],
-    [['Markets',[0,6]],   ['Made',[3]],     ['Simple',[1,4]]],
-    [['Smile',[0,4]],     ['Markets',[0]],  ['Live',[0,1]]],
-    [['Something',[0]],   ['Made',[0,3]],   ['Live',[0,1]]],
-    [['Make',[0]],        ['Markets',[6]],  ['Smile',[2,3,4]]],
-    [['Stay',[0]],        ['Smart,',[1]],   ['Live',[0,1]], ['Easy',[0]]]
-  ];
-
-  /* Asserted, because this is authored by hand and the failure is invisible:
-     a mis-indexed highlight still renders, it just stops saying SMILE. */
-  HL.forEach(function(line,i){
-    var picked=[];
-    line.forEach(function(w){w[1].forEach(function(k){picked.push(w[0][k].toLowerCase())})});
-    var set=picked.slice().sort().join('');
-    var want='eilms';
-    if(picked.length!==5||set!==want){
-      console.error('starting.html: headline '+(i+1)+' highlights "'+set+'" ('+picked.length+
-        '), not five letters spelling s m i l e');
-    }
-  });
-
-  var q=(location.search.match(/[?&]hl=([^&]*)/)||[])[1];
-  var idx=0;
-  if(q==='random'){
-    var seed=sessionStorage.getItem('smile-hl');
-    if(seed===null){seed=String(Math.floor(Math.random()*HL.length));sessionStorage.setItem('smile-hl',seed);}
-    idx=parseInt(seed,10)||0;
-  } else if(q){idx=Math.max(0,Math.min(HL.length-1,(parseInt(q,10)||1)-1));}
-
-  h1.innerHTML=HL[idx].map(function(w,i){
-    var idxs=w[1]||[], out='';
-    for(var k=0;k<w[0].length;k++){
-      out += idxs.indexOf(k)>=0
-        ? '<i class="ac">'+esc(w[0][k])+'</i>'
-        : esc(w[0][k]);
-    }
-    return '<span class="w w'+(i+1)+'">'+out+'</span>';
+  /* Markets / Open / Soon. — the stock line, with the per-word stagger.
+     Grey, grey, gold. */
+  var SHORT=[['Markets','g'],['Open','g'],['Soon.','y']];
+  h1.innerHTML=SHORT.map(function(w,i){
+    return '<span class="w w'+(i+1)+' '+w[1]+'">'+w[0]+'</span>';
   }).join(' ');
 
-  /* Fit the one line to the frame. Size is the user's 126px; this only steps
-     down if a phrase would otherwise run past the edge, and never below 84px
-     because at that point it has stopped being a headline. */
+  /* One line, so this is only insurance against a font substitution arriving
+     wider than the frame. It steps down rather than wrapping or clipping. */
   function fit(){
     var max=parseFloat(getComputedStyle(h1).fontSize);
     var box=h1.clientWidth, size=max;

@@ -43,6 +43,7 @@
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
   --capw:200px;
+  --fade:108px;        /* marquee edge fade; ?fade= overrides */
  }
  *{box-sizing:border-box;margin:0;padding:0}
  html,body{width:1920px;height:76px;overflow:hidden;background:transparent}
@@ -54,7 +55,8 @@
    -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
            mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
 
- .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:35;pointer-events:none;padding:0 12px}
+ .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+   z-index:35;pointer-events:none;padding:0 var(--dockpad,12px)}
  .tkPill{width:fit-content;max-width:100%;height:54px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
    transform:scale(var(--tks));transform-origin:50% 50%;
    background:rgba(0,0,0,.93);
@@ -89,9 +91,15 @@
    line-height:1;letter-spacing:.005em;font-variant-numeric:tabular-nums;color:#17140A}
  .tkPill .cap.r .zone{font-family:var(--fm);font-weight:600;font-size:8.5px;
    letter-spacing:.24em;color:rgba(23,20,10,.6)}
+ /* The edge fade is the whole reason the marquee reads as a ticker instead of
+    a list being chopped. At 30px it was barely two characters wide, so cells
+    were sliced mid-value right beside each cap — "SOL 120.93 +0" then the gold
+    — and over a bright video the hard cut against the dark pill looked like a
+    rendering fault. 108px is about eight characters: enough that whatever is
+    leaving is already unreadable before it reaches the cap. */
  .clip{flex:1;display:flex;align-items:center;overflow:hidden;position:relative;
-   -webkit-mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent);
-   mask:linear-gradient(90deg,transparent,#000 30px calc(100% - 30px),transparent)}
+   -webkit-mask:linear-gradient(90deg,transparent,#000 var(--fade) calc(100% - var(--fade)),transparent);
+   mask:linear-gradient(90deg,transparent,#000 var(--fade) calc(100% - var(--fade)),transparent)}
  .sheen{position:absolute;top:-20%;bottom:-20%;left:0;width:26%;z-index:3;pointer-events:none;
    background:linear-gradient(105deg,transparent,rgba(255,255,255,.09) 45%,transparent 70%);
    transform:translateX(-160%) skewX(-18deg);animation:sheen 7s cubic-bezier(.3,.6,.4,0.7) 1.5s infinite}
@@ -231,6 +239,16 @@
   if(!isNaN(sc)&&sc>0)document.documentElement.style.setProperty('--tks',Math.min(3,sc));
 
   var LIVE=(location.search.match(/[?&]live=([^&]*)/)||[])[1]!=='0';
+  var fade=parseInt((location.search.match(/[?&]fade=(\d+)/)||[])[1],10);
+  if(fade>=0&&fade<=400)document.documentElement.style.setProperty('--fade',fade+'px');
+  /* ?pad= moves the dock inset. 0 makes the strip truly edge-to-edge, which is
+     what you usually want with a full-frame video behind it.
+     Named dockPad, NOT pad: there is already a function pad(n) in this scope
+     for the clock, and a var of the same name hoists over it — which silently
+     killed the clock while every other value looked perfectly fine. */
+  var dockPad=parseInt((location.search.match(/[?&]pad=(\d+)/)||[])[1],10);
+  if(!isNaN(dockPad)&&dockPad>=0&&dockPad<=120)
+    document.documentElement.style.setProperty('--dockpad',dockPad+'px');
   function num(re,lo,dflt){
     var v=parseInt((location.search.match(re)||[])[1],10);
     return v>=lo?v:dflt;
