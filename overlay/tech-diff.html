@@ -42,10 +42,11 @@ svg{display:block}
   font-family:var(--fd);font-weight:700;font-size:14px;letter-spacing:.08em;
   text-transform:uppercase;white-space:nowrap}
 .chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--paper);
-  box-shadow:0 6px 24px rgba(0,0,0,.35)}
-.chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 24px rgba(0,0,0,.35)}
+.chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
 .chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
-  box-shadow:0 8px 28px rgba(255,193,7,.28)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 28px rgba(255,193,7,.28)}
 
 .spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
   box-shadow:0 0 14px rgba(255,193,7,.9),0 0 4px rgba(255,193,7,1);opacity:0;
@@ -70,7 +71,8 @@ to{opacity:.62;transform:scaleY(1)}}
 
 .lcol{position:absolute;left:120px;top:168px;z-index:5;max-width:620px}
 .lcol h1{font-family:var(--fd);font-weight:800;font-size:64px;line-height:1.04;
-  letter-spacing:-.03em;margin-top:22px}
+  letter-spacing:-.03em;margin-top:22px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.lcol h1 .y{text-shadow:0 0 26px rgba(255,193,7,.35)}
 .lcol .chips{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
 
 .orbitWrap{position:absolute;left:calc(55% - 280px);top:calc(48% - 280px);width:560px;height:560px;z-index:4}
@@ -95,7 +97,7 @@ to{opacity:.62;transform:scaleY(1)}}
 .dchip{display:inline-flex;align-items:center;gap:10px;padding:11px 22px;border-radius:999px;
   background:rgba(18,18,18,.92);border:1.5px solid var(--line);font-family:var(--fd);
   font-weight:700;font-size:15px;letter-spacing:.12em;color:#e3e3e3;white-space:nowrap;
-  box-shadow:0 10px 30px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 30px rgba(0,0,0,.45);
   transition:border-color .35s,color .35s,box-shadow .35s}
 .dchip em{font-style:normal;font-size:11px;color:var(--muted);letter-spacing:.18em;transition:color .35s}
 .dchip .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line);background:transparent;
@@ -106,7 +108,8 @@ to{opacity:.62;transform:scaleY(1)}}
 .dchip.ok .dot{background:var(--yellow);border-color:var(--yellow);box-shadow:0 0 12px rgba(255,193,7,.95)}
 
 .status{position:absolute;left:calc(55% - 230px);top:calc(48% + 298px);width:460px;text-align:center;
-  z-index:5;font-size:19px;font-weight:500;color:#c9c9c9;min-height:26px}
+  z-index:5;font-size:19px;font-weight:500;color:#c9c9c9;min-height:26px;
+  text-shadow:0 2px 12px rgba(0,0,0,.6)}
 .caret{display:inline-block;width:2px;height:1.05em;background:var(--yellow);margin-left:4px;
   vertical-align:-2px;animation:caretB 1s steps(1) infinite}
 @keyframes caretB{50%{opacity:0}}
