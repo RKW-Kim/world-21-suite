@@ -119,10 +119,17 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard.flip{border-radius:18px 18px 4px 18px}
 .bcard.flip::after{left:auto;right:18px;border:0;border-left:1px solid var(--line);
   border-bottom:1px solid var(--line)}
-.bcard .h{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:700;
-  font-size:12px;letter-spacing:.1em;color:var(--yellow);margin-bottom:5px;text-transform:uppercase}
-.bcard .h .qno{font-family:var(--fm);font-weight:400;font-size:10px;letter-spacing:.14em;
-  color:var(--muted)}
+.bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:6px;flex-wrap:wrap}
+.bcard .h b{font-family:var(--fd);font-weight:700;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
+.bcard .h .qt{margin-left:auto;font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.16em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 9px;background:rgba(255,255,255,.03)}
+.pl{flex:none;width:20px;height:20px;border-radius:6px;display:grid;place-items:center}
+.pl svg{width:12px;height:12px;display:block}
+.pl-ytb{background:linear-gradient(135deg,#ff2f4d,#c40c22);box-shadow:0 0 14px rgba(255,47,77,.55)}
+.pl-fb{background:linear-gradient(135deg,#2f7cf8,#0b4fd0);box-shadow:0 0 14px rgba(24,119,242,.55)}
+.pl-x{background:linear-gradient(135deg,#3a3f44,#0c0f13);box-shadow:0 0 14px rgba(231,233,234,.3);border:1px solid rgba(255,255,255,.14)}
+.pl-tt{background:linear-gradient(135deg,#19d3e6,#fe2c55);box-shadow:0 0 14px rgba(254,44,85,.5)}
+.pl-ig{background:linear-gradient(135deg,#f9ce34 0%,#ee2a7b 60%,#6228d7 100%);box-shadow:0 0 14px rgba(238,42,123,.5)}
+.pl-li{background:linear-gradient(135deg,#0a66c2,#084a94);box-shadow:0 0 14px rgba(10,102,194,.55)}
 .bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
   text-shadow:0 1px 8px rgba(0,0,0,.5)}
 @keyframes bubRise{
@@ -171,20 +178,15 @@ to{opacity:.62;transform:scaleY(1)}}
     <span class="spark" style="left:30%;top:74%;--d:3.2s;background:var(--sky)"></span>
     <span class="spark" style="left:63%;top:80%;--d:1.8s"></span>
 
-    <div class="topbar">
-      <span class="chip mono rise" style="--rd:.2s"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
-      <span class="chip dark livechip rise" style="--rd:.15s"><i class="dot"></i>Q&amp;A · FLOOR OPEN</span>
-    </div>
-
     <div class="head">
-      <h1 class="rise" style="--rd:.1s">the floor is <span class="y">yours</span>.</h1>
+      <h1 class="rise" style="--rd:.1s">The Floor is <span class="y">Yours.</span></h1>
       <p class="tag" aria-hidden="true">
-        <span>grab the <b>mic</b> — politely.</span>
-        <span>your questions, <b>answered live</b>.</span>
-        <span>no dumb questions — <b>only good ones</b>.</span>
+        <span>Grab the <b>Mic</b> — Politely.</span>
+        <span>Your Questions, <b>Answered Live</b>.</span>
+        <span>No Dumb Questions — <b>Only Good Ones</b>.</span>
       </p>
       <div class="row">
-        <span class="chip solid rise" style="--rd:.2s">drop questions in chat</span>
+        <span class="chip solid rise" style="--rd:.2s">Drop Questions in Chat</span>
         <span class="chip ghost mono rise" style="--rd:.3s">EP <span data-ep>128</span></span>
       </div>
     </div>
@@ -203,53 +205,42 @@ to{opacity:.62;transform:scaleY(1)}}
     </div>
 
     <div class="bub" style="left:110px;top:520px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
-      <div class="sway"><div class="bcard"><span class="h">@wanjiku <i class="qno">Q·01</i></span><span class="q">how did the show start?</span></div></div>
+      <div class="sway"><div class="bcard"><span class="h"><i class="pl pl-ytb"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 6.8v10.4L15.4 12z"/></svg></i><b>@marketnotes</b> <span class="qt">3 YRS</span></span><span class="q">How do I keep up when I miss a day of the market?</span></div></div>
     </div>
     <div class="bub" style="left:318px;top:760px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
-      <div class="sway"><div class="bcard flip"><span class="h">@denno <i class="qno">Q·02</i></span><span class="q">screen share setup tour?</span></div></div>
+      <div class="sway"><div class="bcard flip"><span class="h"><i class="pl pl-fb"><svg viewBox="0 0 24 24"><path fill="#fff" d="M10.1 20v-7H7.6v-3h2.5V8.3C10.1 5.6 11.7 4.4 14.1 4.4v3h-1.7c-.7 0-.9.3-.9.8v1.8h2.6l-.4 3h-2.2v7z"/></svg></i><b>@growthfan88</b> <span class="qt">1 YR</span></span><span class="q">Where does everyone here get their news from?</span></div></div>
     </div>
     <div class="bub" style="left:560px;top:430px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
-      <div class="sway"><div class="bcard"><span class="h">@kimanzi <i class="qno">Q·03</i></span><span class="q">best part of today's ep?</span></div></div>
+      <div class="sway"><div class="bcard"><span class="h"><i class="pl pl-x"><svg viewBox="0 0 24 24"><path fill="#fff" d="M17.9 4h-2.3l-3.5 4.4L8.5 4H5l5.6 7.2L5 20h2.3l3.8-4.8L15.5 20H19l-5.9-7.5z"/></svg></i><b>@cashflowcoach</b> <span class="qt">6 MO</span></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
     </div>
     <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
-      <div class="sway"><div class="bcard flip"><span class="h">@achieng <i class="qno">Q·04</i></span><span class="q">hot takes round when?</span></div></div>
+      <div class="sway"><div class="bcard flip"><span class="h"><i class="pl pl-tt"><svg viewBox="0 0 24 24"><path fill="#fff" d="M14.5 5h2.4s.2 2.6 2.6 2.9v2.4c-1.6-.1-3.2-.7-4.9-2v6.9A5.7 5.7 0 1 1 8 13.3v2.4a8.1 8.1 0 1 0 6.5 7.9V5z"/></svg></i><b>@portfolio101</b> <span class="qt">NEW</span></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
     </div>
     <div class="bub" style="left:1440px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
-      <div class="sway"><div class="bcard"><span class="h">@biru <i class="qno">Q·05</i></span><span class="q">what are you drinking?</span></div></div>
+      <div class="sway"><div class="bcard"><span class="h"><i class="pl pl-ig"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="3.4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="#fff" stroke-width="2"/></svg></i><b>@creatormargin</b> <span class="qt">2 YRS</span></span><span class="q">What do you actually listen to on the way in?</span></div></div>
     </div>
     <div class="bub" style="left:1620px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
-      <div class="sway"><div class="bcard flip"><span class="h">@njoro <i class="qno">Q·06</i></span><span class="q">next guest?</span></div></div>
+      <div class="sway"><div class="bcard flip"><span class="h"><i class="pl pl-li"><svg viewBox="0 0 24 24"><path fill="#fff" d="M6.9 8.6H3.5V20h3.4V8.6zM5.2 3.6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM20.5 13.7c0-3.5-1.9-5.2-4.4-5.2-1.9 0-2.7 1.1-3.2 1.9V8.6H9.5V20h3.4v-6.3c0-1.7.8-2.4 2-2.4 1.1 0 1.8.7 1.8 2.4V20h3.4v-6.3z"/></svg></i><b>@bizbasics</b> <span class="qt">TODAY</span></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
     </div>
     <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
-      <div class="sway"><div class="bcard"><span class="h">@shiko</span><span class="q">chart of the week pick?</span></div></div>
+      <div class="sway"><div class="bcard"><span class="h"><i class="pl pl-fb"><svg viewBox="0 0 24 24"><path fill="#fff" d="M10.1 20v-7H7.6v-3h2.5V8.3C10.1 5.6 11.7 4.4 14.1 4.4v3h-1.7c-.7 0-.9.3-.9.8v1.8h2.6l-.4 3h-2.2v7z"/></svg></i><b>@trendlinecrew</b> <span class="qt">4 YRS</span></span><span class="q">Which platform do you trust for a daily brief?</span></div></div>
     </div>
     <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
-      <div class="sway"><div class="bcard flip"><span class="h">@moseh</span><span class="q">can we get a Q&amp;A playlist?</span></div></div>
+      <div class="sway"><div class="bcard flip"><span class="h"><i class="pl pl-ytb"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 6.8v10.4L15.4 12z"/></svg></i><b>@founderfaqs</b> <span class="qt">8 MO</span></span><span class="q">How do you handle burnout on a long session?</span></div></div>
     </div>
     <div class="bub far" style="left:60px;top:300px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
-      <div class="sway"><div class="bcard"><span class="h">@teo</span><span class="q">team blue or team gold?</span></div></div>
+      <div class="sway"><div class="bcard"><span class="h"><i class="pl pl-ig"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="3.4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="#fff" stroke-width="2"/></svg></i><b>@valuepocket</b> <span class="qt">5 YRS</span></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
     </div>
 
     <p class="sig">smile<b>.co.ke</b></p>
   </section>
 </div>
 <script>
-/* one tiny job: clock (gated interval) + one-shot ?ep= — nothing else runs here.
+/* one tiny job: one-shot ?ep= — nothing else runs here.
    every moving part on this page is pure CSS on the compositor. */
 (function(){
-  var EAT=3*3600*1000; /* UTC+3 */
-  function two(n){return String(n).padStart(2,'0')}
   var eps=(location.search.match(/[?&]ep=([^&]+)/)||[])[1];
   if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps;});
-
-  var ck=document.getElementById('clock'),lastMin=-1;
-  function tick(){
-    if(document.hidden)return;
-    var m=Math.floor((Date.now()+EAT)/60000)%1440;
-    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
-  }
-  tick();setInterval(tick,1000);
-  document.addEventListener('visibilitychange',tick);
 })();
 </script>
 </body></html>
