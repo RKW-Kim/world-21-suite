@@ -24,6 +24,10 @@
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
   --ease-out:cubic-bezier(.22,1,.36,1);
+  --eo:cubic-bezier(.32,.72,0,1); /* starting.html's entrance ease — the headline
+     word-reveal depends on it; without it the .w spans never animate and stay
+     at opacity 0 */
+  --fg:#FAFAFA; --faint:#9B9BA4; --hot:#F5A623;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -45,6 +49,17 @@ svg{display:block}
   background-size:26px 26px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
+
+/* bracket style — corner marks instead of a closed border (MKBHD-ish restraint) */
+.chip.brk{position:relative;background:none;border:0;border-radius:0;
+  padding:15px 22px 15px 24px;color:var(--yellow)}
+.chip.brk.mono{color:var(--muted)}
+.chip.brk::before,.chip.brk::after{content:"";position:absolute;width:11px;height:11px;
+  border:1.5px solid currentColor}
+.chip.brk::before{left:0;top:0;border-right:0;border-bottom:0}
+.chip.brk::after{right:0;bottom:0;border-left:0;border-top:0}
+.chip.brk.gold{color:var(--yellow)}
+.chip.brk.mono b{color:var(--paper);font-weight:600}
 
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
   font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.08em;
@@ -76,9 +91,22 @@ to{opacity:.62;transform:scaleY(1)}}
 .livechip .dot{width:9px;height:9px;border-radius:50%;background:var(--up);animation:dotPulse 1.7s ease-in-out infinite}
 
 .head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
-.head h1{font-family:var(--fd);font-weight:800;font-size:76px;
-  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 4px 30px rgba(0,0,0,.95)}
-.head h1 .y{color:var(--yellow);text-shadow:0 0 18px rgba(255,213,64,.6),0 0 48px rgba(255,180,40,.35)}
+.head h1{font-family:var(--fd);font-weight:800;font-size:100px;
+  line-height:1.02;letter-spacing:-.045em;margin-top:20px;max-width:100%;white-space:nowrap}
+.head h1 .w{display:inline-block;opacity:0;transform:translateY(40px);
+  animation:wordup .85s var(--eo) both}
+.head h1 .w1{animation-delay:.04s}.head h1 .w2{animation-delay:.12s}
+@keyframes wordup{to{opacity:1;transform:none}}
+.head h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 14px rgba(0,0,0,.65))}
+.head h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+/* option B — a short gold accent rule under "Yours." */
+.head .rule{display:block;width:64px;height:3px;margin:26px auto 0;border-radius:2px;
+  background:linear-gradient(90deg,var(--hot),var(--yellow));
+  box-shadow:0 0 18px rgba(255,193,7,.35)}
 .head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
 
 /* cycling tagline — the lineup signature move, pure CSS */
@@ -120,11 +148,20 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard.fb{--pc:rgba(48,138,245,.95)}
 .bcard.x{--pc:rgba(255,255,255,.85)}
 .bcard.tt{--pc:rgba(0,229,255,.85)}
-.bcard::after{content:"";position:absolute;bottom:-15px;left:5%;width:26px;height:20px;
-  background:linear-gradient(180deg,var(--pc) 0%,rgba(255,255,255,.06) 14%,#0e0e12 55%),#0e0e12;
-  clip-path:polygon(0 0,100% 0,0 100%)}
+/* Tail. bottom:0 puts its flat top edge ON the card's bottom edge, so it hangs
+   from the bubble instead of floating below it. The ::before sliver sits above
+   the tail (z-index) so the card's border glow reads as continuing into it. */
+.bcard::after{content:"";position:absolute;bottom:0;left:5%;width:24px;height:16px;z-index:0;
+  background:linear-gradient(180deg,#121216 0,#0e0e12 70%);
+  clip-path:polygon(0 0,100% 0,0 100%);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.bcard::before{content:"";position:absolute;bottom:0;left:5%;width:24px;height:2px;z-index:2;
+  background:linear-gradient(90deg,var(--pc),transparent);
+  opacity:.9;clip-path:polygon(0 0,100% 0,0 100%)}
 .bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
 .bcard.flip::after{left:auto;right:5%;clip-path:polygon(0 0,100% 0,100% 100%)}
+.bcard.flip::before{left:auto;right:5%;clip-path:polygon(0 0,100% 0,100% 100%);
+  background:linear-gradient(270deg,var(--pc),transparent)}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
 .bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
@@ -182,15 +219,16 @@ to{opacity:.62;transform:scaleY(1)}}
   <section class="scn" data-take="a">
 
     <div class="head">
-      <h1 class="rise" style="--rd:.1s">The Floor is <span class="y">Yours.</span></h1>
+      <h1 class="rise" style="--rd:.1s"><span class="w w1"><span class="g">The Floor is</span></span> <span class="w w2"><span class="y">Yours.</span></span></h1>
+      <i class="rule rise" style="--rd:.28s" aria-hidden="true"></i>
       <p class="tag" aria-hidden="true">
         <span>Grab the <b>Mic</b> — Politely.</span>
         <span>Your Questions, <b>Answered Live</b>.</span>
         <span>No Dumb Questions — <b>Only Good Ones</b>.</span>
       </p>
       <div class="row">
-        <span class="chip solid rise" style="--rd:.2s">Drop Questions in Chat</span>
-        <span class="chip ghost mono rise" style="--rd:.3s">EP <span data-ep>128</span></span>
+        <span class="chip brk gold rise" style="--rd:.2s">Drop Questions in Chat</span>
+        <span class="chip brk mono rise" style="--rd:.3s">EP <span data-ep>128</span></span>
       </div>
     </div>
 
