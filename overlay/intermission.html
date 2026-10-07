@@ -38,10 +38,13 @@ svg{display:block}
           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
 .spot{position:absolute;inset:0;background:radial-gradient(ellipse 64% 44% at 50% -10%,rgba(255,255,255,.09),transparent 70%)}
 .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 44%,transparent 56%,rgba(0,0,0,.5) 100%)}
+.auraS{position:absolute;left:50%;top:46%;width:820px;height:560px;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse,rgba(255,193,7,.09),transparent 64%)}
 
 .topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:flex-end;
   padding:22px clamp(18px,4vw,48px)}
 .clockchip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;
+  background:rgba(10,10,12,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 24px rgba(0,0,0,.35);
   font-family:var(--fm);font-size:11px;letter-spacing:.18em;color:var(--muted)}
 .clockchip b{color:var(--fg);font-weight:600}
 
@@ -98,12 +101,13 @@ svg{display:block}
   transition:opacity .7s cubic-bezier(.2,.9,.3,1),transform .7s cubic-bezier(.2,.9,.3,1)}
 .cdcol .ba{font-family:var(--fm);font-size:10px;letter-spacing:.3em;color:var(--faint)}
 .cdcol .cv{font-family:var(--fm);font-weight:600;font-size:clamp(26px,4.6vh,40px);
-  font-variant-numeric:tabular-nums;color:var(--fg)}
+  font-variant-numeric:tabular-nums;color:var(--fg);text-shadow:0 2px 14px rgba(0,0,0,.6)}
 html[data-hold="1"] .cdcol{opacity:0;transform:scale(.92);pointer-events:none}
 .hold{display:inline-flex;align-items:center;gap:11px;border-radius:999px;
   border:1px solid rgba(255,193,7,.5);background:rgba(255,193,7,.1);
   padding:11px 24px;font-family:var(--fm);font-weight:600;font-size:clamp(11px,1.8vh,14px);
   letter-spacing:.3em;color:var(--yellow);text-transform:uppercase;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 26px rgba(255,193,7,.18);
   opacity:0;transform:scale(.92);transition:opacity .7s cubic-bezier(.2,.9,.3,1) .25s,transform .7s cubic-bezier(.2,.9,.3,1) .25s}
 .hold .dot{width:9px;height:9px}
 html[data-hold="1"] .hold{opacity:1;transform:none}
@@ -111,7 +115,7 @@ html[data-hold="1"] .hold{opacity:1;transform:none}
 .ag{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:rise .8s cubic-bezier(.2,.9,.3,1) .4s both}
 .agi{border:1px solid var(--border);border-radius:999px;background:rgba(14,14,17,.62);
   padding:8px 15px;font-family:var(--fm);font-size:9.5px;letter-spacing:.24em;color:var(--muted);
-  text-transform:uppercase}
+  text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.35)}
 .agi b{color:var(--yellow);font-weight:600}
 
 @media (max-width:720px){.agi:nth-child(3){display:none}}
@@ -135,7 +139,7 @@ html[data-hold="1"] .hold{opacity:1;transform:none}
 <body>
 <div class="page">
   <div class="ambient" aria-hidden="true">
-    <div class="dots"></div><div class="spot"></div><div class="vig"></div>
+    <div class="dots"></div><div class="spot"></div><div class="auraS"></div><div class="vig"></div>
   </div>
 
   <header class="topbar">
