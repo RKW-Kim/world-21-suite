@@ -33,8 +33,13 @@ svg{display:block}
 ::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 .bg{position:absolute;inset:0;z-index:-2;background:
+  radial-gradient(900px 620px at 6% 97%,rgba(255,193,7,.06),transparent 62%),
+  radial-gradient(1300px 860px at 50% 38%,transparent 38%,rgba(0,0,0,.55) 100%),
   radial-gradient(1500px 900px at 50% 32%,#1b1b1f 0%,#0d0d10 52%,#050506 100%),
   linear-gradient(180deg,rgba(255,255,255,.04),transparent 32%)}
+.grain{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:220px 220px}
 .bg::after{content:"";position:absolute;inset:0;background-image:
   radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
   background-size:26px 26px;
@@ -115,14 +120,11 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard.fb{--pc:rgba(48,138,245,.95)}
 .bcard.x{--pc:rgba(255,255,255,.85)}
 .bcard.tt{--pc:rgba(0,229,255,.85)}
-.bcard::after{content:"";position:absolute;bottom:-14px;left:0;width:26px;height:20px;
-  background:linear-gradient(#0e0e12,#0e0e12) padding-box,
-    conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
-  border:1.5px solid transparent;
-  clip-path:polygon(0 0,100% 0,0 100%);
-  animation:ang 4.6s linear infinite}
+.bcard::after{content:"";position:absolute;bottom:-15px;left:5%;width:26px;height:20px;
+  background:linear-gradient(180deg,var(--pc) 0%,rgba(255,255,255,.06) 14%,#0e0e12 55%),#0e0e12;
+  clip-path:polygon(0 0,100% 0,0 100%)}
 .bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
-.bcard.flip::after{left:auto;right:0;clip-path:polygon(0 0,100% 0,100% 100%)}
+.bcard.flip::after{left:auto;right:5%;clip-path:polygon(0 0,100% 0,100% 100%)}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
 .bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
@@ -174,6 +176,7 @@ to{opacity:.62;transform:scaleY(1)}}
 </style></head><body>
 <div class="stage">
   <div class="bg"></div>
+  <div class="grain" aria-hidden="true"></div>
   
 
   <section class="scn" data-take="a">
