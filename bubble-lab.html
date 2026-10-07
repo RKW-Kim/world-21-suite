@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · bubble lab</title>
+<style>
+/* SANDBOX — not part of the kit. Open this file, edit the :root values or the
+   .bcard rules live in DevTools, and reload. Nothing here ships. */
+:root{
+  --ink:#0a0a0c;
+  --card:#121216;
+  --pc:rgba(255,45,72,.95);          /* platform glow colour */
+  --pc-soft:rgba(255,45,72,.28);
+
+  /* SHAPE */
+  --radius:20px;                     /* bubble corner radius */
+  --corner:12.5px;                   /* the tail corner (2.5x of 5px) */
+  --w:340px;                         /* bubble width */
+  --pad-x:18px;
+  --pad-y:15px;
+
+  /* TAIL */
+  --tail-w:24px;
+  --tail-h:16px;
+  --tail-inset:5%;                   /* how far in from the edge */
+  --tail-lift:0px;                   /* pull the tail up under the edge */
+  --tail-rim:2px;                    /* the glow sliver on the tail top */
+  --tail-rim-op:.9;
+
+  /* GLOW */
+  --glow-mode:ring;                  /* ring | edge */
+  --glow-speed:4.6s;
+  --glow-w:1.5px;
+  --edge-top:0deg;                   /* per-edge gradient angles */
+  --edge-side:90deg;
+  --edge-hyp:135deg;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:#FAFAFA;font-family:system-ui,sans-serif;padding:40px}
+h1{font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:#888;margin-bottom:26px;font-weight:600}
+.row{display:flex;gap:60px;align-items:flex-start;flex-wrap:wrap}
+
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:true}
+
+/* ---- the bubble under test ---- */
+.bcard{position:relative;border:var(--glow-w) solid transparent;
+  border-radius:var(--radius);border-bottom-left-radius:var(--corner);
+  width:var(--w);padding:var(--pad-y) var(--pad-x);
+  background:linear-gradient(#121216,#0e0e12) padding-box,
+    conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
+  animation:ang var(--glow-speed) linear infinite;
+  font-size:16px;line-height:1.35}
+@keyframes ang{to{--ang:1turn}}
+
+/* edge mode: each edge gets its own gradient direction (the "per vertex" look) */
+.glow-edge .bcard{
+  border-color:transparent;
+  background:var(--card);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255,255,255,.10),
+    inset 0 -2px 0 0 rgba(255,255,255,.06),
+    inset 2px 0 0 0 rgba(255,255,255,.08),
+    inset -2px 0 0 0 rgba(255,255,255,.06);
+}
+.bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;
+  font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--pc);text-transform:uppercase}
+.bcard .q{color:#FAFAFA}
+
+/* tail: hangs from the edge (--tail-lift lets you tuck it up) */
+.bcard::after{content:"";position:absolute;bottom:var(--tail-lift);left:var(--tail-inset);
+  width:var(--tail-w);height:var(--tail-h);z-index:0;
+  background:linear-gradient(180deg,#121216 0,#0e0e12 70%);
+  clip-path:polygon(0 0,100% 0,0 100%);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.bcard::before{content:"";position:absolute;bottom:var(--tail-lift);left:var(--tail-inset);
+  width:var(--tail-w);height:var(--tail-rim);z-index:2;opacity:var(--tail-rim-op);
+  background:linear-gradient(90deg,var(--pc),transparent);
+  clip-path:polygon(0 0,100% 0,0 100%)}
+
+/* mirrored variant (tail on the other corner) */
+.flip{border-radius:var(--radius);border-bottom-right-radius:var(--corner)}
+.flip::after{left:auto;right:var(--tail-inset);clip-path:polygon(0 0,100% 0,100% 100%)}
+.flip::before{left:auto;right:var(--tail-inset);clip-path:polygon(0 0,100% 0,100% 100%);
+  background:linear-gradient(270deg,var(--pc),transparent)}
+
+.panel{font-size:11px;line-height:1.9;color:#777;font-family:ui-monospace,monospace;max-width:340px}
+.panel b{color:#FFC107;font-weight:600}
+.swatch{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--pc);margin-right:6px}
+</style>
+</head>
+<body>
+<h1>bubble lab — edit the :root values above, or use DevTools</h1>
+<div class="row">
+  <div>
+    <div class="bcard">
+      <div class="h">@handle</div>
+      <div class="q">How do I keep up when I miss a day of the market?</div>
+    </div>
+  </div>
+  <div>
+    <div class="bcard flip">
+      <div class="h">@handle</div>
+      <div class="q">How do I keep up when I miss a day of the market?</div>
+    </div>
+  </div>
+  <div class="panel">
+    <span class="swatch"></span><b>--pc</b> platform glow<br>
+    <b>--radius</b> / <b>--corner</b> bubble + tail corner<br>
+    <b>--tail-w / --tail-h / --tail-inset</b> tail size &amp; position<br>
+    <b>--tail-lift</b> tuck the tail up under the edge<br>
+    <b>--tail-rim</b> glow sliver on the tail<br>
+    <b>--glow-mode</b> ring (moving conic) or edge (per-edge gradients)<br>
+    <b>--glow-speed</b> ring rotation period<br>
+    <b>--glow-w</b> ring thickness
+  </div>
+</div>
+<script>
+  // toggle per-edge gradient mode live
+  addEventListener('keydown',e=>{
+    if(e.key==='g'){
+      const on=document.body.classList.toggle('glow-edge');
+      document.documentElement.style.setProperty('--glow-mode',on?'edge':'ring');
+    }
+  });
+</script>
+</body>
+</html>
