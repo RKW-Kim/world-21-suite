@@ -20,7 +20,7 @@
   --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
   --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
   --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
-  --fd:'Inter',system-ui,sans-serif;
+  --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
   --ease-out:cubic-bezier(.22,1,.36,1);
@@ -37,10 +37,11 @@ svg{display:block}
   radial-gradient(900px 560px at 12% 88%,rgba(14,203,129,.04),transparent 60%),
   radial-gradient(circle at 50% 38%,#171717 0%,var(--ink) 78%)}
 .bg::after{content:"";position:absolute;inset:0;background-image:
-  radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
-  background-size:26px 26px;
-  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
-          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
+  linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:96px 96px;
+  -webkit-mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%);
+          mask-image:radial-gradient(circle at 50% 42%,#000 0%,transparent 78%)}
 
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
   font-family:var(--fd);font-weight:700;font-size:14px;letter-spacing:.08em;

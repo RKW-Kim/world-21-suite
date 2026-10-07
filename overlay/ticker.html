@@ -39,7 +39,7 @@
  :root{
   --yellow:#FFC107; --ink:#0a0a0a; --up:#0ECB81; --down:#F6465D;
   --fg:#FAFAFA; --meta:#9AA4BC;
-  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fd:'Inter',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
   --capw:calc(232px*var(--tks,1));
@@ -50,7 +50,7 @@
  body{font-family:var(--fd);-webkit-font-smoothing:antialiased}
  ::selection{background:#FFCE00;color:#1F1702}
 
-.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.09) 1px,transparent 1px);
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
     background-size:26px 26px;opacity:.7;
    -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
             mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
@@ -63,7 +63,7 @@
     which is correct; if it is narrower, the strip is clipped rather than
     having a cap sliced off. */
  .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    z-index:35;pointer-events:none;padding:0 var(--dockpad,4%)}
+    z-index:35;pointer-events:none;padding:0 var(--dockpad,1%)}
   /* width:100%, NOT fit-content. fit-content lets the pill resolve to the
     intrinsic width of its contents — and the marquee track inside .clip is
     ~4600px of nowrap text. It happened to settle at exactly the container
@@ -332,8 +332,9 @@
   var LIVE=(location.search.match(/[?&]live=([^&]*)/)||[])[1]!=='0';
   var fade=parseInt((location.search.match(/[?&]fade=(\d+)/)||[])[1],10);
   if(fade>=0&&fade<=400)document.documentElement.style.setProperty('--fade',fade+'px');
-  /* ?pad= moves the dock inset. 0 makes the strip truly edge-to-edge, which is
-     what you usually want with a full-frame video behind it.
+  /* ?pad= moves the dock inset. Default is a breathing 1% on each side; 0
+     makes the strip truly edge-to-edge, which is what you usually want with
+     a full-frame video behind it.
      Named dockPad, NOT pad: there is already a function pad(n) in this scope
      for the clock, and a var of the same name hoists over it — which silently
      killed the clock while every other value looked perfectly fine. */
