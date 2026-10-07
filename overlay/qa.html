@@ -47,10 +47,11 @@ svg{display:block}
   font-family:var(--fd);font-weight:700;font-size:14px;letter-spacing:.08em;
   text-transform:uppercase;white-space:nowrap}
 .chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--paper);
-  box-shadow:0 6px 24px rgba(0,0,0,.35)}
-.chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 24px rgba(0,0,0,.35)}
+.chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 .chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
-  box-shadow:0 8px 28px rgba(255,193,7,.28)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 28px rgba(255,193,7,.28)}
 .chip.mono{font-family:var(--fm);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
 .chip.mono b{color:var(--paper);font-weight:600}
 
@@ -78,8 +79,8 @@ to{opacity:.62;transform:scaleY(1)}}
 
 .head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
 .head h1{font-family:var(--fd);font-weight:700;font-size:76px;
-  letter-spacing:-.03em;line-height:1;color:var(--paper)}
-.head h1 .y{color:var(--yellow)}
+  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.head h1 .y{color:var(--yellow);text-shadow:0 0 26px rgba(255,193,7,.35)}
 .head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
 
 /* cycling tagline — the lineup signature move, pure CSS */
@@ -112,7 +113,7 @@ to{opacity:.62;transform:scaleY(1)}}
 .sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s);will-change:transform}
 .bcard{position:relative;background:rgba(20,20,20,.9);
   border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:13px 18px 15px;
-  box-shadow:0 12px 34px rgba(0,0,0,.42)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 34px rgba(0,0,0,.42)}
 .bcard::after{content:"";position:absolute;bottom:-7px;left:18px;width:13px;height:13px;
   background:rgba(20,20,20,.9);border-radius:2px;transform:rotate(45deg);
   border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -123,7 +124,8 @@ to{opacity:.62;transform:scaleY(1)}}
   font-size:12px;letter-spacing:.1em;color:var(--yellow);margin-bottom:5px;text-transform:uppercase}
 .bcard .h .qno{font-family:var(--fm);font-weight:400;font-size:10px;letter-spacing:.14em;
   color:var(--muted)}
-.bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper)}
+.bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
+  text-shadow:0 1px 8px rgba(0,0,0,.5)}
 @keyframes bubRise{
   0%{transform:translateY(460px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
   10%{opacity:1}
