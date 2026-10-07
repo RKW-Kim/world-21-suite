@@ -191,7 +191,7 @@ html[data-guide="1"] .guide{display:block}
     <!-- Shown only on file://. YouTube answers an embed from file:// with a
          bare "Error 153" and two buttons, which explains nothing. -->
     <div class="warn" id="warn" hidden>
-      <span class="wbig">you opened this as a file</span>
+      <span class="wbig">You opened this as a file</span>
       <span class="whint">youtube will not start an embedded player from a
         <b>file://</b> page &mdash; there is no referrer to send, so it answers
         <b>error 153</b>. nothing is wrong with these scenes. the watermark and
@@ -209,7 +209,7 @@ html[data-guide="1"] .guide{display:block}
         <rect x=".8" y=".8" width="44.4" height="30.4" rx="5" fill="none" stroke="#FFC107" stroke-width="1.4"/>
         <path d="M19 10.4v11.2L29.4 16z" fill="#FFC107"/>
       </svg>
-      <span class="big">video goes full frame</span>
+      <span class="big">Video goes full frame</span>
       <span class="hint"><b>?pl=hdf</b> · <b>?pl=menta</b> · <b>?pl=almond</b> · <b>?pl=all</b><br>
         or <b>?yt=</b> with any YouTube URL &nbsp;·&nbsp; plays automatically, muted<br>
         <b>?w=&amp;h=&amp;x=&amp;y=</b> shrink it to a panel</span>
@@ -239,6 +239,9 @@ html[data-guide="1"] .guide{display:block}
     return Math.max(0,Math.min(100,v));
   }
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
+  /* Half volume is the house default — loud enough to carry a room, quiet
+     enough not to fight the meeting. Override with ?vol=0-100. */
+  var VOL=Math.max(0,Math.min(100,parseInt(q('vol','50'),10)||0));
 
   if(q('guide')==='1')document.documentElement.dataset.guide='1';
 
@@ -308,7 +311,9 @@ html[data-guide="1"] .guide{display:block}
     return /^[A-Za-z0-9_-]{6,}$/.test(v)?v:'';
   }
 
-  var plName=dec(q('pl','')).trim().toLowerCase();
+  /* Default to the FULL set. Playing everything in order is the resting state
+     of this scene; a named set is the exception you opt into with ?pl=. */
+  var plName=(dec(q('pl','all')).trim().toLowerCase())||'all';
   var set=SETS[plName]||null;
   var raw=dec(q('yt','')).trim();
   /* A set loads its first entry and queues the rest, which is the form the
@@ -347,24 +352,96 @@ html[data-guide="1"] .guide{display:block}
   if(id){
     /* A set becomes YouTube's comma-list, which plays through in order.
        Per-item offsets cannot be expressed in that form, and ?start= has its
-       own problem — see the note where start is parsed. */
+       own problem — see the note where start is parsed.
+
+       enablejsapi=1 is what makes PageUp/PageDown and the volume/mute controls
+       possible at all: without the IFrame API this is just a picture of a
+       video with no reachable transport. cc_load_policy=0 keeps captions off.
+       modestbranding has been ignored by YouTube since 2018 and is left only
+       so the URL is readable; rel=0 is what actually suppresses end-cards. */
     var listIds=set?set.map(function(r){return r[1]}):[];
     var src='https://www.youtube.com/embed/'+encodeURIComponent(id)+
       (!isNaN(start)&&start>0?'&start='+start:'')+
       '?autoplay='+(q('play','1')!=='0'?1:0)+
-      '&mute='+(q('mute','1')!=='0'?1:0)+
+      '&mute='+(q('mute','0')!=='0'?1:0)+
+      '&volume='+(q('vol','50'))+
+      '&cc_load_policy=0&enablejsapi=1&iv_load_policy=3'+
       '&playsinline=1&rel=0&modestbranding=1'+
       '&controls='+(q('ctl','0')!=='0'?1:0)+
       (listIds.length?'&playlist='+encodeURIComponent(listIds.join(',')):'')+
       (q('list','')!==''?'&playlist='+encodeURIComponent(dec(q('list',''))):'');
     var f=document.createElement('iframe');
+    f.id='player';
     f.src=src; f.allow='autoplay; encrypted-media; picture-in-picture';
     f.allowFullscreen=true; f.title=lab;
     document.querySelector('.vp .screen').appendChild(f);
     document.getElementById('empty').hidden=true;
     document.getElementById('tag').hidden=false;
+    transport(f,!!listIds.length,VOL);
   }
 })();
+
+/* ── transport ────────────────────────────────────────────────────────────
+   Unmuted autoplay does not exist. Chrome and Safari both refuse to start
+   audible video without a user gesture, so asking for ?mute=0 and autoplay=1
+   in the same URL gets you a frame with a dead play button in it — which is
+   the exact failure that happens mid-presentation.
+
+   So: request unmuted, then arm the IFrame API and, on the FIRST keypress or
+   click, un-mute, set the volume and start. Every presenter does that within a
+   second of speaking, so in practice the frame is playing by the time anyone
+   looks at it. Until then it sits muted rather than stuck.
+
+   PageUp / PageDown skip the set. They are bound here AND accepted by
+   postMessage, because when this scene runs inside the presenter deck the
+   focused element is YouTube's cross-origin iframe, which swallows keys
+   before any document listener can see them. The deck re-broadcasts them. */
+function transport(f,hasList,VOL){
+  var player=null, armed=false;
+
+  /* Walk up: the deck hands us the event, but listen on both so the scene
+     also works opened on its own. */
+  function onKey(e){
+    var k=e.key;
+    if(k!=='PageUp'&&k!=='PageDown'&&k!=='ArrowLeft'&&k!=='ArrowRight'&&
+       k!==' '&&k!=='Enter') return;
+    var goBack=(k==='PageUp'||k==='ArrowLeft');
+    var goFwd  =(k==='PageDown'||k==='ArrowRight');
+    if(k===' '||k==='Enter'){ if(player){e.preventDefault();player.playVideo()} return; }
+    if(!player||!hasList) return;
+    e.preventDefault();
+    armed(); if(goBack)player.previousVideo(); else player.nextVideo();
+  }
+  function onMsg(e){
+    if(e.data&&e.data.type==='smiletv-key'&&/^Page/.test(e.data.key||''))
+      onKey({key:e.data.key,preventDefault:function(){}});
+  }
+
+  /* The one gesture that unblocks audible playback. */
+  function armed(){
+    if(armed) return; armed=true;
+    if(!player) return;
+    try{ player.unMute(); player.setVolume(VOL); player.playVideo(); }catch(_){}
+  }
+  addEventListener('keydown',onKey);
+  addEventListener('pointerdown',armed,{once:false});
+  addEventListener('message',onMsg);
+
+  /* The API script is only needed for transport. If it never arrives the video
+     still plays (muted, autoplayed) and the page degrades to a poster. */
+  var tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  tag.onerror=function(){};
+  document.head.appendChild(tag);
+  window.onYouTubeIframeAPIReady=function(){
+    try{
+      player=new YT.Player('player',{events:{onReady:function(e){
+        player=e.target;
+        try{ player.setVolume(VOL); }catch(_){}
+      }}});
+    }catch(_){}
+  };
+}
 </script>
 </body>
 </html>

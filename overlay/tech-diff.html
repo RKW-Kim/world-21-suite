@@ -71,8 +71,20 @@ to{opacity:.62;transform:scaleY(1)}}
 
 .lcol{position:absolute;left:120px;top:168px;z-index:5;max-width:620px}
 .lcol h1{font-family:var(--fd);font-weight:800;font-size:64px;line-height:1.04;
-  letter-spacing:-.03em;margin-top:22px;text-shadow:0 2px 18px rgba(0,0,0,.6)}
-.lcol h1 .y{text-shadow:0 0 26px rgba(255,193,7,.35)}
+  letter-spacing:-.03em;margin-top:22px;color:transparent}
+/* The gradient lives on the SPANS, not on the h1. On the h1 the gradient spans
+   the whole two-line box, so line one lands on the pale top of the ramp and
+   line two on the dark bottom — which reads as an accident rather than as two
+   differently-weighted lines. Per-span is also what starting.html does. */
+.lcol h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* --yellow-hot, NOT --hot. This file defines --yellow-hot; --hot is undefined
+   here, and an undefined var() invalidates the whole declaration at
+   computed-value time, so the gold fill silently vanished and the silver
+   underneath showed through. */
+.lcol h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--yellow-hot) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.28))}
 .lcol .chips{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap}
 
 .orbitWrap{position:absolute;left:calc(55% - 280px);top:calc(48% - 280px);width:560px;height:560px;z-index:4}
@@ -134,7 +146,7 @@ to{opacity:.62;transform:scaleY(1)}}
 
     <div class="lcol">
       <span class="chip solid rise" style="--rd:.1s">● SIGNAL TROUBLE</span>
-      <h1 class="rise" style="--rd:.2s">minor technical<br><span class="y">difficulties.</span></h1>
+      <h1 class="rise" style="--rd:.2s"><span class="g">Minor technical</span><br><span class="y">difficulties.</span></h1>
       <div class="chips rise" style="--rd:.34s">
         <span class="chip ghost">EPISODE <span data-ep>128</span> CONTINUES</span>
       </div>
@@ -219,7 +231,7 @@ to{opacity:.62;transform:scaleY(1)}}
   if(chips.length){setTimeout(checkNext,1800);}
 
   /* typewriter status line */
-  var lines=['everything is fine — hold on…','fixing a wire…','still here — smile intact.'];
+  var lines=['Everything is fine — hold on…','Fixing a wire…','Still here — smile intact.'];
   var tt=document.getElementById('typeTxt');
   if(tt){
     (function type(li,ci,del){

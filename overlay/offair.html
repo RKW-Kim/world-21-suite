@@ -63,19 +63,26 @@ svg{display:block}
    never, but the card is not dead.
 
    No halo at all. A lit face IS the live signal and this one is not lit. ---- */
-.markwrap{position:relative;width:190px;height:190px;margin-bottom:40px;
+.markwrap{position:relative;width:132px;height:132px;margin-bottom:30px;
   animation:breathe 14s var(--eio) infinite}
 @keyframes breathe{0%,100%{opacity:.26}50%{opacity:.38}}
 .mark{width:100%;height:100%}
 .mark svg{width:100%;height:100%;overflow:visible}
 
-/* ---- state label ---- */
-.state{display:inline-flex;align-items:center;gap:14px;
-  font-family:var(--fm);font-size:13px;font-weight:600;letter-spacing:.52em;
-  color:var(--muted);padding-left:.52em;text-shadow:0 2px 10px rgba(0,0,0,.55)}
-.led{width:9px;height:9px;border-radius:50%;background:var(--faint);
-  animation:blip 4.2s var(--eio) infinite}
-@keyframes blip{0%,100%{opacity:.22}50%{opacity:.7}}
+/* ---- headline
+   The same gradient-clipped headline the rest of the kit uses — but in SILVER
+   ONLY. Yellow is the live signal and nothing on this scene is live, so the gold
+   stop and the glow are both deliberately absent. The type is the right shape;
+   the colour is the right state. This was the scene's biggest problem: it had a
+   small mono label doing the work of a headline, and no typographic anchor. */
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(60px,7.2vw,120px);
+  line-height:1.02;letter-spacing:-.045em;margin:26px 0 0;white-space:nowrap;
+  background:linear-gradient(180deg,#f4f4f8 20%,#6c6c77 94%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* the second word sits a touch lighter so the two-word phrase has internal
+   structure without introducing a second colour */
+h1 .g2{background:linear-gradient(180deg,#c8c8d2 16%,#787883 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* ---- the clock. The one thing this scene is genuinely for.
    Tracking here is POSITIVE on purpose. -0.05em is correct for a headline but
@@ -83,38 +90,40 @@ svg{display:block}
    bearings, so at 168px a negative value pulls the pair together and "11"
    reads as one blob. Tabular figures plus a hair of positive space keeps every
    pair distinct. ---- */
-.clock{margin-top:34px;font-family:var(--fd);font-weight:800;
-  font-size:clamp(76px,10vw,168px);line-height:.94;letter-spacing:.012em;
+.clock{margin-top:26px;font-family:var(--fd);font-weight:800;
+  font-size:clamp(60px,7.4vw,122px);line-height:.94;letter-spacing:.012em;
   background:linear-gradient(180deg,#fafafa 22%,#7e7e86 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:0 3px 24px rgba(0,0,0,.6)}
 
-/* ---- THE CENTREPIECE: a plug that keeps failing to seat.
-   This is the off-air equivalent of the cable idea tech-diff uses. The whole
-   loop is designed around one rule: at EVERY moment of the cycle the two halves
-   are apart. They drift out, try to come back, and stop just short — an
-   attempted reconnect that never lands. So someone arriving at second 1 or
-   second 4000 reads the same thing: unplugged, and still trying.
+/* ---- THE CENTREPIECE: a broadcast emitter with its transmission struck out.
+   Replaces a hand-drawn electrical plug, which read as household power — the
+   wrong register entirely for a channel.
 
-   The spark is deliberately not yellow. Yellow is the kit's live signal and
-   nothing on this scene is live, so the arc is a dim warm white. ---- */
-.plugwrap{position:relative;width:300px;height:74px;margin:34px 0 26px;opacity:.5}
-.plugwrap svg{width:100%;height:100%;overflow:visible}
-.pl-line{fill:none;stroke:var(--faint);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-/* the socket's standby pip — the machine is on, the signal is not */
-.pip{fill:var(--faint);animation:pip 6.4s var(--eio) infinite}
-@keyframes pip{0%,42%{opacity:.12}50%{opacity:.75}58%,100%{opacity:.12}}
-.socket{animation:driftL 6.4s var(--eio) infinite}
-.plugbody{animation:driftR 6.4s var(--eio) infinite}
-@keyframes driftL{0%,100%{transform:translateX(0)}34%{transform:translateX(-5px)}
-  62%{transform:translateX(2px)}78%{transform:translateX(-3px)}}
-@keyframes driftR{0%,100%{transform:translateX(0)}34%{transform:translateX(5px)}
-  62%{transform:translateX(-2px)}78%{transform:translateX(3px)}}
-/* an arc at the gap, only at the moment of the closest approach */
-.arc{fill:var(--fg);opacity:0;animation:arc 6.4s linear infinite}
-@keyframes arc{0%,44%{opacity:0;transform:scale(.5)}48%{opacity:.7;transform:scale(1)}
-  52%{opacity:0;transform:scale(1.4)}100%{opacity:0;transform:scale(.5)}}
-.spark{transform-box:fill-box;transform-origin:center}
+   Tabler Icons "broadcast-off", MIT licence (c) Paweł Kuna.
+   https://github.com/tabler/tabler-icons  tags: no-signal, offline,
+   transmission, disabled. It is the only candidate found whose own geometry IS
+   a transmitter: concentric emission arcs radiating from a carrier dot.
+
+   The FIRST version animated the story in order — arcs acquire, then the slash
+   strikes. It looked good and it was wrong: between ~26% and ~35% of the cycle
+   the arcs were fully drawn with no slash, which for a couple of seconds reads
+   as "signal is back". On the one scene whose entire job is to make it
+   impossible to misread the live state, that is unacceptable. It also broke the
+   original rule for this scene: at every instant, including second 1 and second
+   4000, it must read the same thing.
+
+   So the geometry is now static and always fully struck through. The only
+   motion is the carrier dot breathing, which is the residual "there is a machine
+   on, there is no signal" state rather than a state change. */
+.sigwrap{position:relative;width:224px;height:224px;margin:26px 0 10px;opacity:.72}
+.sigwrap svg{width:100%;height:100%;overflow:visible}
+.sigwrap path{fill:none;stroke:var(--faint);stroke-width:.45;
+  stroke-linecap:round;stroke-linejoin:round}
+/* the only motion: a carrier that is present but carries nothing */
+.sigwrap .car{stroke:none;fill:var(--faint);animation:carrier 4.6s var(--eio) infinite}
+@keyframes carrier{0%,100%{opacity:.20}50%{opacity:.62}}
+.sigwrap .cut{stroke:var(--fg);stroke-width:.62;opacity:.9}
 .next{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.3em;
   color:var(--faint);text-transform:uppercase}
 .back{margin-top:20px;font-family:var(--fd);font-weight:500;
@@ -123,7 +132,7 @@ svg{display:block}
 .back .over{color:var(--muted)}
 
 /* ---- the instruction that makes this scene worth having ---- */
-.note{margin-top:40px;display:inline-flex;align-items:center;gap:11px;
+.note{margin-top:30px;display:inline-flex;align-items:center;gap:11px;
   padding:9px 17px;border:1px solid var(--line);border-radius:999px;
   background:rgba(255,255,255,.022);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.4);
@@ -137,9 +146,8 @@ svg{display:block}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important}
   .rise{opacity:1}
-  .markwrap{opacity:.34}
-  .plugwrap .socket,.plugwrap .plugbody,.plugwrap .pip,.plugwrap .arc{animation:none}
-  .plugwrap .pip{opacity:.3}
+  .sigwrap{opacity:.72}
+  .sigwrap .car{opacity:.4}
 }
 </style>
 </head>
@@ -155,36 +163,22 @@ svg{display:block}
       </div>
     </div>
 
-    <div class="state rise" style="animation-delay:90ms"><i class="led"></i>OFF AIR</div>
+<h1 class="rise" style="animation-delay:60ms">Off <span class="g2">air.</span></h1>
 
     <div class="clock num" id="clock">--:--</div>
 
-    <div class="plugwrap rise" style="animation-delay:220ms" aria-hidden="true">
-      <svg viewBox="0 0 300 74" xmlns="http://www.w3.org/2000/svg">
-        <!-- socket, facing right. the pin slots are notches IN the face, not
-             marks floating past it, which is what the first pass drew -->
-        <g class="socket">
-          <path class="pl-line" d="M98 23H60a9 9 0 0 0-9 9v10a9 9 0 0 0 9 9h38"/>
-          <path class="pl-line" d="M98 23v28"/>
-          <path class="pl-line" d="M98 30h-7M98 39h-7"/>
-          <circle class="pip" cx="74" cy="37" r="2.4"/>
-        </g>
-        <!-- plug, facing left. prongs run all the way back into the body so it
-             reads as one object, and the tips never reach the socket -->
-        <g class="plugbody">
-          <path class="pl-line" d="M206 23h36a9 9 0 0 1 9 9v10a9 9 0 0 1-9 9h-36"/>
-          <path class="pl-line" d="M206 23v28"/>
-          <path class="pl-line" d="M206 30h-22M206 39h-22"/>
-        </g>
-        <!-- the gap, and the arc that jumps it -->
-        <g class="spark">
-          <path class="arc" d="M146 27l7 10-9 4 8 9"/>
-        </g>
+    <div class="sigwrap rise" style="animation-delay:200ms" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <!-- Tabler Icons "broadcast-off", MIT. https://github.com/tabler/tabler-icons -->
+        <path class="a1" d="M18.364 19.364a9 9 0 0 0 -9.721 -14.717m-2.488 1.509a9 9 0 0 0 -.519 13.208"/>
+        <path class="a2" d="M15.536 16.536a5 5 0 0 0 -3.536 -8.536m-3 1a5 5 0 0 0 -.535 7.536"/>
+        <circle class="car" cx="12.5" cy="12.5" r="1.15"/>
+        <path class="cut" d="M3 3l18 18"/>
       </svg>
     </div>
 
-    <div class="next rise" style="animation-delay:260ms">next session</div>
-    <div class="back rise" id="back" style="animation-delay:320ms">on air most evenings &middot; smile<b>.co.ke</b></div>
+    <div class="next rise" style="animation-delay:260ms">Next session</div>
+    <div class="back rise" id="back" style="animation-delay:320ms">On air most evenings &middot; smile<b>.co.ke</b></div>
 
     <div class="note rise" style="animation-delay:420ms">NOT TRANSMITTING &middot; SAFE TO LEAVE ON PROGRAM</div>
 
@@ -245,8 +239,8 @@ svg{display:block}
     if(target){
       var left=dhm(target-d);
       backEl.innerHTML = left
-        ? 'we are back in <b>'+left+'</b>'
-        : '<span class="over">the session should be open &mdash; go live</span>';
+        ? 'We are back in <b>'+left+'</b>'
+        : '<span class="over">The session should be open &mdash; go live</span>';
       backEl.classList.add('counting');
     }
   }

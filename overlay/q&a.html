@@ -56,51 +56,49 @@ svg{display:block}
   background-position:0 0,13px 34px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 42%,transparent 6%,#000 34%,#000 66%,transparent 97%);
           mask-image:radial-gradient(ellipse at 50% 42%,transparent 6%,#000 34%,#000 66%,transparent 97%)}
-/* ---- the runway ----
-   A hairline running out from under the CTA, with a cut mark at dead centre.
-   The plane launches off that cut and flies to the right cheek of the face.
-   One pass every 11s with a long rest: on a tight loop it reads as a loading
-   spinner. It sits at z-index 1 so it passes BEHIND the comment bubbles and
-   slides under the disc on arrival, which is what makes it read as delivered
-   rather than merely animated. */
-.runway{position:absolute;left:0;right:0;top:428px;height:1px;z-index:1;pointer-events:none}
-.runway i{position:absolute;left:50%;top:0;width:260px;height:1px;margin-left:-130px;
-  background:linear-gradient(90deg,transparent,rgba(255,193,7,.30) 45%,rgba(255,193,7,.30) 55%,transparent)}
-.runway b{position:absolute;left:50%;top:-3px;width:1px;height:7px;margin-left:-.5px;
-  background:rgba(255,193,7,.5);transform-origin:50% 100%}
-.plane{position:absolute;left:50%;top:-7px;width:24px;height:24px;margin-left:-12px;
-  opacity:0;animation:fly 11s cubic-bezier(.42,0,.32,1) infinite;
+/* ---- the aeroplane: free flight, not a fixed path ----
+   The runway and the cut mark are gone. A plane that launches from a marked
+   strip and then wanders is incoherent — the strip only made sense while the
+   path was deterministic. It now roams the frame the way a screensaver's
+   bouncing logo does: constant speed, elastic wall bounces, and an occasional
+   random swerve. Movement with no cause is exactly what a corner of a frame
+   wants, because nobody is reading this part of the screen.
+
+   Rotation is derived from the velocity vector, never hand-tuned per keyframe.
+   The old path rotated 8deg->68deg while travelling down and right, so the
+   aeroplane flew visibly SIDEWAYS for most of its path. Deriving the angle
+   from atan2(dy,dx) is the only way to keep the nose pointing where it is
+   going.
+
+   Phosphor Icons "paper-plane-tilt" points 17.6deg above the +x axis in its own
+   256 viewBox, so that offset is added to every angle. Shortest-arc smoothing
+   on the rotation turns each bounce and swerve into a bank rather than a snap. */
+.plane{position:absolute;left:0;top:0;width:26px;height:26px;z-index:1;
+  pointer-events:none;will-change:transform;
   filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
-.plane svg{width:100%;height:100%;display:block}
-@keyframes fly{
-  0%{opacity:0;transform:translate(0,0) rotate(8deg) scale(.86)}
-  5%{opacity:.92}
-  /* banks into the arc rather than holding a constant angle */
-  30%{transform:translate(28px,54px) rotate(34deg) scale(.98)}
-  56%{transform:translate(100px,168px) rotate(58deg) scale(1)}
-  /* stops just OUTSIDE the disc edge (face right edge is x=1092 at this y).
-     Flying deeper just buries it behind the disc, which reads as the plane
-     vanishing rather than arriving. */
-  64%{opacity:.95;transform:translate(134px,196px) rotate(64deg) scale(1)}
-  71%{opacity:0;transform:translate(144px,208px) rotate(68deg) scale(.94)}
-  100%{opacity:0;transform:translate(0,0) rotate(8deg) scale(.86)}
-}
-/* the cut flares once as the plane leaves */
-.runway b{animation:cut 11s cubic-bezier(.42,0,.32,1) infinite}
-@keyframes cut{
-  0%,3%{opacity:0;transform:scaleY(.4)}
-  6%{opacity:1;transform:scaleY(1.5)}
-  14%,100%{opacity:.5;transform:scaleY(1)}
-}
-.chip.brk{position:relative;background:none;border:0;border-radius:0;
-  padding:15px 22px 15px 24px;color:var(--yellow)}
-.chip.brk.mono{color:var(--muted)}
-.chip.brk::before,.chip.brk::after{content:"";position:absolute;width:11px;height:11px;
-  border:1.5px solid currentColor}
-.chip.brk::before{left:0;top:0;border-right:0;border-bottom:0}
-.chip.brk::after{right:0;bottom:0;border-left:0;border-top:0}
-.chip.brk.gold{color:var(--yellow)}
-.chip.brk.mono b{color:var(--paper);font-weight:600}
+.plane svg{width:100%;height:100%;display:block;overflow:visible}
+
+/* ---- the CTA pill
+   Back to a pill. The gradient carries the fill, the inset highlight gives it a
+   surface, a fine diagonal sheen gives it texture rather than a flat wash, and
+   the shadow is two parts: a tight dark contact shadow directly underneath plus
+   a wide soft gold bloom. The headlines rely on exactly that separation from
+   the dark stage, so the button should use the same trick rather than a single
+   uniform drop shadow. */
+.cta{position:relative;display:inline-flex;align-items:center;gap:10px;
+  padding:13px 27px;border-radius:999px;overflow:hidden;white-space:nowrap;
+  font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink);
+  background:linear-gradient(135deg,#FFE07A 0%,var(--yellow) 46%,var(--hot) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),
+             inset 0 -1px 0 rgba(0,0,0,.24),
+             0 3px 8px rgba(0,0,0,.55),
+             0 16px 38px rgba(255,193,7,.20)}
+.cta::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,
+    rgba(255,255,255,.11) 0 2px,rgba(255,255,255,0) 2px 5px);
+  mix-blend-mode:overlay}
+.cta>span{position:relative}
 
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
   font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.08em;
@@ -223,14 +221,20 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
   text-shadow:0 1px 8px rgba(0,0,0,.5)}
 @keyframes bubRise{
-  0%{transform:translateY(460px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
+  /* The travel window, not the opacity curve, is what keeps bubbles off the
+     headline. .head occupies roughly y=180..490 (headline, gold rule, tagline,
+     CTA pill), so a bubble must be fully transparent before it reaches y=500.
+
+     Total travel is 560px (+420 -> -140). At 52% -- the last fully-opaque
+     moment -- a bubble is at top+129, so any bubble whose resting top is >= 371
+     is still below the CTA when it goes invisible. Before this the travel was
+     1320px and opacity held to 62%, which put an opaque bubble at y=72, straight
+     through "The Floor is Yours." */
+  0%{transform:translateY(420px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
   10%{opacity:1}
-  /* fade out EARLY and leave the top band empty: the clock chip + live chip
-     own the top-right, and the h1 owns the top-centre. Bubbles that stay
-     opaque all the way to -860px drove straight through both. */
-  62%{opacity:1}
-  80%{opacity:0}
-  100%{transform:translateY(-860px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
+  52%{opacity:1}
+  68%{opacity:0}
+  100%{transform:translateY(-140px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
 }
 @keyframes bubSway{from{transform:translateX(calc(var(--sw,12px) * -1))}to{transform:translateX(var(--sw,12px))}}
 .far .sway{opacity:.78}
@@ -272,13 +276,11 @@ to{opacity:.62;transform:scaleY(1)}}
         <span>No Dumb Questions — <b>Only Good Ones</b>.</span>
       </p>
       <div class="row">
-        <span class="chip brk gold rise" style="--rd:.2s">Drop Questions in Chat</span>
+        <span class="cta rise" style="--rd:.2s"><span>Drop Questions in Chat</span></span>
       </div>
     </div>
 
-    <div class="runway" aria-hidden="true">
-      <i></i><b></b>
-      <span class="plane">
+    <span class="plane" aria-hidden="true">
         <!-- Phosphor Icons "paper-plane-tilt" (fill), MIT licence.
              https://github.com/phosphor-icons/core
              Swept wings and a real fuselage notch -- it reads as a paper
@@ -293,8 +295,7 @@ to{opacity:.62;transform:scaleY(1)}}
           </defs>
           <path fill="url(#plg)" d="M231.4,44.34s0,.1,0,.15l-58.2,191.94a15.88,15.88,0,0,1-14,11.51q-.69,.06-1.38.06a15.86,15.86,0,0,1-14.42-9.15L107,164.15a4,4,0,0,1,.77-4.58l57.92-57.92a8,8,0,0,0-11.31-11.31L96.43,148.26a4,4,0,0,1-4.58,.77L17.08,112.64a16,16,0,0,1,2.49-29.8l191.94-58.2.15,0A16,16,0,0,1,231.4,44.34Z"/>
         </svg>
-      </span>
-    </div>
+    </span>
 
     <div class="hubA rise" style="--rd:.25s">
       <div class="face" aria-hidden="true">
@@ -316,10 +317,10 @@ to{opacity:.62;transform:scaleY(1)}}
     <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
       <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
     </div>
-    <div class="bub" style="left:1440px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
+    <div class="bub" style="left:1388px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
       <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@creatormargin</b></span><span class="q">What do you actually listen to on the way in?</span></div></div>
     </div>
-    <div class="bub" style="left:1620px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
+    <div class="bub" style="left:1556px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
       <div class="sway"><div class="bcard flip x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="gold">@bizbasics</b></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
     </div>
     <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
@@ -328,14 +329,114 @@ to{opacity:.62;transform:scaleY(1)}}
     <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
       <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="silver">@founderfaqs</b></span><span class="q">How do you handle burnout on a long session?</span></div></div>
     </div>
-    <div class="bub far" style="left:60px;top:300px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
+    <div class="bub far" style="left:60px;top:430px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
       <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
     </div>
     <p class="sig">smile<b>.co.ke</b></p>
   </section>
 </div>
 <script>
-/* Nothing to do here now that the episode chip is gone. The scene is entirely
-   CSS on the compositor — no clock, no data, no params. */
+/* ---- the aeroplane's flight model ----
+   The one rAF loop in the kit. Everything else here is CSS on the compositor;
+   this cannot be, because genuinely unpredictable motion needs per-frame
+   integration rather than a keyframed path.
+
+   Physics, in the spirit of the bouncing-logo screensaver: constant speed,
+   perfectly elastic wall bounces, and an occasional random swerve. The swerve
+   keeps the bounce from settling into a repetitive two-line orbit, which is
+   what makes the DVD logo feel random even though its bounces are deterministic.
+
+   Heading is derived from the velocity vector every frame — atan2(dy,dx) plus
+   the icon's own 17.6deg built-in tilt.
+
+   The velocity is EASED, not just the angle. Easing only the rotation is the
+   obvious approach and it is wrong: at a wall bounce the heading changes by up
+   to 180deg instantly, so the nose spends several frames pointing backwards
+   while the plane is already travelling the other way — measured at 175deg of
+   error before this change. Easing the velocity vector instead means the plane
+   arcs into the wall and curves out of it, the nose is by definition pointing
+   where it is going, and the turn costs nothing extra. */
+(function(){
+  var plane=document.querySelector('.plane'), stage=document.querySelector('.stage');
+  if(!plane||!stage) return;
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){
+    plane.style.transform='translate(900px,220px) rotate(17.6deg)';
+    return;
+  }
+
+  var ICON_TILT=17.6;      /* the Phosphor path points this far above +x */
+  var SPEED=205;           /* px per second */
+  var PAD=44;              /* keep this far off the frame edge */
+  var SWERVE=0.30;         /* swerves per second, on average */
+  var TURN=15;             /* how fast the velocity vector swings, 1/s */
+
+  var W=0,H=0,x=0,y=0,vx=0,vy=0,tx=0,ty=0;
+
+  function setHeading(a,s){
+    tx=Math.cos(a)*s; ty=Math.sin(a)*s;
+  }
+
+  function measure(){
+    W=stage.clientWidth||1920; H=stage.clientHeight||1080;
+    if(!x){                       /* first layout only */
+      x=W*0.5; y=H*0.34;
+      setHeading(Math.random()*Math.PI*2,SPEED);
+      vx=tx; vy=ty;
+    }
+  }
+
+  function step(dt){
+    /* random swerve. A full random heading is wrong here: it can land exactly
+       opposite the current one. A real aeroplane turns through an angle, so the
+       swerve rotates the CURRENT heading by a limited amount — mostly a small
+       correction, occasionally a committed turn. */
+    if(Math.random()<dt*SWERVE){
+      var mag=Math.random()<0.22?62:26;
+      setHeading(Math.atan2(vy,vx)+(Math.random()<0.5?-1:1)*mag*Math.PI/180,
+                 SPEED*(0.85+Math.random()*0.3));
+    }
+
+    /* ease the velocity toward its target: this is what turns a wall hit into
+       an arc rather than a snap, and it keeps the nose locked to travel */
+    var k=Math.min(1,dt*TURN);
+    vx+=(tx-vx)*k; vy+=(ty-vy)*k;
+
+    /* Re-normalise the magnitude every frame. Easing direction alone lets the
+       speed collapse to nearly nothing whenever a bounce and a swerve land close
+       together — measured at 25px/s against a 205px/s cruise — and the plane
+       appears to hang in the air mid-turn. Pinning the magnitude to the target's
+       is what makes this a coordinated turn at constant speed, which is both
+       correct and what the DVD logo reads as. */
+    var sp=Math.hypot(vx,vy), want=Math.hypot(tx,ty);
+    if(sp>0.001){ vx=vx/sp*want; vy=vy/sp*want; }
+    else { vx=tx; vy=ty; }
+
+    x+=vx*dt; y+=vy*dt;
+
+    /* bounce off the target, not the current velocity, so the arc is not
+       re-triggered every frame while the plane is still curving out */
+    var hit=0;
+    if(x<PAD){x=PAD;tx=Math.abs(tx);hit=1}
+    else if(x>W-PAD){x=W-PAD;tx=-Math.abs(tx);hit=1}
+    if(y<PAD){y=PAD;ty=Math.abs(ty);hit=1}
+    else if(y>H-PAD){y=H-PAD;ty=-Math.abs(ty);hit=1}
+    if(hit) setHeading(Math.atan2(ty,tx),Math.hypot(tx,ty));
+
+    var ang=Math.atan2(vy,vx)*180/Math.PI+ICON_TILT;
+    plane.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) rotate('+ang.toFixed(2)+'deg)';
+  }
+
+  var last=0;
+  function loop(now){
+    if(!last) last=now;
+    var dt=Math.min(0.05,(now-last)/1000);   /* clamp after a tab stall */
+    last=now;
+    measure(); step(dt);
+    requestAnimationFrame(loop);
+  }
+  measure();
+  plane.style.transform='translate('+x+'px,'+y+'px)';
+  requestAnimationFrame(loop);
+})();
 </script>
 </body></html>
