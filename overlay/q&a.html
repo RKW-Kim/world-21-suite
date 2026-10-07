@@ -279,11 +279,19 @@ to{opacity:.62;transform:scaleY(1)}}
     <div class="runway" aria-hidden="true">
       <i></i><b></b>
       <span class="plane">
-        <!-- paper aeroplane: two flat facets with a faint gold nose -->
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 2 2 11.2l8.4 2.4L22 2Z" fill="#e8e8ee"/>
-          <path d="M22 2 10.4 13.6 12.8 22 22 2Z" fill="#b9b9c4"/>
-          <path d="M22 2 10.4 13.6 22 2Z" fill="#ffd100" opacity=".55"/>
+        <!-- Phosphor Icons "paper-plane-tilt" (fill), MIT licence.
+             https://github.com/phosphor-icons/core
+             Swept wings and a real fuselage notch -- it reads as a paper
+             aeroplane where a plain send-arrow reads as a dart. -->
+        <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="plg" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#8e8e9c"/>
+              <stop offset=".55" stop-color="#d8d8e2"/>
+              <stop offset="1" stop-color="#ffd100"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#plg)" d="M231.4,44.34s0,.1,0,.15l-58.2,191.94a15.88,15.88,0,0,1-14,11.51q-.69,.06-1.38.06a15.86,15.86,0,0,1-14.42-9.15L107,164.15a4,4,0,0,1,.77-4.58l57.92-57.92a8,8,0,0,0-11.31-11.31L96.43,148.26a4,4,0,0,1-4.58,.77L17.08,112.64a16,16,0,0,1,2.49-29.8l191.94-58.2.15,0A16,16,0,0,1,231.4,44.34Z"/>
         </svg>
       </span>
     </div>

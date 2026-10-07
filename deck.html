@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SmileTV — Presenter Deck</title>
+<style>
+  :root{
+    --paper:#e8e8ee; --dim:#a1a1aa; --faint:#6b6b74;
+    --yellow:#ffd100; --bg:#08080b; --panel:#101016;
+    --line:rgba(255,255,255,.09);
+    --fd:'Inter',system-ui,sans-serif;
+    --fd-m:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--paper);font-family:var(--fd);
+    overflow:hidden;-webkit-font-smoothing:antialiased}
+
+  /* ---- stage: every scene renders at a fixed 1920x1080 then scales to fit,
+     so all six look identical regardless of window size or projector ---- */
+  #stage{position:fixed;inset:0;background:
+    radial-gradient(120% 120% at 50% 40%,#101015 0%,#08080b 60%,#050507 100%)}
+  /* absolutely centred rather than grid-centred: the wrap is deliberately larger
+     than the viewport before scaling, and an oversized grid item overflows
+     asymmetrically on some engines. translate(-50%,-50%) cannot drift. */
+  #wrap{position:absolute;left:50%;top:50%;width:1920px;height:1080px;
+    transform-origin:center center;box-shadow:0 40px 120px rgba(0,0,0,.7)}
+  #frame{width:1920px;height:1080px;border:0;display:block;background:#0a0a0d}
+
+  /* ---- chrome: hidden while presenting (H), shown by default for rehearsal ---- */
+  #chrome{position:fixed;inset:0;pointer-events:none;z-index:5}
+  .pe{pointer-events:auto}
+
+  /* top-left: what am I looking at */
+  #tag{position:absolute;top:18px;left:20px;display:flex;align-items:center;gap:12px;
+    padding:9px 15px;background:rgba(8,8,11,.82);border:1px solid var(--line);
+    border-radius:2px;backdrop-filter:blur(8px)}
+  #tag .n{font-family:var(--fd-m);font-size:11px;color:var(--bg);background:var(--yellow);
+    width:19px;height:19px;display:grid;place-items:center;border-radius:1px;font-weight:700}
+  #tag .t{font-size:13px;font-weight:700;letter-spacing:.01em}
+  #tag .s{font-family:var(--fd-m);font-size:11px;color:var(--dim)}
+
+  /* top-right: pace */
+  #pace{position:absolute;top:18px;right:20px;display:flex;gap:20px;align-items:center;
+    padding:9px 16px;background:rgba(8,8,11,.82);border:1px solid var(--line);
+    border-radius:2px;backdrop-filter:blur(8px);font-family:var(--fd-m);font-size:11px}
+  #pace b{font-size:15px;font-weight:600;letter-spacing:.02em}
+  #pace .lbl{color:var(--faint);text-transform:uppercase;letter-spacing:.12em;font-size:9px;
+    display:block;margin-bottom:3px}
+  #pace .over b{color:#ff5f56}
+  #pace .over .lbl{color:#ff5f56}
+
+  /* bottom rail: the six, in order */
+  #rail{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;
+    gap:5px;padding:6px;background:rgba(8,8,11,.86);border:1px solid var(--line);
+    border-radius:2px;backdrop-filter:blur(8px)}
+  #rail button{pointer-events:auto;font-family:var(--fd-m);font-size:10.5px;color:var(--dim);
+    background:none;border:0;border-left:1px solid var(--line);padding:8px 13px;cursor:pointer;
+    letter-spacing:.03em;white-space:nowrap;transition:color .16s,background .16s}
+  #rail button:first-child{border-left:0}
+  #rail button:hover{color:var(--paper);background:rgba(255,255,255,.04)}
+  #rail button.on{color:var(--bg);background:var(--yellow);font-weight:700}
+  #rail button.done{color:var(--yellow)}
+  #rail button.done.on{color:var(--bg)}
+
+  /* notes drawer */
+  #notes{position:absolute;top:0;right:0;bottom:0;width:min(46vw,760px);
+    background:rgba(9,9,13,.965);border-left:1px solid var(--line);
+    backdrop-filter:blur(18px);display:flex;flex-direction:column;
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+  #notes.on,body.notes #notes{transform:translateX(0)}
+  #nh{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;
+    justify-content:space-between;align-items:center;flex:0 0 auto}
+  #nh h2{font-size:14px;font-weight:800;letter-spacing:.01em}
+  #nh span{font-family:var(--fd-m);font-size:10px;color:var(--dim);letter-spacing:.08em}
+  #nb{overflow-y:auto;padding:22px 24px 40px;flex:1 1 auto;scrollbar-width:thin}
+  #nb h3{font-family:var(--fd-m);font-size:10px;color:var(--yellow);letter-spacing:.16em;
+    text-transform:uppercase;margin:22px 0 10px;font-weight:500}
+  #nb h3:first-child{margin-top:0}
+  #nb p{font-size:15.5px;line-height:1.66;color:#d2d2da;margin-bottom:13px;
+    font-weight:400;max-width:62ch}
+  #nb p.say{color:var(--paper)}
+  #nb p.say::before{content:"“";color:var(--yellow);font-weight:800;margin-right:1px}
+  #nb p.say::after{content:"”";color:var(--yellow);font-weight:800;margin-left:1px}
+  #nb p.note{color:var(--dim);font-size:14px;font-style:italic}
+  #nb em{color:var(--yellow);font-style:normal;font-weight:600}
+  #nb strong{color:#fff;font-weight:700}
+
+  /* help */
+  #help{position:absolute;inset:0;display:none;place-items:center;background:rgba(5,5,7,.9);
+    backdrop-filter:blur(6px);pointer-events:auto}
+  #help.on{display:grid}
+  #help .card{max-width:660px;padding:38px 42px;background:var(--panel);
+    border:1px solid var(--line);border-radius:3px}
+  #help h2{font-size:13px;font-family:var(--fd-m);color:var(--yellow);letter-spacing:.16em;
+    text-transform:uppercase;margin-bottom:22px;font-weight:500}
+  #help dl{display:grid;grid-template-columns:auto 1fr;gap:11px 22px;align-items:baseline}
+  #help dt{font-family:var(--fd-m);font-size:11.5px;color:var(--paper);white-space:nowrap}
+  #help dd{font-size:13.5px;color:var(--dim)}
+  #help .k{display:inline-block;min-width:19px;padding:2px 6px;margin-right:4px;text-align:center;
+    background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:2px;
+    font-family:var(--fd-m);font-size:10.5px}
+
+  /* clean mode: everything except the scene disappears */
+  body.clean #chrome{display:none}
+
+  /* thin edge marker so you know which scene you're on when chrome is hidden */
+  body.clean #wrap{box-shadow:0 0 0 1px rgba(255,209,0,.14),0 40px 120px rgba(0,0,0,.7)}
+
+  body.hidechrome #tag,body.hidechrome #rail{opacity:0;pointer-events:none;transition:opacity .2s}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="wrap">
+    <iframe id="frame" src="overlay/starting.html" title="scene"
+            allow="autoplay; fullscreen"></iframe>
+  </div>
+</div>
+
+<div id="chrome">
+  <div id="tag" class="pe">
+    <span class="n" id="num">1</span>
+    <span class="t" id="name">Starting</span>
+    <span class="s" id="file">starting.html</span>
+  </div>
+
+  <div id="pace" class="pe">
+    <div id="cScene"><span class="lbl">Scene</span><b>0:00</b></div>
+    <div id="cTotal"><span class="lbl">Total</span><b>0:00</b></div>
+    <div id="cPlan"><span class="lbl">Target</span><b>15:00</b></div>
+  </div>
+
+  <div id="rail" class="pe"></div>
+
+  <aside id="notes" class="pe">
+    <div id="nh"><h2 id="nt">Starting</h2><span id="nd">0:00</span></div>
+    <div id="nb"></div>
+  </aside>
+
+  <div id="help" class="pe">
+    <div class="card">
+      <h2>Keys</h2>
+      <dl>
+        <dt><span class="k">1</span>–<span class="k">6</span></dt><dd>Jump straight to a scene</dd>
+        <dt><span class="k">Enter</span> <span class="k">→</span> <span class="k">Space</span></dt><dd>Next scene</dd>
+        <dt><span class="k">←</span> <span class="k">Backspace</span></dt><dd>Previous scene</dd>
+        <dt><span class="k">N</span></dt><dd>Toggle speaker notes</dd>
+        <dt><span class="k">H</span></dt><dd>Hide the chrome (clean stage)</dd>
+        <dt><span class="k">C</span></dt><dd>Toggle the 0–100 checkpoint rail (restart scene)</dd>
+        <dt><span class="k">R</span></dt><dd>Reset both timers</dd>
+        <dt><span class="k">F</span> or <span class="k">P</span></dt><dd>Fullscreen this deck</dd>
+        <dt><span class="k">?</span></dt><dd>This panel</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   The six scenes, in the order you should take them.
+   `say`  = words read aloud
+   `note` = stage direction / intent, never read aloud
+   ============================================================ */
+const PLAN_MIN = 15;
+
+const SCENES = [
+  {
+    file: 'overlay/starting.html',
+    name: 'Starting',
+    tag:  'The door',
+    mins: 3,
+    notes: [
+      ['h3','Open on the ask — not on a greeting'],
+      ['note','Do not say "thanks for coming". Say the ask in the first 20 seconds. People decide in the first 30 whether this is worth their evening.'],
+      ['say','Before the agenda — one ask, and I will explain it in about three minutes.'],
+      ['say','In ninety seconds I am going to show you what the front of Smile looks like. Not a mock-up. It is built, it is running, and it is the real thing.'],
+      ['note','Let it land. Count to two. Do not fill the silence.']
+    ]
+  },
+  {
+    file: 'overlay/tech-diff.html',
+    name: 'Tech diffs',
+    tag:  'The progress',
+    mins: 3,
+    notes: [
+      ['h3','What this segment is'],
+      ['note','Name it plainly. This is the recurring show. Say what a segment contains so people know what to expect on a normal night.'],
+      ['say','This is tech diffs. It is our weekly progress show. One feature, demonstrated, on the real product. Or a number that moved. Or something we tried that did not work and why we dropped it.'],
+      ['say','Right now that update lives in a WhatsApp group, where it scrolls away by lunchtime. This is the same update, but it stays.'],
+      ['h3','The honest part'],
+      ['note','Name the zero. It builds more trust than any claim of success, and it is true.'],
+      ['say','And some of them will be a zero. Our World21 counter says eight hundred and fifty-four active contributors and zero shillings collected this month. I am not going to hide that off camera. That number is the most useful thing on this screen.'],
+      ['say','That is what building in the open actually means. Not only the wins.'],
+      ['h3','Marking the checkpoint'],
+      ['note','Press C once the bar has swept. The rail filling to 100 is the visual "we finished this". Let it complete on its own.'],
+      ['say','Watch the bar. When that reaches full, that is the segment.']
+    ]
+  },
+  {
+    file: 'overlay/q%26a.html',
+    name: 'Q&A',
+    tag:  'The room, always on',
+    mins: 3.5,
+    notes: [
+      ['h3','This is the part I wanted you to see'],
+      ['note','Slow down here. This is the emotional core of the whole pitch.'],
+      ['say','This is the chat. And I want you to look at the names on it, because those names are the point.'],
+      ['say','Bronze, silver, gold. That is not a points system. That is a record that you were here and you did something. It does not expire. It does not scroll away.'],
+      ['h3','Who this is actually for'],
+      ['say','Somebody in Mombasa cannot make a nine o’clock Wednesday. Somebody is a student and the call is at a time they are working. Somebody just wants to know what we are doing without having to ask someone to invite them.'],
+      ['say','Right now the only place any of that happens is this room and a WhatsApp group. Forty seats. No recording. No way back in.'],
+      ['say','That is the whole reason for tonight.'],
+      ['h3','The aeroplane'],
+      ['note','Point at it as it launches. Roughly every 11 seconds.'],
+      ['say','And watch that — something launches, and it lands. Twice a minute. At two in the morning, when nobody is watching, this is still happening.'],
+      ['say','That is the difference between a channel and a meeting.']
+    ]
+  },
+  {
+    file: 'overlay/offair.html',
+    name: 'Off air',
+    tag:  'After half ten',
+    mins: 2.5,
+    notes: [
+      ['h3','Do not apologise for the time'],
+      ['note','This is where a first-time presenter usually crumbles and apologises for 9pm. Do not. Defend it instead.'],
+      ['say','Now — the schedule. Twice a week, nine to half past ten, we go live. Not a highlight reel. The actual meeting. The working version, where we argue about what to build and sometimes get it wrong.'],
+      ['h3','The argument'],
+      ['say','Nine at night is late. I know it is late. Here is why that is the time.'],
+      ['say','Because that is when the work happens. If I stream it at a civilised hour, I am not streaming the meeting. I am streaming a rehearsal of the meeting. The entire value is that it is the real one.'],
+      ['h3','What happens after'],
+      ['say','And after half past ten, this does not go black. Look.'],
+      ['say','It goes quiet. The channel keeps running. Pre-recorded segments from every front, on a loop, all night. So the thing is always on when someone finds it.'],
+      ['note','Let it sit. This is the line that lands.'],
+      ['say','People will find this at two in the morning. That is fine. That is the point.']
+    ]
+  },
+  {
+    file: 'overlay/meet.html',
+    name: 'Meet',
+    tag:  'How it will look',
+    mins: 2.5,
+    notes: [
+      ['h3','Same room, different room'],
+      ['note','This is the "how it will look" beat. Show that nobody has to change how they behave.'],
+      ['say','This is the meeting, dressed. Same room, same people, same conversation. But it looks like a channel instead of a video call.'],
+      ['say','The furniture — the mark, the ticker, the frame — all of that runs underneath. None of us have to do anything differently. I do not want anybody performing.'],
+      ['h3','The rule'],
+      ['say','One rule, and it is the only rule: it is the real meeting. Argue. Disagree. Get it wrong out loud.'],
+      ['say','If I start polishing this, stop me. The roughness is the product.'],
+      ['h3','The proof'],
+      ['say','Because right now the only way to understand how Smile is built is to be in the room. A room with forty seats and a WhatsApp group.'],
+      ['say','That does not scale, and it should not have to.']
+    ]
+  },
+  {
+    file: 'overlay/end-credits.html',
+    name: 'End credits',
+    tag:  'The ask',
+    mins: 2,
+    notes: [
+      ['h3','Land on commitment, not applause'],
+      ['note','Do not ask for applause. Do not say "any questions". Close on the ask.'],
+      ['say','Two things from me, two things from you.'],
+      ['say','From me — the tech is ready, I run it, and I do not need anybody else touching the setup. Ask me anything, I will show you.'],
+      ['h3','The two asks'],
+      ['say','From you, two things.'],
+      ['say','One. Turn on notifications for the channel tonight. Before the first one goes out. I do not want you hearing about it second-hand.'],
+      ['say','Two. When you watch the first session, tell me one thing that confused you. One thing. I will fix it.'],
+      ['h3','The honest close'],
+      ['note','Slow right down. Say this looking at people, not at the screen.'],
+      ['say','It is not going to be perfect the first time. There will be audio trouble and the wrong slide.'],
+      ['say','I would rather it be rough and open than polished and closed.'],
+      ['say','Tonight is not a launch party. It is the first time the room is online. Turn up.']
+    ]
+  }
+];
+
+/* ---------- build ---------- */
+const $ = s => document.querySelector(s);
+const em = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+const frame = $('#frame'), wrap = $('#wrap');
+const rail = $('#rail');
+
+SCENES.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.textContent = (i + 1) + '  ' + s.name;
+  b.onclick = () => go(i);
+  rail.appendChild(b);
+});
+
+function fit() {
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  wrap.style.transform = 'translate(-50%,-50%) scale(' + k + ')';
+}
+addEventListener('resize', fit); fit();
+
+let cur = -1, t0 = 0, total0 = performance.now();
+
+function go(i) {
+  i = Math.max(0, Math.min(SCENES.length - 1, i));
+  if (i === cur) { frame.contentWindow.location.reload(); return; }
+  cur = i;
+  const s = SCENES[i];
+  frame.src = s.file;                    // & in q&a.html is pre-encoded as %26
+  history.replaceState(null, '', '#' + (i + 1));
+  t0 = performance.now();
+  $('#num').textContent = i + 1;
+  $('#name').textContent = s.name;
+  $('#file').textContent = decodeURIComponent(s.file.replace('overlay/', ''));
+  $('#nt').textContent = s.name + '  ·  ' + s.tag;
+  $('#nd').textContent = s.mins + ' min slot';
+  $('#nb').innerHTML = s.notes.map(([t, x]) =>
+    t === 'h3'  ? '<h3>' + x + '</h3>'
+    : t === 'say'   ? '<p class="say">' + em(x) + '</p>'
+    : '<p class="note">' + em(x) + '</p>').join('');
+  [...rail.children].forEach((b, j) => {
+    b.className = j === i ? 'on' : j < i ? 'done' : '';
+  });
+  // keys must still work if the presenter clicks into the scene
+  try {
+    frame.addEventListener('load', () => {
+      const d = frame.contentDocument;
+      if (d) d.addEventListener('keydown', e => {
+        if (e.key === ' ') e.preventDefault();
+        keys(e);
+      }, true);
+    }, { once: true });
+  } catch (e) {}
+  // warm the next scene so switching feels instant
+  const n = SCENES[i + 1];
+  if (n) { const p = new Image(); p.src = n.file; }
+}
+
+function keys(e) {
+  const k = e.key;
+  if (k >= '1' && k <= String(SCENES.length)) { go(+k - 1); return; }
+  if (k === 'Enter' || k === 'ArrowRight' || k === ' ') { go(cur + 1); return; }
+  if (k === 'ArrowLeft' || k === 'Backspace') { go(cur - 1); return; }
+  if (k === 'n' || k === 'N') document.body.classList.toggle('notes'); return;
+  if (k === 'h' || k === 'H') { document.body.classList.toggle('clean'); return; }
+  if (k === '?' || k === '/') { $('#help').classList.toggle('on'); return; }
+  if (k === 'Escape') { $('#help').classList.remove('on'); return; }
+  if (k === 'r' || k === 'R') { total0 = performance.now(); t0 = performance.now(); return; }
+  if (k === 'c' || k === 'C') { if (cur >= 0) frame.contentWindow.location.reload(); return; }
+  if (k === 'f' || k === 'p' || k === 'F') {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }
+}
+addEventListener('keydown', keys);
+
+const mmss = ms => {
+  const s = Math.floor(ms / 1000);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+};
+setInterval(() => {
+  if (cur < 0) return;
+  $('#cScene').querySelector('b').textContent = mmss(performance.now() - t0);
+  $('#cTotal').querySelector('b').textContent = mmss(performance.now() - total0);
+  const se = $('#cScene'), te = $('#cTotal');
+  se.classList.toggle('over', (performance.now() - t0) > SCENES[cur].mins * 60000 + 20000);
+  te.classList.toggle('over', (performance.now() - total0) > PLAN_MIN * 60000);
+}, 500);
+
+const start = Math.max(0, Math.min(SCENES.length - 1,
+  (parseInt(location.hash.replace('#', ''), 10) || 1) - 1));
+go(start);
+</script>
+</body>
+</html>
