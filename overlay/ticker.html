@@ -27,8 +27,8 @@
    word cloud. The merge was wrong to drop them. Kept at 16px so they read
    as hairline ticks rather than a fence, over a 26px gutter.
    Content is static HTML — zero intervals, zero rAF, zero canvas; the
-   loop is one compositor transform. No backdrop blur: a transparent OBS
-   dock has nothing behind it to sample, so it was pure GPU cost.
+   loop is one compositor transform. Liquid glass: the strip is now a
+   translucent frosted surface rather than a solid dark slab.
    Reduced motion: the strip freezes as a clean static row.
 
    THE TICKER MODULE — layer it as its own OBS browser source over ANY
@@ -42,7 +42,7 @@
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
-  --capw:232px;
+  --capw:calc(232px*var(--tks,1));
   --fade:108px;        /* marquee edge fade; ?fade= overrides */
  }
  *{box-sizing:border-box;margin:0;padding:0}
@@ -50,10 +50,10 @@
  body{font-family:var(--fd);-webkit-font-smoothing:antialiased}
  ::selection{background:#FFCE00;color:#1F1702}
 
- .dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.2) 1.1px,transparent 1px);
-   background-size:26px 26px;
+.dots{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.09) 1px,transparent 1px);
+    background-size:26px 26px;opacity:.7;
    -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%);
-           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
+            mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 82%)}
 
  /* Fixed box, own clip. inset:0 previously resolved against the viewport, so
     the strip's width was whatever the host canvas happened to be — which is
@@ -63,18 +63,20 @@
     which is correct; if it is narrower, the strip is clipped rather than
     having a cap sliced off. */
  .tkWrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-   z-index:35;pointer-events:none;padding:0 var(--dockpad,0px)}
- /* width:100%, NOT fit-content. fit-content lets the pill resolve to the
+    z-index:35;pointer-events:none;padding:0 var(--dockpad,4%)}
+  /* width:100%, NOT fit-content. fit-content lets the pill resolve to the
     intrinsic width of its contents — and the marquee track inside .clip is
     ~4600px of nowrap text. It happened to settle at exactly the container
     width on a 1920 canvas, but at other source widths the pill grew past the
     frame and body{overflow:hidden} clipped the clock cap off the right edge
     with nothing in the DOM reporting an overflow. width:100% cannot exceed its
     container by construction, which is the only reliable fix. */
- .tkPill{width:100%;max-width:100%;height:88%;max-height:66px;display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
-   transform:scale(var(--tks));transform-origin:50% 50%;
-   background:rgba(0,0,0,.93);
-   box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.45),0 0 0 1.5px rgba(255,206,0,.2)}
+  .tkPill{width:100%;max-width:100%;height:88%;max-height:calc(66px*var(--tks,1));display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
+    /* No transform-origin scale here — scaling about the center pulled the two caps toward the middle.
+       ?scale now sizes the strip vertically via max-height and the caps via --capw instead. */
+    background:linear-gradient(180deg,rgba(26,26,32,.66),rgba(10,10,14,.58));
+    backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 0 0 1px rgba(255,255,255,.06),0 14px 34px rgba(0,0,0,.35),0 0 0 1.5px rgba(255,206,0,.14)}
  /* Both caps are a hard, identical width. They used to be flex:none sized by
     their own content, so the left measured 187px and the right 140px — two
     different cap widths on one strip, which reads as an accident rather than
