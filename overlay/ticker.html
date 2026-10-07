@@ -82,7 +82,7 @@
     different cap widths on one strip, which reads as an accident rather than
     a decision. The clock cap now has exactly as much room as the brand cap. */
  .tkPill .cap{flex:0 0 var(--capw);width:var(--capw);display:flex;align-items:center;
-   justify-content:center;gap:9px;padding:0 22px;
+    justify-content:center;gap:3px;padding:0 24px 0 18px;
    background:linear-gradient(0deg,#FFAE5A,#FFC107 100%,#F8A800);color:#1F1702;
    clip-path:polygon(0 0,100% 0,calc(100% - 20px) 100%,0 100%)}
 
@@ -115,7 +115,7 @@
  /* position:relative so the bubble's percentages resolve against the CAP.
     Without it the absolute containing block is .tkWrap and the bubble came out
     4378px wide — 120% of the 1920 wrapper rather of 120% of the 214px cap. */
- .tkPill .cap.r{position:relative;flex-direction:row;gap:14px;overflow:hidden;padding:0 20px}
+ .tkPill .cap.r{    position:relative;flex-direction:row;gap:14px;overflow:hidden;padding:0 18px 0 24px}
  .tkPill .cap.r .face-t{font-family:var(--fd);font-weight:700;font-size:34px;
    line-height:.82;letter-spacing:-.012em;font-variant-numeric:tabular-nums;
    color:#17140A;flex:none;
