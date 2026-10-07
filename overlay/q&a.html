@@ -72,7 +72,7 @@ to{opacity:.62;transform:scaleY(1)}}
 
 .head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
 .head h1{font-family:var(--fd);font-weight:800;font-size:76px;
-  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 2px 22px rgba(0,0,0,.7)}
+  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 4px 30px rgba(0,0,0,.95)}
 .head h1 .y{color:var(--yellow);text-shadow:0 0 18px rgba(255,213,64,.6),0 0 48px rgba(255,180,40,.35)}
 .head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
 
@@ -105,7 +105,7 @@ to{opacity:.62;transform:scaleY(1)}}
   animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);will-change:transform}
 .sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s);will-change:transform}
 @property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
-.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;border-bottom-left-radius:5px;padding:13px 18px 15px;
+.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;border-bottom-left-radius:12.5px;padding:13px 18px 15px;
   background:linear-gradient(#121216,#0e0e12) padding-box,
     conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 14px 36px rgba(0,0,0,.5);
@@ -115,15 +115,22 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard.fb{--pc:rgba(48,138,245,.95)}
 .bcard.x{--pc:rgba(255,255,255,.85)}
 .bcard.tt{--pc:rgba(0,229,255,.85)}
-.bcard::after{content:"";position:absolute;bottom:-11px;left:2px;width:18px;height:14px;
-  background:#0e0e12;clip-path:polygon(0 0,100% 0,0 100%)}
-.bcard.flip{border-radius:20px;border-bottom-right-radius:5px}
-.bcard.flip::after{left:auto;right:2px;clip-path:polygon(0 0,100% 0,100% 100%)}
+.bcard::after{content:"";position:absolute;bottom:-14px;left:0;width:26px;height:20px;
+  background:linear-gradient(#0e0e12,#0e0e12) padding-box,
+    conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
+  border:1.5px solid transparent;
+  clip-path:polygon(0 0,100% 0,0 100%);
+  animation:ang 4.6s linear infinite}
+.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
+.bcard.flip::after{left:auto;right:0;clip-path:polygon(0 0,100% 0,100% 100%)}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
-.bcard .h b.bronze{color:#d08d57}
-.bcard .h b.silver{color:#c7c7cf}
-.bcard .h b.gold{color:#ffd100;text-shadow:0 0 18px rgba(255,209,0,.45)}
+.bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.bcard .h b.silver{background:linear-gradient(180deg,#fafafb 0%,#c9c9d4 45%,#88888f 58%,#eceef3 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.bcard .h b.gold{background:linear-gradient(180deg,#fff6b8 0%,#f2c71b 45%,#b8860b 58%,#ffdf69 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(255,209,0,.45))}
 .pli{width:18px;height:18px;flex:none}
 .pli svg{width:18px;height:18px;display:block}
 .bcard.yt .pli{filter:drop-shadow(0 0 10px rgba(255,0,51,.6))}
