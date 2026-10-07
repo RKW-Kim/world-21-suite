@@ -33,9 +33,8 @@ svg{display:block}
 ::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 .bg{position:absolute;inset:0;z-index:-2;background:
-  radial-gradient(1100px 640px at 74% 18%,rgba(255,193,7,.05),transparent 62%),
-  radial-gradient(900px 560px at 12% 88%,rgba(14,203,129,.04),transparent 60%),
-  radial-gradient(circle at 50% 38%,#171717 0%,var(--ink) 78%)}
+  radial-gradient(1500px 900px at 50% 32%,#1b1b1f 0%,#0d0d10 52%,#050506 100%),
+  linear-gradient(180deg,rgba(255,255,255,.04),transparent 32%)}
 .bg::after{content:"";position:absolute;inset:0;background-image:
   radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
   background-size:26px 26px;
@@ -54,11 +53,6 @@ svg{display:block}
 .chip.mono{font-family:var(--fm);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
 .chip.mono b{color:var(--paper);font-weight:600}
 
-.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--yellow);
-  box-shadow:0 0 14px rgba(255,193,7,.9),0 0 4px rgba(255,193,7,1);opacity:0;
-  animation:floatSpark 6s infinite ease-in-out var(--d,0s)}
-@keyframes floatSpark{0%,100%{transform:translate(0,0) scale(1);opacity:0}
-  12%{opacity:.85}50%{transform:translate(18px,-36px) scale(1.45);opacity:.55}88%{opacity:.7}}
 
 to{opacity:.62;transform:scaleY(1)}}
 50%{transform:scaleY(1.045)}}
@@ -78,8 +72,8 @@ to{opacity:.62;transform:scaleY(1)}}
 
 .head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
 .head h1{font-family:var(--fd);font-weight:800;font-size:76px;
-  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 2px 18px rgba(0,0,0,.6)}
-.head h1 .y{color:var(--yellow);text-shadow:0 0 26px rgba(255,193,7,.35)}
+  letter-spacing:-.03em;line-height:1;color:var(--paper);text-shadow:0 2px 22px rgba(0,0,0,.7)}
+.head h1 .y{color:var(--yellow);text-shadow:0 0 18px rgba(255,213,64,.6),0 0 48px rgba(255,180,40,.35)}
 .head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
 
 /* cycling tagline — the lineup signature move, pure CSS */
@@ -111,39 +105,31 @@ to{opacity:.62;transform:scaleY(1)}}
   animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);will-change:transform}
 .sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s);will-change:transform}
 @property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
-.bcard{position:relative;border:1.5px solid transparent;border-radius:18px 18px 18px 4px;padding:13px 18px 15px;
-  background:linear-gradient(#101014,#101014) padding-box,
+.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;border-bottom-left-radius:5px;padding:13px 18px 15px;
+  background:linear-gradient(#121216,#0e0e12) padding-box,
     conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 34px rgba(0,0,0,.42);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 14px 36px rgba(0,0,0,.5);
   animation:ang 4.6s linear infinite}
 @keyframes ang{to{--ang:1turn}}
 .bcard.yt{--pc:rgba(255,45,72,.95)}
 .bcard.fb{--pc:rgba(48,138,245,.95)}
 .bcard.x{--pc:rgba(255,255,255,.85)}
 .bcard.tt{--pc:rgba(0,229,255,.85)}
-.bcard::after{content:"";position:absolute;bottom:-7px;left:18px;width:13px;height:13px;
-  background:#101014;border-radius:2px;transform:rotate(45deg);
-  border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-.bcard.flip{border-radius:18px 18px 4px 18px}
-.bcard.flip::after{left:auto;right:18px;border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
+.bcard::after{content:"";position:absolute;bottom:-11px;left:2px;width:18px;height:14px;
+  background:#0e0e12;clip-path:polygon(0 0,100% 0,0 100%)}
+.bcard.flip{border-radius:20px;border-bottom-right-radius:5px}
+.bcard.flip::after{left:auto;right:2px;clip-path:polygon(0 0,100% 0,100% 100%)}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
+.bcard .h b.bronze{color:#d08d57}
+.bcard .h b.silver{color:#c7c7cf}
+.bcard .h b.gold{color:#ffd100;text-shadow:0 0 18px rgba(255,209,0,.45)}
 .pli{width:18px;height:18px;flex:none}
 .pli svg{width:18px;height:18px;display:block}
-.med{width:14px;height:14px;display:inline-flex;flex:none}
-.med svg{width:14px;height:14px;display:block}
 .bcard.yt .pli{filter:drop-shadow(0 0 10px rgba(255,0,51,.6))}
 .bcard.fb .pli{filter:drop-shadow(0 0 10px rgba(24,119,242,.6))}
 .bcard.x .pli{filter:drop-shadow(0 0 10px rgba(255,255,255,.45))}
 .bcard.tt .pli{filter:drop-shadow(0 0 10px rgba(254,44,85,.55))}
-.qbadge{margin-left:auto;font-family:var(--fm);font-weight:800;font-size:9px;letter-spacing:.16em;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
-.qbadge.diamond{color:#8adfff;background:rgba(74,222,255,.10);border-color:rgba(74,222,255,.4);box-shadow:0 0 12px rgba(74,222,255,.3)}
-.qbadge.platinum{color:#e8e8ee;background:rgba(200,200,210,.08);border-color:rgba(200,200,210,.35)}
-.qbadge.gold{color:#ffd100;background:rgba(255,209,0,.10);border-color:rgba(255,209,0,.45);box-shadow:0 0 12px rgba(255,209,0,.28)}
-.qbadge.silver{color:#c3c3cc;background:rgba(180,180,190,.08);border-color:rgba(180,180,190,.35)}
-.qbadge.bronze{color:#d08d57;background:rgba(205,127,50,.12);border-color:rgba(205,127,50,.4)}
-.qbadge.new{color:#0ecb81;background:rgba(14,203,129,.10);border-color:rgba(14,203,129,.4)}
-.qsuper{font-family:var(--fm);font-weight:800;font-size:9px;letter-spacing:.14em;color:#1a1000;border-radius:999px;padding:3px 9px;background:linear-gradient(135deg,#ffe08a,#ffb64a);box-shadow:0 0 12px rgba(255,180,60,.5)}
 .bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
   text-shadow:0 1px 8px rgba(0,0,0,.5)}
 @keyframes bubRise{
@@ -175,7 +161,6 @@ to{opacity:.62;transform:scaleY(1)}}
   .rise{animation-delay:0s!important}
   .bub{animation:none;opacity:1}
   .sway{animation:none}
-  .spark{opacity:.6}
   .tag span:first-child{opacity:1;transform:none}
   .hubA .face{animation:none}
 }
@@ -185,12 +170,6 @@ to{opacity:.62;transform:scaleY(1)}}
   
 
   <section class="scn" data-take="a">
-    <span class="spark" style="left:7%;top:20%;--d:0s"></span>
-    <span class="spark" style="left:40%;top:12%;--d:1.2s;background:var(--up)"></span>
-    <span class="spark" style="left:93%;top:22%;--d:.6s;background:var(--down)"></span>
-    <span class="spark" style="left:88%;top:62%;--d:2.4s"></span>
-    <span class="spark" style="left:30%;top:74%;--d:3.2s;background:var(--sky)"></span>
-    <span class="spark" style="left:63%;top:80%;--d:1.8s"></span>
 
     <div class="head">
       <h1 class="rise" style="--rd:.1s">The Floor is <span class="y">Yours.</span></h1>
@@ -214,31 +193,31 @@ to{opacity:.62;transform:scaleY(1)}}
     </div>
 
     <div class="bub" style="left:110px;top:520px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
-      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b>@marketnotes</b><span class="qbadge diamond"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" /> </svg></i>DIAMOND</span><span class="qsuper">SUPER THANKS</span></span><span class="q">How do I keep up when I miss a day of the market?</span></div></div>
+      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@marketnotes</b></span><span class="q">How do I keep up when I miss a day of the market?</span></div></div>
     </div>
     <div class="bub" style="left:318px;top:760px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
-      <div class="sway"><div class="bcard flip fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b>@growthfan88</b><span class="qbadge gold"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>GOLD</span><span class="qsuper">STARS</span></span><span class="q">Where does everyone here get their news from?</span></div></div>
+      <div class="sway"><div class="bcard flip fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="gold">@growthfan88</b></span><span class="q">Where does everyone here get their news from?</span></div></div>
     </div>
     <div class="bub" style="left:560px;top:430px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
-      <div class="sway"><div class="bcard x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b>@cashflowcoach</b><span class="qbadge silver"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>SILVER</span></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
+      <div class="sway"><div class="bcard x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="silver">@cashflowcoach</b></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
     </div>
     <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
-      <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b>@portfolio101</b><span class="qbadge new">NEW</span><span class="qsuper">GIFT</span></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
+      <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
     </div>
     <div class="bub" style="left:1440px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
-      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b>@creatormargin</b><span class="qbadge platinum"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>PLATINUM</span></span><span class="q">What do you actually listen to on the way in?</span></div></div>
+      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@creatormargin</b></span><span class="q">What do you actually listen to on the way in?</span></div></div>
     </div>
     <div class="bub" style="left:1620px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
-      <div class="sway"><div class="bcard flip x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b>@bizbasics</b><span class="qbadge diamond"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" /> </svg></i>DIAMOND</span><span class="qsuper">SUPPORTED</span></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
+      <div class="sway"><div class="bcard flip x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="gold">@bizbasics</b></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
     </div>
     <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
-      <div class="sway"><div class="bcard fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b>@trendlinecrew</b><span class="qbadge bronze"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>BRONZE</span></span><span class="q">Which platform do you trust for a daily brief?</span></div></div>
+      <div class="sway"><div class="bcard fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="bronze">@trendlinecrew</b></span><span class="q">Which platform do you trust for a daily brief?</span></div></div>
     </div>
     <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
-      <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b>@founderfaqs</b><span class="qbadge silver"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>SILVER</span></span><span class="q">How do you handle burnout on a long session?</span></div></div>
+      <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="silver">@founderfaqs</b></span><span class="q">How do you handle burnout on a long session?</span></div></div>
     </div>
     <div class="bub far" style="left:60px;top:300px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
-      <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b>@valuepocket</b><span class="qbadge gold"><i class="med"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" > <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /> <path d="M11 12 5.12 2.2" /> <path d="m13 12 5.88-9.8" /> <path d="M8 7h8" /> <circle cx="12" cy="17" r="5" /> <path d="M12 18v-2h-.5" /> </svg></i>GOLD</span></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
+      <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
     </div>
     <p class="sig">smile<b>.co.ke</b></p>
   </section>
