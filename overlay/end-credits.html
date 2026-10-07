@@ -5,46 +5,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE · end credits</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.4c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3 1.3-1.3 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
 <style>
 /* ── END CREDITS — the sign-off ───────────────────────────────────────────────
-   Two columns on a 1920 canvas. Left: the mark on its orbit and the sign-off
-   line. Right: a credits roll that loops seamlessly behind a soft mask.
+   DNA rebuilt from starting.html: dark ink field, dot texture, gold aura,
+   per-word headline stagger, checklist/service cards dialled in with a real
+   inner top highlight and drop shadow, and text that reads: a faint dark
+   text-shadow under everything, and a radiant warm glow on the gold word.
 
-   WHY TWO COLUMNS. This is the only scene in the kit that can hold two
-   independent pieces of information at once — a farewell and a credit list —
-   so it is the one scene laid out across the frame rather than on a single
-   vertical axis. A centred stack would force one of them to be small.
+   The credits roll is no longer a naked column floating in the middle of
+   the frame. It sits in a designed panel — a translucent card with a real
+   border, inset top highlight, and a drop shadow — and its header carries a
+   0–100 progress bar broken into production checkpoints, so the roll reads
+   like a credits ledger rather than a list.
 
-   FIXES MADE IN THIS REBUILD (all were live, not cosmetic):
-     · the next-session chip could never appear. The CSS revealed .nextrow on
-       html[data-next="1"], and JS set that attribute, but there was no .nextrow
-       element anywhere in the document — so ?next= updated the credits row and
-       then had nowhere to put the chip. The element now exists.
-     · --sky was referenced by one spark and never defined, so that spark
-       painted with an invalid background and vanished.
-     · .sub was declared twice; the second block silently won. It was also
-       referenced by nothing. Both copies are gone.
-     · the h1 carried a staggered word-reveal (.w1/.w2/.w3) that never ran,
-       because the markup had no .w spans — the animation and its keyframes
-       were decoration for a headline that had been rewritten. The lines are
-       now wrapped and actually stagger.
-     · --font-display / --font-mono and --ease-out were the old token names
-       used on 9 selectors here, against --fd / --fm / --eo everywhere else.
-     · the headline was pinned at 124px, which is what made the left column
-       feel crowded against the credits box.
-
-   Contract: no canvas, no rAF. Every moving part is transform/opacity on the
-   compositor. JS does three small jobs — seed the loop so it is seamless,
-   bake the params, and run one gated clock interval.
-
-   Geometry contract: bottom 76px is the ticker module's zone, and the
-   top-right corner is left clear for the watermark module.
-   ─────────────────────────────────────────────────────────────────────────── */
+   Contract:
+      (none)        → roll runs, notifications bell is the honest fallback
+      ?ep=128       → episode number in the header
+      ?next=…       → next-session block appears + fills the matching row
+      ?host=…       → the host credit row + hosted-by line take the name
+      ?what=…       → "· …" what is on, on the hosted-by line        */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
-  --line:#2a2a2a; --up:#0ECB81; --down:#F6465D;
+  --line:rgba(255,255,255,.08); --up:#0ECB81; --down:#F6465D;
   --fd:'Space Grotesk',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --dock:76px;
@@ -59,17 +43,21 @@ svg{display:block}
 ::selection{background:var(--yellow);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 
-.bg{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+/*** background DNA ***/
+.bg{position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
   background-size:26px 26px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
-
-/* top-right chrome; the watermark module owns the top-left corner */
-.topbar{position:absolute;top:58px;right:88px;display:flex;gap:12px;
-  justify-content:flex-end;align-items:center;z-index:7}
+.aura{position:absolute;left:38%;top:44%;width:860px;height:560px;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 64%)}
 
 .rise{opacity:0;animation:riseIn .9s var(--eo) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+/* top-right chrome; watermark module owns top-left */
+.topbar{position:absolute;top:58px;right:88px;display:flex;gap:12px;
+  justify-content:flex-end;align-items:center;z-index:7}
 
 /* ── left column: orbit + sign-off ── */
 .bwrap{position:absolute;left:6%;top:0;bottom:var(--dock);display:flex;align-items:center;
@@ -87,16 +75,17 @@ svg{display:block}
 .orbitB .face svg{width:100%;height:100%}
 
 h1{font-family:var(--fd);font-weight:800;font-size:clamp(54px,6vw,112px);
-  line-height:1;letter-spacing:-.045em}
-/* line-by-line stagger — these spans exist, so this actually runs */
+  line-height:1;letter-spacing:-.045em;text-shadow:0 2px 18px rgba(0,0,0,.55)}
 h1 .w{display:block;opacity:0;transform:translateY(44px);animation:wordup .85s var(--eo) both}
 h1 .w1{animation-delay:.06s}
 h1 .w2{animation-delay:.16s}
 @keyframes wordup{to{opacity:1;transform:none}}
 h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6))}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.28))}
 
 .follow{margin-top:38px;position:relative;overflow:hidden;display:inline-block}
 .follow::after{content:"";position:absolute;inset:0;
@@ -117,7 +106,6 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
   box-shadow:0 0 10px rgba(246,70,93,.8);animation:dotPulse 1.6s ease-in-out infinite}
 @keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
 
-/* ── the next-session block. Hidden until ?next= is passed. ── */
 .nextrow{display:none;margin-top:22px}
 html[data-next="1"] .nextrow{display:block}
 .nc{border-left:2px solid rgba(255,193,7,.55);padding:2px 0 2px 18px;
@@ -125,7 +113,7 @@ html[data-next="1"] .nextrow{display:block}
 .nc .nk{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.32em;
   color:var(--yellow);text-transform:uppercase}
 .nc .nw{font-family:var(--fd);font-weight:700;font-size:clamp(20px,2.1vw,32px);
-  letter-spacing:-.02em;color:var(--fg);line-height:1.12}
+  letter-spacing:-.02em;color:var(--fg);line-height:1.12;text-shadow:0 2px 14px rgba(0,0,0,.55)}
 .nc .nh{font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.14em;
   color:var(--muted);text-transform:uppercase}
 .nc .nh b{color:var(--faint);font-weight:600}
@@ -142,31 +130,44 @@ html[data-next="1"] .bellrow{display:none}
 @keyframes ring{0%,84%,100%{transform:rotate(0)}86%{transform:rotate(12deg)}88%{transform:rotate(-10deg)}
   90%{transform:rotate(7deg)}92%{transform:rotate(-5deg)}94%{transform:rotate(3deg)}96%{transform:rotate(0)}}
 
-/* ── right column: the credits roll ── */
+/* ── right column: the credits panel ── */
 .credits{position:absolute;right:4.5%;top:clamp(118px,15vh,168px);
-  bottom:calc(var(--dock) + 78px);width:min(500px,37vw);z-index:3}
+  bottom:calc(var(--dock) + 78px);width:min(500px,37vw);z-index:3;
+  display:flex;flex-direction:column;padding:26px 26px 22px;border-radius:22px;
+  border:1px solid var(--line);background:rgba(255,255,255,.028);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 64px rgba(0,0,0,.5)}
 .chead{display:flex;align-items:center;gap:16px;font-family:var(--fd);font-weight:700;
   font-size:13px;letter-spacing:.26em;text-transform:uppercase;color:#D8D8D8}
 .chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
 .chead .ep{color:var(--muted);letter-spacing:.18em}
 .chead .ep b{color:var(--yellow);font-weight:700}
 
-/* the mask is what sells the roll — rows enter and leave softly instead of
-   being chopped at the box edge */
-.clist{margin-top:22px;height:calc(100% - 46px);overflow:hidden;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 16%,#000 82%,transparent);
-          mask-image:linear-gradient(180deg,transparent,#000 16%,#000 82%,transparent)}
+/* the 0–100 production ledger — the panel's spine */
+.prog{margin-top:18px}
+.pbar{position:relative;height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.pfill{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--hot),var(--yellow));
+  box-shadow:0 0 14px rgba(255,193,7,.5);
+  animation:pfill 26s linear infinite}
+@keyframes pfill{0%{width:0}100%{width:100%}}
+.pmarks{margin-top:12px;display:flex;justify-content:space-between;gap:8px}
+.pmarks span{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted)}
+
+.clist{margin-top:20px;flex:1;min-height:0;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 82%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 14%,#000 82%,transparent)}
 .ctrack{display:flex;flex-direction:column;will-change:transform;
   animation:roll 26s linear infinite}
 @keyframes roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
-.cr{flex:none;padding:22px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
-/* a faint zebra so the eye can track rows as they travel */
+.cr{flex:none;padding:20px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
 .cr:nth-child(even){background:rgba(255,255,255,.016)}
 .cr i{display:block;font-family:var(--fd);font-weight:700;font-style:normal;
   font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .cr b{display:block;margin-top:8px;font-family:var(--fd);font-weight:700;
-  font-size:clamp(24px,3.3vh,32px);line-height:1.06;letter-spacing:-.015em;color:var(--faint)}
-.cr b .y{color:var(--yellow)}
+  font-size:clamp(24px,3.3vh,32px);line-height:1.06;letter-spacing:-.015em;color:var(--faint);
+  text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.cr b .y{color:var(--yellow);text-shadow:0 0 22px rgba(255,193,7,.3)}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--dock) + 14px);z-index:5;text-align:center;
   font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.46em;
@@ -189,10 +190,8 @@ html[data-next="1"] .bellrow{display:none}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
     transition:none !important;animation-delay:0s !important}
-  /* the roll is the one thing that must STOP, not merely speed up: a frozen
-     half-list mid-transition reads as a rendering fault, so the track is
-     pinned to its untranslated state and the list simply sits there */
   .ctrack{animation:none !important;transform:none !important}
+  .pfill{animation:none !important;width:100%}
   .orbitB::before,.orbitB::after,.orbitB .face,.follow::after,.bellrow svg,.rdot{animation:none !important}
   h1 .w{opacity:1;transform:none}
   .rise{opacity:1;transform:none}
@@ -202,18 +201,17 @@ html[data-next="1"] .bellrow{display:none}
 <body>
 <div class="stage">
   <div class="bg"></div>
+  <div class="aura"></div>
 
   <header class="topbar">
     <span class="chip mono rise" style="--rd:.2s"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
     <span class="chip dark rise" style="--rd:.15s"><span class="rdot"></span>off air · credits rolling</span>
   </header>
 
-  <!-- left: the mark on its orbit + the sign-off -->
   <div class="bwrap">
     <div class="orbitB rise" style="--rd:.3s">
       <span class="glow" aria-hidden="true"></span>
       <div class="face" aria-hidden="true">
-        <!-- smile face — verbatim crop of the real logo, same four paths as Smile-Logo.svg -->
         <svg viewBox="5.39 10.7 23.91 23.91" xmlns="http://www.w3.org/2000/svg">
           <path d="m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z" fill="#ffd100"/>
           <path d="m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z" fill="#0A0900"/>
@@ -233,8 +231,6 @@ html[data-next="1"] .bellrow{display:none}
         <span class="chip solid follow">follow so you don't miss the next one</span>
       </div>
 
-      <!-- the block that could never appear before: CSS revealed .nextrow,
-           JS set the attribute, but no such element existed in the document -->
       <div class="nextrow rise" style="--rd:.6s">
         <div class="nc">
           <span class="nk">next session</span>
@@ -250,10 +246,12 @@ html[data-next="1"] .bellrow{display:none}
     </div>
   </div>
 
-  <!-- right: the credits roll. Rows are authored here once; seedLoop() clones
-       them so the loop is seamless and can never drift out of sync. -->
   <div class="credits rise" style="--rd:.5s">
     <div class="chead"><span>credits</span><i class="rule"></i><span class="ep">ep <b class="num" data-ep>128</b></span></div>
+    <div class="prog">
+      <div class="pbar"><span class="pfill"></span></div>
+      <div class="pmarks"><span>production</span><span>actors</span><span>extras</span><span>music</span><span>chat</span></div>
+    </div>
     <div class="clist">
       <div class="ctrack" id="ctrack">
         <div class="cr"><i>host</i><b id="crHost">you</b></div>
@@ -271,23 +269,11 @@ html[data-next="1"] .bellrow{display:none}
 </div>
 
 <script>
-/* Three jobs, nothing more: make the loop seamless, bake the params, run the
-   clock. Every moving part on this page is CSS on the compositor.
-
-   Contract:
-     (no params)  → credits roll, honest fallback is the notifications bell
-     ?ep=128      → episode number in the credits header
-     ?next=…      → next-session block appears AND fills the matching credit row
-     ?host=…      → replaces the host credit row and the hosted-by line
-     ?what=…      → "· …" what is on, on the hosted-by line                        */
 (function(){
   function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1]}
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
   function trim(v){return dec(v||'').trim()}
 
-  /* Seed the loop. translateY(-50%) is only seamless if the track is exactly
-     two identical halves, so clone the authored rows rather than hand-writing
-     a second copy — a hand copy can drift, and a drifted loop visibly jumps. */
   (function seedLoop(){
     var t=document.getElementById('ctrack');
     var rows=Array.prototype.slice.call(t.children);
@@ -298,36 +284,22 @@ html[data-next="1"] .bellrow{display:none}
   if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps});
 
   var host=trim(get('host'));
-  if(host){
-    /* every host cell, including the clone, so the roll never shows two
-       different hosts half a cycle apart */
-    document.querySelectorAll('#crHost').forEach(function(e){e.textContent=host});
-  }
+  if(host){document.querySelectorAll('#crHost').forEach(function(e){e.textContent=host});}
 
   var nx=trim(get('next'));
   if(nx){
     document.documentElement.dataset.next='1';
     document.getElementById('nw').textContent=nx;
     document.querySelectorAll('#crNext').forEach(function(e){e.textContent=nx});
-
     var what=trim(get('what'));
     if(host||what){
       var nh=document.getElementById('nh');
-      nh.hidden=false;
-      nh.textContent='';
-      if(host){
-        nh.appendChild(document.createTextNode('hosted by '));
-        var b=document.createElement('b');b.textContent=host;nh.appendChild(b);
-      }
-      if(what){
-        if(host){var s=document.createElement('span');s.className='sep';s.textContent='\u00b7';nh.appendChild(s);}
-        var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);
-      }
+      nh.hidden=false;nh.textContent='';
+      if(host){nh.appendChild(document.createTextNode('hosted by '));var b=document.createElement('b');b.textContent=host;nh.appendChild(b);}
+      if(what){if(host){var s=document.createElement('span');s.className='sep';s.textContent='\u00b7';nh.appendChild(s);}var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);}
     }
   }
 
-  /* one gated interval. EAT is UTC+3 and Nairobi does not observe DST, so a
-     fixed offset is correct here and cheaper than a timezone lookup. */
   var EAT=3*3600*1000;
   function two(n){return n<10?'0'+n:''+n}
   var ck=document.getElementById('clock'),lastMin=-1;
