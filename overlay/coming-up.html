@@ -75,7 +75,7 @@ body.preview{background:#09090B;
   display:flex;align-items:stretch;
   background:linear-gradient(180deg,rgba(12,12,15,.96),rgba(8,8,10,.97));
   border-top:1px solid rgba(255,255,255,.09);
-  box-shadow:0 -26px 70px rgba(0,0,0,.62);
+  box-shadow:0 -26px 70px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.06);
   animation:inWipe .58s var(--eo) .18s both,
             outWipe .5s cubic-bezier(.55,0,.75,.35) 7.2s forwards}
 @keyframes inWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
@@ -114,11 +114,12 @@ html[data-hold="1"] .band{animation:inWipe .58s var(--eo) .18s both}
    fitTitle() in the script measures the real string and steps down to fit. */
 .title{font-family:var(--fd);font-weight:700;
   font-size:clamp(38px,4.3vw,82px);line-height:1.02;letter-spacing:-.04em;
-  white-space:nowrap;color:var(--fg);
-  animation:slideUp .55s var(--eo) .44s both}
+   white-space:nowrap;color:var(--fg);text-shadow:0 2px 18px rgba(0,0,0,.6);
+   animation:slideUp .55s var(--eo) .44s both}
 @keyframes slideUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 .title .hl{background:linear-gradient(180deg,#FFDE7A 8%,var(--yellow) 52%,var(--hot));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 18px rgba(255,193,7,.3))}
 
 .meta{display:flex;align-items:center;gap:11px;flex-wrap:wrap;
   font-family:var(--fm);font-weight:600;font-size:13px;letter-spacing:.2em;
@@ -135,7 +136,8 @@ html[data-hold="1"] .band{animation:inWipe .58s var(--eo) .18s both}
   letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 .cdown .v{display:block;margin-top:5px;font-family:var(--fm);font-weight:700;
   font-size:clamp(30px,2.9vw,50px);line-height:1;letter-spacing:-.01em;
-  color:var(--yellow);font-variant-numeric:tabular-nums}
+  color:var(--yellow);font-variant-numeric:tabular-nums;
+  text-shadow:0 0 24px rgba(255,193,7,.3)}
 
 /* a hairline that runs the seam between flag and body — the only ornament */
 .seam{position:absolute;top:0;bottom:0;left:186px;width:1px;
