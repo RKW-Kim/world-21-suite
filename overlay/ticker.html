@@ -42,7 +42,6 @@
   --fd:'Inter',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --tks:1;
-  --capw:calc(232px*var(--tks,1));
   --fade:108px;        /* marquee edge fade; ?fade= overrides */
  }
  *{box-sizing:border-box;margin:0;padding:0}
@@ -73,15 +72,16 @@
     container by construction, which is the only reliable fix. */
   .tkPill{width:100%;max-width:100%;height:88%;max-height:calc(66px*var(--tks,1));display:flex;align-items:stretch;overflow:hidden;border-radius:999px;
     /* No transform-origin scale here — scaling about the center pulled the two caps toward the middle.
-       ?scale now sizes the strip vertically via max-height and the caps via --capw instead. */
+       ?scale now sizes the strip vertically via max-height only. */
     background:linear-gradient(180deg,rgba(26,26,32,.66),rgba(10,10,14,.58));
     backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 0 0 1px rgba(255,255,255,.06),0 14px 34px rgba(0,0,0,.35),0 0 0 1.5px rgba(255,206,0,.14)}
- /* Both caps are a hard, identical width. They used to be flex:none sized by
-    their own content, so the left measured 187px and the right 140px — two
-    different cap widths on one strip, which reads as an accident rather than
-    a decision. The clock cap now has exactly as much room as the brand cap. */
- .tkPill .cap{flex:0 0 var(--capw);width:var(--capw);display:flex;align-items:center;
+ /* Caps size to their own content again (flex:0 0 auto), the way ticker-wm
+    does it — each cap takes only the room it needs and no more. They used to
+    be pinned to one hard --capw, which made the brand cap and the clock cap
+    the same width regardless of what they hold, so the left looked padded out
+    and the clock looked cramped. Content decides; the strip stays snug. */
+ .tkPill .cap{flex:0 0 auto;display:flex;align-items:center;
     justify-content:center;gap:3px;padding:0 24px 0 18px;
    background:linear-gradient(0deg,#FFAE5A,#FFC107 100%,#F8A800);color:#1F1702;
    clip-path:polygon(0 0,100% 0,calc(100% - 20px) 100%,0 100%)}
