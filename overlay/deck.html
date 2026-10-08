@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Scenes — SmileTV</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=Inter:wght@500;600;800&display=swap" rel="stylesheet">
+<style>
+/* SCENE LAUNCHER — an operator tool, not a broadcast scene.
+   Every card opens its scene in a real browser tab, so tab switching belongs
+   to the browser (Ctrl/Cmd+Tab) instead of to this page. Nothing is framed,
+   nothing is nested, no key handler to learn.
+
+   Point OBS at the scene file directly. Never add this page as a source. */
+
+:root{
+  --ink:#0A0A0A;
+  --panel:#121214;
+  --panel-2:#17171A;
+  --line:rgba(255,255,255,.09);
+  --text:#F5F5F7;
+  --dim:#A1A1AA;
+  --faint:#6E6E78;
+  --yellow:#FFC107;
+  --hot:#F5A623;
+  --fd:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --r:16px;
+}
+
+*{box-sizing:border-box}
+html{background:var(--ink)}
+body{
+  margin:0;
+  font-family:var(--fd);
+  color:var(--text);
+  background:
+    radial-gradient(1200px 620px at 12% -12%,rgba(255,193,7,.07),transparent 62%),
+    var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:1120px;margin:0 auto;padding:64px 28px 96px}
+
+/* ---- header ---- */
+.mark{display:flex;align-items:center;gap:12px;margin-bottom:34px}
+.mark i{
+  width:30px;height:30px;border-radius:50%;flex:none;
+  background:linear-gradient(135deg,#FFE07A 0%,var(--yellow) 46%,var(--hot) 100%);
+}
+.mark b{font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+
+h1{
+  margin:0 0 12px;
+  font-size:clamp(30px,5vw,50px);
+  font-weight:800;
+  letter-spacing:-.028em;
+  line-height:1.04;
+}
+h1 em{
+  font-style:normal;
+  background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{margin:0 0 30px;max-width:62ch;font-size:16.5px;line-height:1.62;color:var(--dim)}
+
+.notes{
+  display:inline-flex;align-items:center;gap:9px;
+  margin-bottom:44px;padding:9px 15px 9px 13px;
+  border:1px solid var(--line);border-radius:999px;
+  background:var(--panel);text-decoration:none;
+  font:600 13px/1 var(--fd);color:var(--text);
+  transition:border-color .18s var(--ease),background .18s var(--ease);
+}
+.notes:hover{border-color:rgba(255,193,7,.42);background:var(--panel-2)}
+.notes s{
+  text-decoration:none;font:600 11px/1 var(--fm);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);
+}
+
+/* ---- grid ---- */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(310px,1fr));
+  gap:16px;
+}
+
+.card{
+  display:flex;flex-direction:column;gap:11px;
+  padding:24px 24px 21px;
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel);
+  text-decoration:none;color:inherit;
+  transition:transform .22s var(--ease),border-color .22s var(--ease),background .22s var(--ease);
+}
+.card:hover{
+  transform:translateY(-3px);
+  border-color:rgba(255,193,7,.40);
+  background:var(--panel-2);
+}
+.card:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+
+.card .n{
+  font:600 11px/1 var(--fm);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);
+}
+.card h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.018em}
+.card p{margin:0;font-size:14.5px;line-height:1.56;color:var(--dim)}
+
+.card code{
+  margin-top:auto;padding-top:13px;
+  font:600 11.5px/1.5 var(--fm);color:var(--faint);
+  word-break:break-word;
+}
+.card code b{color:var(--yellow);font-weight:600}
+
+.card .go{
+  display:inline-flex;align-items:center;gap:7px;
+  margin-top:11px;
+  font:800 12.5px/1 var(--fd);letter-spacing:.02em;color:var(--yellow);
+}
+.card .go::after{content:"→";transition:transform .22s var(--ease)}
+.card:hover .go::after{transform:translateX(4px)}
+
+/* ---- footer ---- */
+.foot{
+  margin-top:46px;padding-top:26px;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:10px 26px;
+  font-size:13px;line-height:1.6;color:var(--faint);
+}
+.foot b{color:var(--dim);font-weight:600}
+
+@media (max-width:600px){
+  .wrap{padding:40px 18px 64px}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mark"><i></i><b>SmileTV</b></div>
+
+  <h1>Six scenes, <em>six tabs.</em></h1>
+  <p class="lede">
+    Each scene opens in its own browser tab, so you switch between them the way
+    you switch between any other tab. Nothing is nested in this page and there is
+    nothing to click through. Full production notes live in the markdown file.
+  </p>
+
+  <a class="notes" href="../SCENES.md" target="_blank" rel="noopener">
+    <s>Notes</s> SCENES.md
+  </a>
+
+  <div class="grid">
+
+    <a class="card" href="starting.html" target="_blank" rel="noopener">
+      <span class="n">01</span>
+      <h2>Starting</h2>
+      <p>The holding screen. Sits on Program before anyone talks so an empty
+         channel looks deliberate and the wait has a known length.</p>
+      <code><b>?title=</b> · <b>?date=</b> · <b>?scale=</b></code>
+      <span class="go">Open</span>
+    </a>
+
+    <a class="card" href="tech-diff.html" target="_blank" rel="noopener">
+      <span class="n">02</span>
+      <h2>Tech diffs</h2>
+      <p>The segment opener. Names the change and fills a bar to full as you talk
+         through it, so the viewer always knows what section they are in.</p>
+      <code>No parameters</code>
+      <span class="go">Open</span>
+    </a>
+
+    <a class="card" href="q%26a.html" target="_blank" rel="noopener">
+      <span class="n">03</span>
+      <h2>Q&amp;A</h2>
+      <p>The engagement layer. A working chat that keeps the frame alive during
+         dead air and lets the audience into the programme.</p>
+      <code><b>?scale=</b></code>
+      <span class="go">Open</span>
+    </a>
+
+    <a class="card" href="offair.html" target="_blank" rel="noopener">
+      <span class="n">04</span>
+      <h2>Off air</h2>
+      <p>The safety state. Nothing is yellow, nothing glows, and one glance at
+         Program tells you whether anything is live.</p>
+      <code><b>?next=</b> · <b>?note=</b></code>
+      <span class="go">Open</span>
+    </a>
+
+    <a class="card" href="meet.html" target="_blank" rel="noopener">
+      <span class="n">05</span>
+      <h2>Meet</h2>
+      <p>The video surface. Carries every meeting, screen share and recorded
+         piece behind the channel's own furniture instead of a browser tab.</p>
+      <code><b>?pl=</b> · <b>?yt=</b> · <b>?vol=</b> · <b>?ctl=</b></code>
+      <span class="go">Open</span>
+    </a>
+
+    <a class="card" href="end-credits.html" target="_blank" rel="noopener">
+      <span class="n">06</span>
+      <h2>End credits</h2>
+      <p>The tail. A farewell with a call to action, and a board that names
+         everyone who made the show.</p>
+      <code>No parameters</code>
+      <span class="go">Open</span>
+    </a>
+
+  </div>
+
+  <div class="foot">
+    <span><b>Switching</b> — Ctrl / Cmd + Tab, like any other tab.</span>
+    <span><b>In OBS</b> — add the scene file itself, never this page.</span>
+    <span><b>Reloading</b> — edit, reload the tab, it is on air.</span>
+  </div>
+
+</div>
+</body>
+</html>
