@@ -51,56 +51,11 @@ body{
   background:#000;
 }
 #frame{display:block;width:100%;height:100%;border:0;background:#000}
-
-/* ---- heads-up strip ----
-   Names the scene that is on air and the file behind it, because the second
-   one is what you copy into OBS. Auto-hides so it never sits on the picture. */
-#hud{
-  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
-  display:flex;align-items:center;gap:16px;
-  padding:11px 20px 11px 13px;
-  border:1px solid rgba(255,255,255,.12);border-radius:999px;
-  background:rgba(10,10,10,.86);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  opacity:0;pointer-events:none;
-  transition:opacity .35s ease;
-}
-#hud.on{opacity:1}
-
-#hud .k{
-  display:grid;place-items:center;
-  min-width:26px;height:26px;padding:0 7px;border-radius:8px;
-  background:var(--yellow);color:#0A0A0A;
-  font:800 13px/1 var(--fm);
-}
-#hud .n{font-size:14.5px;font-weight:800;letter-spacing:-.01em}
-#hud .f{font:600 11.5px/1 var(--fm);color:rgba(250,250,250,.5)}
-
-/* the six keys, so the numbering is discoverable without a manual */
-#hud .dots{display:flex;gap:5px;padding-left:4px;border-left:1px solid rgba(255,255,255,.12)}
-#hud .dots i{
-  width:5px;height:5px;border-radius:50%;
-  background:rgba(255,255,255,.24);
-  transition:background .25s ease,transform .25s ease;
-}
-#hud .dots i.on{background:var(--yellow);transform:scale(1.35)}
-
-@media (prefers-reduced-motion:reduce){
-  #hud{transition:none}
-  #hud .dots i{transition:none}
-}
 </style>
 </head>
 <body>
 
 <div id="stage"><iframe id="frame" title="Scene preview" allow="autoplay; encrypted-media; fullscreen"></iframe></div>
-
-<div id="hud" aria-hidden="true">
-  <span class="k" id="hK">1</span>
-  <span class="n" id="hN">Starting</span>
-  <span class="f" id="hF">starting.html</span>
-  <span class="dots" id="hD"></span>
-</div>
 
 <script>
 /* Presentation order — the run of show. */
@@ -114,9 +69,6 @@ const SCENES = [
 ];
 
 const frame = document.getElementById('frame');
-const hud   = document.getElementById('hud');
-const hK = document.getElementById('hK'), hN = document.getElementById('hN'),
-      hF = document.getElementById('hF'), hD = document.getElementById('hD');
 
 /* ---- fit the 1920x1080 frame into whatever window we were given ---- */
 const stage = document.getElementById('stage');
@@ -126,17 +78,6 @@ function fit(){
 }
 addEventListener('resize', fit);
 fit();
-
-/* ---- the six position dots ---- */
-SCENES.forEach(() => hD.appendChild(document.createElement('i')));
-
-/* ---- hud ---- */
-let hideTimer;
-function showHud(){
-  hud.classList.add('on');
-  clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => hud.classList.remove('on'), 2600);
-}
 
 /* ---- navigation ----
    Wraps in both directions. Nothing is a dead end, including going back off the
@@ -150,26 +91,16 @@ function go(i){
   if (frame.getAttribute('src') === s.file) frame.contentWindow.location.reload();
   else frame.setAttribute('src', s.file);
 
-  hK.textContent = cur + 1;
-  hN.textContent = s.name;
-  hF.textContent = s.file;
-  [...hD.children].forEach((d, n) => d.classList.toggle('on', n === cur));
-
   history.replaceState(null, '', '#' + (cur + 1));
-  showHud();
 }
 
-/* Over http the scene is same-origin, so its own key handler can be reached and
-   the meet scene's transport keys work while the deck is driving. Opened from
-   disk this throws and we simply lose that one nicety. */
-function bindSceneKeys(){
-  try{
-    frame.contentDocument.addEventListener('keydown', e => {
-      if (e.key === 'PageUp' || e.key === 'PageDown') e.preventDefault();
-    }, true);
-  }catch(_){}
-}
-frame.addEventListener('load', bindSceneKeys);
+/* Hand the scene the keyboard. Over http the scene is same-origin, so its own
+   key handler has to be given the focus or it never hears anything — and it is
+   the one that owns PageUp/PageDown for the playlist and ArrowUp/ArrowDown for
+   volume in the meet scene. Without this the keys go to the deck instead. */
+frame.addEventListener('load', () => {
+  try{ frame.contentWindow.focus(); }catch(_){}
+});
 
 /* ---- keys ---- */
 function keys(e){
@@ -186,7 +117,6 @@ function keys(e){
   }
 }
 addEventListener('keydown', keys);
-addEventListener('pointerdown', showHud);
 
 /* #3 opens the third scene, so a link can point straight at one. */
 go((parseInt(location.hash.replace('#',''),10) || 1) - 1);
