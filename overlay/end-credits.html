@@ -31,13 +31,15 @@
      the browser can interpolate it, which is what lets the whole panel cross
      fade from one category's colour to the next instead of snapping. */
   --ac:#FFC107;
-  --acs:rgba(255,193,7,.09);
+  --acs:rgba(255,193,7,.15);
   --acm:rgba(255,193,7,.30);
-  transition:--ac .7s var(--eo),--acs .7s var(--eo),--acm .7s var(--eo);
+  --acf:rgba(255,193,7,.22);
+  transition:--ac .7s var(--eo),--acs .7s var(--eo),--acm .7s var(--eo),--acf .7s var(--eo);
 }
 @property --ac {syntax:'<color>';inherits:true;initial-value:#FFC107}
-@property --acs{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.09)}
+@property --acs{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.15)}
 @property --acm{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.30)}
+@property --acf{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.22)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden}
 body{background:var(--ink);color:var(--fg);
@@ -133,10 +135,10 @@ html[data-next="1"] .bellrow{display:none}
 .credits{position:absolute;right:3.4%;top:clamp(80px,10vh,116px);
   bottom:calc(var(--dock) + 54px);width:min(812px,46vw);z-index:3;
   display:flex;flex-direction:column;padding:26px 30px 24px;border-radius:26px;
-  border:1px solid rgba(255,255,255,.10);
+  border:1px solid var(--acf);
   background:
     linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.014) 42%,rgba(255,255,255,.03)),
-    radial-gradient(120% 70% at 50% 0%,var(--acs),transparent 60%);
+    radial-gradient(130% 78% at 50% 0%,var(--acs),transparent 62%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),
     inset 0 -1px 0 rgba(0,0,0,.4),
     0 40px 110px rgba(0,0,0,.62)}
@@ -203,7 +205,7 @@ html[data-next="1"] .bellrow{display:none}
   z-index:calc(60 - var(--ad) * 10);
   transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
 /* the neighbours: present, legible as context, clearly not on stage */
-.box.car .card.side .av{filter:saturate(.3) brightness(.72)}
+.box.car .card.side .av{filter:saturate(.35) brightness(.82)}
 .box.car .card.side .nm{color:var(--muted)}
 .box.car .card.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
   0 0 0 1px var(--acm),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--acs)}
@@ -216,7 +218,7 @@ html[data-next="1"] .bellrow{display:none}
    are as many combinations as you care to author. The palette is deliberately
    low-chroma and cool-to-earthy: no pinks, no pastels, nothing that reads a
    gender, and the mid-tones stay masculine without going monochrome. */
-.av{position:relative;width:min(58%,208px);height:auto;aspect-ratio:1;border-radius:50%;
+.av{position:relative;width:min(70%,238px);height:auto;aspect-ratio:1;border-radius:50%;
   overflow:hidden;
   display:grid;place-items:center;flex:none;
   background:
@@ -264,7 +266,7 @@ html[data-next="1"] .bellrow{display:none}
   transform:none;opacity:1;z-index:auto;
   gap:10px;padding:18px 14px 16px;border-radius:20px;
   transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
-.box.grid .card .av{width:min(56%,190px)}
+.box.grid .card .av{width:min(64%,198px)}
 .box.grid .card .nm{font-size:clamp(15px,1.35vw,20px);letter-spacing:-.01em}
 .box.grid .card .rl{font-size:9px;letter-spacing:.22em}
 /* ranked: the first name in a category is the lead, and it looks like it */
@@ -528,8 +530,9 @@ html[data-next="1"] .bellrow{display:none}
   function setAccent(cat){
     var r=document.documentElement.style;
     r.setProperty('--ac',cat.c);
-    r.setProperty('--acs',hexa(cat.c,.10));
+    r.setProperty('--acs',hexa(cat.c,.15));
     r.setProperty('--acm',hexa(cat.c,.32));
+    r.setProperty('--acf',hexa(cat.c,.22));
   }
 
   /* Enough nodes for the biggest set, reused forever. Cards are never destroyed
