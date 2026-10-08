@@ -27,7 +27,17 @@
   --eo:cubic-bezier(.32,.72,0,1);
   --card-ms:3500;
   --grid-ms:3200;
+  /* --ac is the accent of whatever category is on stage. It is registered so
+     the browser can interpolate it, which is what lets the whole panel cross
+     fade from one category's colour to the next instead of snapping. */
+  --ac:#FFC107;
+  --acs:rgba(255,193,7,.09);
+  --acm:rgba(255,193,7,.30);
+  transition:--ac .7s var(--eo),--acs .7s var(--eo),--acm .7s var(--eo);
 }
+@property --ac {syntax:'<color>';inherits:true;initial-value:#FFC107}
+@property --acs{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.09)}
+@property --acm{syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.30)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden}
 body{background:var(--ink);color:var(--fg);
@@ -126,7 +136,7 @@ html[data-next="1"] .bellrow{display:none}
   border:1px solid rgba(255,255,255,.10);
   background:
     linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.014) 42%,rgba(255,255,255,.03)),
-    radial-gradient(120% 70% at 50% 0%,rgba(255,193,7,.07),transparent 60%);
+    radial-gradient(120% 70% at 50% 0%,var(--acs),transparent 60%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),
     inset 0 -1px 0 rgba(0,0,0,.4),
     0 40px 110px rgba(0,0,0,.62)}
@@ -136,28 +146,31 @@ html[data-next="1"] .bellrow{display:none}
 .chead .ep{color:var(--muted);letter-spacing:.18em}
 .chead .ep b{color:var(--yellow);font-weight:800}
 
-/* ---- category indicator: icon over name, centred ---- */
-.cat{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
-.cat .ci{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;
-  border:1px solid rgba(255,193,7,.26);background:rgba(255,193,7,.075);
-  box-shadow:0 0 22px rgba(255,193,7,.14),inset 0 1px 0 rgba(255,255,255,.09)}
-.cat .ci svg{width:26px;height:26px;fill:none;stroke:var(--yellow);stroke-width:1.6;
+/* ---- category indicator: icon over name, centred.
+   Sized to be read from across a room — this is the one line that tells a
+   viewer where they are in the roll. It takes the category's colour. ---- */
+.cat{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
+.cat .ci{width:64px;height:64px;display:grid;place-items:center;border-radius:18px;
+  border:1px solid var(--acm);background:var(--acs);
+  box-shadow:0 0 26px var(--acs),inset 0 1px 0 rgba(255,255,255,.09)}
+.cat .ci svg{width:33px;height:33px;fill:none;stroke:var(--ac);stroke-width:1.6;
   stroke-linecap:round;stroke-linejoin:round}
-.cat .cn{font-family:var(--fd);font-weight:800;font-size:22px;letter-spacing:.2em;
+.cat .cn{font-family:var(--fd);font-weight:800;font-size:30px;letter-spacing:.18em;
   text-transform:uppercase;color:#EDEDF2;text-align:center}
-.cat .cn small{display:block;font-family:var(--fm);font-weight:500;font-size:9.5px;
-  letter-spacing:.28em;color:var(--faint);margin-top:5px}
+.cat .cn small{display:block;font-family:var(--fm);font-weight:500;font-size:10px;
+  letter-spacing:.28em;color:var(--ac);margin-top:6px}
 
-/* ---- the single bar: time remaining on whatever is on stage ----
-   It DRAINS. Full means the card has just started, empty means it is about to
-   advance. That is the literal reading of "time remaining", and it is why the
-   eye can tell the difference between "this one is nearly done" and "this one
-   has not really started". */
+/* ---- the single bar: how much of the current card is left.
+   It FILLS. Empty means the card has just taken the stage, full means it is
+   about to hand over — which is the direction that reads as progress rather
+   than urgency on a credits roll, where the viewer is waiting, not waiting
+   for you to hurry. */
 .bar{margin-top:14px;height:7px;border-radius:999px;overflow:hidden;flex:none;
   background:rgba(255,255,255,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
 .bar i{display:block;height:100%;width:100%;border-radius:999px;
-  background:linear-gradient(90deg,var(--hot),var(--yellow) 62%,#FFE9A8);
-  box-shadow:0 0 16px rgba(255,193,7,.6)}
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 55%,#000),
+    var(--ac) 66%,color-mix(in srgb,var(--ac) 40%,#fff));
+  box-shadow:0 0 16px var(--acm)}
 
 /* ---- the stage: carousel, then grid ---- */
 .box{position:relative;margin-top:18px;flex:1;min-height:0}
@@ -165,27 +178,35 @@ html[data-next="1"] .bellrow{display:none}
 /* carousel: absolutely placed, overlapping, centre dominant.
    --d is the signed distance from the active card and --ad its magnitude, both
    written by JS. Everything below is derived from those two numbers, so the
-   whole formation is one transform rather than N. */
-.box.car{height:100%}
-/* Gap and falloff are sized so the widest category still fits the panel: three
-   cards at d=0,+1,+2 need 2*gap + half of the outermost card to stay inside
-   half the content width. At gap 168 the last card ran 53px past the edge and
-   was visibly clipped. */
-.box.car .card{position:absolute;left:50%;top:50%;width:252px;
-  transform:translate(-50%,-50%) translateX(calc(var(--d) * 128px))
-                     scale(calc(1 - var(--ad) * .17));
-  opacity:calc(1 - var(--ad) * .17);
-  z-index:calc(60 - var(--ad));
-  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
+   whole formation is one transform rather than N.
 
-.card{pointer-events:none;
-  display:flex;flex-direction:column;align-items:center;gap:14px;
-  padding:24px 18px 22px;border-radius:22px;text-align:center;
-  border:1px solid rgba(255,255,255,.09);
+   Three slots only: the category before, the person on stage, the category
+   after. The flanks are what fill the frame — a lone card used to sit in a
+   wide empty stage, and the answer is not to shrink it, it is to give the
+   empty sides something to say.
+
+   Cards are sized by HEIGHT and take their width from the aspect ratio, so a
+   card fills the frame top to bottom. That is also the reason the avatar is a
+   percentage of the card: the portrait has to stay high resolution when a real
+   photograph replaces the smile. */
+.box.car{height:100%}
+.box.car .card{position:absolute;left:50%;top:50%;
+  width:var(--cw,280px);height:calc(var(--cw,280px) * 1.24);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:18px;padding:28px 20px 26px;border-radius:26px;
+  text-align:center;border:1px solid rgba(255,255,255,.09);
   background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 22px 48px rgba(0,0,0,.5)}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 22px 48px rgba(0,0,0,.5);
+  transform:translate(-50%,-50%) translateX(calc(var(--d) * var(--off,200px)))
+                     scale(calc(1 - var(--ad) * .06));
+  opacity:calc(1 - var(--ad) * .34);
+  z-index:calc(60 - var(--ad) * 10);
+  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
+/* the neighbours: present, legible as context, clearly not on stage */
+.box.car .card.side .av{filter:saturate(.3) brightness(.72)}
+.box.car .card.side .nm{color:var(--muted)}
 .box.car .card.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
-  0 0 0 1px rgba(255,193,7,.28),0 26px 64px rgba(0,0,0,.6),0 0 44px rgba(255,193,7,.12)}
+  0 0 0 1px var(--acm),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--acs)}
 
 /* ---- the avatar slot
    A circle filled with a three-stop gradient drawn from --c1/--c2/--c3, with a
@@ -195,7 +216,8 @@ html[data-next="1"] .bellrow{display:none}
    are as many combinations as you care to author. The palette is deliberately
    low-chroma and cool-to-earthy: no pinks, no pastels, nothing that reads a
    gender, and the mid-tones stay masculine without going monochrome. */
-.av{position:relative;width:126px;height:126px;border-radius:50%;overflow:hidden;
+.av{position:relative;width:min(58%,208px);height:auto;aspect-ratio:1;border-radius:50%;
+  overflow:hidden;
   display:grid;place-items:center;flex:none;
   background:
     conic-gradient(from 210deg,rgba(255,255,255,.17),transparent 30%,
@@ -205,47 +227,49 @@ html[data-next="1"] .bellrow{display:none}
     inset 0 -7px 16px rgba(0,0,0,.52),
     0 0 0 2px rgba(255,255,255,.06),
     0 14px 34px rgba(0,0,0,.55)}
-.av svg{width:70px;height:70px;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
+.av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 
+.card{pointer-events:none;display:flex;flex-direction:column;align-items:center;
+  justify-content:center}
 .card .rl,.card .nm{transition:opacity .45s var(--eo)}
 .card .rl{font-family:var(--fd);font-weight:800;font-size:10px;letter-spacing:.3em;
   text-transform:uppercase;color:var(--muted)}
-.card .nm{font-family:var(--fd);font-weight:800;font-size:26px;letter-spacing:-.02em;
+.card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(19px,2.1vw,27px);
+  letter-spacing:-.02em;
   line-height:1.12;color:#F2F2F6;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Only the centre card shows its text. The cards overlap by design, and two
-   names at once collide into something that reads as a layout fault rather than
-   as depth — so the trailing cards become a stack of avatars peeking out from
-   behind the one that matters. It also states the hierarchy without needing the
-   eye to work it out. */
+/* Only the card on stage shows its text. The flanks overlap the centre by
+   design, and two names at once collide into something that reads as a layout
+   fault rather than as depth. Their avatars still read, which is the point:
+   they are context, not competition. */
 .box.car .card:not(.on) .rl,.box.car .card:not(.on) .nm{opacity:0}
 .box.car .card:not(.on) .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
   inset 0 -7px 16px rgba(0,0,0,.52),0 0 0 2px rgba(255,255,255,.05),
   0 12px 28px rgba(0,0,0,.5)}
 
 /* ---- grid mode
-   Identical aspect ratio on every cell — a grid of mixed shapes is the fastest
-   way to make a credits board look amateur. Cells carry avatar + name always,
-   and the role too when the set is small enough to earn the extra line. */
-/* Columns are a FIXED width and the grid is centred, not stretched to fill the
-   panel. Letting three cells divide 750px gave each one a 375x435 box with all
-   the content in the top third — a wall of empty card. Identical aspect ratio is
-   guaranteed by the fixed column width plus the ratio below, so nothing depends
-   on how many columns there happen to be. */
-.box.grid{display:grid;gap:15px;align-content:center;justify-content:center;
-  grid-template-columns:repeat(var(--cols,3),166px)}
-.box.grid .card{position:static;width:auto;aspect-ratio:1/1.24;
+   The board fills the frame. Columns and rows are both 1fr, so the cells share
+   the stage edge to edge and every cell is the same shape by construction —
+   nothing about the aspect ratio depends on how many columns there are.
+
+   A short last row is centred on fractional grid lines, so two cards left over
+   in a four wide frame each straddle the middle: one takes the right half of
+   column one and the left half of column two, the other takes the right half of
+   column two and the left half of column three. The pair sits in the middle of
+   the board instead of hanging off the left edge. */
+.box.grid{display:grid;gap:14px;align-content:stretch;justify-content:stretch;
+  height:100%;grid-template-columns:repeat(var(--cols,3),1fr);grid-auto-rows:1fr}
+.box.grid .card{position:static;width:auto;height:auto;aspect-ratio:auto;
   transform:none;opacity:1;z-index:auto;
-  gap:9px;padding:16px 12px 14px;border-radius:18px;
+  gap:10px;padding:18px 14px 16px;border-radius:20px;
   transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
-.box.grid .card .av{width:72px;height:72px}
-.box.grid .card .av svg{width:40px;height:40px}
-.box.grid .card .nm{font-size:15px;letter-spacing:-.01em}
-.box.grid .card .rl{font-size:8.5px;letter-spacing:.22em}
+.box.grid .card .av{width:min(56%,190px)}
+.box.grid .card .nm{font-size:clamp(15px,1.35vw,20px);letter-spacing:-.01em}
+.box.grid .card .rl{font-size:9px;letter-spacing:.22em}
 /* ranked: the first name in a category is the lead, and it looks like it */
 .box.grid .card:first-child{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
-  0 0 0 1px rgba(255,193,7,.26),0 18px 40px rgba(0,0,0,.5)}
+  0 0 0 1px var(--acm),0 18px 40px rgba(0,0,0,.5)}
 .box.grid .card:first-child .nm{color:#fff}
 .box.grid.no-role .rl{display:none}
 
@@ -259,15 +283,20 @@ html[data-next="1"] .bellrow{display:none}
 @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
 @media (max-width:1400px){
-  .bwrap{left:4.4%;gap:30px}
+  /* Below this width the panel on the right and the sign-off on the left start
+     fighting for the same pixels: side by side, the headline block ended at 729
+     while the panel began at 635. Stacking the column hands the headline the
+     full width instead of the leftover, and the collision goes away. */
+  .bwrap{left:4.4%;flex-direction:column;align-items:flex-start;
+    gap:26px;max-width:min(560px,44vw)}
+  .orbitB{width:clamp(190px,25vh,250px)}
   .credits{width:min(660px,47vw);padding:20px 22px 20px}
-  .cat .ci{width:42px;height:42px}
-  .cat .ci svg{width:21px;height:21px}
-  .cat .cn{font-size:17px}
-  .box.car .card{width:206px;transform:translate(-50%,-50%) translateX(calc(var(--d) * 106px))
-    scale(calc(1 - var(--ad) * .17))}
-  .av{width:104px;height:104px}
-  .av svg{width:58px;height:58px}
+  .cat .ci{width:54px;height:54px;border-radius:16px}
+  .cat .ci svg{width:28px;height:28px}
+  .cat .cn{font-size:24px}
+  .box.car .card{padding:22px 16px 20px}
+  h1{font-size:clamp(44px,4.6vw,84px)}
+  .chip{font-size:12.5px;padding:8px 18px}
 }
 @media (max-width:980px){
   .credits{right:auto;left:5%;top:auto;bottom:calc(var(--dock) + 20px);width:90vw;height:36vh}
@@ -382,36 +411,36 @@ html[data-next="1"] .bellrow{display:none}
   function C(a,b,c){return {c1:a,c2:b,c3:c}}
 
   var CATS=[
-    {n:'Host',i:'mic',p:[{r:'Host',v:'you',k:C('#3D4F5C','#2E3A46','#55666F')}]},
-    {n:'Co-hosts',i:'users',p:[
+    {n:'Host',i:'mic',c:'#FFC107',p:[{r:'Host',v:'you',k:C('#3D4F5C','#2E3A46','#55666F')}]},
+    {n:'Co-hosts',i:'users',c:'#37C8D8',p:[
       {r:'Lead co-host',v:'the smile squad',k:C('#45506B','#2F4A5C','#5A6472')},
       {r:'Co-host',v:'the night desk',k:C('#4A5A3E','#3A4A3E','#6B5B3E')},
       {r:'Co-host',v:'field desk',k:C('#3E5A54','#334155','#6E6455')}]},
-    {n:'Producers',i:'clap',p:[
+    {n:'Producers',i:'clap',c:'#8B7BE8',p:[
       {r:'Executive producer',v:'smile crew',k:C('#5A4A3C','#3B4652','#7B6D4F')},
       {r:'Producer',v:'the desk',k:C('#45506B','#33474F','#5C6B62')},
       {r:'Producer',v:'production',k:C('#4E5A63','#3A4450','#6B6250')}]},
-    {n:'Script',i:'doc',p:[
+    {n:'Script',i:'doc',c:'#D98A3C',p:[
       {r:'Script editor',v:'the words',k:C('#4A5568','#2E3A46','#5F6C7B')},
       {r:'Copy',v:'the desk',k:C('#3E5A54','#4A5A3E','#55666F')}]},
-    {n:'Assets & graphics',i:'layers',p:[
+    {n:'Assets & graphics',i:'layers',c:'#3FB98C',p:[
       {r:'Graphics',v:'the toolkit',k:C('#6B5B3E','#45506B','#3E5A54')},
       {r:'Motion',v:'motion',k:C('#3D4F5C','#5A4A3C','#55666F')},
       {r:'Brand',v:'brand',k:C('#4E5A63','#2F4A5C','#6B6250')}]},
-    {n:'On-air talent',i:'cast',p:[
+    {n:'On-air talent',i:'cast',c:'#E8577F',p:[
       {r:'Presenter',v:'the voices',k:C('#2F4A5C','#45506B','#5C6B72')},
       {r:'Reader',v:'readers',k:C('#4A5A3E','#5A4A3C','#55666F')},
       {r:'Correspondent',v:'stringer',k:C('#3E5A54','#334155','#6E6455')}]},
-    {n:'Field reporting',i:'cam',p:[
+    {n:'Field reporting',i:'cam',c:'#9BC23F',p:[
       {r:'Camera',v:'the cameras',k:C('#3B4652','#4A5A3E','#6B5B3E')},
       {r:'Sound',v:'stringer',k:C('#45506B','#33474F','#5C6B62')}]},
-    {n:'Fact check',i:'check',p:[
+    {n:'Fact check',i:'check',c:'#4E9BE8',p:[
       {r:'Verifier',v:'the desk',k:C('#3A4A3E','#4A5568','#6B6250')},
       {r:'Standards',v:'verification',k:C('#4E5A63','#3E5A54','#55666F')}]},
-    {n:'Music',i:'music',p:[{r:'Music',v:'licensed',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
-    {n:'Questions',i:'chat',p:[{r:'Questions',v:'the chat',k:C('#45506B','#4A5A3E','#55666F')}]},
-    {n:'Closing',i:'spark',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
-    {n:'Next session',i:'cal',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
+    {n:'Music',i:'music',c:'#B45BD9',p:[{r:'Music',v:'licensed',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
+    {n:'Questions',i:'chat',c:'#E8763A',p:[{r:'Questions',v:'the chat',k:C('#45506B','#4A5A3E','#55666F')}]},
+    {n:'Closing',i:'spark',c:'#F0C24B',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
+    {n:'Next session',i:'cal',c:'#57C46A',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
   ];
 
   /* ---- overrides ---- */
@@ -475,13 +504,8 @@ html[data-next="1"] .bellrow{display:none}
     var before=cards.map(function(c){return c.getBoundingClientRect()});
     box.className='box '+to;
     if(!wantCar){
-      var n=cards.length;
-      box.style.setProperty('--cols', n<=1?1:(n<=2?2:(n<=3?3:(n<=4?2:3))));
-      /* the role line only earns its place while the board is small enough to
-         read. Past four people the grid is faces and names, nothing more. */
-      box.classList.toggle('no-role', n>4);
-    }else{
-      box.classList.remove('no-role');
+      /* the column count and the role lines are decided by setGrid, which runs
+         after this and cannot survive box.className being rewritten here */
     }
     cards.forEach(function(c,i){
       var b=before[i];
@@ -496,25 +520,106 @@ html[data-next="1"] .bellrow{display:none}
     cards.forEach(function(c){c.style.transition='';c.style.transform=''});
   }
 
-  function layout(){
+  function hexa(h,a){
+    var n=parseInt(h.slice(1),16);
+    return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+  }
+  /* the panel takes the colour of whatever category is on stage */
+  function setAccent(cat){
+    var r=document.documentElement.style;
+    r.setProperty('--ac',cat.c);
+    r.setProperty('--acs',hexa(cat.c,.10));
+    r.setProperty('--acm',hexa(cat.c,.32));
+  }
+
+  /* Enough nodes for the biggest set, reused forever. Cards are never destroyed
+     between categories, so there is nothing to flicker. */
+  function pool(items){
+    items.forEach(function(it,i){
+      if(!cards[i]) cards[i]=makeCard(it.p);
+      else fill(cards[i],it.p);
+      /* Re-attach unconditionally. A one person category parks the spare nodes
+         with .remove(), which detaches them but keeps the reference — so the
+         next, larger category would fill those nodes and never put them back. */
+      if(!cards[i].parentNode) box.appendChild(cards[i]);
+      cards[i].classList.toggle('side',!!it.side);
+    });
+    for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
+  }
+
+  /* The card is sized from the frame rather than by a percentage height, which
+     does not resolve reliably against a flex sized box, and the flank offset is
+     solved from the same numbers so the three cards always end flush with the
+     edges of the stage at any window size. */
+  function size(){
+    var bw=box.clientWidth, bh=box.clientHeight;
+    if(!bw||!bh) return;
+    var w=Math.min(bh/1.24, bw*0.42);
+    box.style.setProperty('--cw',w.toFixed(1)+'px');
+    box.style.setProperty('--off',(bw/2-(w/2)*0.94-6).toFixed(1)+'px');
+  }
+
+  /* ---- carousel: before, on stage, after ---- */
+  function setCar(){
+    var cat=CATS[ci], prev=CATS[(ci-1+CATS.length)%CATS.length], nx=CATS[(ci+1)%CATS.length];
+    pool([{p:prev.p[0],side:1},{p:cat.p[pi]},{p:nx.p[0],side:1}]);
     cards.forEach(function(c,i){
-      var d=i-pi+fo;
+      var d=(i-1)+fo;
       c.style.setProperty('--d',d);
       c.style.setProperty('--ad',Math.abs(d));
-      c.classList.toggle('on',i===pi);
+      c.classList.toggle('on',i===1);
+      c.style.gridColumn=''; c.style.gridRow='';
     });
   }
 
+  /* ---- grid: fills the frame, short rows centred on the middle ----
+     A card whose row is short straddles the centre. For k cards in c columns
+     the first one starts at (c-k)/2 + .5, so it takes the right half of one
+     column and the left half of the next. Fractional grid lines are legal, and
+     they are the whole reason a leftover pair sits in the middle of the board
+     instead of hanging off the left edge. */
+  function setGrid(){
+    var cat=CATS[ci], n=cat.p.length;
+    pool(cat.p.map(function(p){return {p:p}}));
+    cards.forEach(function(c){
+      c.classList.remove('side'); c.classList.remove('on');
+      c.style.removeProperty('--d'); c.style.removeProperty('--ad');
+      c.style.gridColumn=''; c.style.gridRow='';
+    });
+    box.classList.toggle('no-role',n>4);
+    if(n===1){                      /* one name, one frame, no letterboxing */
+      cards[0].style.gridColumn='1 / -1'; cards[0].style.gridRow='1 / -1'; return
+    }
+    var cols=n<=2?n:3;              /* readable column cap, not a fixed layout */
+    box.style.setProperty('--cols',cols);
+    var i=0,r=0;
+    while(i<n){
+      var k=Math.min(cols,n-i);
+      /* Grid line numbers are integers, so a short row is centred with spans
+         rather than with a half column offset. When the leftover is even the
+         cards slide in on integer lines. When it is odd — two cards left in a
+         three column board — each one spans two columns and they share the
+         middle: the pair is symmetric about the centre and the overlap is the
+         seam. */
+      var even=(cols-k)%2===0, span=even?1:2, off=even?(cols-k)/2:0;
+      for(var j=0;j<k;j++){
+        cards[i+j].style.gridColumn=(1+off+j)+' / span '+span;
+        cards[i+j].style.gridRow=String(r+1);
+      }
+      i+=k; r++;
+    }
+  }
+
   /* The first card arrives from the far left instead of simply appearing
-     centred. The whole trick is that fo offsets the *formation*, and the
+     centred. The whole trick is that fo offsets the whole formation, and the
      formation is already described by --d: so the incoming card is positioned,
      scaled and faded by the falloff that is already there, rather than by a
      second animation system that would have to be kept in sync with this one.
      The 0.78s transition that already moves the cards does the travel. */
   function slideIn(){
-    fo=-2.1; layout();
+    fo=-1.15; setCar();
     void box.offsetWidth;                 /* commit off-left, or the browser coalesces */
-    fo=0; layout();
+    fo=0; setCar();
   }
 
   function enter(){
@@ -523,26 +628,16 @@ html[data-next="1"] .bellrow{display:none}
     lastKey=key;
     var cat=CATS[ci], people=cat.p;
 
+setAccent(cat);
     catIcon.innerHTML='<svg viewBox="0 0 24 24">'+ICON[cat.i]+'</svg>';
     catName.textContent=cat.n;
     catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
 
-    /* pool: enough nodes for the biggest category, reused forever. Cards are
-       never destroyed between categories, so there is nothing to flicker. */
-    people.forEach(function(p,i){
-      if(!cards[i]){ cards[i]=makeCard(p); box.appendChild(cards[i]) }
-      else fill(cards[i],p);
-    });
-    /* park anything the current category does not need */
-    for(var j=people.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
-
-    if(phase==='card'){ morph('car'); layout();
+    size();
+    if(phase==='card'){ morph('car'); setCar();
       if(!booted){ booted=true; slideIn() }
-    }
-    else{
-      morph('grid');
-      cards.forEach(function(c){ c.classList.remove('on');
-        c.style.removeProperty('--d'); c.style.removeProperty('--ad') });
+    }else{
+      morph('grid'); setGrid();
     }
     stepStart=performance.now();
   }
@@ -564,12 +659,13 @@ html[data-next="1"] .bellrow{display:none}
     barFill.style.width='100%';
   }else{
     enter();
+    addEventListener('resize',function(){ size(); if(phase==='card') setCar() });
     setInterval(function(){
       var dur=(phase==='card'?CARD:GRID);
       var el=performance.now()-stepStart;
       if(el>=dur){ advance(); el=0 }
-      /* drains: full means just started, empty means about to move on */
-      barFill.style.width=(Math.max(0,1-el/dur)*100).toFixed(2)+'%';
+      /* fills: empty means the card has just taken the stage, full means handover */
+      barFill.style.width=(Math.min(1,el/dur)*100).toFixed(2)+'%';
     },70);
   }
 })();
