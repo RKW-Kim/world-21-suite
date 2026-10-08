@@ -49,13 +49,10 @@ svg{display:block}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:220px 220px}
 .dots{position:absolute;inset:0;pointer-events:none;
-  background-image:
-    radial-gradient(circle,rgba(255,255,255,.085) 1.1px,transparent 1px),
-    radial-gradient(circle,rgba(255,255,255,.035) 1.9px,transparent 1px);
-  background-size:26px 26px,68px 68px;
-  background-position:0 0,13px 34px;
-  -webkit-mask-image:radial-gradient(ellipse at 50% 42%,transparent 6%,#000 34%,#000 66%,transparent 97%);
-          mask-image:radial-gradient(ellipse at 50% 42%,transparent 6%,#000 34%,#000 66%,transparent 97%)}
+  background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
 /* ---- the CTA pill
    Back to a pill. The gradient carries the fill, the inset highlight gives it a
    surface, a fine diagonal sheen gives it texture rather than a flat wash, and
@@ -148,7 +145,11 @@ to{opacity:.62;transform:scaleY(1)}}
 .hubA{position:absolute;top:470px;left:calc(50% - 180px);width:360px;height:360px;
   display:grid;place-items:center;z-index:3}
 .hubA .face{width:260px;height:260px;animation:breathe 6.4s ease-in-out infinite;
-  filter:drop-shadow(0 22px 44px rgba(0,0,0,.55))}
+  /* starting.html's mark glow, verbatim: a wide warm bloom with no hard edge.
+     The dark shadow is kept and applied second, so the gold reads as the light
+     source while the face still sits on the stage rather than floating. */
+  filter:drop-shadow(0 0 48px rgba(255,193,7,.62))
+         drop-shadow(0 22px 44px rgba(0,0,0,.55))}
 .hubA .face svg{width:100%;height:100%}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.022)}}
 
@@ -166,16 +167,12 @@ to{opacity:.62;transform:scaleY(1)}}
    top+129, so any card anchored at top >= 371 is still below the CTA by the time
    it goes invisible. The first pass travelled 1320px and held opacity to 62%,
    which put an opaque card at y=72 — straight through the headline. */
-.bub{position:absolute;z-index:2;max-width:300px;--a0:34deg;
+.bub{position:absolute;z-index:2;max-width:300px;
   animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);
   will-change:transform,opacity}
-/* The tokens live on .bub, not on .card, because the aura is drawn by
-   .sway's pseudo-elements — and a custom property set on a child cannot be
-   read by its parent. --a0 is chosen so the conic's BRIGHTEST arc lands on the
-   corner the tail grows out of: 34deg puts the peak at 214deg, which is
-   down-and-left. The glow therefore collects exactly where the two shapes
-   meet, and the seam is the brightest part of the card instead of the darkest. */
-.bub:has(.flip){--a0:326deg}
+/* The colour token lives on .bub, not on .card, because the aura is drawn by
+   .sway's pseudo-elements — and a custom property set on a child cannot be read
+   by its parent. */
 .bub:has(.yt){--pc:rgba(255,45,72,.95)}
 .bub:has(.fb){--pc:rgba(48,138,245,.95)}
 .bub:has(.x) {--pc:rgba(255,255,255,.85)}
@@ -190,37 +187,29 @@ to{opacity:.62;transform:scaleY(1)}}
   100%{transform:translateY(-140px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
 }
 /* ---- the aura: ONE shape, ONE glow
-   The old card had a hard 1.5px border plus a box-shadow aura, and the tail was
-   a separate wedge with its own border. That read as two objects: the box-shadow
-   and the border are clipped to the border box and simply STOP at the card's
-   edge, so nothing carried the glow down the tail.
+   The old card had a hard border plus a box-shadow aura, and the tail was a
+   separate wedge with its own border. That read as two objects: box-shadow and
+   border are both clipped to the border box and simply STOP at the card's edge,
+   so nothing carried the glow down the tail.
 
-   Now the aura is a single blurred conic layer sitting behind the whole
-   silhouette, pulsing in opacity. Its bright arcs are FIXED — nothing rotates —
-   so the places that are brightest brighten and dim in place.
+   Everything here is now the FLAT platform colour — the conic rim is gone. A
+   two-tone rim meant the edge was bright at one point and dull at another, and
+   the eye read that as lighting rather than as an outline. One colour, one
+   weight, all the way round; the only movement is the aura breathing.
 
-   It is drawn twice, once for the bubble and once for the tail, both at z-index
-   -1 so both stay behind the card. :has() picks the side, so the mirrored cards
-   get their halo on the correct corner.
+   The aura is drawn twice, once for the bubble and once for the tail, both at
+   z-index -1 so both stay behind the card. :has() picks the side, so the
+   mirrored cards get their halo on the correct corner.
 
-   Cost: one blurred layer per card, composited. There is deliberately no
-   filter on .card itself — a drop-shadow there looks identical but adds a
-   second render surface per card and pushes the text through it. */
+   Cost: one blurred layer per card, composited. There is deliberately no filter
+   on .card itself — a drop-shadow there looks identical but adds a second render
+   surface per card and pushes the text through it. */
 .sway::before,.sway::after{content:"";position:absolute;z-index:-1;pointer-events:none}
-/* inset:-4px, NOT inset:0. The halo is a filled shape, so at inset:0 it is
-   exactly the card's own silhouette and the opaque card covers all of it —
-   only a couple of pixels of blur escape past the edge, which reads as a faint
-   fringe rather than an aura. Growing it 4px past the card on every side gives
-   the blur something to bleed, and the bleed is what you actually see. */
 .sway::before{inset:-2px;border-radius:22px;border-bottom-left-radius:14.5px;
-  padding:6px;
-  background:conic-gradient(from var(--a0),
-    color-mix(in srgb,var(--pc) 26%,transparent) 0 22%,
-    var(--pc) 50%,
-    color-mix(in srgb,var(--pc) 26%,transparent) 78%);
-  /* punch the middle out so this is a RING, not a filled shape.
-     A filled shape blurred behind an opaque card leaves a hard silhouette edge;
-     a 5px ring blurred reads as light. exclude = content-box XOR border-box. */
+  padding:6px;background:var(--pc);
+  /* punch the middle out so this is a RING, not a filled shape. A filled shape
+     blurred behind an opaque card leaves a hard silhouette edge; a 6px ring
+     blurred reads as light. exclude = content-box XOR border-box. */
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;
           mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
@@ -228,46 +217,31 @@ to{opacity:.62;transform:scaleY(1)}}
   filter:blur(7px);opacity:.75;animation:glowPulse 3.9s ease-in-out infinite}
 .sway::after{left:16px;bottom:-33px;border-style:solid;
   border:17px solid;border-color:var(--pc) transparent transparent var(--pc);
-  filter:blur(6px)}
+  filter:blur(8px);opacity:.8}
 .sway:has(.flip)::after{left:auto;right:16px;
   border-color:var(--pc) var(--pc) transparent transparent}
 @keyframes glowPulse{0%,100%{opacity:.38}50%{opacity:.85}}
 
-/* The rim. Same conic, same angle as the aura, so the bright arc on the outline
-   and the bright arc in the halo line up rather than fighting. */
-.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;
+/* The rim. One flat colour, full weight, all the way round. */
+.bcard{position:relative;border:1.5px solid var(--pc);border-radius:20px;
   border-bottom-left-radius:12.5px;padding:13px 18px 15px;
-  background:linear-gradient(#121216,#0e0e12) padding-box,
-    conic-gradient(from var(--a0),
-      color-mix(in srgb,var(--pc) 48%,transparent) 0 24%,
-      var(--pc) 50%,
-      color-mix(in srgb,var(--pc) 48%,transparent) 76%) border-box;
-  /* The wide, even aura. box-shadow is the only one of these that grows
+  background:linear-gradient(#121216,#0e0e12);
+  /* The wide, even bloom. box-shadow is the only one of these that grows
      OUTWARD from the border box, which is what makes it visible at all — a
      separate glow layer of the same size as the card simply hides behind it. */
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--pc) 20%,transparent),
-    0 0 16px 2px color-mix(in srgb,var(--pc) 24%,transparent),
-    0 0 44px 8px color-mix(in srgb,var(--pc) 13%,transparent),
+  box-shadow:0 0 14px 1px color-mix(in srgb,var(--pc) 30%,transparent),
+    0 0 40px 6px color-mix(in srgb,var(--pc) 15%,transparent),
     0 14px 36px rgba(0,0,0,.5)}
-/* fallback for engines without :has() — the child carries its own tokens */
-.bcard.yt{--pc:rgba(255,45,72,.95);--a0:20deg}
-.bcard.fb{--pc:rgba(48,138,245,.95);--a0:150deg}
-.bcard.x {--pc:rgba(255,255,255,.85);--a0:265deg}
-.bcard.tt{--pc:rgba(0,229,255,.85);--a0:95deg}
-/* ---- the tail
-   Two stacked triangles, as before, but the fill is now the card's own bottom
-   colour rather than a flat guess, so there is no seam where the wedge meets the
-   bubble — and the OUTLINE wedge carries the platform colour at full strength
-   while the bubble's rim is a conic, which means the two match exactly at the
-   junction because the conic is at its brightest there.
-
-   Slightly wider and shallower than the earlier 28x30: a tail that deep reads
-   as a spike rather than a speech tail. */
-.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px;--a0:326deg}
+.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
 .bcard::before,.bcard::after{content:"";position:absolute;width:0;height:0;
   border-style:solid;pointer-events:none;z-index:0;left:18px;bottom:-30px}
 .bcard::before{border:15px solid;
-  border-color:var(--pc) transparent transparent var(--pc)}
+  border-color:var(--pc) transparent transparent var(--pc);
+  /* drop-shadow follows the WEDGE's alpha, which box-shadow cannot do here: this
+     is a 0x0 box, so its border box is a rectangle and any box-shadow would
+     light a rectangle rather than the tail. */
+  filter:drop-shadow(0 0 5px var(--pc))
+         drop-shadow(0 0 13px color-mix(in srgb,var(--pc) 45%,transparent))}
 .bcard::after{border:9px solid;
   border-color:#0e0e12 transparent transparent #0e0e12}
 .bcard.flip::before,.bcard.flip::after{left:auto;right:18px}
@@ -311,6 +285,12 @@ to{opacity:.62;transform:scaleY(1)}}
   .tag span:first-child{opacity:1;transform:none}
   .hubA .face{animation:none}
 }
+/* The TikTok mark is a gradient of its own two brand colours rather than the
+   stacked cyan/red offsets it replaces. Stacked flat offsets put a cyan shape
+   next to the Facebook blue at the same 18px, and on a dark stage the two read
+   as the same blue at a glance. One gradient that runs cyan -> white -> red
+   means the mark is identifiable by its colour instead of by its silhouette.
+   Each card needs its own gradient id — SVG ids are document-global. */
 </style></head><body>
 <div class="stage">
   <div class="bg"></div>
@@ -351,7 +331,7 @@ to{opacity:.62;transform:scaleY(1)}}
       <div class="sway"><div class="bcard x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="silver">@cashflowcoach</b></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
     </div>
     <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
-      <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
+      <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24"><defs><linearGradient id="ttg1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25F4EE"/><stop offset=".42" stop-color="#ffffff"/><stop offset="1" stop-color="#FE2C55"/></linearGradient></defs><path fill="url(#ttg1)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
     </div>
     <div class="bub" style="left:1388px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
       <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@creatormargin</b></span><span class="q">What do you actually listen to on the way in?</span></div></div>
@@ -366,7 +346,7 @@ to{opacity:.62;transform:scaleY(1)}}
       <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="silver">@founderfaqs</b></span><span class="q">How do you handle burnout on a long session?</span></div></div>
     </div>
     <div class="bub far" style="left:60px;top:430px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
-      <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
+      <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24"><defs><linearGradient id="ttg2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25F4EE"/><stop offset=".42" stop-color="#ffffff"/><stop offset="1" stop-color="#FE2C55"/></linearGradient></defs><path fill="url(#ttg2)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
     </div>
     <p class="sig">smile<b>.co.ke</b></p>
   </section>
