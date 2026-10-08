@@ -4,29 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>SMILE — off air</title>
+<meta name="theme-color" content="#0A0A0A">
+<title>SMILE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=Inter:wght@500;600;800&display=swap" rel="stylesheet">
 <style>
 /* OFF AIR — the safety state.
-   This is not for viewers. Nobody is watching when the stream is not running,
-   so the scene has one job: make it impossible to broadcast the wrong thing.
-   When the stream ends, whatever was last on Program stays there. If that was
-   a captured window — a Meet room with a join code in it — and anyone hits
-   start streaming, or OBS is left encoding, that room goes out. Switching to
-   this is a two-second action that removes the whole class of accident.
+   Not for viewers. Nobody is watching when the stream is down, so the scene
+   has one job: make it impossible to broadcast the wrong thing, and survive
+   being looked at once, at 3am, through a glance at Program.
 
-   Same design language as starting.html, with the lights down: the dot field
-   stays, the gradients stay, the type stays. What leaves is the GLOW. Yellow
-   is the kit's live signal, so nothing here is yellow and nothing here glows —
-   a viewer glancing at Program can tell in one frame whether anything is live.
+   Same design language as starting.html with the lights down: the dot field,
+   the gradients, the type. What leaves is the GLOW. Yellow is the kit's live
+   signal, so nothing here is yellow and nothing here glows — one frame of
+   this scene on Program must read "nothing is happening".
 
-   Contract: no canvas, no rAF, one gated interval (the clock). Bottom 76px is
-   the ticker dock and is deliberately left empty — off air, there is no tape. */
+   The scene says it with hardware now: a plug, mated and apart, on a loop.
+   No headline does that work — the last one was two words telling what the
+   mark already shows, so it is gone.
+
+   Contract: no canvas, no rAF, one gated interval (the clock). The plug is
+   declarative CSS keyframes on transform/opacity/fill only, scoped inside
+   its own svg. Bottom 76px is the ticker dock and stays empty — off air,
+   there is no tape. */
 :root{
-  --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
+  /* --yellow exists as the contract, not a colour: nothing on this scene
+     may use it. It is the kit's live signal and this scene is not live. */
+  --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
-  --line:#2a2a2a; --up:#0ECB81;
-  --fd:'Inter',system-ui,sans-serif;
+  --line:#2a2a2a;
+  --fd:'Inter',system-ui,sans-serif; /* the kit's committed face — kept by
+    design even though it is common; the kit speaks with one voice */
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --safe-b:76px;
   --eo:cubic-bezier(.32,.72,0,1);
@@ -46,8 +56,8 @@ svg{display:block}
   background-size:26px 26px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 26%,transparent 100%);
           mask-image:radial-gradient(ellipse at 50% 44%,#000 26%,transparent 100%)}
-/* the aura, cooled right down: starting.html runs this at .08 and glows yellow.
-   here it is a grey lift so the centre reads without implying a live state */
+/* the aura, cooled right down: a grey lift so the centre reads without
+   implying a live state */
 .aura{position:absolute;left:50%;top:46%;width:900px;height:600px;transform:translate(-50%,-50%);
   background:radial-gradient(ellipse,rgba(255,255,255,.035),transparent 66%)}
 
@@ -56,98 +66,88 @@ svg{display:block}
   padding:0 40px calc(var(--safe-b) / 2);z-index:2}
 
 /* ---- THE MARK
-   Awake, as it always is. A one-shot animation on load only speaks to whoever
-   happens to be watching at that instant, and this scene sits for hours — so
-   the meaning lives in the REST STATE, not in the entrance. The mark keeps only
-   a slow breath, which is ambient rather than communicative: you notice it
-   never, but the card is not dead.
-
-   No halo at all. A lit face IS the live signal and this one is not lit. ---- */
-.markwrap{position:relative;width:132px;height:132px;margin-bottom:30px;
+   Awake, as it always is — the meaning lives in the REST STATE, not in an
+   entrance. It keeps only a slow breath: ambient, not communicative. No
+   halo; a lit face IS the live signal and this one is not lit. ---- */
+.markwrap{position:relative;width:116px;height:116px;margin-bottom:24px;
   animation:breathe 14s var(--eio) infinite}
 @keyframes breathe{0%,100%{opacity:.26}50%{opacity:.38}}
 .mark{width:100%;height:100%}
 .mark svg{width:100%;height:100%;overflow:visible}
 
-/* ---- headline
-   The same gradient-clipped headline the rest of the kit uses — but in SILVER
-   ONLY. Yellow is the live signal and nothing on this scene is live, so the gold
-   stop and the glow are both deliberately absent. The type is the right shape;
-   the colour is the right state. This was the scene's biggest problem: it had a
-   small mono label doing the work of a headline, and no typographic anchor. */
-h1{font-family:var(--fd);font-weight:800;font-size:clamp(60px,7.2vw,120px);
-  line-height:1.02;letter-spacing:-.045em;margin:26px 0 0;white-space:nowrap;
-  background:linear-gradient(180deg,#f4f4f8 20%,#6c6c77 94%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-/* the second word sits a touch lighter so the two-word phrase has internal
-   structure without introducing a second colour */
-h1 .g2{background:linear-gradient(180deg,#c8c8d2 16%,#787883 92%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
+/* ---- THE PLUG
+   The whole argument of the scene, drawn as hardware: two halves of a
+   connection on an endless test cycle. Mated, the little monitor on the
+   plug body lights and breathes — that is what "on" would look like.
+   Then the signal dies, the screen blanks, the halves spring apart and
+   sit there, open and dark, before clamping back. The loop is the point:
+   the connected phase is the demo, the open phase is the truth, and the
+   pill at the bottom is the verdict. Nothing here needs reading.
 
-/* ---- the clock. The one thing this scene is genuinely for.
-   Tracking here is POSITIVE on purpose. -0.05em is correct for a headline but
-   wrong for numerals: Space Grotesk's 1 is a narrow glyph with wide side
-   bearings, so at 168px a negative value pulls the pair together and "11"
-   reads as one blob. Tabular figures plus a hair of positive space keeps every
-   pair distinct. ---- */
-.clock{margin-top:26px;font-family:var(--fd);font-weight:800;
-  font-size:clamp(60px,7.4vw,122px);line-height:.94;letter-spacing:.012em;
+   Monochrome on purpose — the scene has no live colour to lend it.
+
+   The static frame (reduced motion) is the OPEN pose with a blank screen:
+   at every instant, including the ones without animation, this scene must
+   read the same thing. ---- */
+.plugband{width:min(620px,64vw);margin:6px 0 2px}
+.plugband svg{width:100%;height:auto;overflow:visible}
+
+/* ---- the clock. The one thing this scene is genuinely for, and now its
+   only typographic anchor — so it carries the size the headline dropped.
+   The silver gradient is the kit's system, kept deliberately: it is the
+   "unlit metal" statement (yellow = live, silver = not). Tracking stays
+   POSITIVE on purpose: negative values pull "11" into one blob at this
+   scale. Tabular figures keep every pair distinct. ---- */
+.clock{margin-top:20px;font-family:var(--fd);font-weight:800;
+  font-size:clamp(64px,8.6vw,148px);line-height:.94;letter-spacing:.012em;
   background:linear-gradient(180deg,#fafafa 22%,#7e7e86 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:0 3px 24px rgba(0,0,0,.6)}
 
-/* ---- THE CENTREPIECE: a broadcast emitter with its transmission struck out.
-   Replaces a hand-drawn electrical plug, which read as household power — the
-   wrong register entirely for a channel.
-
-   Tabler Icons "broadcast-off", MIT licence (c) Paweł Kuna.
-   https://github.com/tabler/tabler-icons  tags: no-signal, offline,
-   transmission, disabled. It is the only candidate found whose own geometry IS
-   a transmitter: concentric emission arcs radiating from a carrier dot.
-
-   The FIRST version animated the story in order — arcs acquire, then the slash
-   strikes. It looked good and it was wrong: between ~26% and ~35% of the cycle
-   the arcs were fully drawn with no slash, which for a couple of seconds reads
-   as "signal is back". On the one scene whose entire job is to make it
-   impossible to misread the live state, that is unacceptable. It also broke the
-   original rule for this scene: at every instant, including second 1 and second
-   4000, it must read the same thing.
-
-   So the geometry is now static and always fully struck through. The only
-   motion is the carrier dot breathing, which is the residual "there is a machine
-   on, there is no signal" state rather than a state change. */
-.sigwrap{position:relative;width:224px;height:224px;margin:26px 0 10px;opacity:.72}
-.sigwrap svg{width:100%;height:100%;overflow:visible}
-.sigwrap path{fill:none;stroke:var(--faint);stroke-width:.45;
-  stroke-linecap:round;stroke-linejoin:round}
-/* the only motion: a carrier that is present but carries nothing */
-.sigwrap .car{stroke:none;fill:var(--faint);animation:carrier 4.6s var(--eio) infinite}
-@keyframes carrier{0%,100%{opacity:.20}50%{opacity:.62}}
-.sigwrap .cut{stroke:var(--fg);stroke-width:.62;opacity:.9}
 .next{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.3em;
   color:var(--faint);text-transform:uppercase}
-.back{margin-top:20px;font-family:var(--fd);font-weight:500;
+.back{margin-top:18px;font-family:var(--fd);font-weight:500;
   font-size:clamp(15px,1.2vw,20px);color:var(--muted);text-shadow:0 2px 10px rgba(0,0,0,.55)}
 .back b{color:var(--fg);font-weight:600}
 .back .over{color:var(--muted)}
+/* a known return time is real information: when the countdown is live the
+   line earns a step of brightness the idle line does not have */
+.back.counting{color:#C9C9D1}
 
-/* ---- the instruction that makes this scene worth having ---- */
-.note{margin-top:30px;display:inline-flex;align-items:center;gap:11px;
+/* ---- the instruction that makes this scene worth having.
+   One edge, one inset light — no diffuse elevation: on ink it does nothing
+   but halo. Text sits at .32 alpha: quiet, still readable at arm's length. ---- */
+.note{margin-top:28px;display:inline-flex;align-items:center;gap:11px;
   padding:9px 17px;border:1px solid var(--line);border-radius:999px;
   background:rgba(255,255,255,.022);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
   font-family:var(--fm);font-size:9.5px;font-weight:600;letter-spacing:.2em;
-  color:rgba(250,250,250,.26)}
-
+  color:rgba(250,250,250,.32)}
 
 .rise{opacity:0;animation:rise 820ms var(--eo) both}
 @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
+/* the stack is authored for 1080p Program; smaller canvases get the same
+   scene, not a cropped one — two tiers, whole-scale, nothing reflowed */
+@media (max-height:840px){
+  .markwrap{width:92px;height:92px;margin-bottom:18px}
+  .plugband{width:min(520px,58vw)}
+  .clock{font-size:clamp(52px,9.8vh,110px);margin-top:14px}
+  .note{margin-top:20px}
+  .back{margin-top:14px}
+}
+@media (max-height:660px){
+  .markwrap{width:72px;height:72px;margin-bottom:12px}
+  .plugband{width:min(420px,52vw)}
+  .clock{font-size:clamp(44px,8.8vh,88px);margin-top:10px}
+  .note{margin-top:16px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important}
   .rise{opacity:1}
-  .sigwrap{opacity:.72}
-  .sigwrap .car{opacity:.4}
+  .markwrap{opacity:.32}
+  /* the plug fragment carries its own static frame: open + blank screen */
 }
 </style>
 </head>
@@ -163,24 +163,16 @@ h1 .g2{background:linear-gradient(180deg,#c8c8d2 16%,#787883 92%);
       </div>
     </div>
 
-<h1 class="rise" style="animation-delay:60ms">Off <span class="g2">air.</span></h1>
+    <div class="plugband rise" style="animation-delay:120ms">
+      <svg class="plg" xmlns="http://www.w3.org/2000/svg" viewBox="0 460 1500 570" aria-hidden="true"><style>@keyframes plg-t{0%{transform:translate(91.54px,0px)}46.67%{transform:translate(91.54px,0px)}47.33%{transform:translate(95.8px,-2.6px)}48%{transform:translate(87.2px,3.2px)}48.67%{transform:translate(94.6px,-2.5px)}49.33%{transform:translate(88.4px,2.1px)}50%{transform:translate(93.5px,-1.6px)}50.67%{transform:translate(89.5px,1.2px)}51.33%{transform:translate(92.6px,-0.7px)}52%{transform:translate(90.5px,0.3px)}52.67%{transform:translate(92.1px,-0.3px)}53.33%{transform:translate(91.54px,0px)}56.7%{transform:translate(91.54px,0px)}59%{transform:translate(40px,0px)}60.7%{transform:translate(18px,0px)}62.2%{transform:translate(8px,0px)}63.5%{transform:translate(-2.6px,0px)}65.5%{transform:translate(0.9px,0px)}68.3%{transform:translate(0px,0px)}73.33%{transform:translate(0px,0px)}77.33%{transform:translate(6.5px,0px)}80.33%{transform:translate(34px,0px)}82.83%{transform:translate(65px,0px)}84.33%{transform:translate(88px,0px)}85.17%{transform:translate(96.4px,0px)}85.83%{transform:translate(91.54px,0px)}100%{transform:translate(91.54px,0px)}}@keyframes plg-ts{0%{transform:translate(-91.54px,-0px)}46.67%{transform:translate(-91.54px,-0px)}47.33%{transform:translate(-95.8px,2.6px)}48%{transform:translate(-87.2px,-3.2px)}48.67%{transform:translate(-94.6px,2.5px)}49.33%{transform:translate(-88.4px,-2.1px)}50%{transform:translate(-93.5px,1.6px)}50.67%{transform:translate(-89.5px,-1.2px)}51.33%{transform:translate(-92.6px,0.7px)}52%{transform:translate(-90.5px,-0.3px)}52.67%{transform:translate(-92.1px,0.3px)}53.33%{transform:translate(-91.54px,-0px)}56.7%{transform:translate(-91.54px,-0px)}59%{transform:translate(-40px,-0px)}60.7%{transform:translate(-18px,-0px)}62.2%{transform:translate(-8px,-0px)}63.5%{transform:translate(2.6px,-0px)}65.5%{transform:translate(-0.9px,-0px)}68.3%{transform:translate(-0px,-0px)}73.33%{transform:translate(-0px,-0px)}77.33%{transform:translate(-6.5px,-0px)}80.33%{transform:translate(-34px,-0px)}82.83%{transform:translate(-65px,-0px)}84.33%{transform:translate(-88px,-0px)}85.17%{transform:translate(-96.4px,-0px)}85.83%{transform:translate(-91.54px,-0px)}100%{transform:translate(-91.54px,-0px)}}@keyframes plg-h{0%{opacity:.3}5.83%{opacity:.78}11.67%{opacity:.3}17.5%{opacity:.78}23.33%{opacity:.3}29.17%{opacity:.78}35%{opacity:.3}40.83%{opacity:.78}46.67%{opacity:.3}47.33%{opacity:.92}48%{opacity:.06}48.67%{opacity:.88}49.33%{opacity:.08}50%{opacity:.82}50.67%{opacity:.12}51.33%{opacity:.7}52%{opacity:.18}52.67%{opacity:.5}53.33%{opacity:.12}56.7%{opacity:.08}59%{opacity:.04}61.5%{opacity:0}68.3%{opacity:0}73.33%{opacity:0}77.33%{opacity:0}80.33%{opacity:.15}82.83%{opacity:.32}84.33%{opacity:.55}85.17%{opacity:.95}85.83%{opacity:.45}90%{opacity:.3}95.83%{opacity:.78}100%{opacity:.3}}@keyframes plg-s{0%{fill:#FCFCFE}46.67%{fill:#FCFCFE}47.33%{fill:#0F0F13}48%{fill:#FCFCFE}48.67%{fill:#0F0F13}49.33%{fill:#FCFCFE}50%{fill:#0F0F13}51.33%{fill:#FCFCFE}52.67%{fill:#0F0F13}84%{fill:#0F0F13}84.33%{fill:#63636B}85.17%{fill:#FCFCFE}85.83%{fill:#FCFCFE}100%{fill:#FCFCFE}}.plg-gp{animation:plg-t 6s linear infinite}.plg-gs{animation:plg-ts 6s linear infinite}.plg-halo{animation:plg-h 6s linear infinite}.plg-scr{animation:plg-s 6s linear infinite}@media (prefers-reduced-motion:reduce){.plg-gp,.plg-gs,.plg-halo,.plg-scr{animation:none}}</style><defs><radialGradient id="plgG" gradientUnits="userSpaceOnUse" cx="-236" cy="1047" r="150"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".5"/><stop offset=".55" stop-color="#E4E4EA" stop-opacity=".16"/><stop offset="1" stop-color="#E4E4EA" stop-opacity="0"/></radialGradient></defs><g transform="translate(750 -310.66)"><g class="plg-gp" transform="translate(0 0)"><path d="M -620.96 1019.48 H -476.57 V 1101.76 H -620.96 Z" fill="#E8E8EC"/><path d="M -487.7 1019.65 H -454.07 V 1101.76 H -487.7 Z" fill="#333339"/><path d="M -446.94 975.51 L -107.88 975.51 A 17.5 17.5 0 0 1 -90.38 993.01 L -90.38 1255.56 A 56.5 56.5 0 0 1 -146.88 1312.06 L -244.68 1312.06 A 165.66 165.66 0 0 1 -410.34 1146.4 L -448.69 1145.2 A 18 18 0 0 1 -466.69 1127.2 L -466.69 995.26 A 19.75 19.75 0 0 1 -446.94 975.51 Z" fill="#98989F"/><path d="M -91.2 826.59 L -91.2 1168.74 A 15.5 15.5 0 0 1 -106.7 1184.24 L -198.95 1184.24 A 225.96 225.96 0 0 1 -323.33 1146.93 A 193.42 193.42 0 0 1 -373.18 869.89 A 170.38 170.38 0 0 1 -243.14 809.59 L -108.2 809.59 A 17 17 0 0 1 -91.2 826.59 Z" fill="#E8E8EC"/><path d="M -91.2 936.87 H -74 V 1019.07 H -91.2 Z M -91.2 1101.84 H -74 V 1184.04 H -91.2 Z" fill="#333339"/><path d="M -74 936.87 L -7.19 936.87 A 41.1 41.1 0 0 1 -7.19 1019.07 L -74 1019.07 Z M -74 1101.84 L -7.19 1101.84 A 41.1 41.1 0 0 1 -7.19 1184.04 L -74 1184.04 Z" fill="#98989F"/><circle cx="0.18" cy="977.72" r="12.52" fill="#0A0A0A"/><circle cx="0.18" cy="1144.02" r="12.52" fill="#0A0A0A"/></g><g class="plg-gs" transform="translate(0 0)"><path d="M 476.57 1019.48 H 620.96 V 1101.76 H 476.57 Z" fill="#E8E8EC"/><path d="M 454.07 1019.65 H 487.7 V 1101.76 H 454.07 Z" fill="#333339"/><path d="M 110.13 809.84 L 244.93 809.84 A 165.66 165.66 0 0 1 410.59 975.5 L 448.69 976.7 A 18 18 0 0 1 466.69 994.7 L 466.69 1126.6 A 18.75 18.75 0 0 1 447.94 1145.35 L 115.38 1145.35 A 23.5 23.5 0 0 1 91.88 1121.85 L 91.88 828.09 A 18.25 18.25 0 0 1 110.13 809.84 Z" fill="#98989F"/><path d="M 91.88 953.92 A 17 17 0 0 1 108.88 936.92 L 198.45 936.92 A 223.21 223.21 0 0 1 338.21 986.32 A 194.02 194.02 0 0 1 374.15 1250.8 A 168.38 168.38 0 0 1 244.89 1311.27 L 107.38 1311.27 A 15.5 15.5 0 0 1 91.88 1295.77 Z" fill="#C7C7CE"/></g><g class="plg-gp" transform="translate(0 0)"><circle class="plg-halo" cx="-236" cy="1047" r="150" fill="url(#plgG)" opacity="0"/><path d="M -318 998 H -154 A 11 11 0 0 1 -143 1009 V 1085 A 11 11 0 0 1 -154 1096 H -318 A 11 11 0 0 1 -329 1085 V 1009 A 11 11 0 0 1 -318 998 Z" fill="#333339"/><rect x="-246" y="1096" width="20" height="18" fill="#333339"/><rect x="-268" y="1114" width="64" height="9" rx="4.5" fill="#333339"/><path class="plg-scr" d="M -308.5 1007.5 H -163.5 A 6 6 0 0 1 -157.5 1013.5 V 1080.5 A 6 6 0 0 1 -163.5 1086.5 H -308.5 A 6 6 0 0 1 -314.5 1080.5 V 1013.5 A 6 6 0 0 1 -308.5 1007.5 Z" fill="#0F0F13"/></g></g></svg>
+    </div>
 
     <div class="clock num" id="clock">--:--</div>
 
-    <div class="sigwrap rise" style="animation-delay:200ms" aria-hidden="true">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <!-- Tabler Icons "broadcast-off", MIT. https://github.com/tabler/tabler-icons -->
-        <path class="a1" d="M18.364 19.364a9 9 0 0 0 -9.721 -14.717m-2.488 1.509a9 9 0 0 0 -.519 13.208"/>
-        <path class="a2" d="M15.536 16.536a5 5 0 0 0 -3.536 -8.536m-3 1a5 5 0 0 0 -.535 7.536"/>
-        <circle class="car" cx="12.5" cy="12.5" r="1.15"/>
-        <path class="cut" d="M3 3l18 18"/>
-      </svg>
-    </div>
+    <div class="next rise" style="animation-delay:340ms">Next session</div>
+    <div class="back rise" id="back" style="animation-delay:400ms">On air most evenings &middot; smile<b>.co.ke</b></div>
 
-    <div class="next rise" style="animation-delay:260ms">Next session</div>
-    <div class="back rise" id="back" style="animation-delay:320ms">On air most evenings &middot; smile<b>.co.ke</b></div>
-
-    <div class="note rise" style="animation-delay:420ms">NOT TRANSMITTING &middot; SAFE TO LEAVE ON PROGRAM</div>
+    <div class="note rise" style="animation-delay:480ms">NOT TRANSMITTING &middot; SAFE TO LEAVE ON PROGRAM</div>
 
   </main>
 </div>
@@ -191,10 +183,10 @@ h1 .g2{background:linear-gradient(180deg,#c8c8d2 16%,#787883 92%);
    ?next=2026-10-06T21:00   a full local wall-clock stamp
    ?note=...                replace the safety line
 
-   Both forms are read as LOCAL time on purpose. The desk runs on EAT and the
-   stream is at 21:00 Nairobi; a UTC stamp here would silently show a countdown
-   three hours wrong, which is the worst possible failure for the one scene you
-   are supposed to be able to trust.
+   Both time forms are read as LOCAL time on purpose. The desk runs on EAT and
+   the stream is at 21:00 Nairobi; a UTC stamp here would silently show a
+   countdown three hours wrong, which is the worst possible failure for the
+   one scene you are supposed to be able to trust.
 
    Without ?next it just sits as a clock. That is the safe default: this scene
    must never be the thing that has to be updated to stay correct. */
@@ -238,10 +230,13 @@ h1 .g2{background:linear-gradient(180deg,#c8c8d2 16%,#787883 92%);
 
     if(target){
       var left=dhm(target-d);
-      backEl.innerHTML = left
-        ? 'We are back in <b>'+left+'</b>'
-        : '<span class="over">The session should be open &mdash; go live</span>';
-      backEl.classList.add('counting');
+      if(left){
+        backEl.innerHTML='We are back in <b>'+left+'</b>';
+        backEl.classList.add('counting');
+      }else{
+        backEl.innerHTML='<span class="over">The session should be open &mdash; go live</span>';
+        backEl.classList.remove('counting');
+      }
     }
   }
   tick();
