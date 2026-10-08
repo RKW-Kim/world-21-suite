@@ -461,7 +461,7 @@ html[data-next="1"] .bellrow{display:none}
   var GRID=parseFloat(get('gridms'))||3200;
   var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='';
+  var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='', fo=0, booted=false;
 
   /* FLIP between carousel and grid.
      Without this the spread is a jump cut: cards leave one layout and appear in
@@ -498,11 +498,23 @@ html[data-next="1"] .bellrow{display:none}
 
   function layout(){
     cards.forEach(function(c,i){
-      var d=i-pi;
+      var d=i-pi+fo;
       c.style.setProperty('--d',d);
       c.style.setProperty('--ad',Math.abs(d));
       c.classList.toggle('on',i===pi);
     });
+  }
+
+  /* The first card arrives from the far left instead of simply appearing
+     centred. The whole trick is that fo offsets the *formation*, and the
+     formation is already described by --d: so the incoming card is positioned,
+     scaled and faded by the falloff that is already there, rather than by a
+     second animation system that would have to be kept in sync with this one.
+     The 0.78s transition that already moves the cards does the travel. */
+  function slideIn(){
+    fo=-2.1; layout();
+    void box.offsetWidth;                 /* commit off-left, or the browser coalesces */
+    fo=0; layout();
   }
 
   function enter(){
@@ -524,7 +536,9 @@ html[data-next="1"] .bellrow{display:none}
     /* park anything the current category does not need */
     for(var j=people.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
 
-    if(phase==='card'){ morph('car'); layout() }
+    if(phase==='card'){ morph('car'); layout();
+      if(!booted){ booted=true; slideIn() }
+    }
     else{
       morph('grid');
       cards.forEach(function(c){ c.classList.remove('on');
