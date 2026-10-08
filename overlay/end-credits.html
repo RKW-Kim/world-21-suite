@@ -4,35 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>SMILE · end credits</title>
+<title>SMILE — end credits</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
 <style>
-/* ── END CREDITS — the sign-off ───────────────────────────────────────────────
-   DNA rebuilt from starting.html: dark ink field, dot texture, gold aura,
-   per-word headline stagger, checklist/service cards dialled in with a real
-   inner top highlight and drop shadow, and text that reads: a faint dark
-   text-shadow under everything, and a radiant warm glow on the gold word.
+/* END CREDITS — the card the channel rests on.
 
-   The credits roll is no longer a naked column floating in the middle of
-   the frame. It sits in a designed panel — a translucent card with a real
-   border, inset top highlight, and a drop shadow — and its header carries a
-   0–100 progress bar broken into production checkpoints, so the roll reads
-   like a credits ledger rather than a list.
+   Two halves. Left: the mark, the sign-off, the call to action. Right: the
+   credits roll, which is the part that has to earn its keep, because a roll
+   with six generic lines on it looks like a template nobody filled in.
 
-   Contract:
-      (none)        → roll runs, notifications bell is the honest fallback
-      ?ep=128       → episode number in the header
-      ?next=…       → next-session block appears + fills the matching row
-      ?host=…       → the host credit row + hosted-by line take the name
-      ?what=…       → "· …" what is on, on the hosted-by line        */
+   The roll is a broadcast ledger: a segmented track fills left to right, and
+   each section lights as the playhead reaches it, holds while it is being
+   called, then goes gold once it is done. That ordering matters — waiting, then
+   current, then finished — because it is the same thing the audience already
+   understands from a progress bar. */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
-  --line:rgba(255,255,255,.08); --up:#0ECB81; --down:#F6465D;
+  --line:rgba(255,255,255,.08);
   --fd:'Inter',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --dock:76px;
   --eo:cubic-bezier(.32,.72,0,1);
+  --dur:26s;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden}
@@ -40,29 +34,25 @@ body{background:var(--ink);color:var(--fg);
   font-family:var(--fd);-webkit-font-smoothing:antialiased}
 svg{display:block}
 .num{font-variant-numeric:tabular-nums}
-::selection{background:var(--yellow);color:var(--ink)}
+::selection{background:var(--fg);color:var(--ink)}
 .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
 
-/*** background DNA ***/
+/*** background DNA — identical to starting.html ***/
 .bg{position:absolute;inset:0;
   background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
   background-size:26px 26px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
           mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
-.aura{position:absolute;left:38%;top:44%;width:860px;height:560px;transform:translate(-50%,-50%);
+.aura{position:absolute;left:34%;top:42%;width:900px;height:580px;transform:translate(-50%,-50%);
   background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 64%)}
 
 .rise{opacity:0;animation:riseIn .9s var(--eo) forwards;animation-delay:var(--rd,0s)}
 @keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 
-/* top-right chrome; watermark module owns top-left */
-.topbar{position:absolute;top:58px;right:88px;display:flex;gap:12px;
-  justify-content:flex-end;align-items:center;z-index:7}
-
 /* ── left column: orbit + sign-off ── */
-.bwrap{position:absolute;left:6%;top:0;bottom:var(--dock);display:flex;align-items:center;
-  gap:clamp(36px,4.6vw,84px);z-index:3}
-.orbitB{position:relative;width:clamp(280px,38vh,400px);aspect-ratio:1;flex:none;
+.bwrap{position:absolute;left:5.4%;top:0;bottom:var(--dock);display:flex;align-items:center;
+  gap:clamp(30px,3.6vw,64px);z-index:3}
+.orbitB{position:relative;width:clamp(250px,34vh,360px);aspect-ratio:1;flex:none;
   display:grid;place-items:center}
 .orbitB::before{content:"";position:absolute;inset:0;border:2px dashed rgba(255,193,7,.45);
   border-radius:50%;animation:spinCW 24s linear infinite}
@@ -71,23 +61,29 @@ svg{display:block}
 .orbitB .glow{position:absolute;inset:-56px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,193,7,.12),transparent 62%)}
 .orbitB .face{width:62%;aspect-ratio:1;animation:faceBob 5.6s ease-in-out infinite;
-  filter:drop-shadow(0 18px 60px rgba(255,193,7,.22))}
+  filter:drop-shadow(0 0 48px rgba(255,193,7,.62))}
 .orbitB .face svg{width:100%;height:100%}
 
-h1{font-family:var(--fd);font-weight:800;font-size:clamp(54px,6vw,112px);
-  line-height:1;letter-spacing:-.045em;text-shadow:0 2px 18px rgba(0,0,0,.55)}
-h1 .w{display:block;opacity:0;transform:translateY(44px);animation:wordup .85s var(--eo) both}
+/* ---- headline: starting.html's treatment, exactly ----
+   The previous pass carried a text-shadow on the h1 and a dark drop-shadow on
+   .g. Both were wrong here and nowhere else in the kit: the glyphs are filled by
+   a clipped gradient with color:transparent, so a text-shadow has nothing to
+   paint, and the drop-shadow only muddied the silver into something greyer than
+   every other headline in the kit. line-height was also 1 where the kit uses
+   1.02, which on two stacked lines set them too tight to read as one phrase. */
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(56px,5.4vw,116px);
+  line-height:1.02;letter-spacing:-.045em}
+h1 .w{display:block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--eo) both}
 h1 .w1{animation-delay:.06s}
 h1 .w2{animation-delay:.16s}
 @keyframes wordup{to{opacity:1;transform:none}}
 h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 12px rgba(0,0,0,.6))}
+  -webkit-background-clip:text;background-clip:text;color:transparent}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 26px rgba(255,193,7,.28))}
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
 
-.follow{margin-top:38px;position:relative;overflow:hidden;display:inline-block}
+.follow{margin-top:34px;position:relative;overflow:hidden;display:inline-block}
 .follow::after{content:"";position:absolute;inset:0;
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);
   transform:translateX(-130%);animation:sheenX 4.5s ease-in-out 2s infinite}
@@ -96,15 +92,8 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot)
 .chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
   font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.08em;
   text-transform:uppercase;white-space:nowrap}
-.chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--faint);
-  box-shadow:0 6px 24px rgba(0,0,0,.35)}
 .chip.solid{background:linear-gradient(135deg,var(--yellow),var(--hot));color:var(--ink);
-  box-shadow:0 8px 28px rgba(255,193,7,.28)}
-.chip.mono{font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.18em;color:var(--muted)}
-.chip.mono b{color:var(--faint);font-weight:600}
-.rdot{width:9px;height:9px;border-radius:50%;background:var(--down);
-  box-shadow:0 0 10px rgba(246,70,93,.8);animation:dotPulse 1.6s ease-in-out infinite}
-@keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 28px rgba(255,193,7,.28)}
 
 .nextrow{display:none;margin-top:22px}
 html[data-next="1"] .nextrow{display:block}
@@ -113,7 +102,7 @@ html[data-next="1"] .nextrow{display:block}
 .nc .nk{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.32em;
   color:var(--yellow);text-transform:uppercase}
 .nc .nw{font-family:var(--fd);font-weight:800;font-size:clamp(20px,2.1vw,32px);
-  letter-spacing:-.02em;color:var(--fg);line-height:1.12;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+  letter-spacing:-.02em;color:var(--fg);line-height:1.12}
 .nc .nh{font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.14em;
   color:var(--muted);text-transform:uppercase}
 .nc .nh b{color:var(--faint);font-weight:600}
@@ -131,43 +120,100 @@ html[data-next="1"] .bellrow{display:none}
   90%{transform:rotate(7deg)}92%{transform:rotate(-5deg)}94%{transform:rotate(3deg)}96%{transform:rotate(0)}}
 
 /* ── right column: the credits panel ── */
-.credits{position:absolute;right:4.5%;top:clamp(118px,15vh,168px);
-  bottom:calc(var(--dock) + 78px);width:min(500px,37vw);z-index:3;
-  display:flex;flex-direction:column;padding:26px 26px 22px;border-radius:22px;
-  border:1px solid var(--line);background:rgba(255,255,255,.028);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 64px rgba(0,0,0,.5)}
-.chead{display:flex;align-items:center;gap:16px;font-family:var(--fd);font-weight:800;
-  font-size:13px;letter-spacing:.26em;text-transform:uppercase;color:#D8D8D8}
-.chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.16),transparent)}
+.credits{position:absolute;right:3.4%;top:clamp(96px,12vh,140px);
+  bottom:calc(var(--dock) + 62px);width:min(792px,45vw);z-index:3;
+  display:flex;flex-direction:column;padding:30px 34px 26px;border-radius:26px;
+  border:1px solid rgba(255,255,255,.10);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.014) 42%,rgba(255,255,255,.03)),
+    radial-gradient(120% 70% at 50% 0%,rgba(255,193,7,.07),transparent 60%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 rgba(0,0,0,.4),
+    0 40px 110px rgba(0,0,0,.62)}
+.chead{display:flex;align-items:center;gap:18px;font-family:var(--fd);font-weight:800;
+  font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:#E4E4EA}
+.chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.22),transparent)}
 .chead .ep{color:var(--muted);letter-spacing:.18em}
 .chead .ep b{color:var(--yellow);font-weight:800}
 
-/* the 0–100 production ledger — the panel's spine */
-.prog{margin-top:18px}
-.pbar{position:relative;height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+/* ---- the ledger track ----
+   A hairline rule with one tick per section, plus a continuous fill. The ticks
+   are what make it read as a broadcast meter rather than a loading bar: you can
+   see how many sections are left, and the fill alone could not say that. */
+.prog{margin-top:22px}
+.pbar{position:relative;height:8px;border-radius:999px;overflow:hidden;
+  background:rgba(255,255,255,.07);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
 .pfill{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;
-  background:linear-gradient(90deg,var(--hot),var(--yellow));
-  box-shadow:0 0 14px rgba(255,193,7,.5);
-  animation:pfill 26s linear infinite}
+  background:linear-gradient(90deg,var(--hot),var(--yellow) 70%,#FFE9A8);
+  box-shadow:0 0 18px rgba(255,193,7,.65);
+  animation:pfill var(--dur) linear infinite}
 @keyframes pfill{0%{width:0}100%{width:100%}}
-.pmarks{margin-top:12px;display:flex;justify-content:space-between;gap:8px}
-.pmarks span{font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--muted)}
+.pticks{margin-top:9px;display:flex;gap:3px}
+.pticks i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.09);
+  transition:background .35s ease,box-shadow .35s ease}
+.pticks i.on{background:rgba(255,193,7,.85);box-shadow:0 0 8px rgba(255,193,7,.6)}
 
-.clist{margin-top:20px;flex:1;min-height:0;overflow:hidden;
-  -webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 82%,transparent);
-          mask-image:linear-gradient(180deg,transparent,#000 14%,#000 82%,transparent)}
+.clist{margin-top:22px;flex:1;min-height:0;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 12%,#000 80%,transparent 98%);
+          mask-image:linear-gradient(180deg,#000 0%,#000 12%,#000 80%,transparent 98%)}
 .ctrack{display:flex;flex-direction:column;will-change:transform;
-  animation:roll 26s linear infinite}
+  animation:roll var(--dur) linear infinite}
 @keyframes roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
-.cr{flex:none;padding:20px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
-.cr:nth-child(even){background:rgba(255,255,255,.016)}
-.cr i{display:block;font-family:var(--fd);font-weight:800;font-style:normal;
-  font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
-.cr b{display:block;margin-top:8px;font-family:var(--fd);font-weight:800;
-  font-size:clamp(24px,3.3vh,32px);line-height:1.06;letter-spacing:-.015em;color:var(--faint);
-  text-shadow:0 2px 12px rgba(0,0,0,.5)}
-.cr b .y{color:var(--yellow);text-shadow:0 0 22px rgba(255,193,7,.3)}
+
+/* ---- a credit row
+   Order is icon, then role, then name, reading down the row. The offset is
+   deliberate: alternate rows sit slightly above and slightly below the panel's
+   centre line, so the roll has a beat to it instead of a flat column of bars. */
+.cr{display:flex;align-items:center;gap:20px;padding:16px 16px;flex:none;
+  border-radius:15px;transition:background .45s ease}
+.cr:nth-child(even){transform:translateY(-8px)}
+.cr:nth-child(odd){transform:translateY(8px)}
+
+.ico{width:34px;height:34px;flex:none;display:grid;place-items:center;
+  border-radius:11px;border:1px solid color-mix(in srgb,var(--ci) 34%,transparent);
+  background:color-mix(in srgb,var(--ci) 11%,transparent);
+  transition:transform .5s var(--eo),box-shadow .5s ease,
+             border-color .5s ease,background .5s ease}
+.ico svg{width:19px;height:19px;fill:none;stroke:var(--ci);stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;
+  transition:stroke .5s ease,width .5s var(--eo),height .5s var(--eo)}
+.tx{display:flex;flex-direction:column;gap:5px;min-width:0}
+.tx i{font-family:var(--fd);font-style:normal;font-weight:800;font-size:10.5px;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--muted);
+  transition:color .5s ease}
+.tx b{font-family:var(--fd);font-weight:800;font-size:clamp(21px,2.6vh,29px);
+  line-height:1.08;letter-spacing:-.018em;color:var(--ci);
+  transition:color .5s ease,text-shadow .5s ease}
+.tx i,.tx b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* three states. WAIT is the resting list, NOW is the section being called,
+   DONE is finished. Everything is transform, opacity, colour and shadow, so the
+   whole roll stays on the compositor. */
+.cr[data-s="wait"]{opacity:.34}
+.cr[data-s="wait"] .ico{transform:scale(.88)}
+.cr[data-s="wait"] .tx b{text-shadow:none}
+
+.cr[data-s="now"]{opacity:1;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--ci) 15%,transparent),transparent 72%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ci) 20%,transparent)}
+.cr[data-s="now"] .ico{transform:scale(1.34);
+  border-color:color-mix(in srgb,var(--ci) 70%,transparent);
+  background:color-mix(in srgb,var(--ci) 22%,transparent);
+  box-shadow:0 0 26px color-mix(in srgb,var(--ci) 55%,transparent)}
+.cr[data-s="now"] .ico svg{width:23px;height:23px;stroke:var(--ci)}
+.cr[data-s="now"] .tx i{color:var(--ci)}
+.cr[data-s="now"] .tx b{color:#fff;text-shadow:0 0 26px color-mix(in srgb,var(--ci) 70%,transparent)}
+
+.cr[data-s="done"]{opacity:.72}
+.cr[data-s="done"] .ico{transform:scale(.94);
+  border-color:rgba(255,193,7,.42);background:rgba(255,193,7,.09)}
+.cr[data-s="done"] .ico svg{stroke:var(--yellow)}
+.cr[data-s="done"] .tx i{color:rgba(255,193,7,.6)}
+.cr[data-s="done"] .tx b{color:var(--yellow);text-shadow:0 0 20px rgba(255,193,7,.28)}
+
+.cr[data-s="now"] .ico svg{animation:icoLift .5s var(--eo)}
+@keyframes icoLift{from{transform:scale(.7)}to{transform:scale(1)}}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--dock) + 14px);z-index:5;text-align:center;
   font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.46em;
@@ -178,13 +224,13 @@ html[data-next="1"] .bellrow{display:none}
 @keyframes spinCCW{to{transform:rotate(-360deg)}}
 @keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 
-@media (max-width:1250px){
-  .bwrap{left:5%;gap:34px}
-  .credits{width:min(440px,40vw)}
+@media (max-width:1400px){
+  .bwrap{left:4.4%;gap:30px}
+  .credits{width:min(660px,46vw);padding:24px 26px 22px}
 }
 @media (max-width:980px){
-  .credits{right:auto;left:5%;top:auto;bottom:calc(var(--dock) + 20px);width:90vw;height:32vh}
-  .bwrap{bottom:42vh}
+  .credits{right:auto;left:5%;top:auto;bottom:calc(var(--dock) + 20px);width:90vw;height:34vh}
+  .bwrap{bottom:44vh}
   h1{font-size:clamp(40px,7vh,64px)}
 }
 @media (prefers-reduced-motion:reduce){
@@ -192,9 +238,10 @@ html[data-next="1"] .bellrow{display:none}
     transition:none !important;animation-delay:0s !important}
   .ctrack{animation:none !important;transform:none !important}
   .pfill{animation:none !important;width:100%}
-  .orbitB::before,.orbitB::after,.orbitB .face,.follow::after,.bellrow svg,.rdot{animation:none !important}
+  .orbitB::before,.orbitB::after,.orbitB .face,.follow::after,.bellrow svg{animation:none !important}
   h1 .w{opacity:1;transform:none}
   .rise{opacity:1;transform:none}
+  .cr{opacity:1 !important;transform:none !important}
 }
 </style>
 </head>
@@ -202,11 +249,6 @@ html[data-next="1"] .bellrow{display:none}
 <div class="stage">
   <div class="bg"></div>
   <div class="aura"></div>
-
-  <header class="topbar">
-    <span class="chip mono rise" style="--rd:.2s"><b class="num" id="clock">--:--</b> · NAIROBI DESK · EAT</span>
-    <span class="chip dark rise" style="--rd:.15s"><span class="rdot"></span>off air · credits rolling</span>
-  </header>
 
   <div class="bwrap">
     <div class="orbitB rise" style="--rd:.3s">
@@ -242,20 +284,76 @@ html[data-next="1"] .bellrow{display:none}
   </div>
 
   <div class="credits rise" style="--rd:.5s">
-    <div class="chead"><span>credits</span><i class="rule"></i><span class="ep">ep <b class="num" data-ep>128</b></span></div>
+    <div class="chead"><span>Credits</span><i class="rule"></i><span class="ep">ep <b class="num" data-ep>128</b></span></div>
+
     <div class="prog">
       <div class="pbar"><span class="pfill"></span></div>
-      <div class="pmarks"><span>production</span><span>actors</span><span>extras</span><span>music</span><span>chat</span></div>
+      <div class="pticks" id="pticks" aria-hidden="true"></div>
     </div>
+
     <div class="clist">
       <div class="ctrack" id="ctrack">
-        <div class="cr"><i>host</i><b id="crHost">you</b></div>
-        <div class="cr"><i>co-hosts</i><b>the smile squad</b></div>
-        <div class="cr"><i>production</i><b>smile crew</b></div>
-        <div class="cr"><i>music</i><b>licensed</b></div>
-        <div class="cr"><i>questions</i><b>the chat</b></div>
-        <div class="cr"><i>vibes</i><b>everyone</b></div>
-        <div class="cr"><i>next session</i><b class="y" id="crNext">tba</b></div>
+
+        <div class="cr" style="--ci:#FFD100" data-s="now">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.2M9 21.2h6"/></svg></span>
+          <span class="tx"><i>Host</i><b id="crHost">you</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#7FD3FF">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.3"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.3 3.3 0 0 1 0 6.1"/><path d="M17.4 14.6A6.2 6.2 0 0 1 21.2 20"/></svg></span>
+          <span class="tx"><i>Co-hosts</i><b>the smile squad</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#FF6B7A">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.2h18V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m2.6 8.6 1.6-4.3a1 1 0 0 1 1.2-.6l13.8 2.8a1 1 0 0 1 .7 1.3l-.5 1.2"/><path d="m7.6 4.9-1.2 3.7M12 4.1l-1.2 3.7M16.4 5.3l-1.2 3.7"/></svg></span>
+          <span class="tx"><i>Producers</i><b>smile crew</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#B99BFF">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.6 13h6.8M8.6 16.6h4.6"/></svg></span>
+          <span class="tx"><i>Script</i><b>the desk</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#FFC46B">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.8 8.4 4.6L12 12 3.6 7.4z"/><path d="m3.6 12 8.4 4.6L20.4 12"/><path d="m3.6 16.6 8.4 4.6 8.4-4.6"/></svg></span>
+          <span class="tx"><i>Assets &amp; graphics</i><b>the toolkit</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#6BE3FF">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.1"/><path d="M8.1 8.1a5.5 5.5 0 0 0 0 7.8"/><path d="M15.9 15.9a5.5 5.5 0 0 0 0-7.8"/><path d="M5.4 5.4a9.4 9.4 0 0 0 0 13.2"/><path d="M18.6 18.6a9.4 9.4 0 0 0 0-13.2"/></svg></span>
+          <span class="tx"><i>On-air talent</i><b>the voices</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#7CE8A8">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6.4" width="13" height="11.2" rx="2.2"/><path d="m15 10.6 6.6-3.4v9.2L15 13z"/><circle cx="7" cy="12" r="1.6"/></svg></span>
+          <span class="tx"><i>Field reporting</i><b>the cameras</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#9BE86B">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.8 5.9v5.6c0 4.6 3.1 8.6 7.2 9.7 4.1-1.1 7.2-5.1 7.2-9.7V5.9z"/><path d="m9 12 2.2 2.2L15.4 10"/></svg></span>
+          <span class="tx"><i>Fact check</i><b>the desk</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#FF8FD0">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.6V5.4l10-2v12"/><circle cx="6.4" cy="17.6" r="2.6"/><circle cx="16.4" cy="15.4" r="2.6"/></svg></span>
+          <span class="tx"><i>Music</i><b>licensed</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#C9C9E8">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 12a7.6 7.6 0 0 1-7.6 7.6H8.4L4 22.6v-4.3A7.6 7.6 0 0 1 3.4 12 7.6 7.6 0 0 1 11 4.4h2a7.6 7.6 0 0 1 7.6 7.6z"/><path d="M8.6 11.6h6.8M8.6 14.6h4"/></svg></span>
+          <span class="tx"><i>Questions</i><b>the chat</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#FFE9A8">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4v3M12 17.6v3M3.4 12h3M17.6 12h3"/><circle cx="12" cy="12" r="3.2"/><path d="M6.6 6.6 8.6 8.6M15.4 15.4l2 2M17.4 6.6l-2 2M8.6 15.4l-2 2"/></svg></span>
+          <span class="tx"><i>Closing</i><b>everyone</b></span>
+        </div>
+
+        <div class="cr" style="--ci:#FFD100">
+          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9.6 15.4 1.7 1.7 3.3-3.4"/></svg></span>
+          <span class="tx"><i>Next session</i><b class="y" id="crNext">tba</b></span>
+        </div>
+
       </div>
     </div>
   </div>
@@ -269,17 +367,23 @@ html[data-next="1"] .bellrow{display:none}
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
   function trim(v){return dec(v||'').trim()}
 
-  (function seedLoop(){
-    var t=document.getElementById('ctrack');
-    var rows=Array.prototype.slice.call(t.children);
-    rows.forEach(function(r){t.appendChild(r.cloneNode(true))});
-  })();
+  var track=document.getElementById('ctrack');
+  var rows=Array.prototype.slice.call(track.children);
+
+  /* Duplicate the list so the -50% roll is seamless. Only the first copy is
+     driven by the state machine — the clone is decoration that fills the gap at
+     the wrap point. */
+  var N=rows.length;
+  rows.forEach(function(r){track.appendChild(r.cloneNode(true))});
+
+  var ticks=document.getElementById('pticks');
+  for(var i=0;i<N;i++) ticks.appendChild(document.createElement('i'));
 
   var eps=trim(get('ep'));
   if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps});
 
   var host=trim(get('host'));
-  if(host){document.querySelectorAll('#crHost').forEach(function(e){e.textContent=host});}
+  if(host)document.querySelectorAll('#crHost').forEach(function(e){e.textContent=host});
 
   var nx=trim(get('next'));
   if(nx){
@@ -290,21 +394,42 @@ html[data-next="1"] .bellrow{display:none}
     if(host||what){
       var nh=document.getElementById('nh');
       nh.hidden=false;nh.textContent='';
-      if(host){nh.appendChild(document.createTextNode('hosted by '));var b=document.createElement('b');b.textContent=host;nh.appendChild(b);}
-      if(what){if(host){var s=document.createElement('span');s.className='sep';s.textContent='\u00b7';nh.appendChild(s);}var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);}
+      if(host){nh.appendChild(document.createTextNode('Hosted by '));var b=document.createElement('b');b.textContent=host;nh.appendChild(b);}
+      if(what){if(host){var s=document.createElement('span');s.className='sep';s.textContent='·';nh.appendChild(s);}var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);}
     }
   }
 
-  var EAT=3*3600*1000;
-  function two(n){return n<10?'0'+n:''+n}
-  var ck=document.getElementById('clock'),lastMin=-1;
-  function tick(){
-    if(document.hidden)return;
-    var m=Math.floor((Date.now()+EAT)/60000)%1440;
-    if(m!==lastMin){lastMin=m;ck.textContent=two(Math.floor(m/60))+':'+two(m%60);}
+  /* ---- the ledger ----
+     One clock drives waiting / current / finished for every row and the ticks,
+     all from the same 26s cycle the CSS bar and the roll use. Deriving the index
+     from elapsed time rather than from a separate counter is what keeps the lit
+     row and the bar's playhead on the same section; if they were independent
+     they would drift apart within a minute and the panel would read as broken.
+
+     Rows above the index are done, the row at the index is being called, rows
+     below are still waiting. Set only on change — writing an attribute every
+     tick would dirty the whole roll for nothing. */
+  var DUR=26000, t0=performance.now(), last=-1, tickEls=ticks.children;
+
+  function step(){
+    var p=((performance.now()-t0)%DUR)/DUR;
+    var idx=Math.min(N-1,Math.floor(p*N));
+    if(idx===last) return;
+    last=idx;
+    for(var i=0;i<N;i++){
+      rows[i].setAttribute('data-s', i<idx?'done':i===idx?'now':'wait');
+      tickEls[i].className = i<=idx?'on':'';
+    }
   }
-  tick();setInterval(tick,1000);
-  document.addEventListener('visibilitychange',tick);
+  step();
+  setInterval(step,200);
+
+  /* A hidden tab still burns the interval, so the cycle keeps running and the
+     panel is correct on return. The one thing worth forcing is a repaint of the
+     states, in case a tick was missed while the page was throttled. */
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden){ last=-1; step(); }
+  });
 })();
 </script>
 </body>
