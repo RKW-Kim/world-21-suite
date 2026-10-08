@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE — end credits · pattern build</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   A pattern build, not a shadcn install.
+
+   These scenes are standalone OBS Browser Sources: no build step,
+   no framework, no runtime dependencies, and the edit goes live on
+   reload. React, Radix and a Tailwind compile cannot be installed
+   into that, so shadcn cannot literally be used here.
+
+   What is ported is the part of shadcn that survives without a
+   framework, which is most of its actual thinking:
+
+     · the token vocabulary — --background, --card, --accent,
+       --muted, --ring, --radius — so a theme override reads the
+       way a shadcn theme reads
+     · theming by data attribute — the category colour is applied
+       as [data-accent] on the root, not by rewriting inline styles
+     · the variant matrix — cva() resolved at build time in React;
+       here it is one rule per [data-variant], which is the same
+       idea with the build step removed
+     · the Radix state machine — data-state / data-disabled rather
+       than utility classes that encode state in their names
+     · Embla's model — every slide carries a signed distance from
+       the active one, and the whole formation derives from that
+     · Embla's spring — a solved damped oscillator, not a bezier
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ---- tokens, in shadcn's vocabulary, filled from the Smile palette ---- */
+:root{
+  /* the theme layer. --accent is the one a category overrides. */
+  --background:#0A0A0A;
+  --foreground:#FAFAFA;
+  --card:#141417;
+  --card-foreground:#FAFAFA;
+  --muted:#A1A1AA;
+  --muted-foreground:#9B9BA4;
+  --border:rgba(255,255,255,.08);
+  --ring:#FFC107;
+
+  /* category accent. registered so the browser can interpolate it,
+     which is what lets the panel cross-fade between categories. */
+  --accent:#FFC107;
+  --accent-foreground:#0A0A0A;
+  --accent-soft:rgba(255,193,7,.15);
+  --accent-line:rgba(255,193,7,.22);
+
+  --radius:16px;
+  --radius-sm:12px;
+  --radius-md:14px;
+
+  --ring-width:2px;
+  --ring-offset:2px;
+
+  /* brand yellows, kept separate because DESIGN.md says they are not
+     interchangeable: the logo fill is an asset, not a token */
+  --accent-brand:#FFC107;
+  --accent-hot:#F5A623;
+  --logo-yellow:#FFD100;
+
+  --font-sans:'Inter',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px;
+
+  /* Embla ships a spring and so does this. Solved, not eyeballed:
+     zeta .62 gives 8.4% overshoot peaking at 54%. A cubic-bezier
+     cannot overshoot at all — it has no velocity continuity at its
+     ends, which is why eased carousels read as tweens. */
+  --spring:linear(0,0.0417 4.17%,0.1453 8.33%,0.2829 12.5%,0.433 16.67%,
+    0.5799 20.83%,0.713 25%,0.8264 29.17%,0.9173 33.33%,0.9858 37.5%,
+    1.0337 41.67%,1.0637 45.83%,1.0792 50%,1.0835 54.17%,1.08 58.33%,
+    1.0713 62.5%,1.0597 66.67%,1.0472 70.83%,1.0349 75%,1.0238 79.17%,
+    1.0144 83.33%,1.0068 87.5%,1.0011 91.67%,0.9971 95.83%,1);
+  --ease:cubic-bezier(.2,.9,.3,1);
+  transition:--accent .7s var(--ease),--accent-soft .7s var(--ease),
+             --accent-line .7s var(--ease),--ring .7s var(--ease);
+}
+@property --accent      {syntax:'<color>';inherits:true;initial-value:#FFC107}
+@property --accent-soft {syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.15)}
+@property --accent-line {syntax:'<color>';inherits:true;initial-value:rgba(255,193,7,.22)}
+@property --ring        {syntax:'<color>';inherits:true;initial-value:#FFC107}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--background);color:var(--foreground);
+  font-family:var(--font-sans);overflow:hidden}
+
+/* shadcn themes the focus ring from the palette. It is the cheapest
+   proof a surface was designed rather than assembled. */
+:focus-visible{outline:var(--ring-width) solid var(--ring);
+  outline-offset:var(--ring-offset);border-radius:6px}
+::selection{background:var(--accent-line);color:var(--accent-foreground)}
+
+.stage{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* ---- the dot field, from starting.html ---- */
+.bg{position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.09) 1.1px,transparent 1.1px);
+  background-size:26px 26px}
+
+/* ---- left column: the mark and the sign-off ---- */
+.bwrap{position:absolute;left:5.4%;top:0;bottom:var(--safe-b);display:flex;
+  align-items:center;gap:clamp(30px,3.6vw,64px);z-index:3}
+.orbitB{position:relative;width:clamp(250px,34vh,360px);aspect-ratio:1;flex:none;
+  display:grid;place-items:center}
+.orbitB::before{content:"";position:absolute;inset:0;border:2px dashed rgba(255,193,7,.45);
+  border-radius:50%;animation:spinCW 24s linear infinite}
+.orbitB::after{content:"";position:absolute;inset:26px;border:1.5px dashed rgba(255,193,7,.2);
+  border-radius:50%;animation:spinCCW 16s linear infinite}
+.orbitB .glow{position:absolute;inset:-56px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,193,7,.12),transparent 62%)}
+.orbitB .face{width:62%;aspect-ratio:1;animation:faceBob 5.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 48px rgba(255,193,7,.62))}
+.orbitB .face svg{width:100%;height:100%}
+
+h1{font-family:var(--font-sans);font-weight:800;font-size:clamp(56px,5.4vw,116px);
+  line-height:1.02;letter-spacing:-.045em}
+h1 .w{display:block;opacity:0;transform:translateY(40px);animation:wordup .85s var(--ease) both}
+h1 .w2{animation-delay:.16s}
+@keyframes wordup{to{opacity:1;transform:none}}
+h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(--accent-hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+
+.follow{margin-top:34px;position:relative;overflow:hidden;display:inline-block}
+.follow::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);
+  transform:translateX(-130%);animation:sheenX 4.5s ease-in-out 2s infinite}
+@keyframes sheenX{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
+  font-family:var(--font-sans);font-weight:800;font-size:14px;letter-spacing:.08em;
+  text-transform:uppercase;white-space:nowrap;background:var(--accent-brand);
+  color:var(--accent-foreground)}
+.bellrow{margin-top:26px;display:flex;align-items:center;gap:10px;
+  font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+.bellrow svg{width:14px;height:14px;fill:none;stroke:var(--accent-brand);stroke-width:1.6}
+.bellrow b{color:var(--muted-foreground);font-weight:600}
+.nc{margin-top:22px;border-left:1px solid rgba(255,193,7,.55);padding:2px 0 2px 18px}
+.nc .nk{font-family:var(--font-mono);font-weight:600;font-size:11px;letter-spacing:.26em;
+  text-transform:uppercase;color:var(--accent-brand)}
+.nc .nv{font-family:var(--font-sans);font-weight:800;font-size:clamp(20px,2vw,28px);
+  letter-spacing:-.02em;margin-top:2px}
+.nc .nw{font-family:var(--font-mono);font-weight:600;font-size:11px;letter-spacing:.22em;
+  color:var(--muted-foreground);margin-top:6px;text-transform:uppercase}
+.nc .nw b{color:var(--foreground)}
+.nc .nw .sep{color:var(--muted);padding:0 6px}
+
+.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;
+  text-align:center;font-family:var(--font-mono);font-weight:600;font-size:11px;
+  letter-spacing:.46em;color:rgba(250,250,250,.38);animation:riseIn .9s var(--ease) .7s both}
+.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+@keyframes riseIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spinCW{to{transform:rotate(360deg)}}
+@keyframes spinCCW{to{transform:rotate(-360deg)}}
+@keyframes faceBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+/* ---- the credits panel ----
+   Content sized and centred in the space above the dock, so at 1080p it does
+   not stretch to 830px and show the slack as dead space inside a bordered box.
+   Auto margins rather than a transform: the panel carries a rise animation
+   that animates transform and would overwrite a centring transform mid-flight. */
+.credits{position:absolute;right:3.4%;top:clamp(80px,10vh,116px);
+  bottom:calc(var(--safe-b) + 54px);width:min(812px,46vw);z-index:3;
+  height:fit-content;max-height:100%;margin-block:auto;
+  display:flex;flex-direction:column;padding:26px 30px 24px;
+  border-radius:var(--radius);border:1px solid var(--accent-line);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.014) 42%,rgba(255,255,255,.03)),
+    radial-gradient(130% 78% at 50% 0%,var(--accent-soft),transparent 62%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -1px 0 rgba(0,0,0,.4),
+    0 40px 110px rgba(0,0,0,.62);animation:riseIn .9s var(--ease) .25s both}
+
+.chead{display:flex;align-items:center;gap:18px;font-weight:800;font-size:12px;
+  letter-spacing:.3em;text-transform:uppercase;color:#E4E4EA}
+.chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.22),transparent)}
+.chead .ep{color:var(--muted);letter-spacing:.18em;font-variant-numeric:tabular-nums}
+.chead .ep b{color:var(--accent-brand);font-weight:800}
+
+.cat{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
+.cat .ci{width:64px;height:64px;display:grid;place-items:center;
+  border-radius:var(--radius-sm);border:1px solid var(--accent-line);
+  background:var(--accent-soft);box-shadow:0 0 26px var(--accent-soft),
+  inset 0 1px 0 rgba(255,255,255,.09)}
+.cat .ci svg{width:33px;height:33px;fill:none;stroke:var(--accent);
+  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cat .cn{font-weight:800;font-size:30px;letter-spacing:.18em;text-transform:uppercase;
+  color:#EDEDF2;text-align:center}
+.cat .cn small{display:block;font-family:var(--font-mono);font-weight:600;font-size:11px;
+  letter-spacing:.24em;color:var(--accent);margin-top:6px;
+  font-variant-numeric:tabular-nums}
+
+/* progress: fills, because on a credits roll the viewer is waiting, not
+   waiting for you to hurry */
+.bar{margin-top:14px;height:7px;border-radius:999px;overflow:hidden;flex:none;
+  background:rgba(255,255,255,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.bar i{display:block;height:100%;width:100%;border-radius:999px;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--accent) 55%,#000),
+    var(--accent) 66%,
+    color-mix(in srgb,var(--accent) 40%,#fff));
+  box-shadow:0 0 16px var(--accent-line)}
+
+.box{position:relative;margin-top:18px;flex:none;height:clamp(260px,34vh,400px)}
+
+/* ═══ the slide ═══
+   One element, one geometry. --d is the signed distance from the active slide
+   and --ad its magnitude; everything below derives from those two numbers, so
+   the formation is one transform rather than N. This is Embla's slidesInView
+   model with the build step removed. */
+.card{pointer-events:none;display:flex;flex-direction:column;align-items:center;
+  justify-content:center}
+.box[data-phase=car] .card{position:absolute;left:50%;top:50%;
+  width:var(--cw,280px);height:calc(var(--cw,280px) * 1.24);
+  gap:18px;padding:28px 20px 26px;border-radius:var(--radius);text-align:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
+  box-shadow:0 22px 48px rgba(0,0,0,.5);
+  transform:translate(-50%,-50%) translateX(calc(var(--d) * var(--off,200px)))
+                     translateY(calc(var(--ad) * 5px))
+                     scale(calc(1 - var(--ad) * .13));
+  opacity:calc(1 - var(--ad) * .42);
+  z-index:calc(60 - var(--ad) * 10);
+  backface-visibility:hidden;
+  transition:transform .82s var(--spring),opacity .82s var(--spring),
+             box-shadow .5s ease}
+/* promoted only while the formation moves, so an idle scene is not holding
+   three composited layers alive */
+.box[data-phase=car][data-moving] .card{will-change:transform,opacity}
+
+/* the variant matrix. React resolves these with cva() at build time; with no
+   build step each variant is one attribute selector. */
+.card[data-variant=inactive] .av{filter:saturate(.35) brightness(.82)}
+.card[data-variant=inactive] .nm{color:var(--muted)}
+.card[data-variant=active]{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+  0 0 0 1px var(--accent-line),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--accent-soft)}
+.card[data-variant=inactive] .rl,
+.card[data-variant=inactive] .nm{opacity:0}
+.card[data-variant=inactive] .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
+  inset 0 -6px 14px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
+
+/* the portrait slot. Sized as a share of the card, so a real photograph
+   replaces the smile without re-tuning anything */
+.av{position:relative;width:min(70%,238px);height:auto;aspect-ratio:1;
+  border-radius:50%;overflow:hidden;display:grid;place-items:center;flex:none;
+  background:linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
+    inset 0 -6px 14px rgba(0,0,0,.45),0 14px 34px rgba(0,0,0,.55)}
+.av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
+
+.rl,.nm{transition:opacity .45s var(--ease)}
+.rl{font-weight:800;font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--muted)}
+.nm{font-weight:800;font-size:clamp(19px,2.1vw,27px);letter-spacing:-.02em;line-height:1.12;
+  color:#F2F2F6;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- the board ----
+   Fills the frame on both axes. A short row is centred on integer grid lines —
+   fractional ones are invalid in CSS Grid and get rejected silently — so two
+   cards left over in a three column board each span two columns and share the
+   middle. */
+.box[data-phase=grid]{display:grid;gap:14px;align-content:stretch;justify-content:stretch;
+  grid-template-columns:repeat(var(--cols,3),1fr);grid-auto-rows:1fr}
+.box[data-phase=grid] .card{position:static;width:auto;height:auto;
+  transform:none;opacity:1;z-index:auto;gap:10px;padding:18px 14px 16px;
+  border-radius:var(--radius-md);
+  transition:transform .82s var(--spring),opacity .82s var(--spring),
+             box-shadow .5s ease}
+.box[data-phase=grid] .av{width:min(64%,198px)}
+.box[data-phase=grid] .nm{font-size:clamp(15px,1.35vw,20px);letter-spacing:-.01em}
+.box[data-phase=grid] .rl{font-size:11px;letter-spacing:.18em}
+/* the first name in a category is the lead, and it looks like one */
+.box[data-phase=grid] .card[data-variant=lead]{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+  0 0 0 1px var(--accent-line),0 18px 40px rgba(0,0,0,.5)}
+.box[data-phase=grid] .card[data-variant=lead] .nm{color:#fff}
+/* the role line earns its place while the board is small enough to read */
+.box[data-phase=grid][data-roles=off] .rl{display:none}
+
+@media (max-width:1400px){
+  .bwrap{left:4.4%;flex-direction:column;align-items:flex-start;gap:26px;
+    max-width:min(560px,44vw)}
+  .orbitB{width:clamp(190px,25vh,250px)}
+  .credits{width:min(660px,47vw);padding:20px 22px}
+  .cat .ci{width:54px;height:54px;border-radius:10px}
+  .cat .ci svg{width:28px;height:28px}
+  .cat .cn{font-size:24px}
+  h1{font-size:clamp(44px,4.6vw,84px)}
+  .chip{font-size:12.5px;padding:8px 18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition:none !important;animation-delay:0s !important}
+  .orbitB::before,.orbitB::after,.orbitB .face,.follow::after{animation:none !important}
+  h1 .w{opacity:1;transform:none}
+  .card{opacity:1 !important}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="bwrap">
+    <div class="orbitB" aria-hidden="true">
+      <span class="glow"></span>
+      <span class="face"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#FFD100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg></span>
+    </div>
+    <div>
+      <h1><span class="w w1"><span class="g">That's all</span></span><span class="w w2"><span class="y">folks.</span></span></h1>
+      <div class="follow"><span class="chip">Follow so you don't miss the next one</span></div>
+      <div class="bellrow">
+        <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        <span>Notifications on — never miss a session</span>
+      </div>
+      <div class="nc" id="nc" hidden>
+        <div class="nk">Next session</div>
+        <div class="nv" id="nv">—</div>
+        <div class="nw" id="nw" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="credits">
+    <div class="chead">
+      <span>Credits</span><span class="rule"></span>
+      <span class="ep">EP <b data-ep>128</b></span>
+    </div>
+
+    <div class="cat">
+      <span class="ci" id="catIcon" aria-hidden="true"></span>
+      <span class="cn"><span id="catName">Host</span><small id="catCount"></small></span>
+    </div>
+
+    <div class="bar" role="progressbar" aria-label="Progress through this credit" id="bar" aria-valuemin="0" aria-valuemax="100"><i id="barFill"></i></div>
+
+    <!-- Embla's role contract: a group of slides, each announced as a slide -->
+    <div class="box" id="box" data-phase="car" data-orientation="horizontal"
+         role="group" aria-roledescription="carousel" aria-label="End credits"></div>
+  </section>
+
+  <div class="sig">smile<b>.</b>co<b>.</b>ke</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var MARK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FFD100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg>';
+
+/* Tabler, one stroke weight throughout — a drawn icon set, not unicode */
+var ICON={
+  mic:'<path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/>',
+  users:'<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  clap:'<path d="M11 3.5a1.5 1.5 0 013 0V13l-1.5 1.5L11 13V3.5z"/><path d="M7 5.5a1.5 1.5 0 013 0V13l-1.5 1.5L7 13V5.5z"/><path d="M3 8a1.5 1.5 0 013 0v5L4.5 14.5 3 13V8z"/><path d="M15 6.5a1.5 1.5 0 013 0V13l-1.5 1.5L15 13V6.5z"/>',
+  doc:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h4"/>',
+  layers:'<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+  cast:'<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a6 6 0 016-6h2a6 6 0 016 6v2"/><circle cx="18" cy="9" r="2.4"/><path d="M22 21v-1.6a4 4 0 00-3-3.9"/>',
+  cam:'<path d="M3 7h11a2 2 0 012 2v6a2 2 0 01-2 2H3a2 2 0 01-2-2V9a2 2 0 012-2z"/><path d="M16 11l6-3.5v9L16 13"/><circle cx="7" cy="13" r="1.6"/>',
+  check:'<path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>',
+  music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  chat:'<path d="M21 11.5a8.4 8.4 0 01-9 8.4 8.5 8.5 0 01-3.8-.9L3 21l1.9-5a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 018.5-8.5h.5a8.5 8.5 0 018 8z"/>',
+  spark:'<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M19 15l.8 2.4 2.2.8-2.2.8L19 21.5l-.8-2.5-2.2-.8 2.2-.8z"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/>'
+};
+
+function C(a,b,c){return {c1:a,c2:b,c3:c}}
+/* category hues are the system's own tokens — accent-brand for the host, then
+   the seat and market colours. A palette here describes state, it is not
+   decoration. */
+var CATS=[
+  {n:'Host',i:'mic',c:'#FFC107',p:[{r:'Host',v:'you',k:C('#3D4F5C','#2E3A46','#55666F')}]},
+  {n:'Co-hosts',i:'users',c:'#A78BFA',p:[
+    {r:'Lead co-host',v:'the smile squad',k:C('#45506B','#2F4A5C','#5A6472')},
+    {r:'Co-host',v:'the night desk',k:C('#4A5A3E','#3A4A3E','#6B5B3E')},
+    {r:'Co-host',v:'field desk',k:C('#3E5A54','#334155','#6E6455')}]},
+  {n:'Producers',i:'clap',c:'#2BB2F5',p:[
+    {r:'Executive producer',v:'smile crew',k:C('#5A4A3C','#3B4652','#7B6D4F')},
+    {r:'Producer',v:'the desk',k:C('#45506B','#33474F','#5C6B62')},
+    {r:'Producer',v:'production',k:C('#4E5A63','#3A4450','#6B6250')}]},
+  {n:'Script',i:'doc',c:'#F5A623',p:[
+    {r:'Script editor',v:'the words',k:C('#4A5568','#2E3A46','#5F6C7B')},
+    {r:'Copy',v:'the desk',k:C('#3E5A54','#4A5A3E','#55666F')}]},
+  {n:'Assets & graphics',i:'layers',c:'#7CD9F9',p:[
+    {r:'Graphics',v:'the toolkit',k:C('#6B5B3E','#45506B','#3E5A54')},
+    {r:'Motion',v:'motion',k:C('#3D4F5C','#5A4A3C','#55666F')},
+    {r:'Brand',v:'brand',k:C('#4E5A63','#2F4A5C','#6B6250')}]},
+  {n:'On-air talent',i:'cast',c:'#F6465D',p:[
+    {r:'Presenter',v:'the voices',k:C('#2F4A5C','#45506B','#5C6B72')},
+    {r:'Reader',v:'readers',k:C('#4A5A3E','#5A4A3C','#55666F')},
+    {r:'Correspondent',v:'stringer',k:C('#3E5A54','#33474F','#6E6455')}]},
+  {n:'Field reporting',i:'cam',c:'#1FD24F',p:[
+    {r:'Camera',v:'the cameras',k:C('#3B4652','#4A5A3E','#6B5B3E')},
+    {r:'Sound',v:'stringer',k:C('#45506B','#33474F','#5C6B62')}]},
+  {n:'Fact check',i:'check',c:'#0ECB81',p:[
+    {r:'Verifier',v:'the desk',k:C('#3A4A3E','#4A5568','#6B6250')},
+    {r:'Standards',v:'verification',k:C('#4E5A63','#3E5A54','#55666F')}]},
+  {n:'Music',i:'music',c:'#3FB6FF',p:[{r:'Music',v:'licensed',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
+  {n:'Questions',i:'chat',c:'#FF5A47',p:[{r:'Questions',v:'the chat',k:C('#45506B','#4A5A3E','#55666F')}]},
+  {n:'Closing',i:'spark',c:'#FFD100',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
+  {n:'Next session',i:'cal',c:'#FFCE00',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
+];
+
+function get(k){var m=new RegExp('[?&]'+k+'=([^&]*)').exec(location.search);return m?decodeURIComponent(m[1].replace(/\+/g,' ')):''}
+function trim(s){return String(s||'').trim()}
+
+var eps=trim(get('ep'));
+if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps});
+var host=trim(get('host'));
+if(host){ CATS[0].p[0].v=host; CATS[0].p[0].r='Host' }
+var nx=trim(get('next'));
+if(nx){
+  document.documentElement.dataset.next='1';
+  document.getElementById('nc').hidden=false;
+  document.getElementById('nv').textContent=nx;
+  var lp=CATS[CATS.length-1].p[0];
+  if(lp.v==='tba') lp.v=nx;
+  var what=trim(get('what'));
+  if(host||what){
+    var nh=document.getElementById('nw'); nh.hidden=false; nh.textContent='';
+    if(host){nh.appendChild(document.createTextNode('Hosted by '));var b=document.createElement('b');b.textContent=host;nh.appendChild(b)}
+    if(what){if(host){var sp=document.createElement('span');sp.className='sep';sp.textContent='·';nh.appendChild(sp)}
+      var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2)}
+  }
+}
+
+var box=document.getElementById('box'), bar=document.getElementById('bar'),
+    barFill=document.getElementById('barFill'), catIcon=document.getElementById('catIcon'),
+    catName=document.getElementById('catName'), catCount=document.getElementById('catCount');
+
+/* ═══ pacing ═══
+   The roll's length is derived, not fixed. Counting the beats first and then
+   dividing a target total across them means adding a department does not make
+   the credits longer — it just makes each beat a little quicker, to a floor.
+   Without this the roll grows without limit and the viewer is still sitting
+   through it long after they have read the last name. */
+var MODE=trim(get('mode'))||'beats';
+var TARGET=parseFloat(get('total'))||72000;   /* 72s for the whole roll */
+var MINBEAT=2600, MAXBEAT=6000;
+
+function phasesFor(cat){
+  if(MODE==='roll') return cat.p.length + 1;      /* every person, then the board */
+  return 1 + (cat.p.length>1?1:0);               /* the lead, then the board */
+}
+var TOTALPHASES=CATS.reduce(function(n,c){return n+phasesFor(c)},0);
+var BEAT=Math.round(Math.min(MAXBEAT,Math.max(MINBEAT,TARGET/TOTALPHASES)));
+var GRIDBEAT=Math.round(Math.min(MAXBEAT,Math.max(MINBEAT,TARGET*0.55/TOTALPHASES)));
+/* overrides, so pacing can be retuned without editing the file */
+var bOv=parseFloat(get('beat')), gOv=parseFloat(get('gridbeat'));
+if(bOv) BEAT=Math.round(bOv);
+if(gOv) GRIDBEAT=Math.round(gOv);
+
+var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='', fo=0, booted=false,
+    moveUntil=0;
+
+function fill(c,p){
+  c.querySelector('.rl').textContent=p.r;
+  c.querySelector('.nm').textContent=p.v;
+  c.style.setProperty('--c1',p.k.c1);
+  c.style.setProperty('--c2',p.k.c2);
+  c.style.setProperty('--c3',p.k.c3);
+  c.setAttribute('aria-label',p.r+', '+p.v);
+}
+function makeCard(){
+  var d=document.createElement('div');
+  d.className='card';
+  d.setAttribute('role','group');
+  d.setAttribute('aria-roledescription','slide');
+  d.innerHTML='<span class="av">'+MARK+'</span><span class="rl"></span><span class="nm"></span>';
+  return d;
+}
+
+/* Enough nodes for the biggest set, reused forever. Re-attach
+   unconditionally: a one person category parks the spares with .remove(),
+   which detaches them but keeps the reference, so the next larger category
+   would fill those nodes and never put them back. */
+function pool(items){
+  items.forEach(function(it,i){
+    if(!cards[i]) cards[i]=makeCard();
+    fill(cards[i],it);
+    if(!cards[i].parentNode) box.appendChild(cards[i]);
+  });
+  for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
+}
+
+/* Card size and flank offset are solved from the frame rather than pinned, so
+   the formation ends flush with both edges at any window size. Height leads:
+   an earlier version also capped width, and on a tall frame the width bound
+   won instead of the height and the card floated with dead space above and
+   below it. */
+function size(){
+  var bw=box.clientWidth, bh=box.clientHeight;
+  if(!bw||!bh) return;
+  var w=Math.min(bh/1.24, bw*0.92);
+  box.style.setProperty('--cw',w.toFixed(1)+'px');
+  box.style.setProperty('--off',(bw/2-(w/2)*0.87-6).toFixed(1)+'px');
+}
+
+/* FLIP between the carousel and the board. Without it the spread is a jump
+   cut: cards leave one layout and appear in another inside the same frame,
+   which is exactly the moment a credits board stops feeling expensive. */
+function morph(to){
+  var wantCar=(to==='car');
+  if(box.dataset.phase===to) return;
+  var before=cards.map(function(c){return c.getBoundingClientRect()});
+  box.dataset.phase=to;
+  cards.forEach(function(c,i){
+    var b=before[i]; if(!b||!b.width) return;
+    var a=c.getBoundingClientRect(); if(!a.width) return;
+    var dx=(b.left+b.width/2)-(a.left+a.width/2);
+    var dy=(b.top+b.height/2)-(a.top+a.height/2);
+    c.style.transition='none';
+    c.style.transform='translate('+dx+'px,'+dy+'px) scale('+(b.width/a.width)+')';
+  });
+  void box.offsetWidth;
+  cards.forEach(function(c){c.style.transition='';c.style.transform=''});
+}
+
+function setCar(){
+  var cat=CATS[ci], prev=CATS[(ci-1+CATS.length)%CATS.length], nx=CATS[(ci+1)%CATS.length];
+  if(MODE==='beats'){
+    /* one beat: the lead, alone, holding the whole frame */
+    pool([cat.p[0]]);
+    cards[0].style.setProperty('--d',fo);
+    cards[0].style.setProperty('--ad',Math.abs(fo));
+    cards[0].dataset.variant='active';
+    cards[0].style.gridColumn=''; cards[0].style.gridRow='';
+  }else{
+    /* the roll: the category before, the person on stage, the category after */
+    pool([prev.p[0],cat.p[pi],nx.p[0]]);
+    cards.forEach(function(c,i){
+      var d=(i-1)+fo;
+      c.style.setProperty('--d',d);
+      c.style.setProperty('--ad',Math.abs(d));
+      c.dataset.variant=(i===1)?'active':'inactive';
+      c.dataset.index=String(i);
+      c.style.gridColumn=''; c.style.gridRow='';
+    });
+  }
+  /* promote for the length of the move only; the tick retires it, so the page
+     still has exactly one timer */
+  box.setAttribute('data-moving',''); moveUntil=performance.now()+900;
+}
+
+function setGrid(){
+  var cat=CATS[ci], n=cat.p.length;
+  pool(cat.p);
+  cards.forEach(function(c,i){
+    c.dataset.variant=(i===0)?'lead':'listed';
+    c.dataset.index=String(i);
+    c.style.removeProperty('--d'); c.style.removeProperty('--ad');
+    c.style.gridColumn=''; c.style.gridRow='';
+  });
+  box.setAttribute('data-roles', n>4?'off':'on');
+  if(n===1){ cards[0].style.gridColumn='1 / -1'; cards[0].style.gridRow='1 / -1'; return }
+  var cols=n<=2?n:3;
+  box.style.setProperty('--cols',cols);
+  var i=0,r=0;
+  while(i<n){
+    var k=Math.min(cols,n-i);
+    /* Grid line numbers are integers, so a short row is centred with spans
+       rather than a half column offset. An odd leftover gives each card a two
+       column span and they share the middle. */
+    var even=(cols-k)%2===0, span=even?1:2, off=even?(cols-k)/2:0;
+    for(var j=0;j<k;j++){
+      cards[i+j].style.gridColumn=(1+off+j)+' / span '+span;
+      cards[i+j].style.gridRow=String(r+1);
+    }
+    i+=k; r++;
+  }
+}
+
+/* the first card arrives from the far left rather than appearing centred. The
+   whole formation is offset through the same --d the carousel already uses, so
+   the incoming card inherits the scale and fade falloff instead of a second
+   animation system that would have to be kept in sync with this one. */
+function slideIn(){
+  fo=-1.15; setCar();
+  void box.offsetWidth;
+  fo=0; setCar();
+}
+
+function enter(){
+  var key=ci+':'+pi+':'+phase;
+  if(key===lastKey) return;
+  lastKey=key;
+  var cat=CATS[ci], people=cat.p;
+
+  /* the category colour is a theme override on the root, the way shadcn does
+     it, rather than properties written onto one element */
+  var rs=document.documentElement.style;
+  rs.setProperty('--accent',cat.c);
+  rs.setProperty('--ring',cat.c);
+  rs.setProperty('--accent-soft',rgba(cat.c,.15));
+  rs.setProperty('--accent-line',rgba(cat.c,.22));
+  document.documentElement.dataset.accent=cat.i;
+
+  catIcon.innerHTML='<svg viewBox="0 0 24 24">'+ICON[cat.i]+'</svg>';
+  catName.textContent=cat.n;
+  catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
+
+  size();
+  box.dataset.category=cat.n;
+  if(phase==='card'){ morph('car'); setCar();
+    if(!booted){ booted=true; slideIn() }
+  }else{
+    morph('grid'); setGrid();
+  }
+  stepStart=performance.now();
+}
+
+function advance(){
+  var cat=CATS[ci];
+  if(phase==='card'){
+    if(MODE==='beats'){
+      /* a single name needs no board — the hero already holds the whole frame,
+         so the count in phasesFor has to match or the pacing is a fiction */
+      if(cat.p.length>1){ phase='grid'; pi=0 }
+      else { ci=(ci+1)%CATS.length; pi=0; phase='card' }
+    }
+    else if(pi<cat.p.length-1) pi++;
+    else { phase='grid'; pi=0 }
+  }else{
+    ci=(ci+1)%CATS.length; pi=0; phase='card';
+  }
+  enter();
+}
+function skip(dir){
+  /* presenter control. OBS only forwards keystrokes to a focused source, so
+     treat this as a desk-side convenience, not a guarantee. */
+  var d=dir>0?1:CATS.length-1;
+  ci=(ci+d)%CATS.length; pi=0; phase='card'; enter();
+}
+addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();advance()}
+  else if(e.key==='ArrowLeft'){e.preventDefault();skip(-1)}
+});
+
+function rgba(hex,a){
+  var n=parseInt(hex.slice(1),16);
+  return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+}
+
+if(reduced){
+  /* a real poster state, not a half finished animation: the last category as a
+     complete board, bar full, nothing moving */
+  ci=CATS.length-1; phase='grid'; pi=0; enter();
+  barFill.style.width='100%'; bar.setAttribute('aria-valuenow','100');
+}else{
+  enter();
+  addEventListener('resize',function(){ size(); if(phase==='card') setCar() });
+  setInterval(function(){
+    var now=performance.now(), el=now-stepStart;
+    var dur=(phase==='card'?BEAT:GRIDBEAT);
+    if(el>=dur){ advance(); el=0 }
+    if(now>moveUntil&&box.hasAttribute('data-moving')) box.removeAttribute('data-moving');
+    var pct=Math.min(1,el/dur)*100;
+    barFill.style.width=pct.toFixed(2)+'%';
+    bar.setAttribute('aria-valuenow',pct.toFixed(0));
+  },70);
+}
+})();
+</script>
+</body>
+</html>
