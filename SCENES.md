@@ -1,530 +1,535 @@
-# The SmileTV scenes — production notes
+# How the SmileTV show works
 
-Written to be read aloud or scrolled on a teleprompter. Every section is
-self-contained, so you can jump straight to the scene you are about to put on
-air.
+A presenter's script. Written for people who know what a news channel looks
+like but have never been behind one.
 
-These notes used to live inside `overlay/deck.html`. They moved here so the
-deck could become a small launcher instead of carrying six long documents in
-its source.
+It is here so you can explain what you are watching, and why each piece exists.
+You do not need any technical background to use it.
 
 ---
 
-## Before you put anything on air
+## The one idea that explains all of it
 
-### Yellow means live
+Most people think going live means turning on a camera and talking.
 
-`#FFC107` is not a decoration. It is the channel's signal colour: a live dot,
-a hot mic, a bar at full. It appears only when the state it describes is
-genuinely active.
+It does not. What they are watching is a **production**, and the difference is
+visible the moment you compare it to a single person on a laptop.
 
-This is why the off-air card contains no yellow and no glow. If a dead-air
-screen contains one lit yellow pixel, someone glancing at Program can misread
-the state. Television never accidentally broadcast a green room because the
-standby slate was designed as a genuinely different visual state.
+A production has **states**, and the audience can always tell which one they are
+in without being told:
 
-### Scenes and modules are different animals
+- **Not started yet** — the channel is open, but nothing is happening.
+- **On air** — someone is talking and the show is happening.
+- **In a defined section** — a topic has started and will end.
+- **Engaging the audience** — the show is talking back.
+- **The tail** — the content is over, but the channel is still up.
+- **Finished** — nothing is live, and it is safe to walk away.
 
-| | Scenes | Modules |
-|---|---|---|
-| Examples | starting, tech-diff, q&a, offair, meet, end-credits | ticker, watermark, speaking |
-| Count | 9 painted scenes | 4 transparent overlays |
-| Background | paints its own, always dark | must be see-through |
-| Placed on | its own OBS source | layered on top of a scene |
+Every screen in this kit exists to announce one of those states clearly. That
+is the whole job. A viewer glancing at a screen for one second should never be
+guessing whether the show is on, over, or broken.
 
-If a module paints a background it becomes a dark rectangle in OBS and covers
-the show. Never layer a scene and a module into one source.
-
-### The frame is fixed
-
-Every scene is exactly 1920 by 1080. That is OBS's canvas, not a resolution
-preference.
-
-The bottom 76 pixels are reserved on every scene for the ticker module, which
-is precisely 1920 by 76. The top-left corner is reserved for the watermark.
-Content may never enter those zones.
-
-There is no responsive design here because there is only one layout.
-
-### Everything is a standalone file
-
-No build step. No framework. No runtime dependency. No install step. Edit the
-file, reload in OBS, the change is on air.
-
-That constraint is why no scene can use React, Tailwind, or a carousel library.
-It would break the reload-and-it-is-live promise.
+This is why a professional channel never simply goes to black when it stops.
+Black is ambiguous. Black might be a crash, a lost connection, or a laptop that
+fell asleep. A deliberate screen saying "not broadcasting, back at nine" is a
+statement. It is the difference between **offline** and **broken**.
 
 ---
 
-## The shape of a show
+## Who is actually running the show
 
-The six scenes in the deck are in presentation order, and that order is the
-run of show:
+This is the part that surprises people most, so it is worth saying out loud
+during a presentation.
 
-    starting → tech-diff → meet → q&a → tech-diff → end-credits → offair
+The viewer sees one host talking. In reality, at least nine people are working
+at once, and almost none of them are visible.
 
-Before anything, open a segment, carry a video, engage the audience, open
-another segment, run the tail, then the real end.
+**The host** is the one on camera. They are the face of the show, but they are
+not running it. A good host can be completely unaware of how much is happening
+around them.
 
-A typical episode: hold on **starting** while people sort out audio and
-cameras. Go live to a face. Cut to **tech-diff** to open a segment. If there
-is a recorded piece or a meeting, **meet**. Then **q&a** while the audience
-talks. More segments. Then **end-credits** for the last few minutes. Then, and
-only then, **offair**.
+**The producer** decides what happens next and when. They are the person making
+the running decisions — "we are going to the guest now", "we are taking
+questions", "we are wrapping". The host follows the producer, not the other way
+round.
 
-One rule the whole kit enforces: never cut to a holding or off-air state in
-the middle of a show. It reads as an error, not as politeness.
+**The vision mixer** — sometimes called the director or the switcher — is the
+person whose job is deciding, moment to moment, *which screen the audience is
+looking at right now*. In this kit, that person is the person driving the
+presentation deck. They press a number and the audience moves. They are never on
+camera.
+
+**The script or teleprompter operator** feeds the host their lines. A presenter
+is not memorising paragraphs. They are reading what is in front of them, which
+is why the delivery is steady even when the subject is complicated.
+
+**The guest or contributor** may be in the room, or may be joining remotely
+from somewhere else entirely. They arrive, they contribute, they leave.
+
+**The graphics and brand person** owns everything the audience reads: the
+titles, the names, the market figures along the bottom, the credits. They are
+responsible for the audience always knowing *what they are looking at*.
+
+**The audio operator** makes sure every voice is audible and at the same level.
+Nobody notices good audio. Everybody notices bad audio.
+
+**The stream operator** is watching whether the broadcast is actually reaching
+people. They are looking at numbers most viewers will never see, and their job
+is to notice trouble before the audience does.
+
+**The chat moderator** manages the audience's words. They keep the chat civil,
+and they surface the good questions so the host does not have to read through
+noise to find them.
+
+The point to land: **a broadcast is not one person talking, it is a team
+coordinating so that one person appears to be working alone.** Every scene in
+this kit is a tool that one of those people uses, and the audience experiences
+the result as a single smooth show.
+
+---
+
+## The running order
+
+The scenes are numbered, and the number is the order they normally appear in.
+Pressing a number on the presentation deck sends that screen to air.
+
+**1. Starting** — before the show
+**2. Tech diffs** — opening a topic
+**3. Q&A** — talking to the audience
+**4. Off air** — the channel is closed
+**5. Meet** — showing video
+**6. End credits** — the tail
+
+A normal evening runs roughly like this:
+
+Hold on Starting while people get their audio and cameras right. Go live to the
+host. Open the first topic with Tech diffs. Bring in video with Meet. Throw out
+to Q&A and read the chat. Back to a topic. Then End credits for the last few
+minutes. Then, and only then, Off air.
+
+One rule that surprises people: **you never go to Starting or Off air in the
+middle of a show.** Cutting to a holding screen mid-show reads as a mistake,
+not as politeness. It belongs at the beginning and the end, nowhere else.
+
+---
+
+# The six screens
 
 ---
 
 ## 1. Starting
 
-File: `overlay/starting.html`
+### What you are looking at
 
-### What it is
+The channel logo, a headline saying the show opens soon, and the time.
 
-The screen that sits on Program before anyone is talking. Broadcast calls this
-a holding screen, a countdown, or a slate.
+### Why a broadcast needs it
 
-### What it is for
+Because the gap between "the stream is on" and "a person is talking" is real and
+usually several minutes long. During that gap the cameras are being adjusted,
+someone is checking their microphone, a guest is still finding their way in.
 
-- Filling dead air. Ten minutes of black reads as broken. This reads as "we
-  start at nine".
-- Absorbing the awkward minute. The gap between "the show starts now" and
-  someone actually talking — camera warm-up, audio check, waiting for the
-  third person to join.
-- Setting tone. The visual identity of the channel is established here before
-  a single word is spoken.
-- Being a natural loop. If it runs longer than planned it can sit for hours.
+If nothing is on screen during that gap, the channel looks broken. Ten minutes
+of black reads as a failure. Ten minutes of this reads as *a show that is
+starting on time*.
 
-### When to use it
+### When you use it
 
-The ten minutes before you go live, and only before you go live.
+Before the show begins. That is its entire purpose.
 
-### What the viewer should get
+### A real situation
 
-We arrived at a real place, and it is accounted for. Not: this stream is
-broken.
+It is 8:50pm. The show is due at 9:00pm. You start the broadcast now so the
+audience can find the channel, but the host is not ready — they are fixing their
+collar and the third guest is still connecting.
 
-### What is on screen, and why
+Without this screen, everyone who arrives early sees a black screen and leaves.
+With it, they see a countdown, they know they are in the right place, and a
+good share of them stay.
 
-- **The headline.** The largest type in the entire kit, deliberately. A holding
-  screen has one job and must carry exactly one idea. It animates in word by
-  word, each word filled with a vertical gradient, pale grey into darker grey,
-  with the final word in gold and a soft glow. Grey first, gold last, so the
-  eye lands on the word carrying the meaning.
-- **Clock and date.** Small, tabular-figured, never competing. They exist to
-  be available, not to be read. Tabular figures matter: a clock whose digits
-  jitter as numbers swap is genuinely hard to read.
-- **The logo, above the headline.** Never beside it. Two focal points on a
-  holding screen read as a mistake.
-- **Everything centred on one axis.** Same reason.
+This screen also does something quieter: it is the first impression of the
+channel. It tells the viewer what kind of show they have arrived at before a
+single word has been spoken.
 
-### Controls
+### How it changes what the viewer feels
 
-`?title=` replaces the headline words. `?date=` the date line. `?scale=` from
-0.4 to 1.6 resizes the mark. One gated interval drives the clock and nothing
-else.
+Instead of uncertainty, they get **reassurance**. The message is "you are in the
+right place, you are early, and nothing is wrong."
 
-### What goes wrong
+### If you are presenting it
 
-Cutting to it mid-show. It reads as an error.
+> "This is the holding screen. Its whole job is to make an empty channel look
+> deliberate. It exists because there is always a gap between opening the
+> stream and someone actually being ready to talk. Black screen in that gap
+> looks broken. This looks intentional. It also does something useful — it
+> tells early arrivals the show starts at a known time, which is why a lot of
+> them stay instead of leaving."
 
 ---
 
 ## 2. Tech diffs
 
-File: `overlay/tech-diff.html`
+### What you are looking at
 
-### What it is
+A title naming the current topic, and a bar underneath that slowly fills from
+empty to full.
 
-The title card that opens a recurring segment, with a bar that fills as you
-talk through it.
+### Why a broadcast needs it
 
-The pattern is borrowed from software. A diff is what changed between one
-version and the next. This card names the change and runs a bar to full.
+Two reasons, and the second one is the important one.
 
-### What it is for
+First, it names the thing. When a team publishes something every week, "we
+shipped X" needs a home, or it disappears into a chat thread that nobody reads
+again.
 
-- Naming the thing. When a team ships something every week, "we shipped X"
-  needs a consistent home or it gets lost in a chat thread.
-- Showing progress without a slide deck. You talk; the card holds the title.
-- Marking completion. A segment that fills its bar is finished. A segment still
-  filling is in progress. Audiences learn this in one show.
-- Being teachable structure. The same frame every week means the regular viewer
-  knows what is happening without being told.
+Second, and more interestingly, **the filling bar is how the audience knows how
+long is left.** The bar is not decoration. It fills at roughly the pace the
+topic is actually being discussed. A viewer glancing at it knows "we are
+two-thirds through this".
 
-### When to use it
+This is the difference between a broadcast and a stream with no structure. On a
+news channel you always know which story you are in and roughly how much of it
+is left, without anyone ever telling you.
 
-Every time you start a named thing. A feature shipped. A fix. A topic. The
-moment the subject changes is the moment you cut to this.
+### When you use it
 
-### What the viewer should get
+Every single time the subject changes. A new topic, a new fix, a new feature.
+The moment the conversation moves on, this is the screen that moves with it.
 
-We are now in a defined section, and I will know when it is done.
+### A real situation
 
-### What is on screen, and why
+The technical team hit a problem during the show. People are watching while
+they work on it.
 
-- **The headline**, same gradient-clip treatment as the opening slate. Grey
-  words, one gold word carrying the emphasis, plus the glow. Same grammar,
-  same channel.
-- **The bar.** Thin, horizontal, reads left to right, and fills once over the
-  whole length of the segment rather than per word, so a long discussion does
-  not make it strobe.
-- **Sentence case throughout.** "Minor technical difficulties", not "Minor
-  Technical Difficulties".
+The screen goes up saying what is being fixed. The bar fills slowly over the
+next several minutes. The channel has acknowledged there is an issue, told
+everyone what it is, and is visibly still working. Nobody has to ask what is
+happening in the comments. Nobody leaves to check if the stream died.
 
-The bar is the segment's clock. It is the only element telling the viewer how
-much is left.
+Compare that with the alternative: staying on the host's face for eight minutes
+while they read out technical messages. That is the version where people start
+wondering whether something is wrong, and where the chat fills with "is this
+working?" — which is exactly the atmosphere you do not want.
 
-### Controls
+### How it changes what the viewer feels
 
-None. It is a fixed card. Repeat a segment by reloading the file.
+**Calm, and confidence in the team.** The message is "we know, we're on it,
+this is being handled, stay with us."
 
-### What goes wrong
+### If you are presenting it
 
-- Putting a bullet list on it. Then it becomes a slide deck and people read
-  instead of listening.
-- Starting a new card mid-sentence. The bar restarting mid-thought breaks the
-  "section finished" contract.
-- A different card every week. The repetition is the value.
-
-Keep it on screen for the whole segment. It is the segment's anchor, not an
-intro you cut away after two seconds.
+> "This is the segment opener. It names the topic and the bar underneath fills
+> as we talk through it. The bar is not a progress bar for us — it is for the
+> audience. It tells them how long is left, which is something a live stream
+> normally never bothers to do.
+>
+> The example I always use is a fault. If something breaks mid-show, this goes
+> up, the bar fills over the next few minutes while we work, and the channel has
+> said out loud: we know, we are on it. Without it you get eight minutes of
+> someone reading out error messages, and the chat fills with 'is this working?'"
 
 ---
 
-## 3. Q and A
+## 3. Q&A
 
-File: `overlay/q%26a.html`
+### What you are looking at
 
-Note the escaped ampersand in the filename. Browsers serve the file as
-`q%26a.html`; that is deliberate, not a typo.
+Messages from the audience appearing on screen, each with the name of the
+person who sent it.
 
-### What it is
+### Why a broadcast needs it
 
-A live, working chat overlay. The engagement layer.
+Because a one-way broadcast makes the audience spectators. This is the screen
+that turns them into participants.
 
-Not a picture of a chat. A real one. Messages arrive, move through the field,
-and age out.
+There is a second, less obvious reason. On a live stream, **the movement of
+messages is itself a signal.** When nothing is happening on screen, a busy
+message feed tells the viewer the channel is alive even if nobody is talking.
+It is the cheapest, most convincing "we are still here" signal a channel has.
 
-### What it is for
+### When you use it
 
-- Proving the channel is alive at any hour. Movement on screen while nobody is
-  talking is the strongest possible "we are on" signal.
-- Making the audience part of the programme. The viewer list is the product.
-- Handling questions without a producer. Questions arrive sorted by tier rather
-  than by who shouted loudest.
-- Filling the frame during dead air. Cheaper and better than a holding screen,
-  because it looks like content.
+Whenever you want the audience involved rather than watching. After a topic, at
+a natural pause, or any time the show would benefit from energy.
 
-### When to use it
+### A real situation
 
-Whenever you want the audience talking. After a segment, during a gap, any time
-the show benefits from audience energy.
+The host has just finished explaining something. Rather than immediately moving
+on, the screen goes to Q&A and the audience starts sending questions.
 
-It also runs unattended. It is a scene that fills the frame and looks like
-content while doing it.
+Two things happen. The host gets material they did not have to write — the
+questions tell you what the audience actually understood and what they did not.
+And the people who sent a question are now invested, because their name was on
+screen in front of everyone.
 
-### What the viewer should get
+The moderator is quietly sorting these behind the scenes so the host is handed
+the good ones instead of reading through noise.
 
-I am in this room. My message, on screen, with my name.
+### How it changes what the viewer feels
 
-### The central design claim
+**Involvement.** "I am in this room, not watching it."
 
-Participation is recorded. Every message carries a handle, and the handle is
-styled — bronze, silver, gold — so a contribution leaves a visible mark that
-does not scroll away with the message. That is the difference between a chat
-overlay and a comment section.
+There is a deliberate detail worth pointing out if someone asks. Names are
+styled differently depending on how much someone has contributed — bronze,
+silver, gold. It means a contribution leaves a mark that does not disappear when
+the message scrolls away. People notice that, and they keep participating.
 
-### What is on screen, and why
+### If you are presenting it
 
-- **Bubbles.** Dark, so they never compete with the face or the headline. Each
-  has a thin platform-coloured outline and a matching tail, so messages read as
-  belonging to a platform without a logo being needed.
-- **Handles.** Metallic vertical gradient, bronze, silver, gold. No medal icon.
-  Colour and material carry the tier; an icon would cheapen it.
-- **The face.** The calm centre. It breathes slowly, and nothing else on the
-  scene moves larger than a bubble. Movement that competes with reading is
-  movement that destroys reading.
-- **Depth is varied.** Some bubbles behind the face, some in front, some half
-  off the edge. A flat grid of identical cards reads as a spreadsheet.
-- **Bubbles rise from the bottom on a stagger, hold, and leave**, so the scene
-  never sits perfectly still. The travel window is deliberately bounded: the
-  headline block owns the top of the picture, so a card is fully transparent
-  before it reaches the call to action.
-
-### Controls
-
-`?scale=` from 0.4 to 1.6. Runs silently with no parameters.
-
-### What goes wrong
-
-- Fake chat. Static screenshots of chat are the oldest trick in streaming, and
-  audiences now read them as dishonest.
-- Showing the chat but never reading it. Visible-and-ignored chat is worse than
-  no chat, because it tells people their words do not matter.
-- Too much motion. Every message animating hard fights the reading.
-- Blocking the face. The face is the anchor; anything crossing it reads as a
-  mistake.
+> "This is the audience layer, and it is live — not a picture of a chat, an
+> actual working one. Messages arrive, sit there, and age out.
+>
+> The obvious reason is participation. The subtler reason is that movement on
+> screen tells a viewer the channel is alive even when nobody is talking. It is
+> the cheapest 'we are still here' signal there is.
+>
+> And notice the names. Regular contributors are styled differently. That is
+> deliberate — being on screen in front of everyone is its own reward, and it is
+> why people keep sending messages."
 
 ---
 
 ## 4. Off air
 
-File: `overlay/offair.html`
+### What you are looking at
 
-### What it is
+A plug, pulled apart. A clock. And a line telling you when the show is next on
+and that nothing is currently being sent.
 
-The screen shown when the channel is not broadcasting. Broadcast engineers call
-this a standby slate or a dead air card.
+### Why a broadcast needs it
 
-This is the one scene that is a safety state, not an entertainment state. That
-distinction drives every choice in it.
+This is the most important screen in the kit and the least glamorous.
 
-### What it is for
+It exists for **two** reasons, one about the audience and one much more serious
+one about safety.
 
-- Making the transition safe. If the last thing on Program was a captured
-  meeting window — a video call with a join code visible in it — and anyone
-  hits start streaming, or OBS is left encoding, that room goes out to the
-  internet. Switching to this scene is a one-action fix that removes an entire
-  class of accident.
-- Telling viewers the channel still exists. A branded dead-air screen is
-  infinitely better than black. It is the difference between offline and
-  broken.
-- Advertising the next session. A clock and a countdown mean the dead screen is
-  still doing work.
+**For the audience:** a dead channel with a deliberate screen on it says "we are
+finished, here is when we return". A dead channel showing black says "something
+is broken". Same situation, completely different impression.
 
-### When to use it
+**For safety:** this is the screen that stops a private video meeting from being
+broadcast to the internet. If the last thing on air was a captured video call —
+and you can see the meeting's join details on screen — then anyone who starts
+the stream by accident, or leaves it running, is publishing that meeting to
+everyone watching.
 
-The moment the programme genuinely ends.
+Television has never accidentally broadcast a green room. That is not luck; it
+is a consequence of having a deliberate "not transmitting" screen that you are
+expected to put up when you finish.
 
-And whenever you are about to do something risky. That is the reason this scene
-exists at all.
+### When you use it
 
-### What the viewer should get
+When the show genuinely ends. And any time you are about to do something
+risky — before a break, before you change something, before you step away from
+the desk.
 
-We are off, not broken. Here is when we are back.
+### A real situation
 
-### What is on screen, and why
+The show has wrapped. The host has said goodbye. The last person is logging out
+of a video meeting.
 
-- **Nothing yellow, nothing glowing.** Rule one, applied absolutely. This is
-  the single most important rule on the scene.
-- **The same design language as the opening slate, with the lights down.** Same
-  dot field, same gradients, same type. It still reads as the same channel,
-  just switched off.
-- **Hardware, not a headline.** A plug, mated and apart, on a loop. No words do
-  that work, because words describing absence are still words competing for
-  attention.
-- **A clock and countdown** to the next session. A branded dead-air screen is
-  better than black, and this is the difference between offline and broken.
-- **An explicit message**: not transmitting, safe to leave on Program.
+If the operator goes straight from that meeting to switching off the stream,
+they are one distracted click away from broadcasting the meeting. Putting this
+screen up first removes the whole possibility. It turns a mistake that needs a
+sequence of errors into a mistake that needs one.
 
-### Controls
+### How it changes what the viewer feels
 
-`?next=21:00` counts down to the next occurrence, read as local time.
-`?next=2026-10-06T21:00` stamps a full local wall clock. `?note=` replaces the
-safety line.
+**Calm, and continuity.** "They are not broken. They are finished, and they
+told me when they are back."
 
-Local time on purpose. A UTC stamp here would silently miscount by hours, which
-is the worst possible failure in the one scene you must be able to trust.
+There is also a small thing this screen refuses to do: it contains no live
+signals at all — no active colours, no lit indicators. In this channel's design,
+bright colour means something is live. So the off-air screen has none of it. An
+operator glancing at the screen can tell in a single glance whether anything is
+being sent. That is a deliberate safety choice, and worth mentioning if anyone
+asks why it looks so quiet compared to the rest of the channel.
 
-### What goes wrong
+### If you are presenting it
 
-- Any accent colour that means live elsewhere.
-- Ambient life. No carousels, no about-to-start animations.
-- A countdown that goes negative or wraps. Past the target it should say the
-  session should be open, not count down into negatives.
-- Leaving it on for hours. It is a safety state, not a filler.
+> "This is the safety screen, and it is the least glamorous thing here and the
+> most important.
+>
+> Audience side: a channel that ends deliberately looks professional. A channel
+> that goes black looks broken. Same situation, completely different impression.
+>
+> Safety side, and this is the real reason: if the last thing on air was a
+> video meeting — and you can see the join details on screen — then one
+> distracted click and that meeting goes out to the internet. Putting this up
+> first means that mistake now takes one click instead of a sequence of them.
+>
+> Notice it has none of the bright colour the rest of the channel uses. In this
+> design bright colour means something is live, so the off-air screen has none.
+> One glance tells the operator whether anything is being sent."
 
 ---
 
 ## 5. Meet
 
-File: `overlay/meet.html`
+### What you are looking at
 
-### What it is
+Video playing full screen — a guest, a recorded piece, a presentation — with the
+channel's own logo, the title of what you are watching, and a strip of market
+figures along the bottom.
 
-A full-frame video surface with the channel's furniture floating over it.
+### Why a broadcast needs it
 
-Whatever the video is — a meeting, a screen share, a recorded piece — it becomes
-part of the channel rather than a window opened on someone's desktop.
+Two reasons.
 
-### What it is for
+First, **it turns a video call into a broadcast.** The picture is the same and
+the conversation is the same, but the framing, the title and the furniture turn
+it into something a channel produced rather than a window somebody shared from
+their laptop.
 
-- Turning a working meeting into a broadcast. Same room, same people, same
-  conversation, but it looks like a channel instead of a video call.
-- Carrying every video in the set. Authored sets play through in order, so the
-  scene can run unattended for a whole block.
-- Filling the schedule between live segments.
-- Not looking like a browser tab. The chrome is what separates a stream from
-  someone sharing their screen.
+Second, and more practically, **it lets the show run by itself.** A playlist of
+pieces plays through in order without anyone touching anything. That is what
+fills a schedule: between the live parts, this screen carries recorded segments,
+presentations, and guest appearances.
 
-### When to use it
+### When you use it
 
-Any time the show needs video: a live meeting, a screen share, a recorded
-segment, talking-head pieces, anything filling the schedule between live
-segments.
+Any time the show needs video. A guest joining. A screen being demonstrated. A
+recorded piece. Anything that would otherwise be a gap in the programme.
 
-### What the viewer should get
+### A real situation
 
-This is a production. Not: someone is sharing their screen.
+A guest cannot travel to the studio, so they join from their own office. Their
+camera is a normal video call.
 
-This is the scene that does the heaviest lifting for the least work. The same
-file handles every video you will ever show, because the content lives in a
-URL, not in the layout.
+Playing that raw would put a small floating call window on screen, complete with
+a mute button and somebody's desktop notifications. This screen plays the same
+call full frame instead, with the guest's name, the channel's logo, and the
+running market figures. Nobody watching knows or cares how it was produced. It
+looks like a studio segment, because that is exactly what it has become.
 
-### What is on screen, and why
+### How it changes what the viewer feels
 
-- **The player chrome is off.** No progress bar, no suggested-video end cards,
-  no platform watermark. Nothing on screen belongs to the video player. That is
-  the premium detail. The channel's furniture replaces all of it.
-- **The mark, with a scrim behind it.** It sits over live video where contrast
-  is not guaranteed. Over flat colour it would not need one; over a white slide
-  it would otherwise disappear.
-- **The ticker strip**, inset from the left and running full width, so it reads
-  as broadcast furniture rather than a web element.
-- **Nothing much moves.** Over moving video, animated chrome competes with the
-  content and reads as a screensaver.
+**Trust.** Everything about this screen says "this was put together". The viewer
+does not consciously notice any of it, but they read the channel as more
+established than a person on a laptop.
 
-### Controls
+The detail worth pointing out is that the video platform's own furniture is
+removed — no progress bar, no suggested videos, no platform watermark. What
+remains is the channel's own. That is the line between a production and a
+screen share.
 
-`?pl=` picks the set: hdf, menta, almond, or all. `?yt=` takes a single video
-URL or id and overrides the set. `?start=` is an offset in seconds, measured to
-break autoplay — leave it at 0. `?vol=` is 0 to 100, default 50. `?mute=1`
-starts muted. `?ctl=1` restores the player controls. `?lab=` and `?cap=`
-override the label and the subtitle.
+### If you are presenting it
 
-Keys: PageUp and PageDown skip the set, Space plays.
-
-### Two defaults that are deliberate
-
-**Volume is half and unmuted.** This is the single most common complaint about
-streaming scenes: an audience cannot tell muted from broken. Browsers block
-audible autoplay, so the frame sits muted until you press a key, then comes up
-at half.
-
-**Captions are off by default.** Captions on an already-quiet room is a fight
-nobody needs. Turn them on deliberately for silent footage.
-
-### What goes wrong
-
-- Player controls over channel furniture. Two competing transport bars read as
-  a cheap screen share.
-- Autoplay blocked. If you see a dead play button, nothing is wrong with the
-  video. Press any key.
-- Bright chrome over bright content. The scrim exists for exactly this.
-- Stretching a 4 by 3 source into a 16 by 9 frame. Let the player letterbox
-  inside the frame. It looks like broadcast video; the stretch does not.
+> "This is the video screen, and it carries everything that is not a live
+> conversation — recorded segments, guest appearances, presentations.
+>
+> The practical reason it exists is that it runs by itself. You put a playlist
+> together and it plays through without anyone touching anything, which is how
+> you fill the gaps in a schedule.
+>
+> The reason it looks like this is more interesting. That guest is on a normal
+> video call from their office. Played raw you would get a small floating
+> window with a mute button and someone's notifications in it. Here the same
+> call goes full frame with a name, our logo, and the market strip. And notice
+> the video platform's own furniture is gone — no progress bar, no suggested
+> videos. What is left is ours. That is the difference between a production and
+> a screen share."
 
 ---
 
 ## 6. End credits
 
-File: `overlay/end-credits.html`
+### What you are looking at
 
-### What it is
+A thank you, a bar filling to show the show is complete, and a board naming
+everyone who worked on it — host, producers, script, graphics, the people
+reporting in the field, the people checking the facts.
 
-The card the channel rests on, with a credits roll.
+### Why a broadcast needs it
 
-Two halves: a farewell with a call to action, and a panel that names everyone
-involved.
+The closing screen does three jobs at once.
 
-### Why it exists at all
+**It ends the show properly.** Without it, a stream just stops. People are still
+watching when the picture dies, and it feels like a dropout rather than a
+finish. This screen says "that was the programme".
 
-The credits roll is borrowed from film and television, where the names are the
-point — a hundred people made the thing and the audience is being told their
-names.
+**It says where to go next.** The call to follow and turn on notifications sits
+on this screen, which is the last thing anyone sees. That is the most valuable
+real estate in the entire broadcast.
 
-Online that habit has mostly been lost. Putting it back does two things. It
-credits people who are rarely credited, and it makes the channel feel like a
-production rather than a webcam.
+**It credits people, which is the real motivation.** Filmmakers and television
+have always credited their teams on screen. Online, most channels stopped. Putting
+it back does something specific: being named on the end card is a genuine,
+visible acknowledgement, and for a lot of volunteers that recognition is a
+reason to keep doing it.
 
-### What it is for
+### When you use it
 
-- Closing on the call to action. The last thing on screen should be the one
-  thing you want remembered, not the credits.
-- Naming the people who did the work. This is the motivation engine. Being
-  named on the end card is a real, visible, permanent acknowledgement.
-- Signalling that this was a complete show. Without an end card a stream just
-  stops. With one, it finished.
-- Filling the tail. The minutes after the last person says goodbye.
-- Driving the follow. Notifications, next session, where to go next.
+After the show's content has finished — the last few minutes, while people are
+still watching and signing off. Not before, and not instead of the off-air
+screen.
 
-### When to use it
+### A real situation
 
-The last few minutes of the programme, after the real content has ended.
+The host has finished. There is nothing left to say, but several hundred people
+are still watching.
 
-### What the viewer should get
+Cutting straight to black ends the relationship abruptly. Cutting to the
+credits lets the show breathe: the board names everyone, the bar fills to say
+"complete", and the follow request sits right there at the end. Then the operator
+switches to the off-air screen and the channel closes properly.
 
-That was a real show made by real people, and here is where to go next.
+The detail worth pointing out is that the board **rotates**. The same six names
+every week would make it a formality. Different people each time, grouped by the
+part they played, makes it mean something — and it means everyone gets to see
+themselves named.
 
-### What is on screen, and why
+### How it changes what the viewer feels
 
-- **Headline**, same gradient treatment as every other scene: grey words, one
-  gold word carrying the meaning, soft glow. One visual language across the
-  whole kit.
-- **Names, set large.** This panel is read, not glanced at.
-- **Roles small, uppercase, wide-tracked, grey.** Names dominate, titles
-  support. Getting this backwards makes the card look like a directory.
-- **A completion bar**, deliberately repeating the segment idiom from
-  tech-diff, so the whole kit has one visual language for finished.
-- **The call to action** under the headline, brighter than anything else, and
-  the last thing the eye lands on.
-- **The channel signature** small and low, the way a station ident does.
+**Completion, and belonging.** "That was a finished show, made by people I could
+name, and here is how I come back for the next one."
 
-### Controls
+### If you are presenting it
 
-None. It is a fixed card and should never need updating.
-
-### What goes wrong
-
-- Generic credits. "Production team", "editing", "special thanks" with no names
-  is worse than no credits, because it looks like a template nobody filled in.
-- The same six people every time. Rotate the board.
-- A roll too fast to read. If it cannot be read, it is decoration.
-- Credits over the call to action. The call to action is what converts.
-- Leaving it running all night. Cut to offair when the programme genuinely
-  ends. The end card is for the tail.
+> "This is the end card, and it does three jobs.
+>
+> It ends the show properly. Without it a stream just stops, and people are
+> still watching when the picture dies — it feels like a dropout, not a finish.
+>
+> It carries the ask. Follow, turn on notifications. This is the last thing
+> anyone sees, which makes it the most valuable few seconds in the whole
+> broadcast.
+>
+> And it credits people. Films and television have always done this. Online most
+> channels stopped, and putting it back means something real: being named is a
+> genuine acknowledgement, and for a lot of volunteers it is why they keep
+> doing it. Notice the board rotates. The same six names every week would make
+> it a formality."
 
 ---
 
-## What every scene shares
+## The point to land
 
-**One easing curve.** A hard exponential ease-out: fast commit, long settle. If
-a scene eases in a different shape, there must be a reason.
+If you only get one thing across, make it this.
 
-**Two families of shadow, strictly separated.** Black ambient shadow is depth,
-lifting a surface off the canvas. Yellow glow is a live state. A glow is a
-sentence with a subject. If you cannot name the live state it describes, it is
-decoration and it comes out.
+Watching a broadcast, it looks like one person talking and some titles. Behind
+it there are at least nine people coordinating, and every screen in the kit is
+one of their tools.
 
-**No canvas and no requestAnimationFrame.** Every animation is compositor CSS:
-transform and opacity only. Rasterise once, then move it on the GPU.
+The screens are not decoration and they are not filler. Each one exists to tell
+the audience, in a glance, **what state the show is in** — before it starts,
+during a topic, while the audience is talking, while video is playing, at the
+end, and once it is over.
 
-**Reduced motion is a real state on every page**, not a half-finished
-animation.
-
-**Legibility under video compression is an accessibility requirement.** The
-viewer may be on a five-inch phone or a hundred-inch television and nobody
-knows which. So: nothing below about 9 pixels, 11 pixels is the practical
-floor for anything carrying meaning, weight 600 minimum on labels that must be
-read, and tabular figures on every number that changes in place.
-
-**Flat vector, no 3D**, with one deliberate exception: the credits deck now
-uses perspective.
+That is what separates a production from somebody on a laptop. Not the camera,
+not the microphone. The structure around it.
 
 ---
 
 ## Quick reference
 
-| Scene | Reach for it when |
-|---|---|
-| starting | Before you go live. Never mid-show. |
-| tech-diff | The subject changes. Holds for the whole segment. |
-| q&a | You want the audience talking, or you need the frame alive. |
-| offair | The programme ended, or you are about to do something risky. |
-| meet | Any video at all: meeting, screen share, recorded piece. |
-| end-credits | The tail, after the real content has ended. |
+| Number | Screen | Use it |
+|---|---|---|
+| 1 | Starting | Before the show. Never in the middle. |
+| 2 | Tech diffs | Every time the topic changes. |
+| 3 | Q&A | Whenever you want the audience involved. |
+| 4 | Off air | The show ended, or something risky is about to happen. |
+| 5 | Meet | Any video at all: guests, recordings, presentations. |
+| 6 | End credits | The tail, after the content is finished. |
 
-Then: cut to offair. Do not leave the end card running all night.
+Then switch to Off air to close the channel properly.
