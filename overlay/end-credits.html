@@ -9,15 +9,14 @@
 <style>
 /* END CREDITS — the card the channel rests on.
 
-   Two halves. Left: the mark, the sign-off, the call to action. Right: the
-   credits roll, which is the part that has to earn its keep, because a roll
-   with six generic lines on it looks like a template nobody filled in.
+   Left: the mark, the sign-off, the call to action. Right: the roll, which is
+   the part that has to earn its keep.
 
-   The roll is a broadcast ledger: a segmented track fills left to right, and
-   each section lights as the playhead reaches it, holds while it is being
-   called, then goes gold once it is done. That ordering matters — waiting, then
-   current, then finished — because it is the same thing the audience already
-   understands from a progress bar. */
+   The roll is a carousel, not a scroller. Each category takes the stage: its
+   people arrive one at a time as large overlapping cards with the centre one
+   dominant, then the whole set spreads into a grid so you can see everyone at
+   once before the next category takes over. The single bar at the top is the
+   time left on whatever is currently on stage. */
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
@@ -26,7 +25,8 @@
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --dock:76px;
   --eo:cubic-bezier(.32,.72,0,1);
-  --dur:26s;
+  --card-ms:3500;
+  --grid-ms:3200;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden}
@@ -119,10 +119,10 @@ html[data-next="1"] .bellrow{display:none}
 @keyframes ring{0%,84%,100%{transform:rotate(0)}86%{transform:rotate(12deg)}88%{transform:rotate(-10deg)}
   90%{transform:rotate(7deg)}92%{transform:rotate(-5deg)}94%{transform:rotate(3deg)}96%{transform:rotate(0)}}
 
-/* ── right column: the credits panel ── */
-.credits{position:absolute;right:3.4%;top:clamp(96px,12vh,140px);
-  bottom:calc(var(--dock) + 62px);width:min(792px,45vw);z-index:3;
-  display:flex;flex-direction:column;padding:30px 34px 26px;border-radius:26px;
+/* ══ the credits panel ══ */
+.credits{position:absolute;right:3.4%;top:clamp(80px,10vh,116px);
+  bottom:calc(var(--dock) + 54px);width:min(812px,46vw);z-index:3;
+  display:flex;flex-direction:column;padding:26px 30px 24px;border-radius:26px;
   border:1px solid rgba(255,255,255,.10);
   background:
     linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.014) 42%,rgba(255,255,255,.03)),
@@ -131,89 +131,123 @@ html[data-next="1"] .bellrow{display:none}
     inset 0 -1px 0 rgba(0,0,0,.4),
     0 40px 110px rgba(0,0,0,.62)}
 .chead{display:flex;align-items:center;gap:18px;font-family:var(--fd);font-weight:800;
-  font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:#E4E4EA}
+  font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#E4E4EA}
 .chead .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.22),transparent)}
 .chead .ep{color:var(--muted);letter-spacing:.18em}
 .chead .ep b{color:var(--yellow);font-weight:800}
 
-/* ---- the ledger track ----
-   A hairline rule with one tick per section, plus a continuous fill. The ticks
-   are what make it read as a broadcast meter rather than a loading bar: you can
-   see how many sections are left, and the fill alone could not say that. */
-.prog{margin-top:22px}
-.pbar{position:relative;height:8px;border-radius:999px;overflow:hidden;
-  background:rgba(255,255,255,.07);
-  box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
-.pfill{position:absolute;inset:0 auto 0 0;width:0;border-radius:999px;
-  background:linear-gradient(90deg,var(--hot),var(--yellow) 70%,#FFE9A8);
-  box-shadow:0 0 18px rgba(255,193,7,.65);
-  animation:pfill var(--dur) linear infinite}
-@keyframes pfill{0%{width:0}100%{width:100%}}
-.pticks{margin-top:9px;display:flex;gap:3px}
-.pticks i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.09);
-  transition:background .35s ease,box-shadow .35s ease}
-.pticks i.on{background:rgba(255,193,7,.85);box-shadow:0 0 8px rgba(255,193,7,.6)}
+/* ---- category indicator: icon over name, centred ---- */
+.cat{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
+.cat .ci{width:52px;height:52px;display:grid;place-items:center;border-radius:15px;
+  border:1px solid rgba(255,193,7,.26);background:rgba(255,193,7,.075);
+  box-shadow:0 0 22px rgba(255,193,7,.14),inset 0 1px 0 rgba(255,255,255,.09)}
+.cat .ci svg{width:26px;height:26px;fill:none;stroke:var(--yellow);stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+.cat .cn{font-family:var(--fd);font-weight:800;font-size:22px;letter-spacing:.2em;
+  text-transform:uppercase;color:#EDEDF2;text-align:center}
+.cat .cn small{display:block;font-family:var(--fm);font-weight:500;font-size:9.5px;
+  letter-spacing:.28em;color:var(--faint);margin-top:5px}
 
-.clist{margin-top:22px;flex:1;min-height:0;overflow:hidden;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 12%,#000 80%,transparent 98%);
-          mask-image:linear-gradient(180deg,#000 0%,#000 12%,#000 80%,transparent 98%)}
-.ctrack{display:flex;flex-direction:column;will-change:transform;
-  animation:roll var(--dur) linear infinite}
-@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+/* ---- the single bar: time remaining on whatever is on stage ----
+   It DRAINS. Full means the card has just started, empty means it is about to
+   advance. That is the literal reading of "time remaining", and it is why the
+   eye can tell the difference between "this one is nearly done" and "this one
+   has not really started". */
+.bar{margin-top:14px;height:7px;border-radius:999px;overflow:hidden;flex:none;
+  background:rgba(255,255,255,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.bar i{display:block;height:100%;width:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--hot),var(--yellow) 62%,#FFE9A8);
+  box-shadow:0 0 16px rgba(255,193,7,.6)}
 
-/* ---- a credit row
-   Order is icon, then role, then name, reading down the row. The offset is
-   deliberate: alternate rows sit slightly above and slightly below the panel's
-   centre line, so the roll has a beat to it instead of a flat column of bars. */
-.cr{display:flex;align-items:center;gap:20px;padding:16px 16px;flex:none;
-  border-radius:15px;transition:background .45s ease}
-.cr:nth-child(even){transform:translateY(-8px)}
-.cr:nth-child(odd){transform:translateY(8px)}
+/* ---- the stage: carousel, then grid ---- */
+.box{position:relative;margin-top:18px;flex:1;min-height:0}
 
-.ico{width:34px;height:34px;flex:none;display:grid;place-items:center;
-  border-radius:11px;border:1px solid color-mix(in srgb,var(--ci) 34%,transparent);
-  background:color-mix(in srgb,var(--ci) 11%,transparent);
-  transition:transform .5s var(--eo),box-shadow .5s ease,
-             border-color .5s ease,background .5s ease}
-.ico svg{width:19px;height:19px;fill:none;stroke:var(--ci);stroke-width:1.7;
-  stroke-linecap:round;stroke-linejoin:round;
-  transition:stroke .5s ease,width .5s var(--eo),height .5s var(--eo)}
-.tx{display:flex;flex-direction:column;gap:5px;min-width:0}
-.tx i{font-family:var(--fd);font-style:normal;font-weight:800;font-size:10.5px;
-  letter-spacing:.28em;text-transform:uppercase;color:var(--muted);
-  transition:color .5s ease}
-.tx b{font-family:var(--fd);font-weight:800;font-size:clamp(21px,2.6vh,29px);
-  line-height:1.08;letter-spacing:-.018em;color:var(--ci);
-  transition:color .5s ease,text-shadow .5s ease}
-.tx i,.tx b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* carousel: absolutely placed, overlapping, centre dominant.
+   --d is the signed distance from the active card and --ad its magnitude, both
+   written by JS. Everything below is derived from those two numbers, so the
+   whole formation is one transform rather than N. */
+.box.car{height:100%}
+/* Gap and falloff are sized so the widest category still fits the panel: three
+   cards at d=0,+1,+2 need 2*gap + half of the outermost card to stay inside
+   half the content width. At gap 168 the last card ran 53px past the edge and
+   was visibly clipped. */
+.box.car .card{position:absolute;left:50%;top:50%;width:252px;
+  transform:translate(-50%,-50%) translateX(calc(var(--d) * 128px))
+                     scale(calc(1 - var(--ad) * .17));
+  opacity:calc(1 - var(--ad) * .17);
+  z-index:calc(60 - var(--ad));
+  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
 
-/* three states. WAIT is the resting list, NOW is the section being called,
-   DONE is finished. Everything is transform, opacity, colour and shadow, so the
-   whole roll stays on the compositor. */
-.cr[data-s="wait"]{opacity:.34}
-.cr[data-s="wait"] .ico{transform:scale(.88)}
-.cr[data-s="wait"] .tx b{text-shadow:none}
+.card{pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:24px 18px 22px;border-radius:22px;text-align:center;
+  border:1px solid rgba(255,255,255,.09);
+  background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 22px 48px rgba(0,0,0,.5)}
+.box.car .card.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+  0 0 0 1px rgba(255,193,7,.28),0 26px 64px rgba(0,0,0,.6),0 0 44px rgba(255,193,7,.12)}
 
-.cr[data-s="now"]{opacity:1;
-  background:linear-gradient(90deg,color-mix(in srgb,var(--ci) 15%,transparent),transparent 72%);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ci) 20%,transparent)}
-.cr[data-s="now"] .ico{transform:scale(1.34);
-  border-color:color-mix(in srgb,var(--ci) 70%,transparent);
-  background:color-mix(in srgb,var(--ci) 22%,transparent);
-  box-shadow:0 0 26px color-mix(in srgb,var(--ci) 55%,transparent)}
-.cr[data-s="now"] .ico svg{width:23px;height:23px;stroke:var(--ci)}
-.cr[data-s="now"] .tx i{color:var(--ci)}
-.cr[data-s="now"] .tx b{color:#fff;text-shadow:0 0 26px color-mix(in srgb,var(--ci) 70%,transparent)}
+/* ---- the avatar slot
+   A circle filled with a three-stop gradient drawn from --c1/--c2/--c3, with a
+   conic sheen over the top and an inset highlight, so it reads as a machined
+   metal disc rather than a flat colour chip — the same trick the bronze/silver/
+   gold handles use in the chat bubbles, but the three stops are free so there
+   are as many combinations as you care to author. The palette is deliberately
+   low-chroma and cool-to-earthy: no pinks, no pastels, nothing that reads a
+   gender, and the mid-tones stay masculine without going monochrome. */
+.av{position:relative;width:126px;height:126px;border-radius:50%;overflow:hidden;
+  display:grid;place-items:center;flex:none;
+  background:
+    conic-gradient(from 210deg,rgba(255,255,255,.17),transparent 30%,
+      rgba(255,255,255,.11) 56%,transparent 76%,rgba(255,255,255,.08)),
+    linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.20),
+    inset 0 -7px 16px rgba(0,0,0,.52),
+    0 0 0 2px rgba(255,255,255,.06),
+    0 14px 34px rgba(0,0,0,.55)}
+.av svg{width:70px;height:70px;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 
-.cr[data-s="done"]{opacity:.72}
-.cr[data-s="done"] .ico{transform:scale(.94);
-  border-color:rgba(255,193,7,.42);background:rgba(255,193,7,.09)}
-.cr[data-s="done"] .ico svg{stroke:var(--yellow)}
-.cr[data-s="done"] .tx i{color:rgba(255,193,7,.6)}
-.cr[data-s="done"] .tx b{color:var(--yellow);text-shadow:0 0 20px rgba(255,193,7,.28)}
+.card .rl,.card .nm{transition:opacity .45s var(--eo)}
+.card .rl{font-family:var(--fd);font-weight:800;font-size:10px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--muted)}
+.card .nm{font-family:var(--fd);font-weight:800;font-size:26px;letter-spacing:-.02em;
+  line-height:1.12;color:#F2F2F6;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.cr[data-s="now"] .ico svg{animation:icoLift .5s var(--eo)}
-@keyframes icoLift{from{transform:scale(.7)}to{transform:scale(1)}}
+/* Only the centre card shows its text. The cards overlap by design, and two
+   names at once collide into something that reads as a layout fault rather than
+   as depth — so the trailing cards become a stack of avatars peeking out from
+   behind the one that matters. It also states the hierarchy without needing the
+   eye to work it out. */
+.box.car .card:not(.on) .rl,.box.car .card:not(.on) .nm{opacity:0}
+.box.car .card:not(.on) .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
+  inset 0 -7px 16px rgba(0,0,0,.52),0 0 0 2px rgba(255,255,255,.05),
+  0 12px 28px rgba(0,0,0,.5)}
+
+/* ---- grid mode
+   Identical aspect ratio on every cell — a grid of mixed shapes is the fastest
+   way to make a credits board look amateur. Cells carry avatar + name always,
+   and the role too when the set is small enough to earn the extra line. */
+/* Columns are a FIXED width and the grid is centred, not stretched to fill the
+   panel. Letting three cells divide 750px gave each one a 375x435 box with all
+   the content in the top third — a wall of empty card. Identical aspect ratio is
+   guaranteed by the fixed column width plus the ratio below, so nothing depends
+   on how many columns there happen to be. */
+.box.grid{display:grid;gap:15px;align-content:center;justify-content:center;
+  grid-template-columns:repeat(var(--cols,3),166px)}
+.box.grid .card{position:static;width:auto;aspect-ratio:1/1.24;
+  transform:none;opacity:1;z-index:auto;
+  gap:9px;padding:16px 12px 14px;border-radius:18px;
+  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
+.box.grid .card .av{width:72px;height:72px}
+.box.grid .card .av svg{width:40px;height:40px}
+.box.grid .card .nm{font-size:15px;letter-spacing:-.01em}
+.box.grid .card .rl{font-size:8.5px;letter-spacing:.22em}
+/* ranked: the first name in a category is the lead, and it looks like it */
+.box.grid .card:first-child{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+  0 0 0 1px rgba(255,193,7,.26),0 18px 40px rgba(0,0,0,.5)}
+.box.grid .card:first-child .nm{color:#fff}
+.box.grid.no-role .rl{display:none}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--dock) + 14px);z-index:5;text-align:center;
   font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.46em;
@@ -226,22 +260,27 @@ html[data-next="1"] .bellrow{display:none}
 
 @media (max-width:1400px){
   .bwrap{left:4.4%;gap:30px}
-  .credits{width:min(660px,46vw);padding:24px 26px 22px}
+  .credits{width:min(660px,47vw);padding:20px 22px 20px}
+  .cat .ci{width:42px;height:42px}
+  .cat .ci svg{width:21px;height:21px}
+  .cat .cn{font-size:17px}
+  .box.car .card{width:206px;transform:translate(-50%,-50%) translateX(calc(var(--d) * 106px))
+    scale(calc(1 - var(--ad) * .17))}
+  .av{width:104px;height:104px}
+  .av svg{width:58px;height:58px}
 }
 @media (max-width:980px){
-  .credits{right:auto;left:5%;top:auto;bottom:calc(var(--dock) + 20px);width:90vw;height:34vh}
-  .bwrap{bottom:44vh}
+  .credits{right:auto;left:5%;top:auto;bottom:calc(var(--dock) + 20px);width:90vw;height:36vh}
+  .bwrap{bottom:46vh}
   h1{font-size:clamp(40px,7vh,64px)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
     transition:none !important;animation-delay:0s !important}
-  .ctrack{animation:none !important;transform:none !important}
-  .pfill{animation:none !important;width:100%}
   .orbitB::before,.orbitB::after,.orbitB .face,.follow::after,.bellrow svg{animation:none !important}
   h1 .w{opacity:1;transform:none}
   .rise{opacity:1;transform:none}
-  .cr{opacity:1 !important;transform:none !important}
+  .card{transition:none !important;opacity:1 !important}
 }
 </style>
 </head>
@@ -286,151 +325,238 @@ html[data-next="1"] .bellrow{display:none}
   <div class="credits rise" style="--rd:.5s">
     <div class="chead"><span>Credits</span><i class="rule"></i><span class="ep">ep <b class="num" data-ep>128</b></span></div>
 
-    <div class="prog">
-      <div class="pbar"><span class="pfill"></span></div>
-      <div class="pticks" id="pticks" aria-hidden="true"></div>
+    <div class="cat" id="cat">
+      <span class="ci" id="catIcon"></span>
+      <span class="cn"><span id="catName">Host</span><small id="catCount"></small></span>
     </div>
 
-    <div class="clist">
-      <div class="ctrack" id="ctrack">
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
 
-        <div class="cr" style="--ci:#FFD100" data-s="now">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.2M9 21.2h6"/></svg></span>
-          <span class="tx"><i>Host</i><b id="crHost">you</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#7FD3FF">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.3"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.3 3.3 0 0 1 0 6.1"/><path d="M17.4 14.6A6.2 6.2 0 0 1 21.2 20"/></svg></span>
-          <span class="tx"><i>Co-hosts</i><b>the smile squad</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#FF6B7A">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.2h18V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m2.6 8.6 1.6-4.3a1 1 0 0 1 1.2-.6l13.8 2.8a1 1 0 0 1 .7 1.3l-.5 1.2"/><path d="m7.6 4.9-1.2 3.7M12 4.1l-1.2 3.7M16.4 5.3l-1.2 3.7"/></svg></span>
-          <span class="tx"><i>Producers</i><b>smile crew</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#B99BFF">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.6 13h6.8M8.6 16.6h4.6"/></svg></span>
-          <span class="tx"><i>Script</i><b>the desk</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#FFC46B">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.8 8.4 4.6L12 12 3.6 7.4z"/><path d="m3.6 12 8.4 4.6L20.4 12"/><path d="m3.6 16.6 8.4 4.6 8.4-4.6"/></svg></span>
-          <span class="tx"><i>Assets &amp; graphics</i><b>the toolkit</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#6BE3FF">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.1"/><path d="M8.1 8.1a5.5 5.5 0 0 0 0 7.8"/><path d="M15.9 15.9a5.5 5.5 0 0 0 0-7.8"/><path d="M5.4 5.4a9.4 9.4 0 0 0 0 13.2"/><path d="M18.6 18.6a9.4 9.4 0 0 0 0-13.2"/></svg></span>
-          <span class="tx"><i>On-air talent</i><b>the voices</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#7CE8A8">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6.4" width="13" height="11.2" rx="2.2"/><path d="m15 10.6 6.6-3.4v9.2L15 13z"/><circle cx="7" cy="12" r="1.6"/></svg></span>
-          <span class="tx"><i>Field reporting</i><b>the cameras</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#9BE86B">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.8 5.9v5.6c0 4.6 3.1 8.6 7.2 9.7 4.1-1.1 7.2-5.1 7.2-9.7V5.9z"/><path d="m9 12 2.2 2.2L15.4 10"/></svg></span>
-          <span class="tx"><i>Fact check</i><b>the desk</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#FF8FD0">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.6V5.4l10-2v12"/><circle cx="6.4" cy="17.6" r="2.6"/><circle cx="16.4" cy="15.4" r="2.6"/></svg></span>
-          <span class="tx"><i>Music</i><b>licensed</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#C9C9E8">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 12a7.6 7.6 0 0 1-7.6 7.6H8.4L4 22.6v-4.3A7.6 7.6 0 0 1 3.4 12 7.6 7.6 0 0 1 11 4.4h2a7.6 7.6 0 0 1 7.6 7.6z"/><path d="M8.6 11.6h6.8M8.6 14.6h4"/></svg></span>
-          <span class="tx"><i>Questions</i><b>the chat</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#FFE9A8">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4v3M12 17.6v3M3.4 12h3M17.6 12h3"/><circle cx="12" cy="12" r="3.2"/><path d="M6.6 6.6 8.6 8.6M15.4 15.4l2 2M17.4 6.6l-2 2M8.6 15.4l-2 2"/></svg></span>
-          <span class="tx"><i>Closing</i><b>everyone</b></span>
-        </div>
-
-        <div class="cr" style="--ci:#FFD100">
-          <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9.6 15.4 1.7 1.7 3.3-3.4"/></svg></span>
-          <span class="tx"><i>Next session</i><b class="y" id="crNext">tba</b></span>
-        </div>
-
-      </div>
-    </div>
+    <div class="box car" id="box"></div>
   </div>
 
   <p class="sig">smile<b>.co.ke</b></p>
 </div>
 
 <script>
+/* ============================================================
+   THE ROLL.
+
+   Data is categories, not a flat list. Each category owns an icon and a list of
+   people, and the machine walks: category -> each person's card -> the category
+   as a grid -> next category. That is why the grid earns its place rather than
+   decorating: it is the "and everyone else in this department" beat between
+   two categories.
+
+   Placeholder names are written the way real credits are written — the desk,
+   the crew, the cameras — so the board is legible before anybody is replaced.
+   ============================================================ */
 (function(){
   function get(k){return (location.search.match(new RegExp('[?&]'+k+'=([^&]*)'))||[])[1]}
   function dec(v){try{return decodeURIComponent(String(v).replace(/\+/g,' '))}catch(e){return v}}
   function trim(v){return dec(v||'').trim()}
 
-  var track=document.getElementById('ctrack');
-  var rows=Array.prototype.slice.call(track.children);
+  var ICON={
+    mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.2M9 21.2h6"/>',
+    users:'<circle cx="9" cy="8" r="3.3"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.3 3.3 0 0 1 0 6.1"/><path d="M17.4 14.6A6.2 6.2 0 0 1 21.2 20"/>',
+    clap:'<path d="M3 9.2h18V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m2.6 8.6 1.6-4.3a1 1 0 0 1 1.2-.6l13.8 2.8a1 1 0 0 1 .7 1.3l-.5 1.2"/><path d="m7.6 4.9-1.2 3.7M12 4.1l-1.2 3.7M16.4 5.3l-1.2 3.7"/>',
+    doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.6 13h6.8M8.6 16.6h4.6"/>',
+    layers:'<path d="m12 2.8 8.4 4.6L12 12 3.6 7.4z"/><path d="m3.6 12 8.4 4.6L20.4 12"/><path d="m3.6 16.6 8.4 4.6 8.4-4.6"/>',
+    cast:'<circle cx="12" cy="12" r="2.1"/><path d="M8.1 8.1a5.5 5.5 0 0 0 0 7.8"/><path d="M15.9 15.9a5.5 5.5 0 0 0 0-7.8"/><path d="M5.4 5.4a9.4 9.4 0 0 0 0 13.2"/><path d="M18.6 18.6a9.4 9.4 0 0 0 0-13.2"/>',
+    cam:'<rect x="2" y="6.4" width="13" height="11.2" rx="2.2"/><path d="m15 10.6 6.6-3.4v9.2L15 13z"/><circle cx="7" cy="12" r="1.6"/>',
+    check:'<path d="M12 2.8 4.8 5.9v5.6c0 4.6 3.1 8.6 7.2 9.7 4.1-1.1 7.2-5.1 7.2-9.7V5.9z"/><path d="m9 12 2.2 2.2L15.4 10"/>',
+    music:'<path d="M9 17.6V5.4l10-2v12"/><circle cx="6.4" cy="17.6" r="2.6"/><circle cx="16.4" cy="15.4" r="2.6"/>',
+    chat:'<path d="M20.6 12a7.6 7.6 0 0 1-7.6 7.6H8.4L4 22.6v-4.3A7.6 7.6 0 0 1 3.4 12 7.6 7.6 0 0 1 11 4.4h2a7.6 7.6 0 0 1 7.6 7.6z"/><path d="M8.6 11.6h6.8M8.6 14.6h4"/>',
+    spark:'<path d="M12 3.4v3M12 17.6v3M3.4 12h3M17.6 12h3"/><circle cx="12" cy="12" r="3.2"/><path d="M6.6 6.6 8.6 8.6M15.4 15.4l2 2M17.4 6.6l-2 2M8.6 15.4l-2 2"/>',
+    cal:'<rect x="3" y="5" width="18" height="16" rx="2.2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9.6 15.4 1.7 1.7 3.3-3.4"/>'
+  };
+  var MARK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#F2F2F6"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg>';
 
-  /* Duplicate the list so the -50% roll is seamless. Only the first copy is
-     driven by the state machine — the clone is decoration that fills the gap at
-     the wrap point. */
-  var N=rows.length;
-  rows.forEach(function(r){track.appendChild(r.cloneNode(true))});
+  /* The avatar palette. Low-chroma, cool-to-earthy: no pinks, no pastels,
+     nothing that reads a gender, with the mid-tones kept masculine without
+     collapsing into monochrome. Each person gets a TRIPLE rather than a single
+     colour, so the number of combinations is effectively unlimited — swap any
+     triple for any other. The set is curated rather than truly random, because
+     a board where two cards land on near-identical greys looks accidental and
+     an end card is the one place that must not look accidental. */
+  function C(a,b,c){return {c1:a,c2:b,c3:c}}
 
-  var ticks=document.getElementById('pticks');
-  for(var i=0;i<N;i++) ticks.appendChild(document.createElement('i'));
+  var CATS=[
+    {n:'Host',i:'mic',p:[{r:'Host',v:'you',k:C('#3D4F5C','#2E3A46','#55666F')}]},
+    {n:'Co-hosts',i:'users',p:[
+      {r:'Lead co-host',v:'the smile squad',k:C('#45506B','#2F4A5C','#5A6472')},
+      {r:'Co-host',v:'the night desk',k:C('#4A5A3E','#3A4A3E','#6B5B3E')},
+      {r:'Co-host',v:'field desk',k:C('#3E5A54','#334155','#6E6455')}]},
+    {n:'Producers',i:'clap',p:[
+      {r:'Executive producer',v:'smile crew',k:C('#5A4A3C','#3B4652','#7B6D4F')},
+      {r:'Producer',v:'the desk',k:C('#45506B','#33474F','#5C6B62')},
+      {r:'Producer',v:'production',k:C('#4E5A63','#3A4450','#6B6250')}]},
+    {n:'Script',i:'doc',p:[
+      {r:'Script editor',v:'the words',k:C('#4A5568','#2E3A46','#5F6C7B')},
+      {r:'Copy',v:'the desk',k:C('#3E5A54','#4A5A3E','#55666F')}]},
+    {n:'Assets & graphics',i:'layers',p:[
+      {r:'Graphics',v:'the toolkit',k:C('#6B5B3E','#45506B','#3E5A54')},
+      {r:'Motion',v:'motion',k:C('#3D4F5C','#5A4A3C','#55666F')},
+      {r:'Brand',v:'brand',k:C('#4E5A63','#2F4A5C','#6B6250')}]},
+    {n:'On-air talent',i:'cast',p:[
+      {r:'Presenter',v:'the voices',k:C('#2F4A5C','#45506B','#5C6B72')},
+      {r:'Reader',v:'readers',k:C('#4A5A3E','#5A4A3C','#55666F')},
+      {r:'Correspondent',v:'stringer',k:C('#3E5A54','#334155','#6E6455')}]},
+    {n:'Field reporting',i:'cam',p:[
+      {r:'Camera',v:'the cameras',k:C('#3B4652','#4A5A3E','#6B5B3E')},
+      {r:'Sound',v:'stringer',k:C('#45506B','#33474F','#5C6B62')}]},
+    {n:'Fact check',i:'check',p:[
+      {r:'Verifier',v:'the desk',k:C('#3A4A3E','#4A5568','#6B6250')},
+      {r:'Standards',v:'verification',k:C('#4E5A63','#3E5A54','#55666F')}]},
+    {n:'Music',i:'music',p:[{r:'Music',v:'licensed',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
+    {n:'Questions',i:'chat',p:[{r:'Questions',v:'the chat',k:C('#45506B','#4A5A3E','#55666F')}]},
+    {n:'Closing',i:'spark',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
+    {n:'Next session',i:'cal',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
+  ];
 
+  /* ---- overrides ---- */
   var eps=trim(get('ep'));
   if(eps)document.querySelectorAll('[data-ep]').forEach(function(e){e.textContent=eps});
 
   var host=trim(get('host'));
-  if(host)document.querySelectorAll('#crHost').forEach(function(e){e.textContent=host});
+  if(host){ CATS[0].p[0].v=host; CATS[0].p[0].r='Host' }
 
   var nx=trim(get('next'));
   if(nx){
     document.documentElement.dataset.next='1';
     document.getElementById('nw').textContent=nx;
-    document.querySelectorAll('#crNext').forEach(function(e){e.textContent=nx});
+    var lp=CATS[CATS.length-1].p[0];
+    if(lp.v==='tba') lp.v=nx;
     var what=trim(get('what'));
     if(host||what){
       var nh=document.getElementById('nh');
       nh.hidden=false;nh.textContent='';
       if(host){nh.appendChild(document.createTextNode('Hosted by '));var b=document.createElement('b');b.textContent=host;nh.appendChild(b);}
-      if(what){if(host){var s=document.createElement('span');s.className='sep';s.textContent='·';nh.appendChild(s);}var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);}
+      if(what){if(host){var sp=document.createElement('span');sp.className='sep';sp.textContent='·';nh.appendChild(sp);}var b2=document.createElement('b');b2.textContent=what;nh.appendChild(b2);}
     }
   }
 
-  /* ---- the ledger ----
-     One clock drives waiting / current / finished for every row and the ticks,
-     all from the same 26s cycle the CSS bar and the roll use. Deriving the index
-     from elapsed time rather than from a separate counter is what keeps the lit
-     row and the bar's playhead on the same section; if they were independent
-     they would drift apart within a minute and the panel would read as broken.
+  var box=document.getElementById('box');
+  var barFill=document.getElementById('barFill');
+  var catIcon=document.getElementById('catIcon');
+  var catName=document.getElementById('catName');
+  var catCount=document.getElementById('catCount');
 
-     Rows above the index are done, the row at the index is being called, rows
-     below are still waiting. Set only on change — writing an attribute every
-     tick would dirty the whole roll for nothing. */
-  var DUR=26000, t0=performance.now(), last=-1, tickEls=ticks.children;
-
-  function step(){
-    var p=((performance.now()-t0)%DUR)/DUR;
-    var idx=Math.min(N-1,Math.floor(p*N));
-    if(idx===last) return;
-    last=idx;
-    for(var i=0;i<N;i++){
-      rows[i].setAttribute('data-s', i<idx?'done':i===idx?'now':'wait');
-      tickEls[i].className = i<=idx?'on':'';
-    }
+  function fill(c,p){
+    c.querySelector('.rl').textContent=p.r;
+    c.querySelector('.nm').textContent=p.v;
+    c.style.setProperty('--c1',p.k.c1);
+    c.style.setProperty('--c2',p.k.c2);
+    c.style.setProperty('--c3',p.k.c3);
   }
-  step();
-  setInterval(step,200);
+  function makeCard(p){
+    var d=document.createElement('div');
+    d.className='card';
+    d.innerHTML='<span class="av">'+MARK+'</span><span class="rl"></span><span class="nm"></span>';
+    fill(d,p);
+    return d;
+  }
 
-  /* A hidden tab still burns the interval, so the cycle keeps running and the
-     panel is correct on return. The one thing worth forcing is a repaint of the
-     states, in case a tick was missed while the page was throttled. */
-  document.addEventListener('visibilitychange',function(){
-    if(!document.hidden){ last=-1; step(); }
-  });
+  var CARD=parseFloat(get('cardms'))||3500;
+  var GRID=parseFloat(get('gridms'))||3200;
+  var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='';
+
+  /* FLIP between carousel and grid.
+     Without this the spread is a jump cut: cards leave one layout and appear in
+     another inside the same frame, which is exactly the moment a credits board
+     stops feeling expensive. Measure where each card is, switch the layout,
+     then hand each card its old position back as a transform and let the
+     transition carry it across. */
+  function morph(to){
+    var wantCar=(to==='car');
+    if(box.classList.contains('car')===wantCar) return;
+    var before=cards.map(function(c){return c.getBoundingClientRect()});
+    box.className='box '+to;
+    if(!wantCar){
+      var n=cards.length;
+      box.style.setProperty('--cols', n<=1?1:(n<=2?2:(n<=3?3:(n<=4?2:3))));
+      /* the role line only earns its place while the board is small enough to
+         read. Past four people the grid is faces and names, nothing more. */
+      box.classList.toggle('no-role', n>4);
+    }else{
+      box.classList.remove('no-role');
+    }
+    cards.forEach(function(c,i){
+      var b=before[i];
+      var a=c.getBoundingClientRect();
+      if(!b||!b.width||!a.width){c.style.transition='none';c.style.transform='';return}
+      var dx=(b.left+b.width/2)-(a.left+a.width/2);
+      var dy=(b.top+b.height/2)-(a.top+a.height/2);
+      c.style.transition='none';
+      c.style.transform='translate('+dx+'px,'+dy+'px) scale('+(b.width/a.width)+')';
+    });
+    void box.offsetWidth;                 /* commit, or the browser coalesces */
+    cards.forEach(function(c){c.style.transition='';c.style.transform=''});
+  }
+
+  function layout(){
+    cards.forEach(function(c,i){
+      var d=i-pi;
+      c.style.setProperty('--d',d);
+      c.style.setProperty('--ad',Math.abs(d));
+      c.classList.toggle('on',i===pi);
+    });
+  }
+
+  function enter(){
+    var key=ci+':'+pi+':'+phase;
+    if(key===lastKey) return;
+    lastKey=key;
+    var cat=CATS[ci], people=cat.p;
+
+    catIcon.innerHTML='<svg viewBox="0 0 24 24">'+ICON[cat.i]+'</svg>';
+    catName.textContent=cat.n;
+    catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
+
+    /* pool: enough nodes for the biggest category, reused forever. Cards are
+       never destroyed between categories, so there is nothing to flicker. */
+    people.forEach(function(p,i){
+      if(!cards[i]){ cards[i]=makeCard(p); box.appendChild(cards[i]) }
+      else fill(cards[i],p);
+    });
+    /* park anything the current category does not need */
+    for(var j=people.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
+
+    if(phase==='card'){ morph('car'); layout() }
+    else{
+      morph('grid');
+      cards.forEach(function(c){ c.classList.remove('on');
+        c.style.removeProperty('--d'); c.style.removeProperty('--ad') });
+    }
+    stepStart=performance.now();
+  }
+
+  function advance(){
+    var cat=CATS[ci];
+    if(phase==='card'){
+      if(pi<cat.p.length-1) pi++;
+      else { phase='grid'; pi=0 }
+    }else{
+      ci=(ci+1)%CATS.length; pi=0; phase='card';
+    }
+    enter();
+  }
+
+  if(reduced){
+    /* no choreography: hold the last category as a board, bar full */
+    ci=CATS.length-1; phase='grid'; pi=0; enter();
+    barFill.style.width='100%';
+  }else{
+    enter();
+    setInterval(function(){
+      var dur=(phase==='card'?CARD:GRID);
+      var el=performance.now()-stepStart;
+      if(el>=dur){ advance(); el=0 }
+      /* drains: full means just started, empty means about to move on */
+      barFill.style.width=(Math.max(0,1-el/dur)*100).toFixed(2)+'%';
+    },70);
+  }
 })();
 </script>
-</body>
-</html>
