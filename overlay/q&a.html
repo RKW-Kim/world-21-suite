@@ -176,34 +176,89 @@ to{opacity:.62;transform:scaleY(1)}}
 
 /* the comment bubbles — dark, transparent, tails — rising bottom → top.
    depth: .far bubbles ride a slightly smaller scale (--sc) and sit dimmer. */
-.bub{position:absolute;z-index:2;max-width:300px;
-  animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);will-change:transform}
-.sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s);will-change:transform}
-@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+/* ---- bubble lifecycle
+   Bubbles no longer run an infinite conveyor of their own. They are now driven
+   by the plane: a card is only shown once its aeroplane has landed, and it is
+   taken out again when its time is up. That means the scene has a narrative
+   order instead of nine cards drifting at once, and it means the number of live
+   cards on screen is bounded and known.
+
+   Both animations touch only transform and opacity, so they are composited and
+   cost nothing per frame. will-change stays on .bub (one promoted layer per
+   card) and is dropped from .sway: nesting two promoted layers per card
+   multiplied the compositing surface for no gain, since the parent already
+   carries the animation. */
+.bub{position:absolute;z-index:2;max-width:300px;opacity:0;
+  will-change:transform,opacity}
+.bub.in{animation:bubIn .5s cubic-bezier(.32,.72,0,1) forwards}
+.bub.out{animation:bubOut 1s cubic-bezier(.4,0,.2,1) forwards}
+.sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s)}
+@keyframes bubIn{
+  from{opacity:0;transform:translateY(34px) scale(var(--sc,1)) rotate(var(--tilt,0deg))}
+  to  {opacity:1;transform:translateY(0)   scale(var(--sc,1)) rotate(var(--tilt,0deg))}
+}
+/* exits by fading in place with a small lift. It does NOT sweep up the frame:
+   the head block owns the top of the picture and a card travelling through it
+   reads as a bug, however briefly. */
+@keyframes bubOut{
+  from{opacity:1;transform:translateY(0)   scale(var(--sc,1)) rotate(var(--tilt,0deg))}
+  to  {opacity:0;transform:translateY(-18px) scale(calc(var(--sc,1) * .97)) rotate(var(--tilt,0deg))}
+}
+/* PERFORMANCE. This card used to animate a registered --ang feeding a
+   conic-gradient. That is the single most expensive thing a card like this can
+   do: a custom property that feeds a background gradient re-resolves and
+   REPAINTS on every frame, for every card, forever. With nine cards on screen
+   that is the frame budget gone, and it showed up as the scene getting heavier
+   the longer it ran.
+
+   The border sweep is now STATIC, painted once. Each platform gets a different
+   start angle so no two rings look identical and the card keeps its lit edge,
+   but nothing about it repaints. The .sway wrapper animates transform only,
+   which the compositor handles on the GPU, so a card is rasterised once and
+   then only ever moved.
+
+   The glow is a static box-shadow in the platform colour for the same reason:
+   a filter or an animated shadow would reintroduce per-frame paint. */
 .bcard{position:relative;border:1.5px solid transparent;border-radius:20px;border-bottom-left-radius:12.5px;padding:13px 18px 15px;
   background:linear-gradient(#121216,#0e0e12) padding-box,
-    conic-gradient(from var(--ang),rgba(255,255,255,.04) 0 60%,var(--pc) 75%,rgba(255,255,255,.04) 92%) border-box;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 14px 36px rgba(0,0,0,.5);
-  animation:ang 4.6s linear infinite}
-@keyframes ang{to{--ang:1turn}}
-.bcard.yt{--pc:rgba(255,45,72,.95)}
-.bcard.fb{--pc:rgba(48,138,245,.95)}
-.bcard.x{--pc:rgba(255,255,255,.85)}
-.bcard.tt{--pc:rgba(0,229,255,.85)}
-/* Tail. bottom:0 puts its flat top edge ON the card's bottom edge, so it hangs
-   from the bubble instead of floating below it. The ::before sliver sits above
-   the tail (z-index) so the card's border glow reads as continuing into it. */
-.bcard::after{content:"";position:absolute;bottom:0;left:5%;width:24px;height:16px;z-index:0;
-  background:linear-gradient(180deg,#121216 0,#0e0e12 70%);
-  clip-path:polygon(0 0,100% 0,0 100%);
-  filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
-.bcard::before{content:"";position:absolute;bottom:0;left:5%;width:24px;height:2px;z-index:2;
-  background:linear-gradient(90deg,var(--pc),transparent);
-  opacity:.9;clip-path:polygon(0 0,100% 0,0 100%)}
-.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
-.bcard.flip::after{left:auto;right:5%;clip-path:polygon(0 0,100% 0,100% 100%)}
-.bcard.flip::before{left:auto;right:5%;clip-path:polygon(0 0,100% 0,100% 100%);
-  background:linear-gradient(270deg,var(--pc),transparent)}
+    conic-gradient(from var(--a0),rgba(255,255,255,.05) 0 58%,var(--pc) 76%,rgba(255,255,255,.05) 94%) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),
+    0 0 0 1px color-mix(in srgb,var(--pc) 16%,transparent),
+    0 0 22px color-mix(in srgb,var(--pc) 13%,transparent),
+    0 14px 36px rgba(0,0,0,.5)}
+.bcard.yt{--pc:rgba(255,45,72,.95);--a0:20deg}
+.bcard.fb{--pc:rgba(48,138,245,.95);--a0:150deg}
+.bcard.x {--pc:rgba(255,255,255,.85);--a0:265deg}
+.bcard.tt{--pc:rgba(0,229,255,.85);--a0:95deg}
+/* ---- the tail: one shape, one border ----
+   Previously the tail was a filled shape with a separate glowing sliver laid
+   over it, so the border stopped at the bubble's edge and the tail read as a
+   second object stuck to the first.
+
+   This is the two-triangle border trick instead: one triangle in the platform
+   colour, one slightly smaller triangle in the card's own fill colour, both
+   sharing the same apex. The slanted sides of the outer triangle show through
+   as an outline of even thickness, so the border flows continuously out of the
+   bubble and down into the tail. One shape, one border, no seam.
+
+   The inner triangle overlaps the card by a few pixels so the join is covered
+   by the card's own fill rather than by the outline. */
+.bcard::before,.bcard::after{content:"";position:absolute;width:0;height:0;
+  border-style:solid;pointer-events:none;z-index:0}
+/* The coloured side must be the TOP border. On a 0x0 box the painted border
+   tapers from its OUTER edge to the content box, so top-colour gives wide-at-top
+   and apex-at-bottom — a downward tail. Colouring the bottom border instead
+   (the more obvious reading of "the bottom of the tail") produces the exact
+   opposite: apex at the top, which renders as a chevron pointing up, hovering
+   under the card like a caret. */
+.bcard::before{bottom:-16px;left:28px;
+  border-width:17px 11px 0 11px;
+  border-color:var(--pc) transparent transparent transparent}
+.bcard::after{bottom:-16px;left:32px;
+  border-width:13px 7px 0 7px;
+  border-color:#101014 transparent transparent transparent}
+.bcard.flip::before{left:auto;right:26px}
+.bcard.flip::after{left:auto;right:32px}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
 .bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
@@ -220,22 +275,6 @@ to{opacity:.62;transform:scaleY(1)}}
 .bcard.tt .pli{filter:drop-shadow(0 0 10px rgba(254,44,85,.55))}
 .bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
   text-shadow:0 1px 8px rgba(0,0,0,.5)}
-@keyframes bubRise{
-  /* The travel window, not the opacity curve, is what keeps bubbles off the
-     headline. .head occupies roughly y=180..490 (headline, gold rule, tagline,
-     CTA pill), so a bubble must be fully transparent before it reaches y=500.
-
-     Total travel is 560px (+420 -> -140). At 52% -- the last fully-opaque
-     moment -- a bubble is at top+129, so any bubble whose resting top is >= 371
-     is still below the CTA when it goes invisible. Before this the travel was
-     1320px and opacity held to 62%, which put an opaque bubble at y=72, straight
-     through "The Floor is Yours." */
-  0%{transform:translateY(420px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
-  10%{opacity:1}
-  52%{opacity:1}
-  68%{opacity:0}
-  100%{transform:translateY(-140px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
-}
 @keyframes bubSway{from{transform:translateX(calc(var(--sw,12px) * -1))}to{transform:translateX(var(--sw,12px))}}
 .far .sway{opacity:.78}
 .far .bcard .q{font-size:15.5px}
@@ -254,7 +293,7 @@ to{opacity:.62;transform:scaleY(1)}}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
   .rise{animation-delay:0s!important}
   .bub{animation:none;opacity:1}
-  .sway{animation:none}
+  
   .tag span:first-child{opacity:1;transform:none}
   .hubA .face{animation:none}
 }
@@ -305,16 +344,16 @@ to{opacity:.62;transform:scaleY(1)}}
       </div>
     </div>
 
-    <div class="bub" style="left:110px;top:520px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
+    <div class="bub" style="left:110px;top:540px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
       <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@marketnotes</b></span><span class="q">How do I keep up when I miss a day of the market?</span></div></div>
     </div>
-    <div class="bub" style="left:318px;top:760px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
+    <div class="bub" style="left:318px;top:790px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
       <div class="sway"><div class="bcard flip fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="gold">@growthfan88</b></span><span class="q">Where does everyone here get their news from?</span></div></div>
     </div>
-    <div class="bub" style="left:560px;top:430px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
+    <div class="bub" style="left:560px;top:640px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
       <div class="sway"><div class="bcard x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="silver">@cashflowcoach</b></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
     </div>
-    <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
+    <div class="bub" style="left:1262px;top:556px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
       <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
     </div>
     <div class="bub" style="left:1388px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
@@ -323,120 +362,217 @@ to{opacity:.62;transform:scaleY(1)}}
     <div class="bub" style="left:1556px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
       <div class="sway"><div class="bcard flip x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="gold">@bizbasics</b></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
     </div>
-    <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
+    <div class="bub far" style="left:835px;top:820px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
       <div class="sway"><div class="bcard fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="bronze">@trendlinecrew</b></span><span class="q">Which platform do you trust for a daily brief?</span></div></div>
     </div>
-    <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
+    <div class="bub far" style="left:900px;top:600px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
       <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="silver">@founderfaqs</b></span><span class="q">How do you handle burnout on a long session?</span></div></div>
     </div>
-    <div class="bub far" style="left:60px;top:430px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
+    <div class="bub far" style="left:60px;top:560px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
       <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><g transform="translate(1.3 0) scale(.9)"><path fill="#FE2C55" transform="translate(.62 .62)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/><path fill="#25F4EE" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
     </div>
     <p class="sig">smile<b>.co.ke</b></p>
   </section>
 </div>
 <script>
-/* ---- the aeroplane's flight model ----
-   The one rAF loop in the kit. Everything else here is CSS on the compositor;
-   this cannot be, because genuinely unpredictable motion needs per-frame
-   integration rather than a keyframed path.
+/* ===================================================================
+   The delivery loop.
 
-   Physics, in the spirit of the bouncing-logo screensaver: constant speed,
-   perfectly elastic wall bounces, and an occasional random swerve. The swerve
-   keeps the bounce from settling into a repetitive two-line orbit, which is
-   what makes the DVD logo feel random even though its bounces are deterministic.
+   One aeroplane, created and destroyed per delivery. It is NOT a single
+   long-lived element that loops: when it reaches the face it fades and is
+   removed from the document entirely, so there is never a hidden, filtered,
+   off-screen node sitting in the tree eating a compositing layer for the rest
+   of the show.
 
-   Heading is derived from the velocity vector every frame — atan2(dy,dx) plus
-   the icon's own 17.6deg built-in tilt.
+   Path: a Catmull-Rom spline through control points that are scattered along
+   the straight line from origin to the ear but pushed sideways by a random
+   amount, alternating sides. That produces a wandering, swirling route across
+   the whole frame rather than a bounce around the edges, and because the
+   spline is smooth the tangent never jumps — which is what fixed the crab-walk.
 
-   The velocity is EASED, not just the angle. Easing only the rotation is the
-   obvious approach and it is wrong: at a wall bounce the heading changes by up
-   to 180deg instantly, so the nose spends several frames pointing backwards
-   while the plane is already travelling the other way — measured at 175deg of
-   error before this change. Easing the velocity vector instead means the plane
-   arcs into the wall and curves out of it, the nose is by definition pointing
-   where it is going, and the turn costs nothing extra. */
+   Motion is arc-length parameterised, so the plane holds one speed along the
+   whole route no matter how much the curvature changes. Heading comes from the
+   CENTRAL difference of the polyline, so the nose is exactly on the direction
+   of travel with no easing lag to read as stiffness; a light bank is added from
+   curvature so turns look like turns.
+   =================================================================== */
 (function(){
-  var plane=document.querySelector('.plane'), stage=document.querySelector('.stage');
-  if(!plane||!stage) return;
-  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){
-    plane.style.transform='translate(900px,220px) rotate(17.6deg)';
+  var plane=document.querySelector('.plane'), stage=document.querySelector('.stage'),
+      face=document.querySelector('.hubA');
+  if(!plane||!stage||!face) return;
+
+  var bubs=[].slice.call(document.querySelectorAll('.bub'));
+  if(!bubs.length) return;
+
+  var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ICON_TILT=17.6;          /* the Phosphor path points this far above +x */
+  var PX=13;                    /* bubble half-size, used to keep it off the edges */
+  var DWELL=4400;               /* how long a landed card stays before it leaves */
+  var GAP=900;                  /* quiet beat between deliveries */
+
+  var W=0,H=0,live=null,timer=null,raf=0;
+  var rnd=Math.random;
+
+  function size(){
+    W=stage.clientWidth||1920; H=stage.clientHeight||1080;
+  }
+
+  /* centre of the disc, and the two "ears" either side of it */
+  function ears(){
+    var r=face.getBoundingClientRect(), st=stage.getBoundingClientRect();
+    var cx=r.left-st.left+r.width/2, cy=r.top-st.top+r.height/2;
+    var rad=r.width*0.36;
+    return { cx:cx, cy:cy, l:{x:cx-rad,y:cy}, r:{x:cx+rad,y:cy} };
+  }
+
+  /* ---- path building ---- */
+  function catmull(p){
+    var out=[],n=p.length;
+    for(var i=0;i<n-1;i++){
+      var p0=p[i-1]||p[i], p1=p[i], p2=p[i+1], p3=p[i+2]||p[i+1];
+      var seg=18;
+      for(var j=0;j<seg;j++){
+        var t=j/seg,t2=t*t,t3=t2*t;
+        out.push({
+          x:.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+          y:.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+        });
+      }
+    }
+    out.push(p[n-1]);
+    /* cumulative arc length so speed can be held constant later */
+    var d=0; out[0].s=0;
+    for(var k=1;k<out.length;k++){
+      d+=Math.hypot(out[k].x-out[k-1].x, out[k].y-out[k-1].y);
+      out[k].s=d;
+    }
+    out.total=d;
+    return out;
+  }
+
+  function route(from,to){
+    var dx=to.x-from.x, dy=to.y-from.y, len=Math.hypot(dx,dy);
+    var nx=-dy/len, ny=dx/len;
+    var pts=[from];
+    var n=5+Math.floor(rnd()*3);
+    /* amplitude is capped by the length so a short hop cannot fling the plane
+       off the top of the frame */
+    var maxA=Math.min(340,len*0.46);
+    for(var i=1;i<n;i++){
+      var t=i/n;
+      var bx=from.x+dx*t, by=from.y+dy*t;
+      var side=(i%2)?1:-1;
+      var amp=maxA*(0.35+rnd()*0.65)*side;
+      /* pull the amplitude back to zero at both ends so the curve still starts
+         at the origin and finishes exactly on the ear */
+      var ease=Math.sin(Math.PI*t);
+      pts.push({x:bx+nx*amp*ease, y:by+ny*amp*ease});
+    }
+    pts.push(to);
+    return catmull(pts);
+  }
+
+  function at(path,s){
+    var lo=0, hi=path.length-1;
+    while(lo<hi-1){ var m=(lo+hi)>>1; if(path[m].s<s) lo=m; else hi=m; }
+    var a=path[lo], b=path[hi]||a;
+    var span=(b.s-a.s)||1, f=(s-a.s)/span;
+    return { x:a.x+(b.x-a.x)*f, y:a.y+(b.y-a.y)*f, lo:lo };
+  }
+
+  function hide(){
+    if(raf){ cancelAnimationFrame(raf); raf=0; }
+    if(live){ live=0; timer=setTimeout(hide,60); }   /* fade, then destroy */
+    plane.style.opacity='0';
+  }
+
+  function deliver(){
+    if(document.hidden){ timer=setTimeout(deliver,1500); return; }
+    var E=ears();
+    /* alternate ears, and start from a genuinely random edge so the route
+       crosses the frame instead of orbiting one corner */
+    var edge=Math.floor(rnd()*4);
+    var from;
+    if(edge===0) from={x:PX+PX+rnd()*(W-PX*4), y:PX};
+    else if(edge===1) from={x:W-PX, y:PX+rnd()*(H-PX*3)};
+    else if(edge===2) from={x:PX+rnd()*(W-PX*4), y:H-PX};
+    else from={x:PX, y:PX+rnd()*(H-PX*3)};
+    var to=(bubs.length%2===0)?E.l:E.r;
+
+    var path=route(from,to);
+    var speed=250+rnd()*120;
+    var dur=path.total/speed;
+    var t0=performance.now();
+    live=1;
+
+    function frame(now){
+      if(!live) return;
+      var p=Math.min(1,(now-t0)/(dur*1000));
+      /* gentle ease at both ends only — a strong ease makes it read as a
+         canned tween rather than a thing flying */
+      var e=p<.12?p/.12*.12 : p>.9? .9+(p-.9)*.625 : p*.9+.12*.5;
+      var s=Math.min(path.total,e*path.total);
+      var pt=at(path,s);
+      /* central difference -> exact tangent, no lag */
+      var prev=at(path,Math.max(0,s-14)), next=at(path,Math.min(path.total,s+14));
+      var ang=Math.atan2(next.y-prev.y,next.x-prev.x)*180/Math.PI+ICON_TILT;
+      var sc=p>.9?1+(1-p)*.55:1;
+      plane.style.transform='translate('+pt.x+'px,'+pt.y+'px) rotate('+ang.toFixed(2)+'deg) scale('+sc.toFixed(3)+')';
+      plane.style.opacity='1';
+      if(p<1){ raf=requestAnimationFrame(frame); return; }
+      /* landed: fade, DESTROY, then hand over to the card */
+      raf=0;
+      plane.style.transition='opacity .26s ease-out, transform .26s ease-out';
+      plane.style.opacity='0';
+      plane.style.transform+=' scale(.5)';
+      setTimeout(function(){
+        plane.removeAttribute('style');          /* back to the CSS base state */
+        arrive();
+      },280);
+    }
+    raf=requestAnimationFrame(frame);
+  }
+
+  /* the card the aeroplane was carrying */
+  var q=0;
+  function arrive(){
+    var b=bubs[q%bubs.length]; q++;
+    if(!b){ timer=setTimeout(deliver,GAP); return; }
+    b.classList.remove('out');
+    b.classList.add('in');
+    setTimeout(function(){
+      b.classList.remove('in');
+      b.classList.add('out');
+      setTimeout(function(){ b.classList.remove('out'); },1050);
+    },DWELL);
+    timer=setTimeout(deliver,GAP);
+  }
+
+  size();
+  if(reduced){
+    /* no flight: just cycle the cards so the scene still has content */
+    (function cycle(){
+      var b=bubs[0];
+      b.classList.add('in');
+      setTimeout(function(){
+        b.classList.remove('in'); b.classList.add('out');
+        setTimeout(function(){
+          b.classList.remove('out');
+          if(bubs[1]) bubs[1].classList.add('in');
+          setTimeout(cycle,4200);
+        },1050);
+      },4200);
+    })();
     return;
   }
 
-  var ICON_TILT=17.6;      /* the Phosphor path points this far above +x */
-  var SPEED=205;           /* px per second */
-  var PAD=44;              /* keep this far off the frame edge */
-  var SWERVE=0.30;         /* swerves per second, on average */
-  var TURN=15;             /* how fast the velocity vector swings, 1/s */
-
-  var W=0,H=0,x=0,y=0,vx=0,vy=0,tx=0,ty=0;
-
-  function setHeading(a,s){
-    tx=Math.cos(a)*s; ty=Math.sin(a)*s;
-  }
-
-  function measure(){
-    W=stage.clientWidth||1920; H=stage.clientHeight||1080;
-    if(!x){                       /* first layout only */
-      x=W*0.5; y=H*0.34;
-      setHeading(Math.random()*Math.PI*2,SPEED);
-      vx=tx; vy=ty;
-    }
-  }
-
-  function step(dt){
-    /* random swerve. A full random heading is wrong here: it can land exactly
-       opposite the current one. A real aeroplane turns through an angle, so the
-       swerve rotates the CURRENT heading by a limited amount — mostly a small
-       correction, occasionally a committed turn. */
-    if(Math.random()<dt*SWERVE){
-      var mag=Math.random()<0.22?62:26;
-      setHeading(Math.atan2(vy,vx)+(Math.random()<0.5?-1:1)*mag*Math.PI/180,
-                 SPEED*(0.85+Math.random()*0.3));
-    }
-
-    /* ease the velocity toward its target: this is what turns a wall hit into
-       an arc rather than a snap, and it keeps the nose locked to travel */
-    var k=Math.min(1,dt*TURN);
-    vx+=(tx-vx)*k; vy+=(ty-vy)*k;
-
-    /* Re-normalise the magnitude every frame. Easing direction alone lets the
-       speed collapse to nearly nothing whenever a bounce and a swerve land close
-       together — measured at 25px/s against a 205px/s cruise — and the plane
-       appears to hang in the air mid-turn. Pinning the magnitude to the target's
-       is what makes this a coordinated turn at constant speed, which is both
-       correct and what the DVD logo reads as. */
-    var sp=Math.hypot(vx,vy), want=Math.hypot(tx,ty);
-    if(sp>0.001){ vx=vx/sp*want; vy=vy/sp*want; }
-    else { vx=tx; vy=ty; }
-
-    x+=vx*dt; y+=vy*dt;
-
-    /* bounce off the target, not the current velocity, so the arc is not
-       re-triggered every frame while the plane is still curving out */
-    var hit=0;
-    if(x<PAD){x=PAD;tx=Math.abs(tx);hit=1}
-    else if(x>W-PAD){x=W-PAD;tx=-Math.abs(tx);hit=1}
-    if(y<PAD){y=PAD;ty=Math.abs(ty);hit=1}
-    else if(y>H-PAD){y=H-PAD;ty=-Math.abs(ty);hit=1}
-    if(hit) setHeading(Math.atan2(ty,tx),Math.hypot(tx,ty));
-
-    var ang=Math.atan2(vy,vx)*180/Math.PI+ICON_TILT;
-    plane.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) rotate('+ang.toFixed(2)+'deg)';
-  }
-
-  var last=0;
-  function loop(now){
-    if(!last) last=now;
-    var dt=Math.min(0.05,(now-last)/1000);   /* clamp after a tab stall */
-    last=now;
-    measure(); step(dt);
-    requestAnimationFrame(loop);
-  }
-  measure();
-  plane.style.transform='translate('+x+'px,'+y+'px)';
-  requestAnimationFrame(loop);
+  plane.style.opacity='0';
+  setTimeout(deliver,700);
+  addEventListener('resize',function(){ size(); });
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden&&raf){ cancelAnimationFrame(raf); raf=0; live=0; }
+  });
 })();
+</script>
 </script>
 </body></html>
