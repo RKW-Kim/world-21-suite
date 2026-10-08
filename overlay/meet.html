@@ -338,10 +338,11 @@ function transport(f,hasList,VOL,startMuted){
 
   addEventListener('keydown',onKey);
   addEventListener('pointerdown',arm);
-  /* PageUp/PageDown from the deck, for when this scene runs in a frame whose
-     keys the parent has to hand over rather than the browser. */
+  /* Keys the deck does not use, handed over so volume and the playlist work
+     while the deck is driving. Accepts everything, not just the track keys:
+     the deck has already kept the ones it needs. */
   addEventListener('message',function(e){
-    if(e.data&&e.data.type==='smiletv-key'&&/^Page/.test(e.data.key||''))
+    if(e.data&&e.data.type==='smiletv-key')
       onKey({key:e.data.key,preventDefault:function(){}});
   });
 

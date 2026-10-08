@@ -94,15 +94,17 @@ function go(i){
   history.replaceState(null, '', '#' + (cur + 1));
 }
 
-/* Hand the scene the keyboard. Over http the scene is same-origin, so its own
-   key handler has to be given the focus or it never hears anything — and it is
-   the one that owns PageUp/PageDown for the playlist and ArrowUp/ArrowDown for
-   volume in the meet scene. Without this the keys go to the deck instead. */
-frame.addEventListener('load', () => {
-  try{ frame.contentWindow.focus(); }catch(_){}
-});
+/* ---- keys ----
+   The deck owns the keyboard, and the frame is deliberately NOT focused.
+   A keydown that happens inside an iframe never reaches the parent window,
+   so focusing the frame silently kills 1-6 and the arrows — which is exactly
+   the bug this replaced.
 
-/* ---- keys ---- */
+   Keys the deck does not use are handed to the scene instead, so the meet
+   scene still owns volume and its playlist while the deck is driving. */
+function toScene(e){
+  try{ frame.contentWindow.postMessage({type:'smiletv-key', key:e.key}, '*'); }catch(_){}
+}
 function keys(e){
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
@@ -114,9 +116,18 @@ function keys(e){
     e.preventDefault();
     if (document.fullscreenElement) document.exitFullscreen();
     else document.documentElement.requestFullscreen();
+    return;
   }
+  toScene(e);
 }
 addEventListener('keydown', keys);
+
+/* If the presenter clicks into the scene, focus leaves the deck and the keys
+   land there instead. Over http the scene is same-origin so it can be reached;
+   from disk it throws and the deck goes quiet until it is clicked back. */
+frame.addEventListener('load', () => {
+  try{ frame.contentWindow.addEventListener('keydown', keys); }catch(_){}
+});
 
 /* #3 opens the third scene, so a link can point straight at one. */
 go((parseInt(location.hash.replace('#',''),10) || 1) - 1);
