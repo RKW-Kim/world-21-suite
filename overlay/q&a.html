@@ -166,10 +166,22 @@ to{opacity:.62;transform:scaleY(1)}}
    top+129, so any card anchored at top >= 371 is still below the CTA by the time
    it goes invisible. The first pass travelled 1320px and held opacity to 62%,
    which put an opaque card at y=72 — straight through the headline. */
-.bub{position:absolute;z-index:2;max-width:300px;
+.bub{position:absolute;z-index:2;max-width:300px;--a0:34deg;
   animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);
   will-change:transform,opacity}
-.sway{animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s)}
+/* The tokens live on .bub, not on .card, because the aura is drawn by
+   .sway's pseudo-elements — and a custom property set on a child cannot be
+   read by its parent. --a0 is chosen so the conic's BRIGHTEST arc lands on the
+   corner the tail grows out of: 34deg puts the peak at 214deg, which is
+   down-and-left. The glow therefore collects exactly where the two shapes
+   meet, and the seam is the brightest part of the card instead of the darkest. */
+.bub:has(.flip){--a0:326deg}
+.bub:has(.yt){--pc:rgba(255,45,72,.95)}
+.bub:has(.fb){--pc:rgba(48,138,245,.95)}
+.bub:has(.x) {--pc:rgba(255,255,255,.85)}
+.bub:has(.tt){--pc:rgba(0,229,255,.85)}
+.sway{position:relative;
+  animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s)}
 @keyframes bubRise{
   0%{transform:translateY(420px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
   10%{opacity:1}
@@ -177,70 +189,90 @@ to{opacity:.62;transform:scaleY(1)}}
   68%{opacity:0}
   100%{transform:translateY(-140px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
 }
-/* PERFORMANCE. This card used to animate a registered --ang feeding a
-   conic-gradient. That is the single most expensive thing a card like this can
-   do: a custom property that feeds a background gradient re-resolves and
-   REPAINTS on every frame, for every card, forever. With nine cards on screen
-   that is the frame budget gone, and it showed up as the scene getting heavier
-   the longer it ran.
+/* ---- the aura: ONE shape, ONE glow
+   The old card had a hard 1.5px border plus a box-shadow aura, and the tail was
+   a separate wedge with its own border. That read as two objects: the box-shadow
+   and the border are clipped to the border box and simply STOP at the card's
+   edge, so nothing carried the glow down the tail.
 
-   The border sweep is now STATIC, painted once. Each platform gets a different
-   start angle so no two rings look identical and the card keeps its lit edge,
-   but nothing about it repaints. The .sway wrapper animates transform only,
-   which the compositor handles on the GPU, so a card is rasterised once and
-   then only ever moved.
+   Now the aura is a single blurred conic layer sitting behind the whole
+   silhouette, pulsing in opacity. Its bright arcs are FIXED — nothing rotates —
+   so the places that are brightest brighten and dim in place.
 
-   The glow is a static box-shadow in the platform colour for the same reason:
-   a filter or an animated shadow would reintroduce per-frame paint. */
-.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;border-bottom-left-radius:12.5px;padding:13px 18px 15px;
+   It is drawn twice, once for the bubble and once for the tail, both at z-index
+   -1 so both stay behind the card. :has() picks the side, so the mirrored cards
+   get their halo on the correct corner.
+
+   Cost: one blurred layer per card, composited. There is deliberately no
+   filter on .card itself — a drop-shadow there looks identical but adds a
+   second render surface per card and pushes the text through it. */
+.sway::before,.sway::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+/* inset:-4px, NOT inset:0. The halo is a filled shape, so at inset:0 it is
+   exactly the card's own silhouette and the opaque card covers all of it —
+   only a couple of pixels of blur escape past the edge, which reads as a faint
+   fringe rather than an aura. Growing it 4px past the card on every side gives
+   the blur something to bleed, and the bleed is what you actually see. */
+.sway::before{inset:-2px;border-radius:22px;border-bottom-left-radius:14.5px;
+  padding:6px;
+  background:conic-gradient(from var(--a0),
+    color-mix(in srgb,var(--pc) 26%,transparent) 0 22%,
+    var(--pc) 50%,
+    color-mix(in srgb,var(--pc) 26%,transparent) 78%);
+  /* punch the middle out so this is a RING, not a filled shape.
+     A filled shape blurred behind an opaque card leaves a hard silhouette edge;
+     a 5px ring blurred reads as light. exclude = content-box XOR border-box. */
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+          mask-composite:exclude;
+  filter:blur(7px);opacity:.75;animation:glowPulse 3.9s ease-in-out infinite}
+.sway::after{left:16px;bottom:-33px;border-style:solid;
+  border:17px solid;border-color:var(--pc) transparent transparent var(--pc);
+  filter:blur(6px)}
+.sway:has(.flip)::after{left:auto;right:16px;
+  border-color:var(--pc) var(--pc) transparent transparent}
+@keyframes glowPulse{0%,100%{opacity:.38}50%{opacity:.85}}
+
+/* The rim. Same conic, same angle as the aura, so the bright arc on the outline
+   and the bright arc in the halo line up rather than fighting. */
+.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;
+  border-bottom-left-radius:12.5px;padding:13px 18px 15px;
   background:linear-gradient(#121216,#0e0e12) padding-box,
-    conic-gradient(from var(--a0),rgba(255,255,255,.05) 0 58%,var(--pc) 76%,rgba(255,255,255,.05) 94%) border-box;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),
-    0 0 0 1px color-mix(in srgb,var(--pc) 16%,transparent),
-    0 0 22px color-mix(in srgb,var(--pc) 13%,transparent),
+    conic-gradient(from var(--a0),
+      color-mix(in srgb,var(--pc) 48%,transparent) 0 24%,
+      var(--pc) 50%,
+      color-mix(in srgb,var(--pc) 48%,transparent) 76%) border-box;
+  /* The wide, even aura. box-shadow is the only one of these that grows
+     OUTWARD from the border box, which is what makes it visible at all — a
+     separate glow layer of the same size as the card simply hides behind it. */
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pc) 20%,transparent),
+    0 0 16px 2px color-mix(in srgb,var(--pc) 24%,transparent),
+    0 0 44px 8px color-mix(in srgb,var(--pc) 13%,transparent),
     0 14px 36px rgba(0,0,0,.5)}
+/* fallback for engines without :has() — the child carries its own tokens */
 .bcard.yt{--pc:rgba(255,45,72,.95);--a0:20deg}
 .bcard.fb{--pc:rgba(48,138,245,.95);--a0:150deg}
 .bcard.x {--pc:rgba(255,255,255,.85);--a0:265deg}
 .bcard.tt{--pc:rgba(0,229,255,.85);--a0:95deg}
-/* ---- the tail: the classic two-triangle speech bubble ----
-   Copied rather than reinvented. The outer triangle is drawn in the platform
-   colour so the ring runs out of the card and down into the tail; the inner one
-   is the card's own fill, offset inwards, which carves the outer back down to a
-   10px outline. They share one apex, so the border converges to a point exactly
-   as the card's own corner does — one shape, one border, no seam.
+/* ---- the tail
+   Two stacked triangles, as before, but the fill is now the card's own bottom
+   colour rather than a flat guess, so there is no seam where the wedge meets the
+   bubble — and the OUTLINE wedge carries the platform colour at full strength
+   while the bubble's rim is a conic, which means the two match exactly at the
+   junction because the conic is at its brightest there.
 
-   The inner colour is #16161c, deliberately lighter than the page. The technique
-   fills with a flat colour because a 0x0 box has no padding box to put a gradient
-   in, so the fill can only ever be flat — which is fine in the original where
-   the bubble is white and the fill is white. Here the card is dark on a darker
-   page, and matching the page exactly left only the coloured outline visible, so
-   the tail read as a thin V instead of a solid tail. Lifting the fill a few steps
-   gives it the same lit-surface presence the card has.
-
-   border-color colours the TOP and LEFT borders. On a 0x0 box those two
-   triangles union into one wedge whose wide edge sits on the card's bottom edge.
-   Colouring the BOTTOM border instead — the more obvious reading of "the bottom
-   of the tail" — produces the opposite shape and renders as a caret pointing
-   up, which is what went wrong before. */
-.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
+   Slightly wider and shallower than the earlier 28x30: a tail that deep reads
+   as a spike rather than a speech tail. */
+.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px;--a0:326deg}
 .bcard::before,.bcard::after{content:"";position:absolute;width:0;height:0;
-  border-style:solid;pointer-events:none;z-index:0}
-/*   Sized down from the original 25/15 at a 50px hang. Those numbers come from
-   a card with 20px padding and font-size:large; ours is roughly half the area,
-   and at 1:1 a 50px tail was longer than half the card's own height and read as
-   an arrow rather than a tail. Ratios are preserved exactly — outer 15 to inner
-   9 is the same 1.67 as 25 to 15, and the 5px/12px insets are the 8px/20px
-   insets at 0.6. */
-.bcard::before{left:18px;bottom:-30px;border:15px solid;
+  border-style:solid;pointer-events:none;z-index:0;left:18px;bottom:-30px}
+.bcard::before{border:15px solid;
   border-color:var(--pc) transparent transparent var(--pc)}
-.bcard::after{left:23px;bottom:-18px;border:9px solid;
-  border-color:#121216 transparent transparent #121216}
-/* the mirrored tail leans the other way, so it colours top+right instead */
-.bcard.flip::before{left:auto;right:18px;
-  border-color:var(--pc) var(--pc) transparent transparent}
-.bcard.flip::after{left:auto;right:23px;
-  border-color:#121216 #121216 transparent transparent}
+.bcard::after{border:9px solid;
+  border-color:#0e0e12 transparent transparent #0e0e12}
+.bcard.flip::before,.bcard.flip::after{left:auto;right:18px}
+.bcard.flip::before{border-color:var(--pc) var(--pc) transparent transparent}
+.bcard.flip::after{border-color:#0e0e12 #0e0e12 transparent transparent}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
 .bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
