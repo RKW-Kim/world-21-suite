@@ -212,38 +212,48 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
 .box{position:relative;margin-top:18px;flex:none;height:clamp(260px,34vh,400px)}
 
 /* ═══ the slide ═══
-   One element, one geometry. --d is the signed distance from the active slide
-   and --ad its magnitude; everything below derives from those two numbers, so
-   the formation is one transform rather than N. This is Embla's slidesInView
-   model with the build step removed. */
-.card{pointer-events:none;display:flex;flex-direction:column;align-items:center;
-  justify-content:center}
-.box[data-phase=car] .card{position:absolute;left:50%;top:50%;
-  width:var(--cw,280px);height:calc(var(--cw,280px) * 1.24);
-  gap:18px;padding:28px 20px 26px;border-radius:var(--radius);text-align:center;
+   A coverflow fan, rebuilt natively rather than pulled in as a library.
+
+   The centre card sits flat. Every card beside it rotates about the edge that
+   faces the centre — transform-origin 100% going left, 0% going right — so the
+   fan turns away from the viewer rather than sliding past flat. That edge pivot
+   is the whole effect; without it the same rotation reads as a card spinning on
+   its middle and the illusion collapses.
+
+   Perspective lives on the stage rather than inside each card's transform, so
+   the cards further out converge toward a vanishing point instead of each
+   having a private vanishing point of its own.
+
+   Everything is one transform per card built from five custom properties, so
+   a change is five property writes rather than a class swap or a re-render. */
+.box[data-phase=car]{perspective:1000px;perspective-origin:50% 50%}
+.box[data-phase=car] .card{
+  position:absolute;left:50%;top:50%;
+  width:var(--cw,280px);height:var(--cw,280px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:24px 18px 22px;border-radius:var(--radius);text-align:center;
   background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
   box-shadow:0 22px 48px rgba(0,0,0,.5);
-  transform:translate(-50%,-50%) translateX(calc(var(--d) * var(--off,200px)))
-                     translateY(calc(var(--ad) * 5px))
-                     scale(calc(1 - var(--ad) * .13));
-  opacity:calc(1 - var(--ad) * .42);
-  z-index:calc(60 - var(--ad) * 10);
+  transform-origin:var(--ox,50% 50%);
+  transform:translate(-50%,-50%) translateX(var(--x,0px))
+            rotateY(var(--ry,0deg)) scale(var(--sc,1));
+  opacity:var(--op,1);z-index:var(--z,1);
   backface-visibility:hidden;
   transition:transform .82s var(--spring),opacity .82s var(--spring),
              box-shadow .5s ease}
-/* promoted only while the formation moves, so an idle scene is not holding
-   three composited layers alive */
+/* promoted only while the fan moves, so an idle scene is not holding five
+   composited layers alive */
 .box[data-phase=car][data-moving] .card{will-change:transform,opacity}
+/* a scrim on the receding cards, so depth does not have to be sold by
+   brightness alone once the cards are turned edge on */
 
-/* the variant matrix. React resolves these with cva() at build time; with no
-   build step each variant is one attribute selector. */
-.card[data-variant=inactive] .av{filter:saturate(.35) brightness(.82)}
-.card[data-variant=inactive] .nm{color:var(--muted)}
+.card[data-variant=flank] .av{filter:saturate(.35) brightness(.82)}
+.card[data-variant=flank] .nm{color:var(--muted)}
 .card[data-variant=active]{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
   0 0 0 1px var(--accent-line),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--accent-soft)}
-.card[data-variant=inactive] .rl,
-.card[data-variant=inactive] .nm{opacity:0}
-.card[data-variant=inactive] .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
+.card[data-variant=flank] .rl,
+.card[data-variant=flank] .nm{opacity:0}
+.card[data-variant=flank] .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
   inset 0 -6px 14px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 
 /* the portrait slot. Sized as a share of the card, so a real photograph
@@ -254,6 +264,12 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
   box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
     inset 0 -6px 14px rgba(0,0,0,.45),0 14px 34px rgba(0,0,0,.55)}
 .av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
+
+/* The card is a flex column in both phases. The fan only overrides its box and
+   transform; without this the board lays the role and name out inline and they
+   collide, because .rl and .nm are spans. */
+.card{pointer-events:none;display:flex;flex-direction:column;align-items:center;
+  justify-content:center}
 
 .rl,.nm{transition:opacity .45s var(--ease)}
 .rl{font-weight:800;font-size:11px;letter-spacing:.26em;text-transform:uppercase;
@@ -489,19 +505,6 @@ function pool(items){
   for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
 }
 
-/* Card size and flank offset are solved from the frame rather than pinned, so
-   the formation ends flush with both edges at any window size. Height leads:
-   an earlier version also capped width, and on a tall frame the width bound
-   won instead of the height and the card floated with dead space above and
-   below it. */
-function size(){
-  var bw=box.clientWidth, bh=box.clientHeight;
-  if(!bw||!bh) return;
-  var w=Math.min(bh/1.24, bw*0.92);
-  box.style.setProperty('--cw',w.toFixed(1)+'px');
-  box.style.setProperty('--off',(bw/2-(w/2)*0.87-6).toFixed(1)+'px');
-}
-
 /* FLIP between the carousel and the board. Without it the spread is a jump
    cut: cards leave one layout and appear in another inside the same frame,
    which is exactly the moment a credits board stops feeling expensive. */
@@ -522,30 +525,104 @@ function morph(to){
   cards.forEach(function(c){c.style.transition='';c.style.transform=''});
 }
 
-function setCar(){
-  var cat=CATS[ci], prev=CATS[(ci-1+CATS.length)%CATS.length], nx=CATS[(ci+1)%CATS.length];
-  if(MODE==='beats'){
-    /* one beat: the lead, alone, holding the whole frame */
-    pool([cat.p[0]]);
-    cards[0].style.setProperty('--d',fo);
-    cards[0].style.setProperty('--ad',Math.abs(fo));
-    cards[0].dataset.variant='active';
-    cards[0].style.gridColumn=''; cards[0].style.gridRow='';
-  }else{
-    /* the roll: the category before, the person on stage, the category after */
-    pool([prev.p[0],cat.p[pi],nx.p[0]]);
-    cards.forEach(function(c,i){
-      var d=(i-1)+fo;
-      c.style.setProperty('--d',d);
-      c.style.setProperty('--ad',Math.abs(d));
-      c.dataset.variant=(i===1)?'active':'inactive';
-      c.dataset.index=String(i);
-      c.style.gridColumn=''; c.style.gridRow='';
-    });
+/* The fan: the person on stage in the middle, the rest of the department
+   beside them, and a neighbour from each adjacent category out at the edges so
+   the frame is never half empty. A category of one gets a lone card on stage
+   with the neighbours either side — which is the coverflow reading of a
+   one-person department, and matches what the board used to say with `1 / -1`. */
+/* Three across. A five wide fan will not fit a 752px panel without either
+   running off the edge or collapsing the overlap, and overlap is the effect. */
+var FAN=3;
+var ANGLE=20;                     /* per step; the nearest pair turns at twice this */
+var TUCK=0.35;                    /* how far the neighbour hides behind the centre */
+
+/* Solve the card size and spacing from the frame instead of hard coding them.
+
+   A card turned ANGLE degrees only reads cos(ANGLE) as wide, so a neighbour's
+   visible half is vis*W/2, not W/2. Its near edge tucks TUCK of the way inside
+   the centre card's right edge, which fixes the spacing:
+
+       S - vis*W/2 = (1-TUCK)*W/2     ->  S = (W/2)*(1-TUCK+vis)
+
+   and the far edge of that neighbour has to land on the frame edge:
+
+       S + vis*W/2 <= bw/2            ->  W <= bw / (1-TUCK+2*vis)
+
+   Get this wrong in one direction and the fan runs off the panel; in the other
+   the cards stop overlapping and the coverflow collapses into a plain row. */
+function fan(){
+  var bw=box.clientWidth, bh=box.clientHeight;
+  if(!bw||!bh) return;
+  var vis=Math.cos(ANGLE*2*Math.PI/180);
+  var w=Math.min(bh, bw/(1-TUCK+2*vis));
+  var S=(w/2)*(1-TUCK+vis);
+  box.style.setProperty('--cw',w.toFixed(1)+'px');
+  return {w:w,S:S,vis:vis};
+}
+
+function personFor(k){
+  var people=CATS[ci].p, j, n=0;
+  if(k===0) return people[pi];
+  if(k<0){
+    for(j=pi-1;j>=0;j--){ if(n++===-k-1) return people[j] }
+    var prev=CATS[(ci-1+CATS.length)%CATS.length];
+    return prev.p[Math.min(-k-1,prev.p.length-1)];
   }
-  /* promote for the length of the move only; the tick retires it, so the page
-     still has exactly one timer */
+  for(j=pi+1;j<people.length;j++){ if(n++===k-1) return people[j] }
+  var nx=CATS[(ci+1)%CATS.length];
+  return nx.p[Math.min(k-1,nx.p.length-1)];
+}
+
+function setCar(){
+  var g=fan();
+  if(!g) return;
+  var half=(FAN-1)/2, items=[];
+  for(var d=0;d<FAN;d++){
+    var k=d-half;
+    items.push({k:k,p:personFor(k)});
+  }
+  /* nearest first, so a reused card already holds the person it needs */
+  items.sort(function(a,b){return Math.abs(a.k)-Math.abs(b.k)});
+  pool(items.map(function(it){return it.p}));
+  items.forEach(function(it,i){
+    var c=cards[i], ad=Math.abs(it.k), b=Math.max(ad,2);
+    c.style.setProperty('--x',(it.k*g.S).toFixed(1)+'px');
+    c.style.setProperty('--ry',(it.k<0?ANGLE*b:-ANGLE*b)+'deg');
+    c.style.setProperty('--ox',it.k<0?'100% 50%':(it.k>0?'0% 50%':'50% 50%'));
+    c.style.setProperty('--sc',(1-ad*0.05).toFixed(3));
+    c.style.setProperty('--op',(1-ad*0.17).toFixed(3));
+    c.style.setProperty('--z',String(60-ad*10));
+    c.dataset.variant=it.k===0?'active':'flank';
+    c.dataset.index=String(it.k);
+    c.style.gridColumn=''; c.style.gridRow='';
+  });
   box.setAttribute('data-moving',''); moveUntil=performance.now()+900;
+  stagger();
+}
+
+/* Their reveal staggers a slide's contents by 75ms as it arrives. Kept, because
+   it is the half of the effect that makes a turn feel like a card arriving
+   rather than a card being swapped. */
+function stagger(){
+  var c=cards.find(function(x){return x.dataset.variant==='active'});
+  if(!c) return;
+  var els=[].slice.call(c.querySelectorAll('.av,.rl,.nm'));
+  els.forEach(function(el){el.style.transition='none';el.style.opacity='0';
+    el.style.transform='translateY(18px)'});
+  void c.offsetWidth;
+  els.forEach(function(el,i){
+    el.style.transition='opacity .5s var(--ease) '+(i*0.075)+'s, transform .5s var(--ease) '+(i*0.075)+'s';
+    el.style.opacity=''; el.style.transform='';
+  });
+}
+
+/* The fan sweeps in on first paint, then settles. */
+function slideIn(){
+  box.style.setProperty('--sweep','-1');
+  setCar();
+  void box.offsetWidth;
+  box.style.setProperty('--sweep','');
+  setCar();
 }
 
 function setGrid(){
@@ -576,14 +653,14 @@ function setGrid(){
   }
 }
 
-/* the first card arrives from the far left rather than appearing centred. The
-   whole formation is offset through the same --d the carousel already uses, so
-   the incoming card inherits the scale and fade falloff instead of a second
-   animation system that would have to be kept in sync with this one. */
+/* The fan sweeps in from the left on first paint, then settles. */
 function slideIn(){
-  fo=-1.15; setCar();
+  var stage=box.style;
+  stage.setProperty('--sweep','-1');
+  setCar();
   void box.offsetWidth;
-  fo=0; setCar();
+  stage.setProperty('--sweep','');
+  setCar();
 }
 
 function enter(){
@@ -605,7 +682,6 @@ function enter(){
   catName.textContent=cat.n;
   catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
 
-  size();
   box.dataset.category=cat.n;
   if(phase==='card'){ morph('car'); setCar();
     if(!booted){ booted=true; slideIn() }
@@ -654,7 +730,7 @@ if(reduced){
   barFill.style.width='100%'; bar.setAttribute('aria-valuenow','100');
 }else{
   enter();
-  addEventListener('resize',function(){ size(); if(phase==='card') setCar() });
+  addEventListener('resize',function(){ if(phase==='card') setCar() });
   setInterval(function(){
     var now=performance.now(), el=now-stepStart;
     var dur=(phase==='card'?BEAT:GRIDBEAT);
