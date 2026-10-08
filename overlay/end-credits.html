@@ -31,6 +31,10 @@
   --fm:'IBM Plex Mono',ui-monospace,monospace;
   --safe-b:76px;
   --eo:cubic-bezier(.32,.72,0,1);
+  /* A damped spring, solved rather than eyeballed: zeta .62 so it overshoots
+     8.4% and comes back. Embla, Reanimated and Motion all ship springs, and
+     the overshoot is what reads as physical rather than as a tween. */
+  --spring:linear(0,0.0417 4.17%,0.1453 8.33%,0.2829 12.5%,0.433 16.67%,0.5799 20.83%,0.713 25%,0.8264 29.17%,0.9173 33.33%,0.9858 37.5%,1.0337 41.67%,1.0637 45.83%,1.0792 50%,1.0835 54.17%,1.08 58.33%,1.0713 62.5%,1.0597 66.67%,1.0472 70.83%,1.0349 75%,1.0238 79.17%,1.0144 83.33%,1.0068 87.5%,1.0011 91.67%,0.9971 95.83%,1);
   --card-ms:3500;
   --grid-ms:3200;
   /* --ac is the accent of whatever category is on stage. It is registered so
@@ -210,14 +214,20 @@ html[data-next="1"] .bellrow{display:none}
   background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
   box-shadow:0 22px 48px rgba(0,0,0,.5);
   transform:translate(-50%,-50%) translateX(calc(var(--d) * var(--off,200px)))
-                     scale(calc(1 - var(--ad) * .06));
-  opacity:calc(1 - var(--ad) * .34);
+                     translateY(calc(var(--ad) * 5px))
+                     scale(calc(1 - var(--ad) * .13));
+  opacity:calc(1 - var(--ad) * .42);
   z-index:calc(60 - var(--ad) * 10);
-  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
+  backface-visibility:hidden;
+  transition:transform .82s var(--spring),opacity .82s var(--spring),
+             box-shadow .5s ease}
+/* promoted only while the formation is actually moving — a permanent will-change
+   keeps three layers alive on a scene that sits idle between cards */
+.box.car.moving .card{will-change:transform,opacity}
 /* the neighbours: present, legible as context, clearly not on stage */
-.box.car .card.side .av{filter:saturate(.35) brightness(.82)}
-.box.car .card.side .nm{color:var(--muted)}
-.box.car .card.on{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+.box.car .card[data-state=inactive] .av{filter:saturate(.35) brightness(.82)}
+.box.car .card[data-state=inactive] .nm{color:var(--muted)}
+.box.car .card[data-state=active]{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
   0 0 0 1px var(--acm),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--acs)}
 
 /* ---- the avatar slot
@@ -251,8 +261,9 @@ html[data-next="1"] .bellrow{display:none}
    design, and two names at once collide into something that reads as a layout
    fault rather than as depth. Their avatars still read, which is the point:
    they are context, not competition. */
-.box.car .card:not(.on) .rl,.box.car .card:not(.on) .nm{opacity:0}
-.box.car .card:not(.on) .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
+.box.car .card:not([data-state=active]) .rl,
+.box.car .card:not([data-state=active]) .nm{opacity:0}
+.box.car .card:not([data-state=active]) .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
   inset 0 -6px 14px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 
 /* ---- grid mode
@@ -270,7 +281,8 @@ html[data-next="1"] .bellrow{display:none}
 .box.grid .card{position:static;width:auto;height:auto;aspect-ratio:auto;
   transform:none;opacity:1;z-index:auto;
   gap:10px;padding:18px 14px 16px;border-radius:14px;
-  transition:transform .78s var(--eo),opacity .78s var(--eo),box-shadow .5s ease}
+  transition:transform .82s var(--spring),opacity .82s var(--spring),
+             box-shadow .5s ease}
 .box.grid .card .av{width:min(64%,198px)}
 .box.grid .card .nm{font-size:clamp(15px,1.35vw,20px);letter-spacing:-.01em}
 .box.grid .card .rl{font-size:11px;letter-spacing:.18em}
@@ -498,7 +510,8 @@ html[data-next="1"] .bellrow{display:none}
   var GRID=parseFloat(get('gridms'))||3200;
   var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='', fo=0, booted=false;
+  var ci=0, pi=0, phase='card', stepStart=0, cards=[], lastKey='', fo=0, booted=false,
+      moveUntil=0;
 
   /* FLIP between carousel and grid.
      Without this the spread is a jump cut: cards leave one layout and appear in
@@ -551,7 +564,6 @@ html[data-next="1"] .bellrow{display:none}
          with .remove(), which detaches them but keeps the reference — so the
          next, larger category would fill those nodes and never put them back. */
       if(!cards[i].parentNode) box.appendChild(cards[i]);
-      cards[i].classList.toggle('side',!!it.side);
     });
     for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
   }
@@ -571,20 +583,24 @@ html[data-next="1"] .bellrow{display:none}
     if(!bw||!bh) return;
     var w=Math.min(bh/1.24, bw*0.92);
     box.style.setProperty('--cw',w.toFixed(1)+'px');
-    box.style.setProperty('--off',(bw/2-(w/2)*0.94-6).toFixed(1)+'px');
+    box.style.setProperty('--off',(bw/2-(w/2)*0.87-6).toFixed(1)+'px');
   }
 
   /* ---- carousel: before, on stage, after ---- */
   function setCar(){
     var cat=CATS[ci], prev=CATS[(ci-1+CATS.length)%CATS.length], nx=CATS[(ci+1)%CATS.length];
-    pool([{p:prev.p[0],side:1},{p:cat.p[pi]},{p:nx.p[0],side:1}]);
+    pool([{p:prev.p[0]},{p:cat.p[pi]},{p:nx.p[0]}]);
     cards.forEach(function(c,i){
       var d=(i-1)+fo;
       c.style.setProperty('--d',d);
       c.style.setProperty('--ad',Math.abs(d));
-      c.classList.toggle('on',i===1);
+      c.dataset.state=(i===1)?'active':'inactive';
+      c.dataset.index=String(i);
       c.style.gridColumn=''; c.style.gridRow='';
     });
+    /* promote for the length of the move only; the tick retires it, so there is
+       no second timer on the page */
+    box.classList.add('moving'); moveUntil=performance.now()+900;
   }
 
   /* ---- grid: fills the frame, short rows centred on the middle ----
@@ -596,8 +612,8 @@ html[data-next="1"] .bellrow{display:none}
   function setGrid(){
     var cat=CATS[ci], n=cat.p.length;
     pool(cat.p.map(function(p){return {p:p}}));
-    cards.forEach(function(c){
-      c.classList.remove('side'); c.classList.remove('on');
+    cards.forEach(function(c,i){
+      c.dataset.state='listed'; c.dataset.index=String(i);
       c.style.removeProperty('--d'); c.style.removeProperty('--ad');
       c.style.gridColumn=''; c.style.gridRow='';
     });
@@ -649,6 +665,7 @@ setAccent(cat);
     catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
 
     size();
+    box.dataset.phase=phase; box.dataset.category=cat.n;
     if(phase==='card'){ morph('car'); setCar();
       if(!booted){ booted=true; slideIn() }
     }else{
@@ -677,8 +694,9 @@ setAccent(cat);
     addEventListener('resize',function(){ size(); if(phase==='card') setCar() });
     setInterval(function(){
       var dur=(phase==='card'?CARD:GRID);
-      var el=performance.now()-stepStart;
+      var now=performance.now(), el=now-stepStart;
       if(el>=dur){ advance(); el=0 }
+      if(now>moveUntil&&box.classList.contains('moving')) box.classList.remove('moving')
       /* fills: empty means the card has just taken the stage, full means handover */
       barFill.style.width=(Math.min(1,el/dur)*100).toFixed(2)+'%';
     },70);
