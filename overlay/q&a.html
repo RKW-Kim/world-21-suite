@@ -167,16 +167,56 @@ to{opacity:.62;transform:scaleY(1)}}
    top+129, so any card anchored at top >= 371 is still below the CTA by the time
    it goes invisible. The first pass travelled 1320px and held opacity to 62%,
    which put an opaque card at y=72 — straight through the headline. */
+/* ── NOTATION — future replacement, deliberately not built ──────────────
+   IDEA (raised by the user, parked here on purpose): replace the floating
+   cards with a single chat INPUT, as if you were typing to someone or to an
+   assistant. Text appears, is partly deleted mid-word, a different comment is
+   typed in its place, and the loop repeats — ending on the one that resolves.
+   The purpose is not decoration: it demonstrates the input path and invites
+   the viewer to comment, rather than showing comments that appear from nowhere.
+
+   WHY IT IS NOT IMPLEMENTED YET: this scene runs unattended for hours with no
+   person at the controls, and a typing loop has to look deliberate rather than
+   like a stuck cursor. Three things have to be solved before it can go in:
+
+     1. Cursor and caret behaviour. A blinking block caret at 17px competes
+        with the headline for attention. It needs to sit low, dim, and only
+        appear while a string is actually being edited.
+     2. Deletion has to read as deletion. Removing characters at an even rate
+        looks like text failing to load. It needs a hold before the first
+        backspace, and the new string should start before the old one has
+        finished clearing, or the gap reads as a pause.
+     3. It must never loop visibly. The strings and their order need to be
+        long enough that the repeat is not legible within a viewing, and the
+        dwell after the final string has to be long enough that nobody waits
+        through a full cycle wondering whether it has stopped.
+
+   Cost note: a typewriter is the first thing in this file that cannot be done
+   with CSS alone. It wants either a small JS interval mutating textContent —
+   which is fine, it is the same one-tick cost as the clock elsewhere — or a
+   steps() animation over a pre-split string, which stays on the compositor but
+   cannot express "hold, then delete from the middle". Prefer the interval.
+
+   If it is built, the floating cards above should stay for depth and this
+   should be the foreground element, not a replacement for them — the cards are
+   what make the scene look populated when nobody has commented yet. */
 .bub{position:absolute;z-index:2;max-width:300px;
   animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);
   will-change:transform,opacity}
 /* The colour token lives on .bub, not on .card, because the aura is drawn by
    .sway's pseudo-elements — and a custom property set on a child cannot be read
    by its parent. */
-.bub:has(.yt){--pc:rgba(255,45,72,.95)}
-.bub:has(.fb){--pc:rgba(48,138,245,.95)}
-.bub:has(.x) {--pc:rgba(255,255,255,.85)}
-.bub:has(.tt){--pc:rgba(0,229,255,.85)}
+/* --pc is the single platform colour, used for anything that can only take one
+   (the tail's aura). --pgl is what PAINTS the rim and the aura, and it is a
+   gradient layer rather than a colour so one platform can carry more than one.
+   TikTok's is the same cyan -> white -> red as its mark, so the bubble and the
+   logo it came from are visibly the same thing. A border cannot hold a gradient,
+   hence the padding-box/border-box pair below rather than border-color. */
+.bub:has(.yt){--pc:rgba(255,45,72,.95);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.fb){--pc:rgba(48,138,245,.95);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.x) {--pc:rgba(255,255,255,.85);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.tt){--pc:rgba(0,229,255,.85);
+  --pgl:linear-gradient(135deg,#25F4EE 0%,#ffffff 46%,#FE2C55 100%)}
 .sway{position:relative;
   animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s)}
 @keyframes bubRise{
@@ -206,7 +246,7 @@ to{opacity:.62;transform:scaleY(1)}}
    surface per card and pushes the text through it. */
 .sway::before,.sway::after{content:"";position:absolute;z-index:-1;pointer-events:none}
 .sway::before{inset:-2px;border-radius:22px;border-bottom-left-radius:14.5px;
-  padding:6px;background:var(--pc);
+  padding:6px;background:var(--pgl);
   /* punch the middle out so this is a RING, not a filled shape. A filled shape
      blurred behind an opaque card leaves a hard silhouette edge; a 6px ring
      blurred reads as light. exclude = content-box XOR border-box. */
@@ -222,10 +262,12 @@ to{opacity:.62;transform:scaleY(1)}}
   border-color:var(--pc) var(--pc) transparent transparent}
 @keyframes glowPulse{0%,100%{opacity:.38}50%{opacity:.85}}
 
-/* The rim. One flat colour, full weight, all the way round. */
-.bcard{position:relative;border:1.5px solid var(--pc);border-radius:20px;
+/* The rim. padding-box holds the card surface and border-box shows through the
+   1.5px transparent border to paint the rim — the only way to give a border a
+   gradient. Flat for every platform but TikTok, which carries two colours. */
+.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;
   border-bottom-left-radius:12.5px;padding:13px 18px 15px;
-  background:linear-gradient(#121216,#0e0e12);
+  background:linear-gradient(#121216,#0e0e12) padding-box,var(--pgl) border-box;
   /* The wide, even bloom. box-shadow is the only one of these that grows
      OUTWARD from the border box, which is what makes it visible at all — a
      separate glow layer of the same size as the card simply hides behind it. */
@@ -233,20 +275,21 @@ to{opacity:.62;transform:scaleY(1)}}
     0 0 40px 6px color-mix(in srgb,var(--pc) 15%,transparent),
     0 14px 36px rgba(0,0,0,.5)}
 .bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
-.bcard::before,.bcard::after{content:"";position:absolute;width:0;height:0;
-  border-style:solid;pointer-events:none;z-index:0;left:18px;bottom:-30px}
-.bcard::before{border:15px solid;
-  border-color:var(--pc) transparent transparent var(--pc);
-  /* drop-shadow follows the WEDGE's alpha, which box-shadow cannot do here: this
-     is a 0x0 box, so its border box is a rectangle and any box-shadow would
-     light a rectangle rather than the tail. */
-  filter:drop-shadow(0 0 5px var(--pc))
-         drop-shadow(0 0 13px color-mix(in srgb,var(--pc) 45%,transparent))}
-.bcard::after{border:9px solid;
-  border-color:#0e0e12 transparent transparent #0e0e12}
-.bcard.flip::before,.bcard.flip::after{left:auto;right:18px}
-.bcard.flip::before{border-color:var(--pc) var(--pc) transparent transparent}
-.bcard.flip::after{border-color:#0e0e12 #0e0e12 transparent transparent}
+/* ---- the tail
+   The classic two-triangle technique, but BOTH triangles are now the card's own
+   surface colour. The tail used to be a dark wedge inside a platform-coloured
+   outline, which is two tones — and at 18px that reads as a sticker laid onto
+   the card rather than as part of it.
+
+   With the outline gone the tail is one piece of the same material as the
+   bubble, and the only thing describing it is the glow behind it: .sway::after,
+   which is still the platform colour. So the shape belongs to the card and the
+   light around it belongs to the platform. One object, lit at the tail. */
+.bcard::before{content:"";position:absolute;width:0;height:0;
+  border-style:solid;pointer-events:none;z-index:0;left:18px;bottom:-30px;
+  border:15px solid;border-color:#0e0e12 transparent transparent #0e0e12}
+.bcard.flip::before{left:auto;right:18px;
+  border-color:#0e0e12 #0e0e12 transparent transparent}
 .bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
 .bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
 .bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
