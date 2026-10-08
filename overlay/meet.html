@@ -73,10 +73,11 @@
    Contract: no canvas, no rAF, no timers. One pass at load.
    ───────────────────────────────────────────────────────────────────────────── */
 :root{
-  --yellow:#FFC107; --ink:#0A0A0A;
+  --yellow:#FFC107; --hot:#F5A623; --ink:#0A0A0A;
   --fg:#FAFAFA; --muted:#A1A1AA; --faint:#8A8A94;
-  --fd:'Inter',system-ui,sans-serif;
+  --line:#2a2a2a; --fd:'Inter',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --dock:7vh;   /* 7% of the viewport: exactly 76px at 1080, and it scales */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:transparent}
@@ -94,7 +95,37 @@ svg{display:block}
 .vp[data-frame="1"]{border-radius:16px;border:1px solid rgba(255,255,255,.1);
   background:linear-gradient(180deg,rgba(12,12,15,.94),rgba(8,8,10,.96));
   box-shadow:0 26px 70px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.5)}
-.vp .empty[hidden]{display:none !important}
+.vp[data-frame="1"] .screen{top:38px}
+.vp .tex{display:none;position:absolute;inset:38px 0 0 0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 26%,#000 74%,transparent);
+          mask-image:linear-gradient(180deg,transparent,#000 26%,#000 74%,transparent)}
+.vp[data-frame="1"] .tex{display:block}
+
+/* ── the label ──
+   Two shapes from one element: a header bar in panel mode, a corner chip in
+   full frame. Both carry a scrim, because in full frame the text sits on
+   whatever the video happens to be showing. */
+.vp .tag{position:absolute;z-index:2;display:flex;align-items:center;gap:10px;
+  pointer-events:none;font-family:var(--fm);font-weight:600}
+.vp .tag[hidden],.vp .empty[hidden]{display:none !important}
+
+.vp[data-frame="1"] .tag{left:0;right:0;top:0;height:38px;padding:0 13px;
+  border-bottom:1px solid rgba(255,255,255,.08);background:transparent}
+
+.vp[data-frame="0"] .tag{right:44px;top:34px;padding:9px 16px;border-radius:999px;
+  background:rgba(10,10,12,.78);border:1px solid var(--line);
+  box-shadow:0 8px 26px rgba(0,0,0,.45)}
+.vp .dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);flex:none;
+  box-shadow:0 0 10px rgba(255,193,7,.85)}
+.vp .lab{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--fg);
+  white-space:nowrap}
+.vp .sub{font-size:10px;letter-spacing:.14em;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.vp[data-frame="1"] .sub{margin-left:auto;max-width:62%}
+/* a hairline between label and caption, panel mode only */
+.vp[data-frame="1"] .sub{padding-left:10px;border-left:1px solid rgba(255,255,255,.14)}
 
 /* ── empty state ── */
 .vp .empty{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;
@@ -125,20 +156,46 @@ svg{display:block}
 .vp .warn .wthen b{color:var(--fg);font-weight:600}
 .vp .warn .wnote{max-width:720px;font-family:var(--fm);font-weight:400;font-size:11.5px;
   line-height:1.85;letter-spacing:.02em;color:var(--faint);opacity:.85}
+
+/* ── chrome: full-frame iframes stacked ABOVE the player ──
+   pointer-events:none so this layer never swallows a click meant for OBS. */
+iframe.chrome{position:absolute;border:0;background:transparent;pointer-events:none}
+#wmFrame{inset:0;width:100%;height:100%;z-index:5}
+ /* width:100% is REQUIRED, not redundant. An iframe is a replaced element:
+    for an absolutely positioned replaced box, width:auto resolves to the
+    INTRINSIC width — the 300px default — and left/right are then ignored.
+    That silently crushed the strip into a 300px corner. Caught by rendering
+    at 1600x900 rather than only at 1920. */
+ #tkFrame{left:0;right:0;bottom:0;width:100%;height:var(--dock);z-index:6}
+
+/* ── setup guide ── */
+.guide{position:absolute;inset:0;z-index:9;pointer-events:none;display:none}
+html[data-guide="1"] .guide{display:block}
+.guide i{position:absolute;border:1px dashed rgba(255,193,7,.55);border-radius:10px}
+.guide i::after{content:attr(data-l);position:absolute;left:8px;bottom:5px;
+  font-family:var(--fm);font-weight:600;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--yellow)}
 </style>
 </head>
 <body>
 <div class="stage">
 
   <div class="vp" id="vp">
+    <div class="tex" aria-hidden="true"></div>
     <div class="screen"></div>
+    <div class="tag" id="tag" hidden>
+      <span class="dot" aria-hidden="true"></span>
+      <span class="lab" id="tagLab">now playing</span>
+      <span class="sub" id="tagSub"></span>
+    </div>
     <!-- Shown only on file://. YouTube answers an embed from file:// with a
          bare "Error 153" and two buttons, which explains nothing. -->
     <div class="warn" id="warn" hidden>
       <span class="wbig">You opened this as a file</span>
       <span class="whint">youtube will not start an embedded player from a
         <b>file://</b> page &mdash; there is no referrer to send, so it answers
-        <b>error 153</b>. nothing is wrong with this scene.</span>
+        <b>error 153</b>. nothing is wrong with these scenes. the watermark and
+        ticker around this are the real ones and they are working right now.</span>
       <span class="wcmd">./serve.sh</span>
       <span class="wthen">then open the <b>http://127.0.0.1:8017</b> address it
         prints, instead of the file path</span>
@@ -153,10 +210,22 @@ svg{display:block}
         <path d="M19 10.4v11.2L29.4 16z" fill="#FFC107"/>
       </svg>
       <span class="big">No video set</span>
-      <span class="hint"><b>?pl=hdf</b> &nbsp;·&nbsp; <b>?pl=menta</b> &nbsp;·&nbsp; <b>?pl=almond</b> &nbsp;·&nbsp; <b>?pl=all</b><br>
-        or <b>?yt=</b> with any YouTube URL<br>
-        <b>&uarr;</b> <b>&darr;</b> volume &nbsp;·&nbsp; <b>pgup</b> <b>pgdn</b> previous / next</span>
+      <span class="hint"><b>?src=</b> an mp4 or url &nbsp;·&nbsp; <b>?set=</b> several, separated by |<br>
+        cleanest picture — no player ui at all<br>
+        <b>?yt=</b> a youtube url &nbsp;·&nbsp; <b>?pl=hdf|menta|almond|all</b><br>
+        youtube cannot hide its own title or buttons<br>
+        <b>&uarr;</b><b>&darr;</b> volume &nbsp;·&nbsp; <b>pgup</b><b>pgdn</b> previous / next</span>
     </div>
+  </div>
+
+  <!-- the real modules, embedded — not copied -->
+  <iframe class="chrome" id="wmFrame" title="watermark" scrolling="no"></iframe>
+  <iframe class="chrome" id="tkFrame" title="ticker" scrolling="no"></iframe>
+
+  <div class="guide" aria-hidden="true">
+    <i data-l="player" id="gVp" style=""></i>
+    <i data-l="watermark · tl" style="left:20px;top:20px;width:340px;height:104px"></i>
+    <i data-l="ticker dock" style="left:20px;bottom:1%;right:20px;height:7%"></i>
   </div>
 
 </div>
@@ -176,6 +245,8 @@ svg{display:block}
      enough not to fight the meeting. Override with ?vol=0-100. */
   var VOL=Math.max(0,Math.min(100,parseInt(q('vol','50'),10)||0));
 
+  if(q('guide')==='1')document.documentElement.dataset.guide='1';
+
   /* ── the player ──
      Geometry defaults to the whole canvas. Anything smaller is panel mode and
      gets the framed treatment automatically, so there is one decision to make
@@ -186,6 +257,36 @@ svg{display:block}
   vp.style.width=W+'%'; vp.style.height=H+'%';
   var full=(W>=100&&H>=100);
   vp.dataset.frame=full?'0':'1';
+  document.getElementById('gVp').style.cssText=
+    'left:'+X+'%;top:'+Y+'%;width:'+W+'%;height:'+H+'%';
+
+  /* ── chrome ── */
+  var wmExtra=[];
+  /* dy defaults to 0 because in the default layout the player is the
+     background, not another app's window. When you DO lay this over a raw
+     Meet capture, Meet owns the top 72px with the meeting title in it, so pass
+     ?wmdy=64 to drop the mark clear of that bar. */
+  var dy=parseInt(q('wmdy',''),10); if(isNaN(dy))dy=0;
+  wmExtra.push('dy='+dy);
+  /* a scrim by default: in full frame the gold mark sits on live video and
+     will vanish over anything bright without it */
+  if(q('scrim','1')!=='0')wmExtra.push('scrim=1');
+  var wsize=q('wsize',''); if(wsize!=='') wmExtra.push('size='+wsize);
+  var wcorner=q('wcorner',''); if(wcorner!=='') wmExtra.push('corner='+wcorner);
+  var wmFrame=document.getElementById('wmFrame');
+  wmFrame.style.display=(q('wm','1')==='0')?'none':'';
+  wmFrame.src='watermark.html?'+wmExtra.join('&');
+
+  var tkFrame=document.getElementById('tkFrame');
+  tkFrame.style.display=(q('tk','1')==='0')?'none':'';
+  /* pad=0 here: in the meet scene the strip sits over a full-frame video, and
+     a 12px inset on each side reads as a floating bar rather than a dock.
+     ?tpad= overrides it if you want the inset back. */
+  var tkParams=[];
+  if(q('tklive','')==='0')tkParams.push('live=0');
+  var tpad=parseInt(q('tpad',''),10); if(isNaN(tpad))tpad=0;
+  tkParams.push('pad='+Math.max(0,Math.min(120,tpad)));
+  tkFrame.src='ticker.html?'+tkParams.join('&');
 
   /* ── the video, or a set of them ──
      Authored here rather than as a YouTube playlist id so the order, the
@@ -233,13 +334,39 @@ svg{display:block}
   if(isNaN(start))start=0;
 
   var lab=dec(q('lab','')).trim()||(set?NAMES[plName]||plName:'now playing');
+  var sub=dec(q('cap','')).trim();
+  document.getElementById('tagLab').textContent=lab;
+  var subEl=document.getElementById('tagSub');
+  subEl.textContent=sub; subEl.hidden=!sub;
 
   /* On file:// there is no referrer, so YouTube's player refuses to start and
      paints "Error 153" over the whole frame with no explanation. Say it here
-     instead. */
+     instead. The chrome still loads either way: those are same-directory
+     file:// iframes, which Firefox is happy with — it is only the remote
+     player that needs a real origin. */
   if(id&&location.protocol==='file:'){
-document.getElementById('empty').hidden=true;
+    document.getElementById('empty').hidden=true;
     document.getElementById('warn').hidden=false;
+    document.getElementById('tag').hidden=false;
+    return;
+  }
+
+  /* ── local files: the clean path ──
+     A <video> element with no controls attribute has no player chrome at all:
+     no title block, no Watch-on-YouTube badge, no play/pause bar, and no
+     buffering spinner, because that is all part of the YouTube player rather
+     than part of video. Volume is a real number we set ourselves rather than
+     something we ask somebody else's player to do.
+
+     ?src= one file. ?set= several, separated by |, for pgup/pgdn to walk. */
+  var files=dec(q('set','')).split('|').map(function(s){return s.trim()}).filter(Boolean);
+  var one =dec(q('src','')).trim();
+  if(one) files.unshift(one);
+  if(files.length){
+    document.getElementById('empty').hidden=true;
+    document.getElementById('tag').hidden=false;
+    document.getElementById('tagLab').textContent=lab;
+    localVideo(files,VOL,q('mute','0')!=='0');
     return;
   }
 
@@ -270,84 +397,151 @@ document.getElementById('empty').hidden=true;
     f.allowFullscreen=true; f.title=lab;
     document.querySelector('.vp .screen').appendChild(f);
     document.getElementById('empty').hidden=true;
-    transport(f,!!listIds.length,VOL,q('mute','0')!=='0');
+    document.getElementById('tag').hidden=false;
+    transport(f,!!listIds.length,VOL);
   }
 })();
 
-/* ── transport ────────────────────────────────────────────────────────────
-   Unmuted autoplay does not exist. Chrome and Safari both refuse to start
-   audible video without a user gesture, so asking for mute=0 and autoplay=1 in
-   the same URL gets you a frame with a dead play button in it — which is
-   exactly the failure that happens mid-presentation.
+/* ── local transport ──────────────────────────────────────────────────────
+   The YouTube path has to ask a stranger's player to change the volume and
+   hope it listened. This one owns the element, so volume is just a number and
+   the keyboard is exact. No controls attribute, which is the entire trick:
+   the browser draws no player UI at all, so there is nothing to hide, nothing
+   to appear on hover, and no spinner while it buffers. */
+function localVideo(files,VOL,startMuted){
+  var v=document.createElement('video');
+  v.id='player';
+  /* no `controls` — that omission is the whole design */
+  v.playsInline=true; v.preload='auto';
+  v.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;'+
+                  'border:0;display:block;background:#000;object-fit:contain';
+  document.querySelector('.vp .screen').appendChild(v);
 
-   So the frame always tries to be playing, and always tries to be at half
-   volume, by the least bad route available:
+  var i=0, want=VOL, audible=!startMuted;
 
-     1. Ask the embed for autoplay at half volume with mute=0. This works
-        outright on browsers that have decided the viewer is a regular at the
-        site, and on any browser where the presenter has touched the page
-        already. Those are the common cases in a rehearsal room and during a
-        show, so most of the time it just plays.
-     2. If that is refused, the embed falls back to muted and keeps playing.
-        Nothing is ever stuck on a dead play button.
-     3. On the FIRST keypress or click, unmute and set the volume. Every
-        presenter does that within a second of speaking, so the frame is
-        audible long before anyone is watching it.
-
-   Volume is ArrowUp / ArrowDown in steps of ten. PageUp / PageDown change
-   track. ArrowLeft / ArrowRight are deliberately NOT bound here: the deck uses
-   them to change scene, and two meanings for one key is how you skip to the
-   wrong scene mid-sentence. */
-function transport(f,hasList,VOL,startMuted){
-  var player=null, armed=false, vol=VOL;
-
-  function setVol(v){
-    vol=Math.max(0,Math.min(100,v));
-    if(player){ try{ player.setVolume(vol); }catch(_){} }
+  function show(){
+    v.src=files[i];
+    /* Set the level BEFORE load/play. Leaving it to loadedmetadata means the
+       first moments of every clip play at full volume, which is exactly the
+       moment nobody is ready for it. */
+    v.volume=want/100;
+    v.muted=!audible;
+    v.load();
+    v.play().catch(function(){});   /* blocked until a gesture; arm() retries */
   }
+  function arm(){
+    audible=true;
+    v.muted=false; v.volume=want/100;
+    var p=v.play(); if(p&&p.catch) p.catch(function(){});
+  }
+  function nudge(d){
+    want=Math.max(0,Math.min(100,want+d));
+    /* Stay audible while moving the volume — a nudge that silences the show
+       is worse than no control at all. */
+    audible=true; v.muted=false; v.volume=want/100;
+  }
+  function step(n){
+    i=(i+n+files.length)%files.length;
+    show();
+  }
+
+  v.addEventListener('ended',function(){ if(files.length>1) step(1); });
+  v.addEventListener('loadedmetadata',function(){ v.volume=want/100; v.muted=!audible; });
 
   function onKey(e){
     var k=e.key;
-
-    if(k==='ArrowUp'||k==='ArrowDown'){
-      e.preventDefault();
-      armed();
-      setVol(vol+(k==='ArrowUp'?10:-10));
-      return;
-    }
-
-    if(k===' '||k==='Enter'){
-      if(player){ e.preventDefault(); armed(); player.playVideo(); }
-      return;
-    }
-
-    if(k!=='PageUp'&&k!=='PageDown') return;
-    if(!player||!hasList) return;
-    e.preventDefault();
-    armed();
-    if(k==='PageUp')player.previousVideo(); else player.nextVideo();
+    if(k==='ArrowUp'){ e.preventDefault(); nudge(10); return; }
+    if(k==='ArrowDown'){ e.preventDefault(); nudge(-10); return; }
+    if(k===' '||k==='Enter'){ e.preventDefault(); arm(); return; }
+    if(k==='PageUp'){ e.preventDefault(); step(-1); return; }
+    if(k==='PageDown'){ e.preventDefault(); step(1); return; }
   }
-
-  /* The one gesture that unblocks audible playback. */
-  function arm(){
-    if(armed||!player) return; armed=true;
-    try{ player.unMute(); player.setVolume(vol); player.playVideo(); }catch(_){}
-  }
-  /* keep the name stable for the pointerdown listener below */
-  function armed(){ arm(); }
-
   addEventListener('keydown',onKey);
   addEventListener('pointerdown',arm);
-  /* Keys the deck does not use, handed over so volume and the playlist work
-     while the deck is driving. Accepts everything, not just the track keys:
-     the deck has already kept the ones it needs. */
   addEventListener('message',function(e){
     if(e.data&&e.data.type==='smiletv-key')
       onKey({key:e.data.key,preventDefault:function(){}});
   });
 
+  show();
+}
+
+/* ── transport ────────────────────────────────────────────────────────────
+   Unmuted autoplay does not exist. Chrome and Safari both refuse to start
+   audible video without a user gesture, so asking for ?mute=0 and autoplay=1
+   in the same URL gets you a frame with a dead play button in it — which is
+   the exact failure that happens mid-presentation.
+
+   So: request unmuted, then arm the IFrame API and, on the FIRST keypress or
+   click, un-mute, set the volume and start. Every presenter does that within a
+   second of speaking, so in practice the frame is playing by the time anyone
+   looks at it. Until then it sits muted rather than stuck.
+
+   PageUp / PageDown skip the set. They are bound here AND accepted by
+   postMessage, because when this scene runs inside the presenter deck the
+   focused element is YouTube's cross-origin iframe, which swallows keys
+   before any document listener can see them. The deck re-broadcasts them. */
+function transport(f,hasList,VOL){
+  var player=null, armed=false, want=VOL, audible=false;
+
+  /* Push the state we want at the player. Safe to call as often as we like,
+     and deliberately does nothing at all until the player object exists —
+     which is the whole point. The old version set armed=true before testing
+     for the player, so a keypress that arrived before YouTube was ready spent
+     the one gesture that would have unmuted it, and the video stayed silent
+     for the rest of the show. */
+  function apply(){
+    if(!player) return false;
+    try{
+      if(audible) player.unMute(); else player.mute();
+      player.setVolume(want);
+      return true;
+    }catch(_){ return false; }
+  }
+  /* Try to become audible. Only counts as armed once it actually worked. */
+  function arm(){
+    audible=true;
+    if(!apply()) return;      /* stay unarmed, try again on the next event */
+    armed=true;
+    try{ player.playVideo(); }catch(_){}
+  }
+
+  /* up / down is volume. Step of ten, and it shows in the player's own
+     readout, so pressing it and hearing nothing is no longer ambiguous. */
+  function nudge(d){
+    want=Math.max(0,Math.min(100,want+d));
+    if(!player){ arm(); return; }
+    audible=true; apply();
+  }
+
+  function onKey(e){
+    var k=e.key;
+
+    if(k==='ArrowUp'){ e.preventDefault(); nudge(10); return; }
+    if(k==='ArrowDown'){ e.preventDefault(); nudge(-10); return; }
+
+    if(k===' '||k==='Enter'){ if(player){e.preventDefault();arm();player.playVideo()} return; }
+
+    /* Track keys. ArrowLeft/ArrowRight are deliberately NOT bound here: the
+       deck uses them to change scene, and one key with two meanings is how you
+       land on the wrong screen mid-sentence. */
+    if(k!=='PageUp'&&k!=='PageDown') return;
+    if(!player||!hasList) return;
+    e.preventDefault();
+    arm();
+    if(k==='PageUp')player.previousVideo(); else player.nextVideo();
+  }
+  function onMsg(e){
+    if(e.data&&e.data.type==='smiletv-key')
+      onKey({key:e.data.key,preventDefault:function(){}});
+  }
+
+  addEventListener('keydown',onKey);
+  addEventListener('pointerdown',arm);
+  addEventListener('message',onMsg);
+
   /* The API script is only needed for transport. If it never arrives the video
-     still plays and the arrow keys simply do nothing. */
+     still plays (muted, autoplayed) and the page degrades to a poster. */
   var tag=document.createElement('script');
   tag.src='https://www.youtube.com/iframe_api';
   tag.onerror=function(){};
@@ -356,11 +550,11 @@ function transport(f,hasList,VOL,startMuted){
     try{
       player=new YT.Player('player',{events:{onReady:function(e){
         player=e.target;
-        /* The volume the URL asked for, then the same attempt at audible
-           playback the embed already made — so a browser that allowed it stays
-           allowed, and one that refused does not get stuck retrying. */
-        try{ player.setVolume(vol); }catch(_){}
-        if(!startMuted){ try{ player.unMute(); }catch(_){} }
+        /* Re-assert whatever we were already asking for. If the presenter
+           pressed up or clicked before the player existed, that intent is
+           held here and applied now instead of being lost. */
+        apply();
+        if(armed){ try{ player.playVideo(); }catch(_){} }
       }}});
     }catch(_){}
   };
