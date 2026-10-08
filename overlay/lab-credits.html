@@ -226,30 +226,54 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
 
    Everything is one transform per card built from five custom properties, so
    a change is five property writes rather than a class swap or a re-render. */
-.box[data-phase=car]{perspective:1000px;perspective-origin:50% 50%}
+/* ═══ the slide ═══
+   A coverflow deck, matched against Glide.js's own hero rather than guessed at.
+
+   The thing that makes theirs read as solid slabs is not the rotation, it is the
+   extrusion: each frame is a box with two thin side panels folded back at
+   rotateY(90deg) with a heavy outer border, and preserve-3d keeps them in the
+   same space. Without those two panels a turned card looks like skewed paper,
+   which is exactly what the first attempt looked like.
+
+   Theirs is also a plain flex row with a gap — the cards do NOT overlap, they
+   are not scaled down, and they are not faded. All the depth comes from the
+   rotation and the side panels. The earlier version invented a tuck and a
+   falloff, neither of which is in the original. */
+.box[data-phase=car]{display:flex;align-items:center;justify-content:center;
+  gap:var(--gap,28px);overflow:visible}
 .box[data-phase=car] .card{
-  position:absolute;left:50%;top:50%;
-  width:var(--cw,280px);height:var(--cw,280px);
+  position:relative;flex:none;
+  width:var(--cw,220px);height:var(--ch,360px);
+  transform:perspective(2000px);transform-style:preserve-3d;
+  transition:transform 1s ease-in-out;
+  backface-visibility:hidden}
+/* the slab carries the content and the turn; the origin is the edge facing the
+   centre, which is what makes the deck fan rather than spin */
+.slab{position:absolute;inset:0;transform-style:preserve-3d;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:16px;padding:24px 18px 22px;border-radius:var(--radius);text-align:center;
   background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.014));
-  box-shadow:0 22px 48px rgba(0,0,0,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09);
   transform-origin:var(--ox,50% 50%);
-  transform:translate(-50%,-50%) translateX(var(--x,0px))
-            rotateY(var(--ry,0deg)) scale(var(--sc,1));
-  opacity:var(--op,1);z-index:var(--z,1);
-  backface-visibility:hidden;
-  transition:transform .82s var(--spring),opacity .82s var(--spring),
-             box-shadow .5s ease}
-/* promoted only while the fan moves, so an idle scene is not holding five
-   composited layers alive */
-.box[data-phase=car][data-moving] .card{will-change:transform,opacity}
+  transform:rotateY(var(--ry,0deg));
+  transition:transform 1s ease-in-out}
+/* the two folded side panels. This is the extrusion. */
+.slab>i{position:absolute;top:0;width:var(--dep,30px);height:100%;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.28));
+  border:2px solid rgba(255,255,255,.22);backface-visibility:hidden;
+  pointer-events:none}
+.slab>i.l{left:0;transform:translate3d(1px,0,calc(-1 * var(--dep,30px))) rotateY(-90deg);
+  transform-origin:0 50%;border-width:3px;border-left-width:9px;border-radius:var(--radius) 0 0 var(--radius)}
+.slab>i.r{right:0;transform:translate3d(-1px,0,calc(-1 * var(--dep,30px))) rotateY(90deg);
+  transform-origin:100% 50%;border-width:3px;border-right-width:9px;border-radius:0 var(--radius) var(--radius) 0}
+.box[data-phase=car][data-moving] .card{will-change:transform}
+.box[data-phase=car][data-moving] .slab{will-change:transform}
 /* a scrim on the receding cards, so depth does not have to be sold by
    brightness alone once the cards are turned edge on */
 
 .card[data-variant=flank] .av{filter:saturate(.35) brightness(.82)}
 .card[data-variant=flank] .nm{color:var(--muted)}
-.card[data-variant=active]{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
+.card[data-variant=active] .slab{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
   0 0 0 1px var(--accent-line),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--accent-soft)}
 .card[data-variant=flank] .rl,
 .card[data-variant=flank] .nm{opacity:0}
@@ -276,6 +300,9 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
   color:var(--muted)}
 .nm{font-weight:800;font-size:clamp(19px,2.1vw,27px);letter-spacing:-.02em;line-height:1.12;
   color:#F2F2F6;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* in the deck the cards are narrow and tall, so the name wraps to two lines
+   instead of truncating to "the smile sq…" */
+.box[data-phase=car] .nm{white-space:normal;overflow-wrap:anywhere;font-size:17px;line-height:1.16}
 
 /* ---- the board ----
    Fills the frame on both axes. A short row is centred on integer grid lines —
@@ -289,6 +316,9 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
   border-radius:var(--radius-md);
   transition:transform .82s var(--spring),opacity .82s var(--spring),
              box-shadow .5s ease}
+.box[data-phase=grid] .slab{position:static;inset:auto;height:auto;transform:none;
+  transform-style:flat}
+.box[data-phase=grid] .slab>i{display:none}
 .box[data-phase=grid] .av{width:min(64%,198px)}
 .box[data-phase=grid] .nm{font-size:clamp(15px,1.35vw,20px);letter-spacing:-.01em}
 .box[data-phase=grid] .rl{font-size:11px;letter-spacing:.18em}
@@ -370,6 +400,9 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
 var MARK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#FFD100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg>';
 
 /* Tabler, one stroke weight throughout — a drawn icon set, not unicode */
+/* real portraits, filled from the World21 team roll. empty means the smile mark. */
+var AVATAR={};
+
 var ICON={
   mic:'<path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><path d="M12 19v3"/>',
   users:'<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
@@ -488,7 +521,8 @@ function makeCard(){
   d.className='card';
   d.setAttribute('role','group');
   d.setAttribute('aria-roledescription','slide');
-  d.innerHTML='<span class="av">'+MARK+'</span><span class="rl"></span><span class="nm"></span>';
+  d.innerHTML='<div class="slab"><span class="av">'+MARK+'</span><span class="rl"></span>'+
+    '<span class="nm"></span><i class="l"></i><i class="r"></i></div>';
   return d;
 }
 
@@ -530,34 +564,23 @@ function morph(to){
    the frame is never half empty. A category of one gets a lone card on stage
    with the neighbours either side — which is the coverflow reading of a
    one-person department, and matches what the board used to say with `1 / -1`. */
-/* Three across. A five wide fan will not fit a 752px panel without either
-   running off the edge or collapsing the overlap, and overlap is the effect. */
+/* A plain flex row with a gap, which is what Glide.js actually does: perView
+   slides, a fixed gap, no overlap and no scale or opacity falloff. Width is
+   solved from the frame and the gap so the deck always fills the panel. */
 var FAN=3;
+var GAP=28;
 var ANGLE=20;                     /* per step; the nearest pair turns at twice this */
-var TUCK=0.35;                    /* how far the neighbour hides behind the centre */
 
-/* Solve the card size and spacing from the frame instead of hard coding them.
-
-   A card turned ANGLE degrees only reads cos(ANGLE) as wide, so a neighbour's
-   visible half is vis*W/2, not W/2. Its near edge tucks TUCK of the way inside
-   the centre card's right edge, which fixes the spacing:
-
-       S - vis*W/2 = (1-TUCK)*W/2     ->  S = (W/2)*(1-TUCK+vis)
-
-   and the far edge of that neighbour has to land on the frame edge:
-
-       S + vis*W/2 <= bw/2            ->  W <= bw / (1-TUCK+2*vis)
-
-   Get this wrong in one direction and the fan runs off the panel; in the other
-   the cards stop overlapping and the coverflow collapses into a plain row. */
 function fan(){
   var bw=box.clientWidth, bh=box.clientHeight;
   if(!bw||!bh) return;
-  var vis=Math.cos(ANGLE*2*Math.PI/180);
-  var w=Math.min(bh, bw/(1-TUCK+2*vis));
-  var S=(w/2)*(1-TUCK+vis);
+  var w=(bw-GAP*(FAN-1))/FAN;
+  w=Math.min(w, bh/1.45);         /* keep them portrait rather than squat */
   box.style.setProperty('--cw',w.toFixed(1)+'px');
-  return {w:w,S:S,vis:vis};
+  box.style.setProperty('--ch',(w*1.45).toFixed(1)+'px');
+  box.style.setProperty('--gap',GAP+'px');
+  box.style.setProperty('--dep',(w*0.13).toFixed(1)+'px');
+  return {w:w};
 }
 
 function personFor(k){
@@ -574,8 +597,7 @@ function personFor(k){
 }
 
 function setCar(){
-  var g=fan();
-  if(!g) return;
+  if(!fan()) return;
   var half=(FAN-1)/2, items=[];
   for(var d=0;d<FAN;d++){
     var k=d-half;
@@ -586,11 +608,9 @@ function setCar(){
   pool(items.map(function(it){return it.p}));
   items.forEach(function(it,i){
     var c=cards[i], ad=Math.abs(it.k), b=Math.max(ad,2);
-    c.style.setProperty('--x',(it.k*g.S).toFixed(1)+'px');
+    /* the edge facing the centre is the pivot: 100% going left, 0% going right */
     c.style.setProperty('--ry',(it.k<0?ANGLE*b:-ANGLE*b)+'deg');
     c.style.setProperty('--ox',it.k<0?'100% 50%':(it.k>0?'0% 50%':'50% 50%'));
-    c.style.setProperty('--sc',(1-ad*0.05).toFixed(3));
-    c.style.setProperty('--op',(1-ad*0.17).toFixed(3));
     c.style.setProperty('--z',String(60-ad*10));
     c.dataset.variant=it.k===0?'active':'flank';
     c.dataset.index=String(it.k);
@@ -606,7 +626,7 @@ function setCar(){
 function stagger(){
   var c=cards.find(function(x){return x.dataset.variant==='active'});
   if(!c) return;
-  var els=[].slice.call(c.querySelectorAll('.av,.rl,.nm'));
+  var els=[].slice.call(c.querySelectorAll('.slab .av,.slab .rl,.slab .nm'));
   els.forEach(function(el){el.style.transition='none';el.style.opacity='0';
     el.style.transform='translateY(18px)'});
   void c.offsetWidth;
