@@ -268,12 +268,31 @@ html[data-next="1"] .bellrow{display:none}
 /* ---- the portrait slot ----
    The signal. Circular, because the mark is a circle and a portrait in a circle
    is a broadcast convention rather than a style choice. */
+/* Two blooms over a near-black base, which is the shape a preset card is: one
+   light source in the top-left corner, a second in the bottom-right, and a lot
+   of empty dark between them. A corner-to-corner linear ramp cannot do this --
+   it has no darkness to sit against, so the whole disc ends up mid-tone and
+   flat. The ramps fade to nothing at 55% so the base shows through the middle.
+
+   The grain is the other half of it. A perfectly clean bloom reads as plastic;
+   the noise is what makes it read as light falling on a surface. */
 .av{position:relative;width:min(58%,150px);height:auto;aspect-ratio:1;border-radius:50%;
   container-type:inline-size;overflow:hidden;
   display:grid;place-items:center;flex:none;
-  background:linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
+  background:
+    radial-gradient(farthest-corner at 12% 12%,var(--c1),transparent 42%),
+    radial-gradient(farthest-corner at 88% 88%,var(--c3),transparent 42%),
+    linear-gradient(150deg,var(--c2) 0%,#08080B 72%);
   box-shadow:inset 0 2px 0 rgba(255,255,255,.14),
     inset 0 -6px 14px rgba(0,0,0,.45)}
+/* grain, as a tiling noise plate rather than a filter -- a filter on the disc
+   would also grain the photograph inside it */
+.av::after{content:'';position:absolute;inset:0;pointer-events:none;
+  opacity:.34;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  background-size:120px 120px}
+/* the grain plate is a sibling overlay, so the content sits above it */
+.av svg,.av img,.av .ini{position:relative;z-index:1}
 .av svg{width:58%;height:58%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 .av img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
 /* a wordmark is wider than a portrait, so it is contained rather than cropped */
@@ -445,12 +464,15 @@ html[data-next="1"] .bellrow{display:none}
     return deg;
   }
   function C(name){
-    var h=hueFor(name);
-    /* L drops and C falls across the ramp: the top of the disc catches the
-       light, the bottom settles into the panel */
-    return { c1:'oklch(78% .155 '+h+')',
-             c2:'oklch(58% .175 '+h+')',
-             c3:'oklch(38% .120 '+h+')' };
+    var h0=hueFor(name);
+    /* The second bloom sits on the other side of the wheel from the first rather
+       than at the same hue, which is what gives a preset depth: one warm corner
+       against a cool one, so the disc reads as lit from somewhere. Two radials
+       from the same hue just look like one blur with a smudge in it. */
+    var h1=(h0+168)%360;
+    return { c1:'oklch(76% .195 '+h0+')',
+             c2:'oklch(46% .15 '+h0+')',
+             c3:'oklch(60% .175 '+h1+')' };
   }
   /* Real portraits, inlined rather than hot-linked. A browser source that
    fetches from the network at air time is one CDN outage away from a broken
@@ -723,12 +745,11 @@ var CATS=(function(){
   function advance(){
     var cat=CATS[ci], n=cat.p.length;
     slot++;
-    /* One pass over the doubled track is one full turn of this department: it
-       reaches every person twice, which is what the duplication is for, and only
-       then does the roll move to the next department. Advancing the department
-       mid-pass is what used to leave the roll stuck showing one team forever --
-       slot walks the track, ci walks the departments. */
-    if(slot>=2*n){ ci=(ci+1)%CATS.length; slot=0; enter(true); return }
+    /* Everyone in this department, once, then the roll moves on. The track is
+       still built doubled -- the second copy is the scroll runway that lets the
+       last card sit centred instead of jammed against the end -- but the cursor
+       only ever walks the first copy, so no one is credited twice. */
+    if(slot>=n){ ci=(ci+1)%CATS.length; slot=0; enter(true); return }
     enter(false);
   }
   if(reduced){

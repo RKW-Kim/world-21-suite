@@ -1,0 +1,40 @@
+[
+  {
+    "scene": "01-starting",
+    "source": "starting.html",
+    "bytes": 448234,
+    "pageErrors": [
+      "Cannot set properties of null (setting 'textContent')"
+    ]
+  },
+  {
+    "scene": "02-tech-diff",
+    "source": "tech-diff.html",
+    "bytes": 535332,
+    "pageErrors": []
+  },
+  {
+    "scene": "03-qa",
+    "source": "q%26a.html",
+    "bytes": 2348742,
+    "pageErrors": []
+  },
+  {
+    "scene": "04-off-air",
+    "source": "offair.html",
+    "bytes": 119922,
+    "pageErrors": []
+  },
+  {
+    "scene": "05-meet",
+    "source": "meet.html",
+    "bytes": 869256,
+    "pageErrors": []
+  },
+  {
+    "scene": "06-end-credits",
+    "source": "lab-credits.html",
+    "bytes": 382244,
+    "pageErrors": []
+  }
+]
