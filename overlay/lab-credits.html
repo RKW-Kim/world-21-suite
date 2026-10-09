@@ -257,15 +257,23 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
   transform-origin:var(--ox,50% 50%);
   transform:rotateY(var(--ry,0deg));
   transition:transform 1s ease-in-out}
-/* the two folded side panels. This is the extrusion. */
+/* the two folded side panels. This is the extrusion.
+   Glide hard-codes the depth at 3rem with a 3px face border and a 9px leading
+   edge — 6.25% and 18.75% of the panel. Ours scales with the card, so both of
+   those have to scale with it. Left as fixed pixels, a 9px edge ate 58% of a
+   15px panel: the side stopped reading as a face and became a bar glued to the
+   edge, which is exactly what it looked like. */
 .slab>i{position:absolute;top:0;width:var(--dep,30px);height:100%;
   background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.28));
-  border:2px solid rgba(255,255,255,.22);backface-visibility:hidden;
-  pointer-events:none}
+  border-style:solid;border-color:rgba(255,255,255,.22);
+  border-width:calc(var(--dep,30px)*.0625);
+  backface-visibility:hidden;pointer-events:none}
 .slab>i.l{left:0;transform:translate3d(1px,0,calc(-1 * var(--dep,30px))) rotateY(-90deg);
-  transform-origin:0 50%;border-width:3px;border-left-width:9px;border-radius:var(--radius) 0 0 var(--radius)}
+  transform-origin:0 50%;border-left-width:calc(var(--dep,30px)*.1875);
+  border-radius:var(--radius) 0 0 var(--radius)}
 .slab>i.r{right:0;transform:translate3d(-1px,0,calc(-1 * var(--dep,30px))) rotateY(90deg);
-  transform-origin:100% 50%;border-width:3px;border-right-width:9px;border-radius:0 var(--radius) var(--radius) 0}
+  transform-origin:100% 50%;border-right-width:calc(var(--dep,30px)*.1875);
+  border-radius:0 var(--radius) var(--radius) 0}
 .box[data-phase=car][data-moving] .card{will-change:transform}
 .box[data-phase=car][data-moving] .slab{will-change:transform}
 /* a scrim on the receding cards, so depth does not have to be sold by
@@ -582,7 +590,10 @@ function fan(){
   box.style.setProperty('--cw',w.toFixed(1)+'px');
   box.style.setProperty('--ch',(w*1.45).toFixed(1)+'px');
   box.style.setProperty('--gap',GAP+'px');
-  box.style.setProperty('--dep',(w*0.13).toFixed(1)+'px');
+  /* Glide's depth is a flat 3rem regardless of the card. Ours has to track the
+     card, but it keeps Glide's proportion of the width and is floored, because
+     below about 26px the folded faces stop reading as depth at all. */
+  box.style.setProperty('--dep',Math.max(26,w*0.16).toFixed(1)+'px');
   return {w:w};
 }
 
