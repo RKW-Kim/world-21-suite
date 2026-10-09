@@ -168,7 +168,7 @@ html[data-next="1"] .bellrow{display:none}
    viewer where they are in the roll. It takes the category's colour. ---- */
 .cat{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
 .cat .ci{width:64px;height:64px;display:grid;place-items:center;border-radius:12px;
-  border:1px solid var(--acm);background:var(--acs);
+  border:1px solid var(--acm);background:var(--panel);
   box-shadow:0 0 26px var(--acs),inset 0 1px 0 rgba(255,255,255,.09)}
 .cat .ci svg{width:33px;height:33px;fill:none;stroke:var(--ac);stroke-width:1.6;
   stroke-linecap:round;stroke-linejoin:round}
@@ -204,6 +204,11 @@ html[data-next="1"] .bellrow{display:none}
    and never shows an end. When the cursor runs past the halfway mark it steps
    back by exactly n slots — which is invisible, because slot n is a picture of
    the same person as slot 0 and the landing is the correct next beat anyway. */
+/* ---- the roll ----
+   One track per department, holding only the people in it. The items are
+   duplicated, so a set of n becomes a track of 2n and the run never shows an
+   end: when the cursor passes halfway it steps back by exactly n slots, which
+   is invisible because slot n is a picture of the same person as slot 0. */
 .box{position:relative;margin-top:18px;flex:none;height:clamp(300px,38vh,430px);
   display:flex;align-items:center;gap:0;
   overflow-x:auto;overflow-y:hidden;
@@ -211,73 +216,70 @@ html[data-next="1"] .bellrow{display:none}
   overscroll-behavior-x:contain;scrollbar-width:none;
   pointer-events:none}
 .box::-webkit-scrollbar{display:none}
-/* Empty runs either side, so the first and last card can reach the centre. As
-   flex items they take their width; as grid items they were laid out by
-   grid-auto-columns and the ends landed 40px off. */
 .box::before,.box::after{content:'';flex:0 0 var(--pad,0px)}
 
 /* ---- the card ----
-   The border is a gradient, cut out of a gradient background with a double
-   mask so only the ring survives. Our flavour: the gradient carries the
-   department's accent instead of a fixed blue, the avatar keeps our machined
-   disc and the real photographs, and the card sits on the scene's own dot field
-   so a card reads as the same material as everything behind it. */
+   An instrument readout, not a promo tile. The photograph or the initials disc
+   is the signal, the name is the label attached to it, and the role is
+   measurement. Nothing is decorated.
+
+   Elevation is declared once: a hairline. The previous card carried a gradient
+   border AND a wide soft shadow, which is the ghost card -- the border vanishes
+   under the shadow and the panel stops reading as a surface at all. The card on
+   stage is marked by the brand signal rather than by more elevation, because a
+   zero-offset coloured halo is decoration and this system has one signal
+   colour and spends it once. */
 .card{flex:0 0 var(--cw,250px);scroll-snap-align:center;scroll-snap-stop:always;
-  height:var(--ch,300px);position:relative;
+  height:var(--ch,300px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:9px;padding:26px 24px 22px;text-align:center;
+  gap:10px;padding:26px 22px 22px;text-align:center;
+  background:var(--panel);
+  border:1px solid var(--hairline);
+  border-radius:var(--panel-r,16px);
   transform-origin:center center;z-index:1;
-  transition:scale .62s var(--eo),box-shadow .5s ease}
-/* the gradient ring */
-.card::before{
-  content:'';position:absolute;inset:0;border-radius:16px;z-index:-1;
-  border:1.5px solid transparent;
-  background:linear-gradient(145deg,
-    color-mix(in srgb,var(--ac) 62%,#ffffff) 0%,
-    rgba(255,255,255,.14) 42%,
-    color-mix(in srgb,var(--ac) 34%,#000000) 100%) border-box;
-  -webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
-  -webkit-mask-composite:destination-out;
-          mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);
-          mask-composite:exclude;
-}
-/* the surface, so two overlapping cards never bleed into one another */
-.card::after{
-  content:'';position:absolute;inset:0;border-radius:16px;z-index:-2;
-  background:
-    radial-gradient(circle,rgba(255,255,255,.05) 1.1px,transparent 1px) 0 0/26px 26px,
-    linear-gradient(180deg,rgba(26,26,31,.95),rgba(15,15,19,.975));
-}
-.card:not(.is-active){scale:.9;opacity:.8}
+  transition:scale .62s var(--eo),border-color .5s ease,
+             background-color .5s ease}
+.card:not(.is-active){scale:.9;opacity:.62}
 .card.is-active{scale:var(--scale,1.1);z-index:3;
-  box-shadow:0 22px 52px rgba(0,0,0,.6),0 0 34px color-mix(in srgb,var(--ac) 22%,transparent)}
+  border-color:color-mix(in srgb,var(--ac) 46%,transparent);
+  background:var(--panel-2,#1A1A1E);
+  /* one offset, one blur. A shadow without them is a costume. */
+  box-shadow:0 18px 38px -12px rgba(0,0,0,.7)}
 
-.card .rl,.card .nm{transition:color .5s var(--eo)}
-/* Wraps, with two lines reserved. At 12.5px the widest role in the roster is
-   LIVESTREAM DEVELOPER, which clipped to an ellipsis at 11px. */
-.card .rl{font-family:var(--fd);font-weight:800;font-size:12.5px;letter-spacing:.22em;
+/* The name is the loudest thing on the card and nothing competes with it.
+   Tracking stops at -0.02em: tighter reads cramped at this weight on a
+   compressed stream. */
+.card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(17px,1.4vw,22px);
+  letter-spacing:-.02em;line-height:1.14;color:var(--fg);
+  overflow-wrap:anywhere;hyphens:auto;max-width:100%;min-height:2.3em;
+  transition:color .5s var(--eo)}
+/* The role is measurement, so it is set as data and not as a caption. It wraps,
+   with two lines reserved: at 11px the widest role in the roster,
+   LIVESTREAM DEVELOPER, clipped to an ellipsis on air. */
+.card .rl{font-family:var(--fm);font-weight:600;font-size:12px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--muted);white-space:normal;
-  overflow-wrap:break-word;line-height:1.32;min-height:2.64em;max-width:100%}
-.card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(16px,1.35vw,21px);
-  letter-spacing:.05em;line-height:1.14;color:#F2F2F6;
-  overflow-wrap:anywhere;hyphens:auto;max-width:100%;min-height:2.3em}
+  overflow-wrap:break-word;line-height:1.5;min-height:3em;max-width:100%;
+  transition:color .5s var(--eo)}
 .card.is-active .nm{color:#fff}
-.card.is-active .rl{color:color-mix(in srgb,var(--ac) 88%,#FFFFFF)}
+/* Active and inactive are told apart by weight of the label, not by hue, so
+   the one signal colour on this scene stays where it belongs. */
+.card:not(.is-active) .nm{color:var(--fg-2,#C9C9D1)}
 
-/* ---- the portrait slot ---- */
-.av{position:relative;width:min(62%,168px);height:auto;aspect-ratio:1;border-radius:50%;
+/* ---- the portrait slot ----
+   The signal. Circular, because the mark is a circle and a portrait in a circle
+   is a broadcast convention rather than a style choice. */
+.av{position:relative;width:min(58%,150px);height:auto;aspect-ratio:1;border-radius:50%;
   container-type:inline-size;overflow:hidden;
   display:grid;place-items:center;flex:none;
   background:linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
-    inset 0 -6px 14px rgba(0,0,0,.45),
-    0 10px 24px rgba(0,0,0,.5)}
-.av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),
+    inset 0 -6px 14px rgba(0,0,0,.45)}
+.av svg{width:58%;height:58%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 .av img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
 /* a wordmark is wider than a portrait, so it is contained rather than cropped */
 .av img.fit{object-fit:contain;padding:16%}
-.av .ini{font-family:var(--fd);font-weight:800;font-size:40cqw;line-height:1;
-  letter-spacing:-.01em;color:rgba(250,250,250,.84);
+.av .ini{font-family:var(--fd);font-weight:800;font-size:38cqw;line-height:1;
+  letter-spacing:-.02em;color:rgba(250,250,250,.82);
   text-shadow:0 2px 10px rgba(0,0,0,.5)}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
@@ -598,12 +600,18 @@ var CATS=(function(){
     return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
   }
   /* the panel takes the colour of whatever category is on stage */
-  function setAccent(cat){
+  function setAccent(){
+    /* One signal colour, spent once. The department used to tint the panel, the
+       icon, the ring and every card with its own hue -- which is the seat
+       palette used as decoration, and also the purple-to-blue accent this
+       system's anti-reference names by name. The department is now identified by
+       its name and its count, and yellow is left alone for the progress bar,
+       which is the only genuinely live thing on this scene. */
     var r=document.documentElement.style;
-    r.setProperty('--ac',cat.c);
-    r.setProperty('--acs',hexa(cat.c,.15));
-    r.setProperty('--acm',hexa(cat.c,.32));
-    r.setProperty('--acf',hexa(cat.c,.22));
+    r.setProperty('--ac','#FFC107');
+    r.setProperty('--acs','rgba(255,193,7,.15)');
+    r.setProperty('--acm','rgba(255,193,7,.32)');
+    r.setProperty('--acf','rgba(255,193,7,.22)');
   }
 
   /* Enough nodes for the biggest set, reused forever. Cards are never destroyed
@@ -664,7 +672,7 @@ var CATS=(function(){
     lastKey=key; lastCi=ci;
     var cat=CATS[ci];
 
-    setAccent(cat);
+    setAccent();
     catIcon.innerHTML='<svg viewBox="0 0 24 24">'+(ICON[cat.i]||ICON.dot)+'</svg>';
     catName.textContent=cat.n;
     catCount.textContent=cat.p.length>1?cat.p.length+' in '+cat.n.toLowerCase():'';
