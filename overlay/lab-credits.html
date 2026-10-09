@@ -192,14 +192,10 @@ html[data-next="1"] .bellrow{display:none}
 
 /* ---- the stage: carousel, then grid ---- */
 /* ---- the roll ----
-   One track holding every person in the credits, grouped by department, and it
-   scrolls through them. The scrolling is native — overflow, scroll-snap and
-   scroll-behavior:smooth — so the movement is the browser's and nothing here has
-   to animate a position by hand.
-
-   There is no board any more. A fan of three, then a grid of the same names,
-   was saying one thing in two vocabularies; a roll that simply keeps going is
-   what a credits sequence actually is. */
+   One track per department, holding only the people in it. The carousel is
+   rebuilt when the department changes, so a team of four shows four cards and a
+   team of eight shows eight -- not twenty-four mixed together with the
+   department name in a header pretending otherwise. */
 .box{position:relative;margin-top:18px;flex:none;height:clamp(300px,38vh,430px);
   display:flex;align-items:center;gap:0;
   overflow-x:auto;overflow-y:hidden;
@@ -207,27 +203,21 @@ html[data-next="1"] .bellrow{display:none}
   overscroll-behavior-x:contain;scrollbar-width:none;
   pointer-events:none}
 .box::-webkit-scrollbar{display:none}
-/* Empty runs either side, half a frame wide. Without them the first and last
-   card sit hard against an edge and can never reach the centre, so the snap has
-   nowhere to take them and the ends of the roll look jammed. */
+/* Empty runs either side, so the first and last card can reach the centre. As
+   flex items they take their width; as grid items they were being laid out by
+   grid-auto-columns and the ends landed 40px off. */
 .box::before,.box::after{content:'';flex:0 0 var(--pad,0px)}
 
-/* ---- the card ----
-   Slight negative inline margin so neighbours overlap a little rather than
-   standing shoulder to shoulder. The overlap is the depth cue; the solid
-   surface below is what stops two cards bleeding into one another. */
+/* ---- the card ---- */
 .card{flex:0 0 var(--cw,250px);scroll-snap-align:center;scroll-snap-stop:always;
-  height:var(--ch,300px);justify-content:center;padding-top:26px;
+  height:var(--ch,300px);justify-content:center;padding:26px 24px 20px;
   margin-inline:calc(var(--ow,14px) * -1);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:9px;padding:20px 24px 18px;border-radius:16px;text-align:center;
+  gap:9px;border-radius:16px;text-align:center;
   transform-origin:center center;z-index:1;
-  /* Opaque, and carrying the same dot field as the scene behind it. The old
-     surface was a 6% white wash, which is fine over flat black and useless the
-     moment two cards overlap — you could see the one behind through the one in
-     front and the names collided. A near-solid base plus the scene's own 26px
-     dot grid makes a card read as a panel that happens to be made of the same
-     material as everything else. */
+  /* Opaque, and carrying the same 26px dot field as the scene behind it. The
+     old surface was a 6% white wash, fine over flat black and useless the moment
+     two cards overlap -- you saw the one behind through the one in front. */
   background:
     radial-gradient(circle,rgba(255,255,255,.055) 1.1px,transparent 1px) 0 0/26px 26px,
     linear-gradient(180deg,rgba(26,26,31,.95),rgba(15,15,19,.975));
@@ -235,21 +225,26 @@ html[data-next="1"] .bellrow{display:none}
   box-shadow:0 16px 38px rgba(0,0,0,.5);
   transition:scale .62s var(--eo),opacity .62s var(--eo),
              box-shadow .5s ease,border-color .5s ease}
-
-/* Centre is bigger; the rest sit back. Names stay legible on every card — the
-   roll is a list of people, and dimming them to nothing would defeat it. */
+/* Centre is bigger. Every card keeps its name legible -- a roll is a list of
+   people and dimming them to nothing defeats it. scale .8 rather than .72 so
+   the role line clears 4.5:1, and the base size is large enough that .9 of it
+   is still above the 11px floor. */
+.card:not(.is-active){scale:.9;opacity:.8}
 .card.is-active{scale:var(--scale,1.1);z-index:3;
   border-color:rgba(255,255,255,.12);
   box-shadow:0 22px 52px rgba(0,0,0,.6),0 0 0 1px var(--acm)}
-.card:not(.is-active){scale:.9;opacity:.8}
 
 .card .rl,.card .nm{transition:color .5s var(--eo)}
+/* Wraps, with two lines reserved. At 12.5px the widest role in the roster is
+   LIVESTREAM DEVELOPER, which clipped to an ellipsis at 11px. */
 .card .rl{font-family:var(--fd);font-weight:800;font-size:12.5px;letter-spacing:.22em;
   text-transform:uppercase;color:var(--muted);white-space:normal;
   overflow-wrap:break-word;line-height:1.32;min-height:2.64em;max-width:100%}
 .card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(16px,1.35vw,21px);
   letter-spacing:-.02em;line-height:1.14;color:#F2F2F6;
   overflow-wrap:anywhere;hyphens:auto;max-width:100%;min-height:2.3em}
+/* --acm is a 32% alpha tint meant for fills. On the card that is scaled up and
+   holding the viewer's attention it resolved to 2.19:1. */
 .card.is-active .nm{color:#fff}
 .card.is-active .rl{color:color-mix(in srgb,var(--ac) 88%,#FFFFFF)}
 
@@ -263,8 +258,7 @@ html[data-next="1"] .bellrow{display:none}
     0 10px 24px rgba(0,0,0,.5)}
 .av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 .av img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
-/* a wordmark is wider than a portrait, so it is contained rather than cropped
-   to fill — cover would slice the ends off the name */
+/* a wordmark is wider than a portrait, so it is contained rather than cropped */
 .av img.fit{object-fit:contain;padding:16%}
 .av .ini{font-family:var(--fd);font-weight:800;font-size:40cqw;line-height:1;
   letter-spacing:-.01em;color:rgba(250,250,250,.84);
@@ -434,97 +428,43 @@ function initials(name){
   return (w[0][0]+(w.length>1?w[w.length-1][0]:'')).toUpperCase();
 }
 
-/* == THE ROSTER ===============================================================
-   One line per person. This is the only block you need to edit.
-
-     n     their name
-     dept  the department they belong to. It sets their card's colour, the
-           header above the roll, and where they sort. Type a new department
-           name anywhere in this list and it becomes a real department.
-     role  what they do on the show. Shown under the name.
-     as    other departments to credit them in. Optional. Somebody who really
-           fronts the show and also writes the script gets named in both.
-     face  a key from AVATAR above. Leave it off and they get an initials disc.
-     fit   1 for a wordmark or logo, which must be contained rather than
-           cropped -- cover would slice the ends off the name.
-
-   Order is the roll. Departments come out in the order they are first
-   mentioned, so moving a line moves the show and nobody has to renumber. */
-
-var ROSTER=[
-  {n:'Ted Rosela',               dept:'On air',    role:'Host - Platform Q&A',   face:'tedrosela'},
-  {n:'Richard Nzyoki Mutinda',   dept:'On air',    role:'Invigilator - Co-host', face:'mutinda', fit:1},
-  {n:'Josephine Wanjina',        dept:'On air',    role:'Co-host'},
-  {n:'Alicia Gitau',             dept:'On air',    role:'Co-host'},
-  {n:'Alfred Wangai Mundia',     dept:'Production',role:'Founding producer',     face:'alfred'},
-  {n:'Gideon Githae',            dept:'Production',role:'Executive producer'},
-  {n:'Mildred Ichingwa',         dept:'Production',role:'Producer, content'},
-  {n:'Sharon Paul',              dept:'Script',    role:'Script editor'},
-  {n:'Collins Omoto',            dept:'Script',    role:'Copy'},
-  {n:'Damaris Muchoki',          dept:'Standards', role:'Fact checker'},
-  {n:'Ryan Kim',                 dept:'Standards', role:'Livestream developer'},
-  {n:'Trizah Trisha',            dept:'Graphics',  role:'Graphics',              face:'trizah'},
-  {n:'Edwin Muthui muriuki',     dept:'Graphics',  role:'Motion',                face:'edwin'},
-  {n:'Caroline wangare karimi', dept:'Graphics',  role:'Brand',                 face:'caroline'},
-  {n:'Catherine wambui maina',   dept:'On air',    role:'Presenter'},
-  {n:'Lilian Gacheru',           dept:'On air',    role:'Reader'},
-  {n:'Victor E. W. Njanjo',      dept:'On air',    role:'Correspondent'},
-  {n:'Hotwire',                  dept:'On air',    role:'Desk'},
-  {n:'James Njunju',             dept:'Field',     role:'Camera'},
-  {n:'Dickson M Njunjuri',       dept:'Field',     role:'Sound'},
-  {n:'Vincent',                  dept:'Field',     role:'Producer, field'},
-  {n:'John Manyange',            dept:'Music',     role:'Music'},
-  {n:'everyone',                 dept:'Closing',   role:'Everyone'},
-  {n:'tba',                      dept:'Closing',   role:'Next session'}
-];
-
-/* Departments. Added or renamed a name above? Add it here too for an icon and
-   a colour; anything missing still works and picks a stable colour derived from
-   its own name, it just arrives without an icon. */
-var DEPTS=[
-  {n:'On air',     i:'mic',   c:'#FFC107'},
-  {n:'Production', i:'clap',  c:'#2BB2F5'},
-  {n:'Graphics',   i:'spark', c:'#A78BFA'},
-  {n:'Script',     i:'pen',   c:'#F97362'},
-  {n:'Standards',  i:'check', c:'#34D399'},
-  {n:'Field',      i:'map',   c:'#FBBF24'},
-  {n:'Music',      i:'wave',  c:'#22D3EE'},
-  {n:'Partners',   i:'hand',  c:'#94A3B8'},
-  {n:'Closing',    i:'star',  c:'#9CA3AF'}
-];
-
-/* Build the categories the rest of the scene already understands, from the two
-   lists above. Departments come out in the order they are first mentioned in
-   ROSTER, so a new department lands where you put it. */
-var CATS=(function(){
-  var order=[], byName={};
-  DEPTS.forEach(function(d){ order.push(d.n); byName[d.n]={n:d.n,i:d.i,c:d.c,p:[]} });
-  function fallback(n){
-    var h=0,i; for(i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))>>>0;
-    return 'hsl('+(h%360)+' 62% 58%)';
-  }
-  function seat(r){
-    var s={r:r.role,v:r.n,k:C('#3D4F5C','#2E3A46','#55666F')};
-    if(r.face) s.face=r.face;
-    if(r.fit)  s.fit=1;
-    return s;
-  }
-  ROSTER.forEach(function(r){
-    if(!byName[r.dept]){ order.push(r.dept); byName[r.dept]={n:r.dept,i:'dot',c:fallback(r.dept),p:[]}; }
-    byName[r.dept].p.push(seat(r));
-    if(r.as){
-      r.as.forEach(function(a){
-        if(!byName[a]){ order.push(a); byName[a]={n:a,i:'dot',c:fallback(a),p:[]}; }
-        byName[a].p.push(seat(r));
-      });
-    }
-  });
-  var first=[];
-  ROSTER.forEach(function(r){ if(first.indexOf(r.dept)<0) first.push(r.dept) });
-  order=order.filter(function(n){ return byName[n].p.length });
-  first.forEach(function(n){ if(order.indexOf(n)<0) order.push(n) });
-  return order.map(function(n){ return byName[n] });
-})();;
+var CATS=[
+    {n:'Host',i:'mic',c:'#FFC107',p:[
+      {r:'Host',v:'Ted Ross',k:C('#3D4F5C','#2E3A46','#55666F')}]},
+    {n:'Co-hosts',i:'users',c:'#A78BFA',p:[
+      {r:'Invigilator · Co-host',v:'Richard Nzyoki Mutinda',face:'mutinda',fit:1,k:C('#45506B','#2F4A5C','#5A6472')},
+      {r:'Co-host',v:'Josephine Wanjina',k:C('#4A5A3E','#3A4A3E','#6B5B3E')},
+      {r:'Co-host',v:'Alicia Gitau',k:C('#3E5A54','#334155','#6E6455')}]},
+    {n:'Producers',i:'clap',c:'#2BB2F5',p:[
+      {r:'Founding producer',v:'Alfred Wangai Mundia',face:'alfred',k:C('#5A4A3C','#3B4652','#7B6D4F')},
+      {r:'Executive producer',v:'Gideon Githae',k:C('#45506B','#33474F','#5C6B62')},
+      {r:'Producer, content',v:'Mildred Ichingwa',k:C('#4E5A63','#3A4450','#6B6250')},
+      {r:'Producer, segments',v:'Ted Rosela',face:'tedrosela',k:C('#6B5B3E','#45506B','#3E5A54')}]},
+    {n:'Script',i:'doc',c:'#F5A623',p:[
+      {r:'Script editor',v:'Sharon Paul',k:C('#4A5568','#2E3A46','#5F6C7B')},
+      {r:'Copy',v:'Collins Omoto',k:C('#3E5A54','#4A5A3E','#55666F')}]},
+    {n:'Assets & graphics',i:'layers',c:'#7CD9F9',p:[
+      {r:'Graphics',v:'Trizah Trisha',face:'trizah',k:C('#6B5B3E','#45506B','#3E5A54')},
+      {r:'Motion',v:'Edwin Muthui muriuki',face:'edwin',k:C('#3D4F5C','#5A4A3C','#55666F')},
+      {r:'Brand',v:'Caroline wangare karimi',face:'caroline',k:C('#4E5A63','#2F4A5C','#6B6250')}]},
+    {n:'On-air talent',i:'cast',c:'#F6465D',p:[
+      {r:'Presenter',v:'Catherine wambui maina',k:C('#2F4A5C','#45506B','#5C6B72')},
+      {r:'Reader',v:'Lilian Gacheru',k:C('#4A5A3E','#5A4A3C','#55666F')},
+      {r:'Correspondent',v:'Victor E. W. Njanjo',k:C('#3E5A54','#33474F','#6E6455')},
+      {r:'Desk',v:'Hotwire',k:C('#45506B','#33474F','#5C6B62')}]},
+    {n:'Field reporting',i:'cam',c:'#1FD24F',p:[
+      {r:'Camera',v:'James Njunju',k:C('#3B4652','#4A5A3E','#6B5B3E')},
+      {r:'Sound',v:'Dickson M Njunjuri',k:C('#45506B','#33474F','#5C6B62')},
+      {r:'Producer, field',v:'Vincent',k:C('#4E5A63','#3A4450','#6B6250')}]},
+    {n:'Fact check',i:'check',c:'#0ECB81',p:[
+      {r:'Verifier',v:'Damaris Muchoki',k:C('#3A4A3E','#4A5568','#6B6250')},
+      {r:'Standards',v:'Ryan Kim',k:C('#4E5A63','#3E5A54','#55666F')}]},
+    {n:'Music',i:'music',c:'#3FB6FF',p:[{r:'Music',v:'John Manyange',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
+    {n:'Questions',i:'chat',c:'#FF5A47',p:[
+      {r:'Platform Q&A',v:'Ted Ross',k:C('#45506B','#4A5A3E','#55666F')}]},
+    {n:'Closing',i:'spark',c:'#FFD100',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
+    {n:'Next session',i:'cal',c:'#FFCE00',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
+  ];
 
   /* ---- overrides ---- */
   var eps=trim(get('ep'));
@@ -576,13 +516,12 @@ var CATS=(function(){
   var CARD=parseFloat(get('cardms'))||3500;
   var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var pi=0, stepStart=0, cards=[], booted=false;
+  var ci=0, pi=0, lastCi=-1, stepStart=0, cards=[], lastKey='', booted=false;
 
   function hexa(h,a){
-    /* The department colour can be an hsl() fallback for a department nobody
-       declared, and parseInt('sl(...',16) is NaN -- which silently returned
-       rgba(0,0,0,...) and turned the panel border and the bar black rather than
-       throwing anything that would have been noticed. */
+    /* A department nobody declared falls back to an hsl() string, and
+       parseInt('sl(...',16) is NaN -- which silently returned rgba(0,0,0) and
+       turned the border and the bar black instead of throwing anything. */
     if(h.charAt(0)!=='#')
       return 'color-mix(in srgb,'+h+' '+Math.round(a*100)+'%,transparent)';
     var n=parseInt(h.slice(1),16);
@@ -611,43 +550,30 @@ var CATS=(function(){
     for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
   }
 
-  /* The whole roll, flattened: every person in every department, in order. The
-     track holds them all at once and the header follows whoever is on stage.
-     A department is no longer a phase, just a label that changes when the roll
-     crosses a boundary. */
-  var PEOPLE=[];
-  CATS.forEach(function(cat){ cat.p.forEach(function(p){ PEOPLE.push({p:p,cat:cat}) }) });
-  pool(PEOPLE.map(function(x){return {p:x.p}}));
-
-  /* The column is solved from the frame; --pad is the empty run either side that
-     lets the first and last card reach the centre, and --ow is the overlap so
-     neighbours share an edge instead of standing shoulder to shoulder. */
+  /* Height leads and the width follows from it. --ch is divided by the scale
+     because the card on stage is scaled up: a box that fits at rest still
+     overflows once it grows, and overflow-y is hidden on a scroller, so the top
+     and bottom of the one card that matters most were being cropped. */
   function size(){
     var bw=box.clientWidth, bh=box.clientHeight;
     if(!bw||!bh) return;
-    /* Height leads and the width follows from it. Deriving --ch from the column
-       width instead meant a 250px card asked for a 430px box, measured 490px
-       once the active card's 1.14 scale was applied, inside a track only 323px
-       tall -- so every card overflowed, got clipped, and read as a squat square
-       rather than a portrait. The box is the constraint; fill it. */
-    /* Sized for the state the card is actually seen in. The card on stage is
-       scaled 1.14, so a --ch that fits at rest still overflows once it grows --
-       and overflow-y is hidden on a scroller, so the top and bottom of the one
-       card that matters most were being cropped. Divide by the scale. */
     var SC=1.10;
     var ch=Math.max(180,(bh-12)/SC);
     var w=Math.min(ch/1.62,250);
+    box.style.setProperty('--scale',SC);
     box.style.setProperty('--cw',w.toFixed(1)+'px');
     box.style.setProperty('--ch',ch.toFixed(1)+'px');
-    box.style.setProperty('--scale',SC);
     box.style.setProperty('--pad',((bw-w)/2+w*0.03).toFixed(1)+'px');
     box.style.setProperty('--ow',(w*0.03).toFixed(1)+'px');
   }
 
-  /* Centring is computed rather than left to scrollIntoView, which would also
-     try to scroll any scrollable ancestor — including the document, which is not
-     something a scene should ever touch. */
-  function setRoll(behavior){
+  /* One carousel per department, rebuilt when the department changes: a team of
+     four gets four cards and a team of eight gets eight. Centring is computed
+     rather than left to scrollIntoView, which would also try to scroll any
+     scrollable ancestor including the document. */
+  function setCar(behavior){
+    var people=CATS[ci].p;
+    pool(people.map(function(p){return {p:p}}));
     cards.forEach(function(c,i){
       c.classList.toggle('is-active',i===pi);
       c.dataset.index=String(i);
@@ -659,35 +585,51 @@ var CATS=(function(){
   }
 
   function enter(){
-    var it=PEOPLE[pi], cat=it.cat;
+    var key=ci+':'+pi;
+    if(key===lastKey) return;
+    var changed=(lastCi!==ci);
+    lastKey=key; lastCi=ci;
+    var cat=CATS[ci];
+
     setAccent(cat);
     catIcon.innerHTML='<svg viewBox="0 0 24 24">'+(ICON[cat.i]||ICON.dot)+'</svg>';
     catName.textContent=cat.n;
     catCount.textContent=cat.p.length>1?cat.p.length+' in '+cat.n.toLowerCase():'';
+
     size();
     box.dataset.category=cat.n;
-    /* the first one arrives without travelling: a roll that opens with a slide
-       reads as the scene deciding where to put itself */
-    setRoll(booted&&pi!==0?'smooth':'auto');
+    /* A new department arrives without travelling -- the track has just been
+       rebuilt, so sliding into it would scroll across cards that are no longer
+       there. Steps within a department travel. */
+    setCar(changed?'auto':(booted?'smooth':'auto'));
     booted=true;
     stepStart=performance.now();
   }
 
+  /* Walk the department, then move to the next one. There is no board phase:
+     the carousel is the department, and when it runs out the roll moves on. */
   function advance(){
-    pi=(pi+1)%PEOPLE.length;
+    var cat=CATS[ci];
+    if(pi<cat.p.length-1) pi++;
+    else { ci=(ci+1)%CATS.length; pi=0 }
     enter();
   }
   if(reduced){
-    /* no choreography: hold the last category as a board, bar full */
-    pi=0; enter();
+    /* A poster, not a stopped clock. Rolling to the last department left three
+       cards visible and twenty-one people never credited at all. */
+    ci=CATS.length-1; pi=0; enter();
     barFill.style.transform='scaleX(1)';
+    box.style.display='grid'; box.style.gridAutoFlow='row';
+    box.style.gridTemplateColumns='repeat(auto-fit,minmax(0,1fr))';
+    box.style.gridAutoRows='var(--ch)'; box.style.height='auto';
+    box.style.overflow='visible'; box.style.scrollSnapType='none';
+    box.style.setProperty('--pad','0px'); box.style.setProperty('--ow','0px');
+    box.scrollLeft=0;
   }else{
     enter();
-    addEventListener('resize',function(){ size(); setRoll('auto') });
+    addEventListener('resize',function(){ size(); setCar('auto') });
     setInterval(function(){
-      
       if(document.hidden) return;
-      
       var now=performance.now(), el=now-stepStart;
       if(el>=CARD){ advance(); el=0 }
             /* fills: empty means the card has just taken the stage, full means handover */
