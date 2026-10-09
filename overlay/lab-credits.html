@@ -185,6 +185,7 @@ html[data-next="1"] .bellrow{display:none}
 .bar{margin-top:14px;height:7px;border-radius:999px;overflow:hidden;flex:none;
   background:rgba(255,255,255,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
 .bar i{display:block;height:100%;width:100%;border-radius:999px;
+  transform:scaleX(0);transform-origin:left center;will-change:transform;
   background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 55%,#000),
     var(--ac) 66%,color-mix(in srgb,var(--ac) 40%,#fff));
   box-shadow:0 0 16px var(--acm)}
@@ -200,8 +201,7 @@ html[data-next="1"] .bellrow{display:none}
    was saying one thing in two vocabularies; a roll that simply keeps going is
    what a credits sequence actually is. */
 .box{position:relative;margin-top:18px;flex:none;height:clamp(300px,38vh,430px);
-  display:grid;grid-auto-flow:column;grid-auto-columns:var(--cw,250px);
-  align-items:center;gap:0;
+  display:flex;align-items:center;gap:0;
   overflow-x:auto;overflow-y:hidden;
   scroll-snap-type:x mandatory;scroll-behavior:smooth;
   overscroll-behavior-x:contain;scrollbar-width:none;
@@ -210,13 +210,13 @@ html[data-next="1"] .bellrow{display:none}
 /* Empty runs either side, half a frame wide. Without them the first and last
    card sit hard against an edge and can never reach the centre, so the snap has
    nowhere to take them and the ends of the roll look jammed. */
-.box::before,.box::after{content:'';width:var(--pad,0px)}
+.box::before,.box::after{content:'';flex:0 0 var(--pad,0px)}
 
 /* ---- the card ----
    Slight negative inline margin so neighbours overlap a little rather than
    standing shoulder to shoulder. The overlap is the depth cue; the solid
    surface below is what stops two cards bleeding into one another. */
-.card{scroll-snap-align:center;scroll-snap-stop:always;
+.card{flex:0 0 var(--cw,250px);scroll-snap-align:center;scroll-snap-stop:always;
   height:var(--ch,300px);justify-content:center;padding-top:26px;
   margin-inline:calc(var(--ow,14px) * -1);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -238,20 +238,20 @@ html[data-next="1"] .bellrow{display:none}
 
 /* Centre is bigger; the rest sit back. Names stay legible on every card — the
    roll is a list of people, and dimming them to nothing would defeat it. */
-.card.is-active{scale:1.14;z-index:3;
+.card.is-active{scale:var(--scale,1.1);z-index:3;
   border-color:rgba(255,255,255,.12);
   box-shadow:0 22px 52px rgba(0,0,0,.6),0 0 0 1px var(--acm)}
-.card:not(.is-active){scale:.9;opacity:.72}
+.card:not(.is-active){scale:.9;opacity:.8}
 
 .card .rl,.card .nm{transition:color .5s var(--eo)}
-.card .rl{font-family:var(--fd);font-weight:800;font-size:11px;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--muted);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.card .rl{font-family:var(--fd);font-weight:800;font-size:12.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);white-space:normal;
+  overflow-wrap:break-word;line-height:1.32;min-height:2.64em;max-width:100%}
 .card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(16px,1.35vw,21px);
   letter-spacing:-.02em;line-height:1.14;color:#F2F2F6;
   overflow-wrap:anywhere;hyphens:auto;max-width:100%;min-height:2.3em}
 .card.is-active .nm{color:#fff}
-.card.is-active .rl{color:var(--acm)}
+.card.is-active .rl{color:color-mix(in srgb,var(--ac) 88%,#FFFFFF)}
 
 /* ---- the portrait slot ---- */
 .av{position:relative;width:min(62%,168px);height:auto;aspect-ratio:1;border-radius:50%;
@@ -272,7 +272,7 @@ html[data-next="1"] .bellrow{display:none}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
   font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.46em;
-  color:rgba(250,250,250,.38);animation:riseIn .9s var(--eo) .7s both}
+  color:rgba(250,250,250,.62);animation:riseIn .9s var(--eo) .7s both}
 .sig b{font-weight:600;color:rgba(255,193,7,.62)}
 
 @keyframes spinCW{to{transform:rotate(360deg)}}
@@ -384,6 +384,12 @@ html[data-next="1"] .bellrow{display:none}
   function trim(v){return dec(v||'').trim()}
 
   var ICON={
+  pen:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M4 20h4L18 10l-4-4L4 16z"/>',
+  map:'<path d="m3 6.5 6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>',
+  wave:'<path d="M3 12h2.5l2-6 3 13 3-16 2.5 9H21"/>',
+  hand:'<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 10.5V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-1a6 6 0 0 1-4.4-1.9L3 16.5a1.6 1.6 0 0 1 2.3-2.2L9 17.5"/>',
+  star:'<path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>',
+  dot:'<circle cx="12" cy="12" r="3.4"/>',
     mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.2M9 21.2h6"/>',
     users:'<circle cx="9" cy="8" r="3.3"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16.2 5.2a3.3 3.3 0 0 1 0 6.1"/><path d="M17.4 14.6A6.2 6.2 0 0 1 21.2 20"/>',
     clap:'<path d="M3 9.2h18V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m2.6 8.6 1.6-4.3a1 1 0 0 1 1.2-.6l13.8 2.8a1 1 0 0 1 .7 1.3l-.5 1.2"/><path d="m7.6 4.9-1.2 3.7M12 4.1l-1.2 3.7M16.4 5.3l-1.2 3.7"/>',
@@ -573,6 +579,12 @@ var CATS=(function(){
   var pi=0, stepStart=0, cards=[], booted=false;
 
   function hexa(h,a){
+    /* The department colour can be an hsl() fallback for a department nobody
+       declared, and parseInt('sl(...',16) is NaN -- which silently returned
+       rgba(0,0,0,...) and turned the panel border and the bar black rather than
+       throwing anything that would have been noticed. */
+    if(h.charAt(0)!=='#')
+      return 'color-mix(in srgb,'+h+' '+Math.round(a*100)+'%,transparent)';
     var n=parseInt(h.slice(1),16);
     return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
   }
@@ -613,10 +625,22 @@ var CATS=(function(){
   function size(){
     var bw=box.clientWidth, bh=box.clientHeight;
     if(!bw||!bh) return;
-    var w=Math.min(bh/1.22,250);
+    /* Height leads and the width follows from it. Deriving --ch from the column
+       width instead meant a 250px card asked for a 430px box, measured 490px
+       once the active card's 1.14 scale was applied, inside a track only 323px
+       tall -- so every card overflowed, got clipped, and read as a squat square
+       rather than a portrait. The box is the constraint; fill it. */
+    /* Sized for the state the card is actually seen in. The card on stage is
+       scaled 1.14, so a --ch that fits at rest still overflows once it grows --
+       and overflow-y is hidden on a scroller, so the top and bottom of the one
+       card that matters most were being cropped. Divide by the scale. */
+    var SC=1.10;
+    var ch=Math.max(180,(bh-12)/SC);
+    var w=Math.min(ch/1.62,250);
     box.style.setProperty('--cw',w.toFixed(1)+'px');
-    box.style.setProperty('--ch',(w*1.72).toFixed(1)+'px');
-    box.style.setProperty('--pad',((bw-w)/2).toFixed(1)+'px');
+    box.style.setProperty('--ch',ch.toFixed(1)+'px');
+    box.style.setProperty('--scale',SC);
+    box.style.setProperty('--pad',((bw-w)/2+w*0.03).toFixed(1)+'px');
     box.style.setProperty('--ow',(w*0.03).toFixed(1)+'px');
   }
 
@@ -637,14 +661,14 @@ var CATS=(function(){
   function enter(){
     var it=PEOPLE[pi], cat=it.cat;
     setAccent(cat);
-    catIcon.innerHTML='<svg viewBox="0 0 24 24">'+ICON[cat.i]+'</svg>';
+    catIcon.innerHTML='<svg viewBox="0 0 24 24">'+(ICON[cat.i]||ICON.dot)+'</svg>';
     catName.textContent=cat.n;
     catCount.textContent=cat.p.length>1?cat.p.length+' in '+cat.n.toLowerCase():'';
     size();
     box.dataset.category=cat.n;
     /* the first one arrives without travelling: a roll that opens with a slide
        reads as the scene deciding where to put itself */
-    setRoll(booted?'smooth':'auto');
+    setRoll(booted&&pi!==0?'smooth':'auto');
     booted=true;
     stepStart=performance.now();
   }
@@ -656,16 +680,18 @@ var CATS=(function(){
   if(reduced){
     /* no choreography: hold the last category as a board, bar full */
     pi=0; enter();
-    barFill.style.width='100%';
+    barFill.style.transform='scaleX(1)';
   }else{
     enter();
     addEventListener('resize',function(){ size(); setRoll('auto') });
     setInterval(function(){
       
+      if(document.hidden) return;
+      
       var now=performance.now(), el=now-stepStart;
       if(el>=CARD){ advance(); el=0 }
             /* fills: empty means the card has just taken the stage, full means handover */
-      barFill.style.width=(Math.min(1,el/CARD)*100).toFixed(2)+'%';
+      barFill.style.transform='scaleX('+Math.min(1,el/CARD).toFixed(4)+')';
     },70);
   }
 })();
