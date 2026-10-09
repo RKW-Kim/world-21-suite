@@ -611,8 +611,12 @@ function setCar(){
   pool(items.map(function(it){return it.p}));
   items.forEach(function(it,i){
     var c=cards[i], ad=Math.abs(it.k), b=Math.max(ad,2);
-    /* the edge facing the centre is the pivot: 100% going left, 0% going right */
-    c.style.setProperty('--ry',(it.k<0?ANGLE*b:-ANGLE*b)+'deg');
+    /* the edge facing the centre is the pivot: 100% going left, 0% going right.
+       k===0 is the subject and must be dead flat — it fails the k<0 test and
+       used to fall into the negative branch, where b=Math.max(0,2)=2 gave the
+       card on stage the full -40deg. That is the "centre one isn't straight"
+       skew. Check it before anything else. */
+    c.style.setProperty('--ry',(it.k===0?0:(it.k<0?ANGLE*b:-ANGLE*b))+'deg');
     c.style.setProperty('--ox',it.k<0?'100% 50%':(it.k>0?'0% 50%':'50% 50%'));
     c.style.setProperty('--z',String(60-ad*10));
     c.dataset.variant=it.k===0?'active':'flank';
