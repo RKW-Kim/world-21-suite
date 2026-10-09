@@ -190,6 +190,15 @@ html[data-next="1"] .bellrow{display:none}
   box-shadow:0 0 16px var(--acm)}
 
 /* ---- the stage: carousel, then grid ---- */
+/* ---- the roll ----
+   One track holding every person in the credits, grouped by department, and it
+   scrolls through them. The scrolling is native — overflow, scroll-snap and
+   scroll-behavior:smooth — so the movement is the browser's and nothing here has
+   to animate a position by hand.
+
+   There is no board any more. A fan of three, then a grid of the same names,
+   was saying one thing in two vocabularies; a roll that simply keeps going is
+   what a credits sequence actually is. */
 .box{position:relative;margin-top:18px;flex:none;height:clamp(300px,38vh,430px);
   display:grid;grid-auto-flow:column;grid-auto-columns:var(--cw,250px);
   align-items:center;gap:0;
@@ -197,76 +206,68 @@ html[data-next="1"] .bellrow{display:none}
   scroll-snap-type:x mandatory;scroll-behavior:smooth;
   overscroll-behavior-x:contain;scrollbar-width:none;
   pointer-events:none}
-/* the demo hides the scrollbar with scrollbar-width:none plus the webkit
-   pseudo — an OBS browser source has no scrollbar UI to lose either way */
 .box::-webkit-scrollbar{display:none}
-/* Empty leading and trailing tracks the width of half the viewport. Without
-   them the first and last card sit hard against an edge and can never reach the
-   centre, so the snap has nowhere to take them. In the original these are bare
-   ::before/::after grid items; they need --pad, which JS solves from the same
-   numbers as the column width. */
+/* Empty runs either side, half a frame wide. Without them the first and last
+   card sit hard against an edge and can never reach the centre, so the snap has
+   nowhere to take them and the ends of the roll look jammed. */
 .box::before,.box::after{content:'';width:var(--pad,0px)}
 
 /* ---- the card ----
-   Three stacked areas: portrait, name, role. On stage the portrait is full
-   size with both lines of type under it; off stage the whole thing shrinks to
-   half and the name lifts 100px, which tucks it up behind the portrait so the
-   row reads as one subject and a few ghosts rather than a wall of captions. */
+   Slight negative inline margin so neighbours overlap a little rather than
+   standing shoulder to shoulder. The overlap is the depth cue; the solid
+   surface below is what stops two cards bleeding into one another. */
 .card{scroll-snap-align:center;scroll-snap-stop:always;
-  display:grid;grid-template-areas:'av' 'nm' 'rl';
-  grid-template-rows:1fr auto auto;
-  align-content:center;text-align:center;padding:0 6px;
-  transition:transform .3s ease-in-out}
-.card .nm,.card .rl{transition:scale .3s ease-in-out,opacity .3s ease-in-out,
-  translate .3s ease-in-out,color .3s ease-in-out}
+  margin-inline:calc(var(--ow,14px) * -1);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:9px;padding:20px 24px 18px;border-radius:16px;text-align:center;
+  transform-origin:center center;z-index:1;
+  /* Opaque, and carrying the same dot field as the scene behind it. The old
+     surface was a 6% white wash, which is fine over flat black and useless the
+     moment two cards overlap — you could see the one behind through the one in
+     front and the names collided. A near-solid base plus the scene's own 26px
+     dot grid makes a card read as a panel that happens to be made of the same
+     material as everything else. */
+  background:
+    radial-gradient(circle,rgba(255,255,255,.055) 1.1px,transparent 1px) 0 0/26px 26px,
+    linear-gradient(180deg,rgba(26,26,31,.95),rgba(15,15,19,.975));
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow:0 16px 38px rgba(0,0,0,.5);
+  transition:scale .62s var(--eo),opacity .62s var(--eo),
+             box-shadow .5s ease,border-color .5s ease}
 
-/* ---- the portrait slot ----
-   A rounded rectangle at 3:4, not a disc. A photograph is cropped to fill it;
-   where there is no photograph the machined gradient disc carries the initials
-   instead, centred, because a full-bleed initials tile reads as a missing
-   image rather than as a person. */
-.av{grid-area:av;position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;
-  overflow:hidden;display:grid;place-items:center;
-  container-type:inline-size;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
-  box-shadow:0 10px 20px rgba(0,0,0,.25);
-  transform-origin:center center;
-  transition:scale .3s ease-in-out,opacity .3s ease-in-out,box-shadow .3s ease-in-out}
+/* Centre is bigger; the rest sit back. Names stay legible on every card — the
+   roll is a list of people, and dimming them to nothing would defeat it. */
+.card.is-active{scale:1.14;z-index:3;
+  border-color:rgba(255,255,255,.12);
+  box-shadow:0 22px 52px rgba(0,0,0,.6),0 0 0 1px var(--acm)}
+.card:not(.is-active){scale:.9;opacity:.72}
+
+.card .rl,.card .nm{transition:color .5s var(--eo)}
+.card .rl{font-family:var(--fd);font-weight:800;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(16px,1.35vw,21px);
+  letter-spacing:-.02em;line-height:1.14;color:#F2F2F6;
+  overflow-wrap:anywhere;hyphens:auto;max-width:100%}
+.card.is-active .nm{color:#fff}
+.card.is-active .rl{color:var(--acm)}
+
+/* ---- the portrait slot ---- */
+.av{position:relative;width:min(62%,168px);height:auto;aspect-ratio:1;border-radius:50%;
+  container-type:inline-size;overflow:hidden;
+  display:grid;place-items:center;flex:none;
+  background:linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
+    inset 0 -6px 14px rgba(0,0,0,.45),
+    0 10px 24px rgba(0,0,0,.5)}
+.av svg{width:62%;height:62%;filter:drop-shadow(0 3px 7px rgba(0,0,0,.6))}
 .av img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
 /* a wordmark is wider than a portrait, so it is contained rather than cropped
    to fill — cover would slice the ends off the name */
 .av img.fit{object-fit:contain;padding:16%}
-.av .ini{width:72%;aspect-ratio:1;border-radius:50%;
-  display:grid;place-items:center;
-  background:linear-gradient(145deg,var(--c1) 0%,var(--c2) 54%,var(--c3) 100%);
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),
-    inset 0 -6px 14px rgba(0,0,0,.45),0 8px 18px rgba(0,0,0,.4);
-  font-family:var(--fd);font-weight:800;font-size:40cqw;line-height:1;
-  letter-spacing:-.01em;color:rgba(250,250,250,.84)}
-
-/* A name is never truncated. The demo sets white-space:nowrap on its headings,
-   which is fine for "Simon Hadley" in a 250px column and useless for
-   "Richard Nzyoki Mutinda" — a credits roll that ends a colleague's name in an
-   ellipsis has defeated its own purpose. It wraps instead. */
-.card .nm{grid-area:nm;margin:1rem 0 0;font-size:clamp(16px,1.35vw,21px);
-  font-weight:800;letter-spacing:-.02em;line-height:1.14;color:#F2F2F6;
-  overflow-wrap:anywhere;hyphens:auto}
-.card .rl{grid-area:rl;margin:.4rem 0 0;font-size:11px;font-weight:800;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* ---- off stage: the demo's own numbers, driven by a class rather than
-   @container scroll-state(). Same result, but scroll-state() needs CEF 135+
-   and OBS ships whatever CEF its release bundles — on an older build every card
-   would render at half scale, which on air is a credits roll you cannot read.
-   The class is set from the scroll position, so it is true on any browser. */
-.card:not(.is-active) .av{scale:.5;opacity:.5}
-.card:not(.is-active) .nm{scale:.5;opacity:.5;translate:0 -100px}
-.card:not(.is-active) .rl{scale:.5;opacity:0}
-.card.is-active .av{box-shadow:0 18px 34px rgba(0,0,0,.5),0 0 0 1px var(--acm)}
-.card.is-active .nm{color:#fff}
-/* a long name must not be clipped mid-word at the column width */
-.card .nm,.card .rl{max-width:100%}
+.av .ini{font-family:var(--fd);font-weight:800;font-size:40cqw;line-height:1;
+  letter-spacing:-.01em;color:rgba(250,250,250,.84);
+  text-shadow:0 2px 10px rgba(0,0,0,.5)}
 
 .sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
   font-family:var(--fm);font-weight:600;font-size:11px;letter-spacing:.46em;
@@ -289,7 +290,7 @@ html[data-next="1"] .bellrow{display:none}
   .cat .ci{width:54px;height:54px;border-radius:10px}
   .cat .ci svg{width:28px;height:28px}
   .cat .cn{font-size:24px}
-  .box.car .card{padding:22px 16px 20px}
+  .box .card{padding:22px 26px 20px}
   h1{font-size:clamp(44px,4.6vw,84px)}
   .chip{font-size:12.5px;padding:8px 18px}
 }
@@ -514,7 +515,7 @@ var CATS=[
   var CARD=parseFloat(get('cardms'))||3500;
   var reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var ci=0, pi=0, stepStart=0, cards=[], lastKey='', booted=false;
+  var pi=0, stepStart=0, cards=[], booted=false;
 
   function hexa(h,a){
     var n=parseInt(h.slice(1),16);
@@ -543,27 +544,30 @@ var CATS=[
     for(var j=items.length;j<cards.length;j++){ if(cards[j].parentNode) cards[j].remove() }
   }
 
-  /* The track is sized from the frame rather than by a percentage height, which
-     does not resolve reliably against a flex sized box. --pad is the empty
-     leading and trailing run that lets the first and last card reach the
-     centre; without it the snap cannot travel far enough to centre them and the
-     ends of the roll are stuck against the edge of the panel. */
+  /* The whole roll, flattened: every person in every department, in order. The
+     track holds them all at once and the header follows whoever is on stage.
+     A department is no longer a phase, just a label that changes when the roll
+     crosses a boundary. */
+  var PEOPLE=[];
+  CATS.forEach(function(cat){ cat.p.forEach(function(p){ PEOPLE.push({p:p,cat:cat}) }) });
+  pool(PEOPLE.map(function(x){return {p:x.p}}));
+
+  /* The column is solved from the frame; --pad is the empty run either side that
+     lets the first and last card reach the centre, and --ow is the overlap so
+     neighbours share an edge instead of standing shoulder to shoulder. */
   function size(){
     var bw=box.clientWidth, bh=box.clientHeight;
     if(!bw||!bh) return;
-    var w=Math.min(bh/1.16,250);
+    var w=Math.min(bh/1.22,250);
     box.style.setProperty('--cw',w.toFixed(1)+'px');
     box.style.setProperty('--pad',((bw-w)/2).toFixed(1)+'px');
+    box.style.setProperty('--ow',(w*0.03).toFixed(1)+'px');
   }
 
-  /* One card per person in the category, laid out as a track. The card on
-     stage is marked, the track is scrolled so that card sits centre, and
-     scroll-snap does the rest. Centring is computed rather than left to
-     scrollIntoView, which would also try to scroll any scrollable ancestor —
-     including the document, which is not something a scene should ever touch. */
-  function setCar(behavior){
-    var cat=CATS[ci];
-    pool(cat.p.map(function(p){return {p:p}}));
+  /* Centring is computed rather than left to scrollIntoView, which would also
+     try to scroll any scrollable ancestor — including the document, which is not
+     something a scene should ever touch. */
+  function setRoll(behavior){
     cards.forEach(function(c,i){
       c.classList.toggle('is-active',i===pi);
       c.dataset.index=String(i);
@@ -575,48 +579,36 @@ var CATS=[
   }
 
   function enter(){
-    var key=ci+':'+pi;
-    if(key===lastKey) return;
-    lastKey=key;
-    var cat=CATS[ci], people=cat.p;
-
+    var it=PEOPLE[pi], cat=it.cat;
     setAccent(cat);
     catIcon.innerHTML='<svg viewBox="0 0 24 24">'+ICON[cat.i]+'</svg>';
     catName.textContent=cat.n;
-    catCount.textContent=people.length>1?people.length+' in '+cat.n.toLowerCase():'';
-
+    catCount.textContent=cat.p.length>1?cat.p.length+' in '+cat.n.toLowerCase():'';
     size();
     box.dataset.category=cat.n;
     /* the first one arrives without travelling: a roll that opens with a slide
-       reads as the scene deciding where to put it */
-    setCar(booted?'smooth':'auto');
+       reads as the scene deciding where to put itself */
+    setRoll(booted?'smooth':'auto');
     booted=true;
     stepStart=performance.now();
   }
 
-  /* one name per beat, then the next category. The card phase and the board
-     phase have collapsed into the one track: a fan of three followed by a grid
-     of the same names twice was saying the same thing in two vocabularies. */
   function advance(){
-    var cat=CATS[ci];
-    if(pi<cat.p.length-1) pi++;
-    else { ci=(ci+1)%CATS.length; pi=0 }
+    pi=(pi+1)%PEOPLE.length;
     enter();
   }
-
   if(reduced){
-    /* no choreography: hold the last name on stage with the bar full */
-    ci=CATS.length-1; pi=0; enter();
+    /* no choreography: hold the last category as a board, bar full */
+    pi=0; enter();
     barFill.style.width='100%';
   }else{
     enter();
-    /* a resize re-solves --pad, and the active card has to be re-centred
-       against it or the roll drifts a card off the middle of the frame */
-    addEventListener('resize',function(){ size(); setCar('auto') });
+    addEventListener('resize',function(){ size(); setRoll('auto') });
     setInterval(function(){
+      
       var now=performance.now(), el=now-stepStart;
       if(el>=CARD){ advance(); el=0 }
-      /* fills: empty means the name has just taken the stage, full means handover */
+            /* fills: empty means the card has just taken the stage, full means handover */
       barFill.style.width=(Math.min(1,el/CARD)*100).toFixed(2)+'%';
     },70);
   }
