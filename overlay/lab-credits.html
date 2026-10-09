@@ -275,8 +275,11 @@ h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--accent-brand) 55%,var(
 .card[data-variant=flank] .nm{color:var(--muted)}
 .card[data-variant=active] .slab{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),
   0 0 0 1px var(--accent-line),0 26px 64px rgba(0,0,0,.6),0 0 44px var(--accent-soft)}
-.card[data-variant=flank] .rl,
-.card[data-variant=flank] .nm{opacity:0}
+/* Flanks are context, not competition — but they are not empty either. Hiding
+   the text outright left two anonymous slabs either side of the subject, which
+   read as a rendering fault rather than as depth. The name stays, quiet. */
+.card[data-variant=flank] .rl{opacity:0}
+.card[data-variant=flank] .nm{opacity:.5}
 .card[data-variant=flank] .av{box-shadow:inset 0 2px 0 rgba(255,255,255,.12),
   inset 0 -6px 14px rgba(0,0,0,.45),0 12px 28px rgba(0,0,0,.5)}
 
@@ -614,6 +617,13 @@ function setCar(){
     c.style.setProperty('--z',String(60-ad*10));
     c.dataset.variant=it.k===0?'active':'flank';
     c.dataset.index=String(it.k);
+    /* Position comes from `order`, not DOM order. The list above is sorted by
+       distance so a reused card already holds the person it needs — but flex
+       lays out in DOM order, which parked the person on stage leftmost with two
+       empty cards trailing right and a third of the panel left over. order puts
+       them where the eye expects: neighbour, subject, neighbour. setGrid()
+       clears it again, because order applies to grid items too. */
+    c.style.order=String(it.k+half);
     c.style.gridColumn=''; c.style.gridRow='';
   });
   box.setAttribute('data-moving',''); moveUntil=performance.now()+900;
@@ -652,6 +662,10 @@ function setGrid(){
     c.dataset.variant=(i===0)?'lead':'listed';
     c.dataset.index=String(i);
     c.style.removeProperty('--d'); c.style.removeProperty('--ad');
+    /* order is how the carousel centres its subject, and it applies to grid
+       items as well — left set, it reorders the board and fights the explicit
+       gridColumn below. The board owns DOM order. */
+    c.style.order='';
     c.style.gridColumn=''; c.style.gridRow='';
   });
   box.setAttribute('data-roles', n>4?'off':'on');
