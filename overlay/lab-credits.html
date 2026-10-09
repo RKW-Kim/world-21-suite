@@ -217,6 +217,7 @@ html[data-next="1"] .bellrow{display:none}
    standing shoulder to shoulder. The overlap is the depth cue; the solid
    surface below is what stops two cards bleeding into one another. */
 .card{scroll-snap-align:center;scroll-snap-stop:always;
+  height:var(--ch,300px);justify-content:center;padding-top:26px;
   margin-inline:calc(var(--ow,14px) * -1);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:9px;padding:20px 24px 18px;border-radius:16px;text-align:center;
@@ -248,7 +249,7 @@ html[data-next="1"] .bellrow{display:none}
   overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .card .nm{font-family:var(--fd);font-weight:800;font-size:clamp(16px,1.35vw,21px);
   letter-spacing:-.02em;line-height:1.14;color:#F2F2F6;
-  overflow-wrap:anywhere;hyphens:auto;max-width:100%}
+  overflow-wrap:anywhere;hyphens:auto;max-width:100%;min-height:2.3em}
 .card.is-active .nm{color:#fff}
 .card.is-active .rl{color:var(--acm)}
 
@@ -427,43 +428,97 @@ function initials(name){
   return (w[0][0]+(w.length>1?w[w.length-1][0]:'')).toUpperCase();
 }
 
-var CATS=[
-    {n:'Host',i:'mic',c:'#FFC107',p:[
-      {r:'Host',v:'Ted Ross',k:C('#3D4F5C','#2E3A46','#55666F')}]},
-    {n:'Co-hosts',i:'users',c:'#A78BFA',p:[
-      {r:'Invigilator · Co-host',v:'Richard Nzyoki Mutinda',face:'mutinda',fit:1,k:C('#45506B','#2F4A5C','#5A6472')},
-      {r:'Co-host',v:'Josephine Wanjina',k:C('#4A5A3E','#3A4A3E','#6B5B3E')},
-      {r:'Co-host',v:'Alicia Gitau',k:C('#3E5A54','#334155','#6E6455')}]},
-    {n:'Producers',i:'clap',c:'#2BB2F5',p:[
-      {r:'Founding producer',v:'Alfred Wangai Mundia',face:'alfred',k:C('#5A4A3C','#3B4652','#7B6D4F')},
-      {r:'Executive producer',v:'Gideon Githae',k:C('#45506B','#33474F','#5C6B62')},
-      {r:'Producer, content',v:'Mildred Ichingwa',k:C('#4E5A63','#3A4450','#6B6250')},
-      {r:'Producer, segments',v:'Ted Rosela',face:'tedrosela',k:C('#6B5B3E','#45506B','#3E5A54')}]},
-    {n:'Script',i:'doc',c:'#F5A623',p:[
-      {r:'Script editor',v:'Sharon Paul',k:C('#4A5568','#2E3A46','#5F6C7B')},
-      {r:'Copy',v:'Collins Omoto',k:C('#3E5A54','#4A5A3E','#55666F')}]},
-    {n:'Assets & graphics',i:'layers',c:'#7CD9F9',p:[
-      {r:'Graphics',v:'Trizah Trisha',face:'trizah',k:C('#6B5B3E','#45506B','#3E5A54')},
-      {r:'Motion',v:'Edwin Muthui muriuki',face:'edwin',k:C('#3D4F5C','#5A4A3C','#55666F')},
-      {r:'Brand',v:'Caroline wangare karimi',face:'caroline',k:C('#4E5A63','#2F4A5C','#6B6250')}]},
-    {n:'On-air talent',i:'cast',c:'#F6465D',p:[
-      {r:'Presenter',v:'Catherine wambui maina',k:C('#2F4A5C','#45506B','#5C6B72')},
-      {r:'Reader',v:'Lilian Gacheru',k:C('#4A5A3E','#5A4A3C','#55666F')},
-      {r:'Correspondent',v:'Victor E. W. Njanjo',k:C('#3E5A54','#33474F','#6E6455')},
-      {r:'Desk',v:'Hotwire',k:C('#45506B','#33474F','#5C6B62')}]},
-    {n:'Field reporting',i:'cam',c:'#1FD24F',p:[
-      {r:'Camera',v:'James Njunju',k:C('#3B4652','#4A5A3E','#6B5B3E')},
-      {r:'Sound',v:'Dickson M Njunjuri',k:C('#45506B','#33474F','#5C6B62')},
-      {r:'Producer, field',v:'Vincent',k:C('#4E5A63','#3A4450','#6B6250')}]},
-    {n:'Fact check',i:'check',c:'#0ECB81',p:[
-      {r:'Verifier',v:'Damaris Muchoki',k:C('#3A4A3E','#4A5568','#6B6250')},
-      {r:'Standards',v:'Ryan Kim',k:C('#4E5A63','#3E5A54','#55666F')}]},
-    {n:'Music',i:'music',c:'#3FB6FF',p:[{r:'Music',v:'John Manyange',k:C('#3D4F5C','#2E3A46','#5C6B72')}]},
-    {n:'Questions',i:'chat',c:'#FF5A47',p:[
-      {r:'Platform Q&A',v:'Ted Ross',k:C('#45506B','#4A5A3E','#55666F')}]},
-    {n:'Closing',i:'spark',c:'#FFD100',p:[{r:'Everyone',v:'everyone',k:C('#6B5B3E','#3D4F5C','#5A6472')}]},
-    {n:'Next session',i:'cal',c:'#FFCE00',p:[{r:'Next session',v:'tba',k:C('#FFC107','#C98A12','#8A5E0C')}]}
-  ];
+/* == THE ROSTER ===============================================================
+   One line per person. This is the only block you need to edit.
+
+     n     their name
+     dept  the department they belong to. It sets their card's colour, the
+           header above the roll, and where they sort. Type a new department
+           name anywhere in this list and it becomes a real department.
+     role  what they do on the show. Shown under the name.
+     as    other departments to credit them in. Optional. Somebody who really
+           fronts the show and also writes the script gets named in both.
+     face  a key from AVATAR above. Leave it off and they get an initials disc.
+     fit   1 for a wordmark or logo, which must be contained rather than
+           cropped -- cover would slice the ends off the name.
+
+   Order is the roll. Departments come out in the order they are first
+   mentioned, so moving a line moves the show and nobody has to renumber. */
+
+var ROSTER=[
+  {n:'Ted Rosela',               dept:'On air',    role:'Host - Platform Q&A',   face:'tedrosela'},
+  {n:'Richard Nzyoki Mutinda',   dept:'On air',    role:'Invigilator - Co-host', face:'mutinda', fit:1},
+  {n:'Josephine Wanjina',        dept:'On air',    role:'Co-host'},
+  {n:'Alicia Gitau',             dept:'On air',    role:'Co-host'},
+  {n:'Alfred Wangai Mundia',     dept:'Production',role:'Founding producer',     face:'alfred'},
+  {n:'Gideon Githae',            dept:'Production',role:'Executive producer'},
+  {n:'Mildred Ichingwa',         dept:'Production',role:'Producer, content'},
+  {n:'Sharon Paul',              dept:'Script',    role:'Script editor'},
+  {n:'Collins Omoto',            dept:'Script',    role:'Copy'},
+  {n:'Damaris Muchoki',          dept:'Standards', role:'Fact checker'},
+  {n:'Ryan Kim',                 dept:'Standards', role:'Livestream developer'},
+  {n:'Trizah Trisha',            dept:'Graphics',  role:'Graphics',              face:'trizah'},
+  {n:'Edwin Muthui muriuki',     dept:'Graphics',  role:'Motion',                face:'edwin'},
+  {n:'Caroline wangare karimi', dept:'Graphics',  role:'Brand',                 face:'caroline'},
+  {n:'Catherine wambui maina',   dept:'On air',    role:'Presenter'},
+  {n:'Lilian Gacheru',           dept:'On air',    role:'Reader'},
+  {n:'Victor E. W. Njanjo',      dept:'On air',    role:'Correspondent'},
+  {n:'Hotwire',                  dept:'On air',    role:'Desk'},
+  {n:'James Njunju',             dept:'Field',     role:'Camera'},
+  {n:'Dickson M Njunjuri',       dept:'Field',     role:'Sound'},
+  {n:'Vincent',                  dept:'Field',     role:'Producer, field'},
+  {n:'John Manyange',            dept:'Music',     role:'Music'},
+  {n:'everyone',                 dept:'Closing',   role:'Everyone'},
+  {n:'tba',                      dept:'Closing',   role:'Next session'}
+];
+
+/* Departments. Added or renamed a name above? Add it here too for an icon and
+   a colour; anything missing still works and picks a stable colour derived from
+   its own name, it just arrives without an icon. */
+var DEPTS=[
+  {n:'On air',     i:'mic',   c:'#FFC107'},
+  {n:'Production', i:'clap',  c:'#2BB2F5'},
+  {n:'Graphics',   i:'spark', c:'#A78BFA'},
+  {n:'Script',     i:'pen',   c:'#F97362'},
+  {n:'Standards',  i:'check', c:'#34D399'},
+  {n:'Field',      i:'map',   c:'#FBBF24'},
+  {n:'Music',      i:'wave',  c:'#22D3EE'},
+  {n:'Partners',   i:'hand',  c:'#94A3B8'},
+  {n:'Closing',    i:'star',  c:'#9CA3AF'}
+];
+
+/* Build the categories the rest of the scene already understands, from the two
+   lists above. Departments come out in the order they are first mentioned in
+   ROSTER, so a new department lands where you put it. */
+var CATS=(function(){
+  var order=[], byName={};
+  DEPTS.forEach(function(d){ order.push(d.n); byName[d.n]={n:d.n,i:d.i,c:d.c,p:[]} });
+  function fallback(n){
+    var h=0,i; for(i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))>>>0;
+    return 'hsl('+(h%360)+' 62% 58%)';
+  }
+  function seat(r){
+    var s={r:r.role,v:r.n,k:C('#3D4F5C','#2E3A46','#55666F')};
+    if(r.face) s.face=r.face;
+    if(r.fit)  s.fit=1;
+    return s;
+  }
+  ROSTER.forEach(function(r){
+    if(!byName[r.dept]){ order.push(r.dept); byName[r.dept]={n:r.dept,i:'dot',c:fallback(r.dept),p:[]}; }
+    byName[r.dept].p.push(seat(r));
+    if(r.as){
+      r.as.forEach(function(a){
+        if(!byName[a]){ order.push(a); byName[a]={n:a,i:'dot',c:fallback(a),p:[]}; }
+        byName[a].p.push(seat(r));
+      });
+    }
+  });
+  var first=[];
+  ROSTER.forEach(function(r){ if(first.indexOf(r.dept)<0) first.push(r.dept) });
+  order=order.filter(function(n){ return byName[n].p.length });
+  first.forEach(function(n){ if(order.indexOf(n)<0) order.push(n) });
+  return order.map(function(n){ return byName[n] });
+})();;
 
   /* ---- overrides ---- */
   var eps=trim(get('ep'));
@@ -560,6 +615,7 @@ var CATS=[
     if(!bw||!bh) return;
     var w=Math.min(bh/1.22,250);
     box.style.setProperty('--cw',w.toFixed(1)+'px');
+    box.style.setProperty('--ch',(w*1.72).toFixed(1)+'px');
     box.style.setProperty('--pad',((bw-w)/2).toFixed(1)+'px');
     box.style.setProperty('--ow',(w*0.03).toFixed(1)+'px');
   }
