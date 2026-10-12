@@ -29,7 +29,9 @@ import json
 import os
 import random
 import shutil
+import socket
 import sqlite3
+import struct
 import sys
 import threading
 import time
@@ -68,12 +70,127 @@ class OBSRenderer(Renderer):
         self._seq = 0
         self._ended_cb = None
 
-    def _connect(self):
-        import socket
-        s = socket.create_connection((self.host, self.port), timeout=5)
-        f = s.makefile("rwb")
-        hello = json.loads(f.readline().decode())
-        assert hello.get("op") == 0, "not an obs-websocket v5 server"
+class _WS:
+    """Minimal RFC6455 client (handshake + text frames). obs-websocket speaks
+    real WebSocket framing, not line-delimited JSON — this is that."""
+
+    GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+    def __init__(self, host, port, timeout=5):
+        self.s = socket.create_connection((host, port), timeout=timeout)
+        key = base64.b64encode(os.urandom(16)).decode()
+        self.s.sendall(("GET / HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\n"
+                        "Connection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
+                        "Sec-WebSocket-Version: 13\r\n\r\n" % (host, port, key)).encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = self.s.recv(4096)
+            if not chunk:
+                raise RuntimeError("websocket handshake failed (EOF)")
+            head += chunk
+        accept = base64.b64encode(hashlib.sha1(
+            (key + self.GUID).encode()).digest()).decode()
+        status = head.split(b"\r\n", 1)[0]
+        if b" 101 " not in status or accept.encode() not in head:
+            raise RuntimeError("websocket handshake rejected: %s" % status.decode(errors="replace"))
+        self.buf = b""
+
+    def _fill(self, n):
+        while len(self.buf) < n:
+            chunk = self.s.recv(65536)
+            if not chunk:
+                raise RuntimeError("websocket closed mid-frame")
+            self.buf += chunk
+
+    def _frame(self, opcode, payload=b""):
+        # Servers MUST drop unmasked client frames (we were killed with 1002
+        # for an unmasked close) — so even close/pong go out masked.
+        mask = os.urandom(4)
+        n = len(payload)
+        hdr = bytes([0x80 | opcode])
+        if n < 126:
+            hdr += bytes([0x80 | n])
+        elif n < 65536:
+            hdr += bytes([0x80 | 126]) + struct.pack(">H", n)
+        else:
+            hdr += bytes([0x80 | 127]) + struct.pack(">Q", n)
+        self.s.sendall(hdr + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+
+    def send(self, obj):
+        self._frame(0x1, json.dumps(obj).encode())
+
+    def recv(self):
+        frags = []
+        while True:
+            self._fill(2)
+            b1, b2 = self.buf[0], self.buf[1]
+            fin, op, ln, off = b1 & 0x80, b1 & 0x0F, b2 & 0x7F, 2
+            if ln == 126:
+                self._fill(4)
+                ln, off = struct.unpack(">H", self.buf[2:4])[0], 4
+            elif ln == 127:
+                self._fill(10)
+                ln, off = struct.unpack(">Q", self.buf[2:10])[0], 10
+            masked = b2 & 0x80
+            if masked:
+                off += 4
+            self._fill(off + ln)
+            payload = self.buf[off:off + ln]
+            if masked:
+                m = self.buf[off - 4:off]
+                payload = bytes(c ^ m[i % 4] for i, c in enumerate(payload))
+            self.buf = self.buf[off + ln:]
+            if op == 0x8:
+                raise RuntimeError("websocket closed by server")
+            if op == 0x9:
+                self._frame(0xA)  # ping -> masked pong
+                continue
+            if op not in (0x0, 0x1):
+                continue
+            frags.append(payload)
+            if fin:
+                try:
+                    return json.loads(b"".join(frags).decode())
+                except ValueError as e:
+                    raise RuntimeError("bad frame: %s" % e)
+
+    def close(self):
+        try:
+            self._frame(0x8)
+        except OSError:
+            pass
+        try:
+            self.s.close()
+        except OSError:
+            pass
+
+
+class OBSRenderer(Renderer):
+    """obs-websocket v5 over stdlib sockets. No third-party dependency."""
+
+    def __init__(self, host=None, port=None, password=None):
+        self.host = host or os.environ.get("OBS_HOST", "127.0.0.1")
+        self.port = int(port or os.environ.get("OBS_PORT", "4455"))
+        self.password = password or os.environ.get("OBS_PASS", "")
+        self._seq = 0
+        self._ended_cb = None
+
+    def _connect(self, timeout="default"):
+        # Calls default to 60s: on weak boxes a SetInputSettings can stall the
+        # server thread for many seconds (ffmpeg probe + CEF contention), and a
+        # short timeout turns that into a false "unreachable". Overridable via
+        # OBS_TIMEOUT. The event thread passes None and blocks forever instead.
+        if timeout == "default":
+            timeout = int(os.environ.get("OBS_TIMEOUT", "60"))
+        try:
+            ws = _WS(self.host, self.port, timeout=timeout)
+        except OSError as e:
+            raise RuntimeError("render plane unreachable at %s:%d (%s)"
+                               % (self.host, self.port, e))
+        hello = ws.recv()
+        if hello.get("op") != 0:
+            ws.close()
+            raise RuntimeError("not an obs-websocket v5 server")
         identify = {"op": 1, "d": {"rpcVersion": 1}}
         auth = hello["d"].get("authentication")
         if auth:
@@ -82,35 +199,29 @@ class OBSRenderer(Renderer):
             response = base64.b64encode(hashlib.sha256(
                 (secret + auth["challenge"]).encode()).digest()).decode()
             identify["d"]["authentication"] = response
-        f.write((json.dumps(identify) + "\n").encode())
-        f.flush()
-        identified = json.loads(f.readline().decode())
-        assert identified.get("op") == 2, "identify rejected (wrong password?)"
-        return s, f
+        ws.send(identify)
+        identified = ws.recv()
+        if identified.get("op") != 2:
+            ws.close()
+            raise RuntimeError("identify rejected (wrong password?)")
+        return ws
 
     def _call(self, req, data=None):
-        import socket
-        try:
-            s, f = self._connect()
-        except OSError as e:
-            raise RuntimeError("render plane unreachable at %s:%d (%s)"
-                               % (self.host, self.port, e))
+        ws = self._connect()
         try:
             self._seq += 1
             rid = "daemon-%d" % self._seq
-            f.write((json.dumps({"op": 6, "d": {
-                "requestType": req, "requestId": rid,
-                "requestData": data or {}}}) + "\n").encode())
-            f.flush()
+            ws.send({"op": 6, "d": {"requestType": req, "requestId": rid,
+                                    "requestData": data or {}}})
             while True:
-                msg = json.loads(f.readline().decode())
+                msg = ws.recv()
                 if msg.get("op") == 7 and msg["d"].get("requestId") == rid:
                     d = msg["d"]
                     if d["requestStatus"]["result"]:
                         return d.get("responseData", {})
                     raise RuntimeError("%s: %s" % (req, d["requestStatus"].get("comment")))
         finally:
-            s.close()
+            ws.close()
 
     def set_scene(self, name):
         self._call("SetCurrentProgramScene", {"sceneName": name})
@@ -160,18 +271,20 @@ class OBSRenderer(Renderer):
     def _events(self):
         while True:
             try:
-                s, f = self._connect()
-                while True:
-                    msg = json.loads(f.readline().decode())
-                    if msg.get("op") == 5 and msg["d"].get("eventType") == "MediaInputPlaybackEnded":
-                        if self._ended_cb:
-                            try:
-                                self._ended_cb(msg["d"]["eventData"].get("inputName"))
-                            except Exception as e:
-                                # A dying callback must never kill the event thread:
-                                # that would silently stop all playlist advance.
-                                print("event callback failed: %s" % e, file=sys.stderr, flush=True)
-                s.close()
+                ws = self._connect(timeout=None)
+                try:
+                    while True:
+                        msg = ws.recv()
+                        if msg.get("op") == 5 and msg["d"].get("eventType") == "MediaInputPlaybackEnded":
+                            if self._ended_cb:
+                                try:
+                                    self._ended_cb(msg["d"]["eventData"].get("inputName"))
+                                except Exception as e:
+                                    # A dying callback must never kill the event thread:
+                                    # that would silently stop all playlist advance.
+                                    print("event callback failed: %s" % e, file=sys.stderr, flush=True)
+                finally:
+                    ws.close()
             except Exception:
                 time.sleep(5)  # reconnect; the loop must not die with the socket
 

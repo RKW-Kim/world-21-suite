@@ -17,7 +17,12 @@
     "  END      -> SMILE | End Credits(intentional shutdown.)",
     "UNTESTED AGAINST REAL OBS (no Xvfb on the lab box yet): schema follows the",
     "documented collection layout; render_scenes.py --check enforces internal",
-    "consistency only. First OBS load is an explicit verification step."
+    "consistency only. First OBS load is an explicit verification step.",
+    "BROWSER SHUTDOWN IS FALSE EVERYWHERE, DELIBERATELY. shutdown:true unloads",
+    "a page the moment its scene hides; headless first paint then costs MINUTES",
+    "(measured 4-6 min on 2 shared cores), i.e. every scene cut airs blank.",
+    "Resident browsers cost RAM; blank cuts cost the station. RAM is cheaper;",
+    "bake-static (debrief 14) is what reduces the count, not unloading."
   ],
   "name": "SMILE Station",
   "current_scene": "SMILE | Off Air",
@@ -65,7 +70,7 @@
     ]}},
 
     {"name": "OB Starting Page", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/starting.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/starting.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "IDENT", "id": "ffmpeg_source", "settings": {
       "local_file": "{{MEDIA}}/ident_evening.mp4", "is_local_file": true, "looping": false}},
     {"name": "PLAYOUT_A", "id": "ffmpeg_source", "settings": {
@@ -79,16 +84,16 @@
       "input": "srt://0.0.0.0:9001?mode=listener&latency=800000",
       "is_local_file": false, "looping": false}},
     {"name": "OB Speaking", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/speaking.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/speaking.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "OB Tech Diffs", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/tech-diff.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/tech-diff.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "OB Off Air", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/offair.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/offair.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "OB End Credits", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/end-credits.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/end-credits.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "MOD Ticker", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/ticker.html", "width": 1920, "height": 76, "fps": 30, "shutdown": true}},
+      "url": "{{OVERLAY}}/ticker.html", "width": 1920, "height": 76, "fps": 30, "shutdown": false}},
     {"name": "MOD Watermark", "id": "browser_source", "settings": {
-      "url": "{{OVERLAY}}/watermark.html?corner=tl", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}}
+      "url": "{{OVERLAY}}/watermark.html?corner=tl", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}}
   ]
 }

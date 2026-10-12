@@ -4,6 +4,28 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-12 — Headless OBS rig live (Flatpak 32.2.2 + Xvfb :99)
+
+- Daemon speaks real RFC6455 now (obs-websocket is framed WebSocket, not line
+  JSON — first version never could have connected). Masked close/pong (server
+  kills unmasked client frames with 1002), 60s call timeout (OBS stalls 10s+
+  on SetInputSettings under load; short timeouts lie "unreachable").
+- Fresh installs ship websocket OFF with a random password:
+  `plugin_config/obs-websocket/config.json` → enable, keep auth.
+- Template collection loads perfectly (all 6 scenes, 18 sources, harbour first).
+- PROVEN: media decode+progress (PLAYING 10033/12000ms, ENDED on finish),
+  deck file swap + visibility toggle, scene cuts, 19s program RECORD to disk
+  (h264+aac), red color-source renders (compositor alive headless).
+- CEF verdict: NOT broken, brutally SLOW. First paint 4–6 min on 2 shared cores
+  with 12 browsers; then pixel-perfect (starting.html verified visually).
+  Consequence: browser `shutdown` flipped FALSE everywhere (unload-on-hide =
+  blank-on-every-cut). Bake-static is now load-shedding, not just hygiene.
+- Gotchas: Flatpak /tmp is namespaced (SaveSourceScreenshot invisible from
+  host — use GetSourceScreenshot base64); background OBS dies with tool-call
+  timeout (relaunch via setsid); 12s clips exhaust during slow round-trips
+  (use 60s+ media for headless tests); D-Bus abort killed one run (unresolved,
+  watching); collection switch needs OBS restart to appear in list.
+
 ## 2026-10-12 — Scene collection + SMILE|X naming (template, unverified in OBS)
 
 - Deck's six are now OBS scenes `SMILE | Starting/Meet/Q&A/Tech Diffs/Off Air/
