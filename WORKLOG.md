@@ -4,6 +4,21 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-12 — Scene collection + SMILE|X naming (template, unverified in OBS)
+
+- Deck's six are now OBS scenes `SMILE | Starting/Meet/Q&A/Tech Diffs/Off Air/
+  End Credits`, authored in `station/scenes.json.template`, rendered by
+  `station/render_scenes.py` (env paths, fresh UUIDs, structural checks).
+- Role mapping: PROGRAM→Meet (deck+chrome, meet.html NOT on air), LIVE→Q&A
+  (SRT + speaking overlay), TECHDIFF→Tech Diffs (fault framing per SCENES.md),
+  STARTING holds IDENT, OFF-AIR harbour, END credits. Daemon rewired to match.
+- `overlay_server` sends ACAO:* so file:// pages can consume /events + /state.
+- setup.sh renders the collection + prints the OBS profile checklist (output
+  settings stay manual — profiles can't be safely templated blind).
+- BLOCKED on real OBS: no Xvfb on lab box (`sudo pacman -S xorg-server-xvfb`
+  needs the operator; agent has no sudo). Template validity is internal-only
+  until first OBS load. Offscreen QPA refused ("Unable to open X display").
+
 ## 2026-10-12 — Stress test #1: brownout murder drill (PASS)
 
 - Sender SIGKILLed at wall-t=10.0s. Receiver file: 10.36s, h264+aac present,

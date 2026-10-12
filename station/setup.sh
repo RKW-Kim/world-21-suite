@@ -43,6 +43,10 @@ EOF
   echo "wrote $ROOT/secrets.env (mode 600) — fill in YOUTUBE_STREAM_KEY"
 fi
 
+# Render-plane deps (VPS + headless lab): a virtual display for OBS plus the
+# pinned Flatpak build. setup.sh never installs system packages itself — OS
+# choices stay visible. Arch: sudo pacman -S xorg-server-xvfb.
+command -v Xvfb >/dev/null || echo "::warning::Xvfb missing — headless OBS needs xorg-server-xvfb."
 # Pin the render-plane build: Arch and Ubuntu must run the same OBS.
 if command -v flatpak >/dev/null && flatpak info com.obsproject.Studio >/dev/null 2>&1; then
   {
@@ -60,3 +64,14 @@ fi
 
 echo "OK: broadcast root at $ROOT"
 ls -la "$ROOT"
+
+# Scene collection from template (env-driven paths, fresh UUIDs, validated).
+python3 station/render_scenes.py --root "$ROOT"
+
+cat <<'EOF'
+
+OBS profile checklist (set once in the GUI; profiles can't be safely templated):
+  Output 1920x1080, 30fps | x264 superfast CBR 6000k | keyframe 2s | AAC 128k
+  websocket server on 127.0.0.1:4455 with password (= OBS_PASS in secrets.env)
+  Load scene collection: broadcast/scenes/SMILE-Station.json
+EOF

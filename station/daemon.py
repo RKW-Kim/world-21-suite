@@ -7,7 +7,7 @@ local files handed to it through the Renderer interface below.
 
 Usage (run from repo root, lab defaults to ./broadcast):
   python3 station/daemon.py loop            # run the 24/7 loop (blocks)
-  python3 station/daemon.py scene program   # one-shot: cut to a scene
+  python3 station/daemon.py scene "SMILE | Meet"  # one-shot cut (exact OBS name)
   python3 station/daemon.py go-live         # ident, then cut to LIVE
   python3 station/daemon.py tech-diff       # hard cut to holding card
   python3 station/daemon.py resume          # short sting, back to LIVE
@@ -259,12 +259,12 @@ class Watchdog:
         if len(hist) >= REPEAT_LIMIT:
             alert("REPEATED FAILURE %s (%s) x%d in 1h. OFF-AIR, waiting for human."
                   % (source, reason, len(hist)), "CRIT")
-            self.r.set_scene("OFF-AIR")
+            self.r.set_scene(SCENE_OFFAIR)
             return False
         alert("%s: %s." % (source, reason), "CRIT")
         if on_air:
             alert("Cutting to TECHDIFF; stream survives.", "INFO")
-            self.r.set_scene("TECHDIFF")
+            self.r.set_scene(SCENE_TECHDIFF)
         return False
 
     def check_stream(self):
@@ -283,11 +283,15 @@ class Watchdog:
 
 
 # ------------------------------------------------------------------- loop ---
-# Scene model (OBS side): scene PROGRAM holds PLAYOUT_A + PLAYOUT_B (one
-# visible at a time) plus overlay sources; scene STARTING holds source IDENT;
-# TECHDIFF / OFF-AIR / LIVE / END are static scenes. Names are fixed here so
-# the state machine can reason about them; rename in OBS and here together.
-PROGRAM, DECK_A, DECK_B, IDENT_SRC = "PROGRAM", "PLAYOUT_A", "PLAYOUT_B", "IDENT"
+# Scene model (OBS side; collection built by render_scenes.py from the deck's
+# six — Starting, Meet, Q&A, Tech Diffs, Off Air, End Credits).
+# Role mapping: STARTING holds the IDENT clip; PROGRAM plays the PLAYOUT_A/B
+# deck under ticker+watermark; LIVE carries the SRT feeds under the speaking
+# overlay; TECHDIFF frames faults per SCENES.md; OFF-AIR is the harbour.
+SCENE_STARTING, SCENE_PROGRAM = "SMILE | Starting", "SMILE | Meet"
+SCENE_LIVE, SCENE_TECHDIFF = "SMILE | Q&A", "SMILE | Tech Diffs"
+SCENE_OFFAIR, SCENE_END = "SMILE | Off Air", "SMILE | End Credits"
+PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "IDENT"
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
 
@@ -324,7 +328,7 @@ def advance(renderer, state, data, deck_sources):
     not in RecursionError."""
     items = data.get("items", [])
     if not items:
-        renderer.set_scene("TECHDIFF")
+        renderer.set_scene(SCENE_TECHDIFF)
         alert("Playlist empty; holding.", "WARN")
         return
     skipped = 0
@@ -338,7 +342,7 @@ def advance(renderer, state, data, deck_sources):
         state["index"] = idx + 1
         skipped += 1
     else:
-        renderer.set_scene("TECHDIFF")
+        renderer.set_scene(SCENE_TECHDIFF)
         alert("Every playlist item missing; holding.", "CRIT")
         return
     deck = "B" if state.get("deck", "A") == "A" else "A"
@@ -359,7 +363,7 @@ def advance(renderer, state, data, deck_sources):
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
     if source == IDENT_SRC:
-        renderer.set_scene("LIVE")  # ident played to completion; cut to live
+        renderer.set_scene(SCENE_LIVE)  # ident played to completion; cut to live
         alert("Ident done; LIVE on air.", "INFO")
     elif source in decks.values():
         advance(renderer, load_state(), load_playlist(), decks)
@@ -450,7 +454,7 @@ def selftest():
     assert ("vis", PROGRAM, DECK_B, True) in r.calls, r.calls
     assert ("vis", PROGRAM, DECK_A, False) in r.calls, r.calls
     on_ended(r, decks, IDENT_SRC)  # ident end cuts LIVE, never advances playlist
-    assert ("scene", "LIVE") in r.calls, r.calls
+    assert ("scene", SCENE_LIVE) in r.calls, r.calls
     live_calls = len(r.calls)
     on_ended(r, decks, "SOME_PREVIEW")  # unknown sources are ignored
     assert len(r.calls) == live_calls, r.calls
@@ -462,7 +466,7 @@ def selftest():
     assert dog.check_source(DECK_A, on_air=False) is True
     dog.last_progress[DECK_A] -= 10  # simulate 10s of no movement
     assert dog.check_source(DECK_A, on_air=False) is False
-    assert ("scene", "TECHDIFF") not in [c for c in r.calls if c[0] == "scene"], r.calls
+    assert ("scene", SCENE_TECHDIFF) not in [c for c in r.calls if c[0] == "scene"], r.calls
     print("selftest: all checks passed.")
     return 0
 
@@ -491,16 +495,16 @@ def main():
         r.set_scene(args.arg)
         alert("Cut to %s." % args.arg, "INFO")
     elif args.cmd == "go-live":
-        r.set_scene("STARTING")  # ident plays; MediaInputPlaybackEnded -> LIVE
+        r.set_scene(SCENE_STARTING)  # ident plays; MediaInputPlaybackEnded -> LIVE
         alert("GO LIVE: ident running, LIVE armed.", "INFO")
     elif args.cmd == "tech-diff":
-        r.set_scene("TECHDIFF")
+        r.set_scene(SCENE_TECHDIFF)
         alert("TECH DIFF on air.", "WARN")
     elif args.cmd == "resume":
-        r.set_scene("LIVE")  # short sting lives in the scene; no full re-intro
+        r.set_scene(SCENE_LIVE)  # short sting lives in the scene; no full re-intro
         alert("Resumed LIVE.", "INFO")
     elif args.cmd == "return":
-        r.set_scene("PROGRAM")
+        r.set_scene(SCENE_PROGRAM)
         alert("Returned to PROGRAM.", "INFO")
     elif args.cmd == "loop":
         return cmd_loop(r)

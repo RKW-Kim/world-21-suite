@@ -1,0 +1,94 @@
+{
+  "_comment": [
+    "OBS scene-collection template for the station. Rendered by render_scenes.py,",
+    "never hand-edited into OBS: placeholders {{MEDIA}} {{OVERLAY}} are filled at",
+    "deploy time so Arch paths and VPS paths never leak into each other.",
+    "Role mapping (daemon drives left, OBS shows right):",
+    "  STARTING -> SMILE | Starting   (starting.html hold + IDENT clip source)",
+    "  PROGRAM  -> SMILE | Meet       (PLAYOUT_A/B local files + ticker + watermark.",
+    "                                   meet.html itself is NOT on air; the scene is",
+    "                                   named for its deck position.)",
+    "  LIVE     -> SMILE | Q&A        (SRT cam/screen sources + speaking.html overlay",
+    "                                   + ticker; floating q&a.html bubbles toggled",
+    "                                   for audience segments.)",
+    "  TECHDIFF -> SMILE | Tech Diffs (fault framing per SCENES.md: names the problem,",
+    "                                   bar fills while we work.)",
+    "  OFFAIR   -> SMILE | Off Air    (maintenance harbour. Never edited.)",
+    "  END      -> SMILE | End Credits(intentional shutdown.)",
+    "UNTESTED AGAINST REAL OBS (no Xvfb on the lab box yet): schema follows the",
+    "documented collection layout; render_scenes.py --check enforces internal",
+    "consistency only. First OBS load is an explicit verification step."
+  ],
+  "name": "SMILE Station",
+  "current_scene": "SMILE | Off Air",
+  "current_program_scene": "SMILE | Off Air",
+  "current_transition": "Fade",
+  "transition_duration": 300,
+  "scene_order": [
+    {"name": "SMILE | Starting"},
+    {"name": "SMILE | Meet"},
+    {"name": "SMILE | Q&A"},
+    {"name": "SMILE | Tech Diffs"},
+    {"name": "SMILE | Off Air"},
+    {"name": "SMILE | End Credits"}
+  ],
+  "transitions": [
+    {"name": "Fade", "id": "fade_transition", "settings": {}},
+    {"name": "Cut", "id": "cut_transition", "settings": {}}
+  ],
+  "sources": [
+    {"name": "SMILE | Starting", "id": "scene", "settings": {"items": [
+      {"name": "OB Starting Page", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "IDENT", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+    {"name": "SMILE | Meet", "id": "scene", "settings": {"items": [
+      {"name": "PLAYOUT_A", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "PLAYOUT_B", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "MOD Ticker", "visible": true, "pos": {"x": 0.0, "y": 1004.0}},
+      {"name": "MOD Watermark", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+    {"name": "SMILE | Q&A", "id": "scene", "settings": {"items": [
+      {"name": "SRT Cam", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "SRT Screen", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "OB Speaking", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
+      {"name": "MOD Ticker", "visible": true, "pos": {"x": 0.0, "y": 1004.0}},
+      {"name": "MOD Watermark", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+    {"name": "SMILE | Tech Diffs", "id": "scene", "settings": {"items": [
+      {"name": "OB Tech Diffs", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+    {"name": "SMILE | Off Air", "id": "scene", "settings": {"items": [
+      {"name": "OB Off Air", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+    {"name": "SMILE | End Credits", "id": "scene", "settings": {"items": [
+      {"name": "OB End Credits", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
+    ]}},
+
+    {"name": "OB Starting Page", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/starting.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+    {"name": "IDENT", "id": "ffmpeg_source", "settings": {
+      "local_file": "{{MEDIA}}/ident_evening.mp4", "is_local_file": true, "looping": false}},
+    {"name": "PLAYOUT_A", "id": "ffmpeg_source", "settings": {
+      "local_file": "{{MEDIA}}/PLACEHOLDER_a.mp4", "is_local_file": true, "looping": false}},
+    {"name": "PLAYOUT_B", "id": "ffmpeg_source", "settings": {
+      "local_file": "{{MEDIA}}/PLACEHOLDER_b.mp4", "is_local_file": true, "looping": false}},
+    {"name": "SRT Cam", "id": "ffmpeg_source", "settings": {
+      "input": "srt://0.0.0.0:9000?mode=listener&latency=800000",
+      "is_local_file": false, "looping": false}},
+    {"name": "SRT Screen", "id": "ffmpeg_source", "settings": {
+      "input": "srt://0.0.0.0:9001?mode=listener&latency=800000",
+      "is_local_file": false, "looping": false}},
+    {"name": "OB Speaking", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/speaking.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+    {"name": "OB Tech Diffs", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/tech-diff.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+    {"name": "OB Off Air", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/offair.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+    {"name": "OB End Credits", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/end-credits.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}},
+    {"name": "MOD Ticker", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/ticker.html", "width": 1920, "height": 76, "fps": 30, "shutdown": true}},
+    {"name": "MOD Watermark", "id": "browser_source", "settings": {
+      "url": "{{OVERLAY}}/watermark.html?corner=tl", "width": 1920, "height": 1080, "fps": 30, "shutdown": true}}
+  ]
+}

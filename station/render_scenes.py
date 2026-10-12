@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""Render scenes.json.template into an OBS scene collection.
+
+Fills {{MEDIA}} {{OVERLAY}}, stamps unique UUIDs, numbers scene items, and
+validates internal consistency (unique names, every item resolves, no
+placeholder survives, ticker docked at y=1004). This checks OUR work, not
+OBS's acceptance — first load inside real OBS is still an explicit step.
+
+  python3 station/render_scenes.py --check              # validate only
+  python3 station/render_scenes.py [--root DIR]         # write broadcast/scenes/SMILE-Station.json
+  python3 station/render_scenes.py --selftest           # offline proof
+Env: BROADCAST_ROOT (default ./broadcast), OVERLAY_URL (default 127.0.0.1:7070).
+"""
+
+import argparse
+import json
+import os
+import sys
+import uuid
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE = os.path.join(HERE, "scenes.json.template")
+CANVAS_W, CANVAS_H, TICKER_H = 1920, 1080, 76
+
+
+def render(media, overlay_url):
+    with open(TEMPLATE) as f:
+        text = f.read().replace("{{MEDIA}}", media).replace("{{OVERLAY}}", overlay_url)
+    assert "{{" not in text, "unfilled placeholder survives"
+    col = json.loads(text)
+    names = [s["name"] for s in col["sources"]]
+    assert len(names) == len(set(names)), "duplicate source names"
+    by_name = {s["name"]: s for s in col["sources"]}
+    for s in col["sources"]:
+        s.setdefault("uuid", str(uuid.uuid4()))
+        for i, it in enumerate(s.get("settings", {}).get("items", [])):
+            it.setdefault("id", i + 1)
+            assert it["name"] in by_name, "%s references missing %s" % (s["name"], it["name"])
+    for s in col["sources"]:
+        items = s.get("settings", {}).get("items", [])
+        if items:
+            s["settings"]["id_counter"] = len(items)
+    order = [e["name"] for e in col["scene_order"]]
+    assert all(n in by_name for n in order), "scene_order names unknown source"
+    assert col["current_program_scene"] in order, "program scene not in order"
+    return col
+
+
+def check(col):
+    """Structural invariants of the station contract."""
+    by_name = {s["name"]: s for s in col["sources"]}
+    scenes = [s for s in col["sources"] if s["id"] == "scene"]
+    assert len(scenes) == 6, "want exactly the 6 deck scenes, got %d" % len(scenes)
+    decks = {s["name"] for s in scenes}
+    assert decks == {"SMILE | Starting", "SMILE | Meet", "SMILE | Q&A",
+                     "SMILE | Tech Diffs", "SMILE | Off Air", "SMILE | End Credits"}, decks
+    meet_items = {i["name"] for i in by_name["SMILE | Meet"]["settings"]["items"]}
+    assert {"PLAYOUT_A", "PLAYOUT_B", "MOD Ticker", "MOD Watermark"} <= meet_items
+    live_items = {i["name"] for i in by_name["SMILE | Q&A"]["settings"]["items"]}
+    assert {"SRT Cam", "SRT Screen", "OB Speaking"} <= live_items
+    for item in by_name["SMILE | Meet"]["settings"]["items"]:
+        if item["name"] == "MOD Ticker":
+            assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
+            assert by_name["MOD Ticker"]["settings"]["height"] == TICKER_H
+    for url_src in ["OB Starting Page", "OB Speaking", "MOD Ticker"]:
+        url = by_name[url_src]["settings"]["url"]
+        assert url.startswith("http://127.0.0.1:"), "overlay URL must be localhost: %s" % url
+    for fsrc in ["PLAYOUT_A", "PLAYOUT_B", "IDENT"]:
+        assert by_name[fsrc]["settings"].get("is_local_file") is True, fsrc
+    for srt in ["SRT Cam", "SRT Screen"]:
+        assert by_name[srt]["settings"].get("is_local_file") is False, srt
+        assert "mode=listener" in by_name[srt]["settings"]["input"], srt
+    return True
+
+
+def selftest():
+    col = render("/tmp/media", "http://127.0.0.1:7070")
+    assert check(col)
+    print("render selftest: 6 scenes, deck wired, dock exact, localhost-only. OK.")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--check", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--root", default=os.environ.get("BROADCAST_ROOT",
+                                                     os.path.join(os.getcwd(), "broadcast")))
+    args = ap.parse_args()
+    if args.selftest:
+        return selftest()
+    media = os.path.join(args.root, "media")
+    overlay = os.environ.get("OVERLAY_URL", "http://127.0.0.1:7070")
+    col = render(media, overlay)
+    check(col)
+    if args.check:
+        print("template consistent.")
+        return 0
+    outdir = os.path.join(args.root, "scenes")
+    os.makedirs(outdir, exist_ok=True)
+    out = os.path.join(outdir, "SMILE-Station.json")
+    tmp = out + ".new"
+    with open(tmp, "w") as f:
+        json.dump(col, f, indent=2)
+    os.replace(tmp, out)
+    print("wrote %s" % out)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
