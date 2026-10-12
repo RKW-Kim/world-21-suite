@@ -4,7 +4,18 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
-## 2026-10-12 — Reconnect drill: direct listener vs bus (bus wins half)
+## 2026-10-12 — Host standard decided: plain OBS GUI, no headless, no scripts
+
+- Hosts run normal OBS (minimized, preview off, VideoToolbox HW encode,
+  720p30 ≤1500 kbps, 2 sources). Headless-on-host rejected twice over:
+  (1) macOS has no X server, so the weakest machines can't do it at all;
+  (2) a browser controller costs more than the Qt GUI it replaces — net
+  negative on weak hardware; (3) it deletes the panic-stop/preview UX that
+  justified OBS over ffmpeg in the first place.
+- Rationale that closed it: hosts learn the GUI in ~5 streams; familiarity
+  beats custom tooling. Websocket host page still planned, justified by
+  uniformity/direction (same buttons + tally for every host), not efficiency —
+  multi-guest phase. ffmpeg stays lab/VPS-side only, never presenter-facing.
 
 - Bug replicated cleanly (no MBA needed): ffmpeg SRT listener takes sender1's
   8s, then sender2's reconnect never arrives (8.4s total). Same disease as the
