@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE · Q&amp;A</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<style>
+/* ── Q&A — the original "rising bubbles" board (lab R3, 63197D0), refined ──
+   The take the room asked for by name, brought up to (and past) the current
+   lineup standard: dark transparent comment bubbles drifting bottom → top,
+   past the smile hub in its dashed orbit. Refinements: two depth layers,
+   per-bubble sway, cycling tagline, clock chip, plain-sight signature,
+   dot field (zero runtime JS for scenery). Every moving part is
+   pure compositor CSS — transform + opacity only. JS = one gated interval
+   for the clock + one-shot ?ep=. Watermark + ticker stay outside the page
+   as their own OBS modules: corners + bottom 76px stay clear. ──────────── */
+:root{
+  --yellow:#FFC107; --yellow-hot:#F5A623; --ink:#0a0a0a;
+  --line:#2a2a2a; --muted:#a1a1aa; --paper:#ffffff;
+  --up:#0ECB81; --down:#F6465D; --sky:#3FB6FF;
+  --fd:'Inter',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px; /* EXACTLY the ticker module dock height (1920×76) */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --eo:cubic-bezier(.32,.72,0,1); /* starting.html's entrance ease — the headline
+     word-reveal depends on it; without it the .w spans never animate and stay
+     at opacity 0 */
+  --fg:#FAFAFA; --faint:#9B9BA4; --hot:#F5A623;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--ink);color:var(--paper);font-family:var(--fd);
+  overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+svg{display:block}
+::selection{background:var(--yellow);color:var(--ink)}
+.stage{position:relative;width:100vw;height:100vh;overflow:hidden}
+/* ---- background: warm horizon, and a dot field with depth ----
+   The horizon is a single low band of warm light at the bottom edge. It gives
+   the frame a floor without lifting the centre, so the gold face still owns
+   the middle. The dots are TWO layers at different scales and opacities —
+   one layer alone reads as flat wallpaper; two gives a parallax depth that
+   never moves. */
+.bg{position:absolute;inset:0;z-index:-2;background:
+  radial-gradient(1600px 280px at 50% 104%,rgba(255,193,7,.11),transparent 70%),
+  radial-gradient(1200px 700px at 50% 18%,#131317 0%,#08080a 58%,#030304 100%)}
+.grain{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:220px 220px}
+.dots{position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,.09) 1.1px,transparent 1px);
+  background-size:26px 26px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%);
+          mask-image:radial-gradient(ellipse at 50% 44%,#000 28%,transparent 100%)}
+/* ---- the CTA pill
+   Back to a pill. The gradient carries the fill, the inset highlight gives it a
+   surface, a fine diagonal sheen gives it texture rather than a flat wash, and
+   the shadow is two parts: a tight dark contact shadow directly underneath plus
+   a wide soft gold bloom. The headlines rely on exactly that separation from
+   the dark stage, so the button should use the same trick rather than a single
+   uniform drop shadow. */
+.cta{position:relative;display:inline-flex;align-items:center;gap:10px;
+  padding:13px 27px;border-radius:999px;overflow:hidden;white-space:nowrap;
+  font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink);
+  background:linear-gradient(135deg,#FFE07A 0%,var(--yellow) 46%,var(--hot) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),
+             inset 0 -1px 0 rgba(0,0,0,.24),
+             0 3px 8px rgba(0,0,0,.55),
+             0 16px 38px rgba(255,193,7,.20)}
+.cta::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,
+    rgba(255,255,255,.11) 0 2px,rgba(255,255,255,0) 2px 5px);
+  mix-blend-mode:overlay}
+.cta>span{position:relative}
+
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:999px;
+  font-family:var(--fd);font-weight:800;font-size:14px;letter-spacing:.08em;
+  text-transform:uppercase;white-space:nowrap}
+.chip.dark{background:rgba(20,20,20,.86);border:1px solid var(--line);color:var(--paper);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 6px 24px rgba(0,0,0,.35)}
+.chip.ghost{background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.55);color:var(--yellow);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.chip.solid{background:linear-gradient(135deg,var(--yellow),var(--yellow-hot));color:var(--ink);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 28px rgba(255,193,7,.28)}
+.chip.mono{font-family:var(--fm);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--muted)}
+.chip.mono b{color:var(--paper);font-weight:600}
+
+
+to{opacity:.62;transform:scaleY(1)}}
+50%{transform:scaleY(1.045)}}
+
+.rise{opacity:0;animation:riseIn .9s var(--ease-out) forwards;animation-delay:var(--rd,0s)}
+@keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+
+.scn{position:absolute;inset:0;z-index:2;overflow:hidden}
+@keyframes dotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.5}}
+/* removed with the rings — faceBob/spinCW/spinCCW had no remaining users */
+
+.topbar{position:absolute;top:60px;left:90px;right:90px;display:flex;gap:12px;
+  justify-content:flex-end;align-items:center;z-index:6} /* top-left stays clear: watermark module docks here */
+.livechip .dot{width:9px;height:9px;border-radius:50%;background:var(--up);animation:dotPulse 1.7s ease-in-out infinite}
+
+.head{position:absolute;top:140px;left:0;right:0;text-align:center;z-index:5}
+.head h1{font-family:var(--fd);font-weight:800;font-size:100px;
+  line-height:1.02;letter-spacing:-.045em;margin-top:20px;max-width:100%;white-space:nowrap}
+.head h1 .w{display:inline-block;opacity:0;transform:translateY(40px);
+  animation:wordup .85s var(--eo) both}
+.head h1 .w1{animation-delay:.04s}.head h1 .w2{animation-delay:.12s}
+@keyframes wordup{to{opacity:1;transform:none}}
+/* Negative tracking (-4.5px) pulls the last glyph of each word toward the
+   next word's gradient box, and where two background-clip:text boxes meet the
+   seam reads as a shaved letter. Padding-right restores the side-bearing that
+   tracking eats, without changing the visual gap (margin trims it back). */
+.head h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  padding-right:5px;margin-right:-5px;
+  filter:drop-shadow(0 2px 14px rgba(0,0,0,.65))}
+.head h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  padding-right:5px;
+  filter:drop-shadow(0 0 26px rgba(255,193,7,.25))}
+/* option B — a short gold accent rule under "Yours." */
+.head .rule{display:block;width:64px;height:3px;margin:26px auto 0;border-radius:2px;
+  background:linear-gradient(90deg,var(--hot),var(--yellow));
+  box-shadow:0 0 18px rgba(255,193,7,.35)}
+.head .row{margin-top:24px;display:flex;gap:14px;justify-content:center}
+
+/* cycling tagline — the lineup signature move, pure CSS */
+.tag{position:relative;height:1.6em;width:min(88vw,720px);margin:20px auto 0;overflow:hidden}
+.tag span{position:absolute;inset:0;display:block;line-height:1.6em;text-align:center;
+  font-family:var(--fd);font-weight:500;font-size:clamp(15px,2vh,20px);
+  color:var(--muted);opacity:0;transform:translateY(12px);animation:tagCycle 12s infinite}
+.tag span b{color:var(--yellow);font-weight:800}
+.tag span:nth-child(2){animation-delay:4s}
+.tag span:nth-child(3){animation-delay:8s}
+@keyframes tagCycle{0%{opacity:0;transform:translateY(12px)}3%,27%{opacity:1;transform:none}
+  33%,100%{opacity:0;transform:translateY(-12px)}}
+
+/* ---- the centre face: one slow breath, nothing else ----
+   The rings, the aura, the eye drift, the blink and the specular pass are all
+   gone. Only the breath remains. Everything else that moved was motion without
+   meaning, and motion without meaning reads as a loading state. */
+.hubA{position:absolute;top:470px;left:calc(50% - 180px);width:360px;height:360px;
+  display:grid;place-items:center;z-index:3}
+.hubA .face{width:260px;height:260px;animation:breathe 6.4s ease-in-out infinite;
+  /* starting.html's mark glow, verbatim: a wide warm bloom with no hard edge.
+     The dark shadow is kept and applied second, so the gold reads as the light
+     source while the face still sits on the stage rather than floating. */
+  filter:drop-shadow(0 0 48px rgba(255,193,7,.62))
+         drop-shadow(0 22px 44px rgba(0,0,0,.55))}
+.hubA .face svg{width:100%;height:100%}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.022)}}
+
+/* the comment bubbles — dark, transparent, tails — rising bottom → top.
+   depth: .far bubbles ride a slightly smaller scale (--sc) and sit dimmer. */
+/* ---- bubble lifecycle
+   Nine cards rise from the bottom of the frame on a stagger, hold, and leave.
+   The infinite loop is what lets the scene run unattended for hours.
+
+   Transform and opacity only, so it is composited and costs nothing per frame.
+   The travel window is bounded on purpose. .head owns the top of the picture —
+   headline, gold rule, tagline, CTA pill, running from roughly y=180 to y=490 —
+   so a card must be fully transparent before it reaches y=500. Total travel is
+   560px (+420 -> -140); at 52%, the last fully-opaque moment, a card sits at
+   top+129, so any card anchored at top >= 371 is still below the CTA by the time
+   it goes invisible. The first pass travelled 1320px and held opacity to 62%,
+   which put an opaque card at y=72 — straight through the headline. */
+/* ── NOTATION — future replacement, deliberately not built ──────────────
+   IDEA (raised by the user, parked here on purpose): replace the floating
+   cards with a single chat INPUT, as if you were typing to someone or to an
+   assistant. Text appears, is partly deleted mid-word, a different comment is
+   typed in its place, and the loop repeats — ending on the one that resolves.
+   The purpose is not decoration: it demonstrates the input path and invites
+   the viewer to comment, rather than showing comments that appear from nowhere.
+
+   WHY IT IS NOT IMPLEMENTED YET: this scene runs unattended for hours with no
+   person at the controls, and a typing loop has to look deliberate rather than
+   like a stuck cursor. Three things have to be solved before it can go in:
+
+     1. Cursor and caret behaviour. A blinking block caret at 17px competes
+        with the headline for attention. It needs to sit low, dim, and only
+        appear while a string is actually being edited.
+     2. Deletion has to read as deletion. Removing characters at an even rate
+        looks like text failing to load. It needs a hold before the first
+        backspace, and the new string should start before the old one has
+        finished clearing, or the gap reads as a pause.
+     3. It must never loop visibly. The strings and their order need to be
+        long enough that the repeat is not legible within a viewing, and the
+        dwell after the final string has to be long enough that nobody waits
+        through a full cycle wondering whether it has stopped.
+
+   Cost note: a typewriter is the first thing in this file that cannot be done
+   with CSS alone. It wants either a small JS interval mutating textContent —
+   which is fine, it is the same one-tick cost as the clock elsewhere — or a
+   steps() animation over a pre-split string, which stays on the compositor but
+   cannot express "hold, then delete from the middle". Prefer the interval.
+
+   If it is built, the floating cards above should stay for depth and this
+   should be the foreground element, not a replacement for them — the cards are
+   what make the scene look populated when nobody has commented yet. */
+.bub{position:absolute;z-index:2;max-width:300px;
+  animation:bubRise var(--bd,14s) linear infinite var(--bdel,0s);
+  will-change:transform,opacity}
+/* The colour token lives on .bub, not on .card, because the aura is drawn by
+   .sway's pseudo-elements — and a custom property set on a child cannot be read
+   by its parent. */
+/* --pc is the single platform colour, used for anything that can only take one
+   (the tail's aura). --pgl is what PAINTS the rim and the aura, and it is a
+   gradient layer rather than a colour so one platform can carry more than one.
+   TikTok's is the same cyan -> white -> red as its mark, so the bubble and the
+   logo it came from are visibly the same thing. A border cannot hold a gradient,
+   hence the padding-box/border-box pair below rather than border-color. */
+.bub:has(.yt){--pc:rgba(255,45,72,.95);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.fb){--pc:rgba(48,138,245,.95);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.x) {--pc:rgba(255,255,255,.85);--pgl:linear-gradient(var(--pc),var(--pc))}
+.bub:has(.tt){--pc:rgba(0,229,255,.85);
+  --pgl:linear-gradient(135deg,#25F4EE 0%,#ffffff 46%,#FE2C55 100%)}
+.sway{position:relative;
+  animation:bubSway var(--swd,6s) ease-in-out infinite alternate var(--swel,0s)}
+@keyframes bubRise{
+  0%{transform:translateY(420px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
+  10%{opacity:1}
+  52%{opacity:1}
+  68%{opacity:0}
+  100%{transform:translateY(-140px) scale(var(--sc,1)) rotate(var(--tilt,0deg));opacity:0}
+}
+/* ---- the aura: ONE shape, ONE glow
+   The old card had a hard border plus a box-shadow aura, and the tail was a
+   separate wedge with its own border. That read as two objects: box-shadow and
+   border are both clipped to the border box and simply STOP at the card's edge,
+   so nothing carried the glow down the tail.
+
+   Everything here is now the FLAT platform colour — the conic rim is gone. A
+   two-tone rim meant the edge was bright at one point and dull at another, and
+   the eye read that as lighting rather than as an outline. One colour, one
+   weight, all the way round; the only movement is the aura breathing.
+
+   The aura is drawn twice, once for the bubble and once for the tail, both at
+   z-index -1 so both stay behind the card. :has() picks the side, so the
+   mirrored cards get their halo on the correct corner.
+
+   Cost: one blurred layer per card, composited. There is deliberately no filter
+   on .card itself — a drop-shadow there looks identical but adds a second render
+   surface per card and pushes the text through it. */
+.sway::before,.sway::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.sway::before{inset:-2px;border-radius:22px;border-bottom-left-radius:14.5px;
+  padding:6px;background:var(--pgl);
+  /* punch the middle out so this is a RING, not a filled shape. A filled shape
+     blurred behind an opaque card leaves a hard silhouette edge; a 6px ring
+     blurred reads as light. exclude = content-box XOR border-box. */
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+          mask-composite:exclude;
+  filter:blur(7px);opacity:.75;animation:glowPulse 3.9s ease-in-out infinite}
+.sway::after{left:16px;bottom:-33px;border-style:solid;
+  border:17px solid;border-color:var(--pc) transparent transparent var(--pc);
+  filter:blur(8px);opacity:.8}
+.sway:has(.flip)::after{left:auto;right:16px;
+  border-color:var(--pc) var(--pc) transparent transparent}
+@keyframes glowPulse{0%,100%{opacity:.38}50%{opacity:.85}}
+
+/* The rim. padding-box holds the card surface and border-box shows through the
+   1.5px transparent border to paint the rim — the only way to give a border a
+   gradient. Flat for every platform but TikTok, which carries two colours. */
+.bcard{position:relative;border:1.5px solid transparent;border-radius:20px;
+  border-bottom-left-radius:12.5px;padding:13px 18px 15px;
+  background:linear-gradient(#121216,#0e0e12) padding-box,var(--pgl) border-box;
+  /* The wide, even bloom. box-shadow is the only one of these that grows
+     OUTWARD from the border box, which is what makes it visible at all — a
+     separate glow layer of the same size as the card simply hides behind it. */
+  box-shadow:0 0 14px 1px color-mix(in srgb,var(--pc) 30%,transparent),
+    0 0 40px 6px color-mix(in srgb,var(--pc) 15%,transparent),
+    0 14px 36px rgba(0,0,0,.5)}
+.bcard.flip{border-radius:20px;border-bottom-right-radius:12.5px}
+/* ---- the tail
+   The classic two-triangle technique, but BOTH triangles are now the card's own
+   surface colour. The tail used to be a dark wedge inside a platform-coloured
+   outline, which is two tones — and at 18px that reads as a sticker laid onto
+   the card rather than as part of it.
+
+   With the outline gone the tail is one piece of the same material as the
+   bubble, and the only thing describing it is the glow behind it: .sway::after,
+   which is still the platform colour. So the shape belongs to the card and the
+   light around it belongs to the platform. One object, lit at the tail. */
+.bcard::before{content:"";position:absolute;width:0;height:0;
+  border-style:solid;pointer-events:none;z-index:0;left:18px;bottom:-30px;
+  border:15px solid;border-color:#0e0e12 transparent transparent #0e0e12}
+.bcard.flip::before{left:auto;right:18px;
+  border-color:#0e0e12 #0e0e12 transparent transparent}
+.bcard .h{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap}
+.bcard .h b{font-family:var(--fd);font-weight:800;font-size:12px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
+.bcard .h b.bronze{background:linear-gradient(180deg,#f0b67f 0%,#c47a3d 45%,#8c4d1c 58%,#e8b083 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.bcard .h b.silver{background:linear-gradient(180deg,#fafafb 0%,#c9c9d4 45%,#88888f 58%,#eceef3 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.bcard .h b.gold{background:linear-gradient(180deg,#fff6b8 0%,#f2c71b 45%,#b8860b 58%,#ffdf69 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(255,209,0,.45))}
+.pli{width:18px;height:18px;flex:none}
+.pli svg{width:18px;height:18px;display:block}
+.bcard.yt .pli{filter:drop-shadow(0 0 10px rgba(255,0,51,.6))}
+.bcard.fb .pli{filter:drop-shadow(0 0 10px rgba(24,119,242,.6))}
+.bcard.x .pli{filter:drop-shadow(0 0 10px rgba(255,255,255,.45))}
+.bcard.tt .pli{filter:drop-shadow(0 0 10px rgba(254,44,85,.55))}
+.bcard .q{font-family:var(--fd);font-weight:600;font-size:17px;line-height:1.35;color:var(--paper);
+  text-shadow:0 1px 8px rgba(0,0,0,.5)}
+@keyframes bubSway{from{transform:translateX(calc(var(--sw,12px) * -1))}to{transform:translateX(var(--sw,12px))}}
+.far .sway{opacity:.78}
+.far .bcard .q{font-size:15.5px}
+
+/* plain-sight brand signature — the fallback mark when the watermark
+   module isn't layered over this scene */
+.sig{position:absolute;left:0;right:0;bottom:calc(var(--safe-b) + 14px);z-index:5;text-align:center;
+  font-family:var(--fm);font-size:11px;letter-spacing:.46em;color:rgba(250,250,250,.38);
+  animation:riseIn .9s var(--ease-out) .7s both}
+.sig b{font-weight:600;color:rgba(255,193,7,.62)}
+
+
+
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+  .rise{animation-delay:0s!important}
+  .bub{animation:none;opacity:1}
+  
+  .tag span:first-child{opacity:1;transform:none}
+  .hubA .face{animation:none}
+}
+/* The TikTok mark is a gradient of its own two brand colours rather than the
+   stacked cyan/red offsets it replaces. Stacked flat offsets put a cyan shape
+   next to the Facebook blue at the same 18px, and on a dark stage the two read
+   as the same blue at a glance. One gradient that runs cyan -> white -> red
+   means the mark is identifiable by its colour instead of by its silhouette.
+   Each card needs its own gradient id — SVG ids are document-global. */
+</style></head><body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="dots" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  
+
+  <section class="scn" data-take="a">
+
+    <div class="head">
+      <h1 class="rise" style="--rd:.1s"><span class="w w1"><span class="g">The Floor is</span></span> <span class="w w2"><span class="y">Yours.</span></span></h1>
+      <i class="rule rise" style="--rd:.28s" aria-hidden="true"></i>
+      <p class="tag" aria-hidden="true">
+        <span>Grab the <b>Mic</b> — Politely.</span>
+        <span>Your Questions, <b>Answered Live</b>.</span>
+        <span>No Dumb Questions — <b>Only Good Ones</b>.</span>
+      </p>
+      <div class="row">
+        <span class="cta rise" style="--rd:.2s"><span>Drop Questions in Chat</span></span>
+      </div>
+    </div>
+
+    <div class="hubA rise" style="--rd:.25s">
+      <div class="face" aria-hidden="true">
+        <!-- smile face — the kit's standard circle mark; eyes are separate so
+             they can drift and blink independently of the disc -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg>
+      </div>
+    </div>
+
+    <div class="bub" style="left:110px;top:520px;--bd:15s;--bdel:-3s;--tilt:-2deg;--sw:12px;--swd:6.4s;--swel:-1.2s">
+      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@marketnotes</b></span><span class="q">How do I keep up when I miss a day of the market?</span></div></div>
+    </div>
+    <div class="bub" style="left:318px;top:760px;--bd:18s;--bdel:-9s;--tilt:2deg;--sw:10px;--swd:5.6s;--swel:-2.4s">
+      <div class="sway"><div class="bcard flip fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="gold">@growthfan88</b></span><span class="q">Where does everyone here get their news from?</span></div></div>
+    </div>
+    <div class="bub" style="left:560px;top:430px;--bd:12.5s;--bdel:-6s;--tilt:-1.5deg;--sw:14px;--swd:7s;--swel:-.6s">
+      <div class="sway"><div class="bcard x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="silver">@cashflowcoach</b></span><span class="q">What's a habit that actually turned your revenue around?</span></div></div>
+    </div>
+    <div class="bub" style="left:1215px;top:470px;--bd:13.5s;--bdel:-2s;--tilt:1.5deg;--sw:11px;--swd:6.1s;--swel:-3s">
+      <div class="sway"><div class="bcard flip tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24"><defs><linearGradient id="ttg1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25F4EE"/><stop offset=".42" stop-color="#ffffff"/><stop offset="1" stop-color="#FE2C55"/></linearGradient></defs><path fill="url(#ttg1)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></i><b class="gold">@portfolio101</b></span><span class="q">How much cash do you guys keep aside as a buffer?</span></div></div>
+    </div>
+    <div class="bub" style="left:1388px;top:700px;--bd:16.5s;--bdel:-11s;--tilt:-2deg;--sw:13px;--swd:6.8s;--swel:-1.8s">
+      <div class="sway"><div class="bcard yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="gold">@creatormargin</b></span><span class="q">What do you actually listen to on the way in?</span></div></div>
+    </div>
+    <div class="bub" style="left:1556px;top:610px;--bd:14s;--bdel:-7s;--tilt:2deg;--sw:10px;--swd:5.2s;--swel:-2s">
+      <div class="sway"><div class="bcard flip x"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#E7E9EA"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></i><b class="gold">@bizbasics</b></span><span class="q">What would you say to someone brand new to investing?</span></div></div>
+    </div>
+    <div class="bub far" style="left:835px;top:810px;--bd:11s;--bdel:-1s;--tilt:-1deg;--sc:.94;--sw:9px;--swd:5.9s;--swel:-2.8s">
+      <div class="sway"><div class="bcard fb"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="#1877F2"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></i><b class="bronze">@trendlinecrew</b></span><span class="q">Which platform do you trust for a daily brief?</span></div></div>
+    </div>
+    <div class="bub far" style="left:985px;top:560px;--bd:20s;--bdel:-14s;--tilt:1deg;--sc:.94;--sw:8px;--swd:6.6s;--swel:-.9s">
+      <div class="sway"><div class="bcard flip yt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></i><b class="silver">@founderfaqs</b></span><span class="q">How do you handle burnout on a long session?</span></div></div>
+    </div>
+    <div class="bub far" style="left:60px;top:430px;--bd:19s;--bdel:-16s;--tilt:-2deg;--sc:.94;--sw:9px;--swd:7.2s;--swel:-3.6s">
+      <div class="sway"><div class="bcard tt"><span class="h"><i class="pli"><svg viewBox="0 0 24 24"><defs><linearGradient id="ttg2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25F4EE"/><stop offset=".42" stop-color="#ffffff"/><stop offset="1" stop-color="#FE2C55"/></linearGradient></defs><path fill="url(#ttg2)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></i><b class="gold">@valuepocket</b></span><span class="q">What's the first thing you set before a big meeting?</span></div></div>
+    </div>
+    <p class="sig">smile<b>.co.ke</b></p>
+  </section>
+</div>
+<script>
+/* Nothing to run. The scene is entirely CSS on the compositor: no clock, no
+   data, no params, no requestAnimationFrame. Every animation touches transform
+   or opacity only, so the whole thing is rasterised once and then moved by the
+   GPU — including the nine card borders, whose conic sweep is a static gradient
+   precisely because animating it repainted every frame. */
+</script>
+</script>
+</script>
+</body></html>

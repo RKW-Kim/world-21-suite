@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SMILE — countdown</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<style>
+/* STARTING SOON — the last sixty seconds.
+   Hold the long buffer on starting.html. Cut to this when the crew is ready.
+
+   The stage is the blackhole poster: one dark sphere with a bright rim and the
+   words laid across its lower half. That is the whole composition until zero.
+   It is deliberately featureless — the mark is not on it, nothing smiles at you
+   while you wait.
+
+   A doomsday flip clock sits on the sphere's centre. When it reaches 00:00 the
+   four cards turn over one at a time, left to right, each landing on the mark.
+   Then they run together like water: the outer two run into their neighbours,
+   and the last two fall into each other and drop out of frame. The centre is
+   left empty, the sphere rises and becomes the mark, the eyes blink, the mouth
+   draws, and the stream is open.
+
+   Motion language is Apple/Linear: critically damped decel, no overshoot,
+   size-specific optical tracking, type that rises rather than fades up.
+
+   Contract: no canvas, no rAF, one gated interval (the clock). Every animation
+   is a CSS keyframe on the compositor. Bottom 76px is the ticker dock. */
+:root{
+  --yellow:#FFC107; --hot:#F5A623; --ember:#FF8A1F; --ink:#0A0A0A;
+  --fg:#FAFAFA; --muted:#A1A1AA; --faint:#9B9BA4;
+  --line:#2a2a2a;
+  --fd:'Inter',system-ui,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,monospace;
+  --safe-b:76px;
+  --eo:cubic-bezier(.32,.72,0,1);
+  --eio:cubic-bezier(.4,0,.2,1);
+
+  --sun:clamp(360px,34vw,660px);        /* the sphere */
+  --mark:calc(var(--sun)*.62);          /* the mark it resolves into */
+  /* The card row has to sit INSIDE the sphere with air on both sides. At
+     --cw .215 the row came out 605px against a 614px sphere, so the sphere's
+     rim showed as two vertical slivers hugging the outer cards and read as
+     clipping. .165 puts the row at ~79% of the sphere. */
+  --cw:calc(var(--sun)*.165);           /* flip card width  */
+  --ch:calc(var(--cw)*1.42);            /* flip card height */
+  --cgap:calc(var(--cw)*.15);           /* was .11 — adjacent digits crowded */
+  --cdim:calc(var(--ch)*.80);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--fg);font-family:var(--fd);-webkit-font-smoothing:antialiased}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+::selection{background:var(--yellow);color:var(--ink)}
+.page{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* ---- watermark corner, moved to the right ---- */
+.clockchip{position:absolute;top:34px;right:44px;z-index:30;display:inline-flex;align-items:center;gap:10px;
+  padding:9px 18px;border-radius:999px;background:rgba(10,10,12,.82);border:1px solid var(--line);
+  font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--muted)}
+.clockchip b{color:var(--fg);font-weight:600}
+
+/* ---- the sphere. A dark ball lit from above with a bright rim riding its top
+        edge: a sun not quite up, or an eclipse holding something back. ---- */
+.holder{position:absolute;left:50%;top:48%;width:0;height:0;z-index:1}
+.holder>*{position:absolute;left:50%;top:0;transform:translate(-50%,-50%)}
+.rim{z-index:0;width:var(--sun);height:var(--sun);border-radius:50%;pointer-events:none;
+  box-shadow:0 -16px 66px 4px rgba(255,150,50,.42),0 -4px 20px 1px rgba(255,206,130,.40);
+  transition:opacity 600ms var(--eio),box-shadow 700ms var(--eio)}
+.sun{z-index:1;width:var(--sun);height:var(--sun);border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 24%,rgba(255,180,90,.13),transparent 58%),
+    radial-gradient(circle at 50% 40%,#1d1608 0%,#100c05 54%,#050402 100%);
+  box-shadow:inset 0 20px 56px rgba(255,140,40,.24),inset 0 -28px 66px rgba(0,0,0,.78)}
+
+/* ---- the words, laid across the sphere's lower half as in the poster ---- */
+.words{position:absolute;left:0;right:0;top:70%;z-index:6;
+  display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;
+  transition:opacity 520ms var(--eio)}
+.coming{font-family:var(--fd);font-weight:500;font-size:clamp(28px,2.5vw,46px);
+  letter-spacing:.42em;color:#EDEDF2;text-indent:.42em}
+.brand{font-family:var(--fm);font-size:clamp(10px,.82vw,15px);font-weight:600;
+  letter-spacing:.62em;color:rgba(255,138,31,.92);text-indent:.62em}
+
+/* ================= the doomsday flip clock =================
+   Four chunky tiles with a hard split down the middle. Amber rather than red:
+   the sphere is already warm, and a second alarm colour would fight it. */
+.flip{position:absolute;left:0;right:0;top:48%;transform:translateY(-50%);z-index:8;
+  display:flex;align-items:center;justify-content:center;gap:var(--cgap);perspective:1400px}
+.card{position:relative;width:var(--cw);height:var(--ch);transform-style:preserve-3d}
+.in3d{position:absolute;inset:0;transform-style:preserve-3d}
+.side{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;
+  display:grid;place-items:center;overflow:hidden;
+  background:linear-gradient(180deg,#100d07,#060503);
+  box-shadow:inset 0 0 0 2px rgba(255,138,31,.22),0 18px 40px rgba(0,0,0,.6)}
+.side::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;
+  background:#000;z-index:3;box-shadow:0 0 0 1px rgba(255,138,31,.14)}
+.dg{font-family:var(--fd);font-weight:800;font-size:var(--cdim);line-height:1;
+  color:var(--ember);text-shadow:0 0 26px rgba(255,138,31,.55)}
+.side.back{transform:rotateX(180deg);background:none;box-shadow:none}
+.side.back svg{width:100%;height:100%}
+/* a digit turning: the card is edge-on and invisible at the halfway point, so
+   the glyph can be swapped underneath it without anyone seeing the seam */
+.card.turn .in3d{animation:cardTurn 240ms linear both}
+@keyframes cardTurn{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0)}}
+.card[data-i="0"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(0ms - var(--freeze,0s))}
+.card[data-i="1"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(150ms - var(--freeze,0s))}
+.card[data-i="2"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(300ms - var(--freeze,0s))}
+.card[data-i="3"].flip .in3d{animation:cardFlip 440ms var(--eo) both;
+  animation-delay:calc(450ms - var(--freeze,0s))}
+@keyframes cardFlip{from{transform:rotateX(0)}to{transform:rotateX(180deg)}}
+.colon{display:flex;flex-direction:column;gap:calc(var(--cw)*.19);padding:0 calc(var(--cw)*.03)}
+.colon i{width:calc(var(--cw)*.09);height:calc(var(--cw)*.09);border-radius:50%;background:var(--ember);
+  box-shadow:0 0 16px rgba(255,138,31,.7)}
+
+/* ---- the resolve choreography ----
+   Delays are calc(base - var(--freeze)) so QA can park any beat on demand. */
+body.zero .words{opacity:.34}
+
+/* 1 · every card turns over, left to right, each landing on the mark */
+
+/* 2 · the outer two run into their neighbours like water finding its level */
+.card[data-i="0"].mrg{animation:runL 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="1"].mrg{animation:absorb 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="3"].mrg{animation:runR 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+.card[data-i="2"].mrg{animation:absorb 620ms var(--eo) both;
+  animation-delay:calc(1120ms - var(--freeze,0s))}
+@keyframes runL{0%{transform:translateX(0) scale(1);opacity:1}
+  55%{transform:translateX(calc(var(--cw)*.52)) scale(.94,.9);opacity:1}
+  100%{transform:translateX(calc(var(--cw)*.68)) scale(.5,.42);opacity:0}}
+@keyframes runR{0%{transform:translateX(0) scale(1);opacity:1}
+  55%{transform:translateX(calc(var(--cw)*-.52)) scale(.94,.9);opacity:1}
+  100%{transform:translateX(calc(var(--cw)*-.68)) scale(.5,.42);opacity:0}}
+@keyframes absorb{0%{transform:scale(1)}45%{transform:scale(1.09,1.05)}
+  100%{transform:scale(1)}}
+
+/* 3 · the last two fall into each other and drop out, leaving the centre bare */
+.card[data-i="1"].void{animation:voidL 900ms cubic-bezier(.5,0,.75,0) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+.card[data-i="2"].void{animation:voidR 900ms cubic-bezier(.5,0,.75,0) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+@keyframes voidL{0%{transform:scale(1) translateX(0);opacity:1}
+  100%{transform:scale(.06) translateX(calc(var(--cw)*.5));opacity:0}}
+@keyframes voidR{0%{transform:scale(1) translateX(0);opacity:1}
+  100%{transform:scale(.06) translateX(calc(var(--cw)*-.5));opacity:0}}
+body.voided .colon{animation:voidOut 700ms var(--eio) both;
+  animation-delay:calc(1880ms - var(--freeze,0s))}
+@keyframes voidOut{to{opacity:0;transform:scale(.4)}}
+
+/* 4 · the sphere rises and becomes the mark */
+body.risen .rim{animation:rimLit 900ms var(--eio) both;
+  animation-delay:calc(2900ms - var(--freeze,0s))}
+body.risen .sun{animation:sunRise 900ms var(--eo) both;
+  animation-delay:calc(2900ms - var(--freeze,0s))}
+body.risen .mark{opacity:1;animation:markIn 760ms var(--eo) both;
+  animation-delay:calc(2960ms - var(--freeze,0s))}
+@keyframes rimLit{0%{opacity:1;box-shadow:0 -16px 66px 4px rgba(255,150,50,.42),0 -4px 20px 1px rgba(255,206,130,.40)}
+  to{opacity:0;box-shadow:0 -10px 90px 12px rgba(255,193,7,.40),0 0 210px 34px rgba(255,193,7,.16)}}
+@keyframes sunRise{0%{opacity:1;transform:translate(-50%,-50%) translateY(46px) scale(.94)}
+  to{opacity:0;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+@keyframes markIn{from{opacity:0;transform:translate(-50%,-50%) translateY(30px) scale(.86)}
+  to{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(1)}}
+body.risen .words{opacity:0}
+
+/* 5 · the mark itself. Paths verbatim from assets/smile-face.svg; only the
+       eye transform and the mouth clip are animated, nothing is redrawn. */
+.mark{z-index:5;width:var(--mark);height:var(--mark);opacity:0;
+  filter:drop-shadow(0 0 34px rgba(255,193,7,.34))}
+.mark svg{width:100%;height:100%;overflow:visible}
+.f-eye,.f-mouth{transform-box:fill-box;transform-origin:center}
+.mark .f-eye{opacity:0}
+.mark.eyes .f-eye{animation:fEyeIn 260ms var(--eo) both;
+  animation-delay:calc(3860ms - var(--freeze,0s))}
+@keyframes fEyeIn{from{opacity:0}to{opacity:1}}
+/* THE BLINK, recovered from logo-motion.html study B — 90ms shut / 90ms open,
+   right eye 140ms behind. Eyes only; the study's mouth pulse is dropped. */
+.mark.blink .f-eye-l{animation:fBlink 180ms linear both;
+  animation-delay:calc(4180ms - var(--freeze,0s))}
+.mark.blink .f-eye-r{animation:fBlink 180ms linear both;
+  animation-delay:calc(4320ms - var(--freeze,0s))}
+@keyframes fBlink{0%{transform:scaleY(1)}50%{transform:scaleY(.06)}100%{transform:scaleY(1)}}
+/* THE DRAW, recovered from logo-motion.html study A — mouth wipes L to R over
+   480ms. The -8% vertical inset is what keeps the stroke ends off the clip. */
+.mark .f-mouth{clip-path:inset(-8% 100% -8% -2%)}
+.mark.mouth .f-mouth{animation:fMouthDraw 480ms var(--eo) both;
+  animation-delay:calc(4420ms - var(--freeze,0s))}
+@keyframes fMouthDraw{from{clip-path:inset(-8% 100% -8% -2%)}
+  to{clip-path:inset(-8% -2% -8% -2%)}}
+
+/* ================= welcome ================= */
+.welcome{position:absolute;left:0;right:0;top:72%;z-index:12;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  opacity:0;pointer-events:none}
+.w-kick{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.5em;
+  color:var(--yellow);padding-left:.5em}
+.w-title{font-family:var(--fd);font-weight:800;font-size:clamp(40px,4.8vw,74px);
+  line-height:.94;letter-spacing:-.045em;margin-top:18px}
+.w-title .y{color:var(--yellow)}
+.w-sub{font-family:var(--fm);font-size:12px;font-weight:600;letter-spacing:.3em;
+  color:var(--muted);margin-top:20px}
+.w-rule{width:56px;height:2px;background:var(--yellow);opacity:.55;margin-top:26px;
+  transform:scaleX(0);transform-origin:center}
+.stingers{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
+.stinger{position:relative;display:inline-flex;align-items:center;gap:10px;
+  padding:10px 18px 10px 14px;border-radius:14px;
+  border:1px solid var(--line);background:rgba(255,255,255,.035);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.stinger .mk{width:18px;height:18px;flex:0 0 auto;display:block}
+.stinger .mk svg{width:100%;height:100%}
+.stinger .nm{font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.18em;
+  color:var(--muted)}
+.stinger::after{content:"";position:absolute;inset:-1px;border-radius:14px;
+  pointer-events:none;opacity:.5;box-shadow:0 0 22px -6px currentColor}
+.stinger[data-p="youtube"]{color:rgba(255,0,51,.8)}
+.stinger[data-p="twitch"] {color:rgba(145,70,255,.8)}
+.stinger[data-p="facebook"]{color:rgba(24,119,242,.8)}
+.stinger[data-p="tiktok"] {color:rgba(37,244,238,.7)}
+.stinger[data-p="youtube"] .nm{color:#FF5A78}
+.stinger[data-p="twitch"] .nm{color:#B18AFF}
+.stinger[data-p="facebook"] .nm{color:#6BA6FF}
+.stinger[data-p="tiktok"] .nm{color:#7FE9E4}
+.w-url{font-family:var(--fm);font-size:14px;font-weight:600;letter-spacing:.2em;
+  color:rgba(250,250,250,.72);margin-top:28px}
+.w-url b{color:var(--yellow);font-weight:600}
+
+body.landed .welcome{pointer-events:auto;
+  animation:wFade 520ms var(--eio) both;
+  animation-delay:calc(5000ms - var(--freeze,0s))}
+body.landed .w-kick  {animation:rise 560ms var(--eo) both;animation-delay:calc(5080ms - var(--freeze,0s))}
+body.landed .w-title {animation:rise 640ms var(--eo) both;animation-delay:calc(5170ms - var(--freeze,0s))}
+body.landed .w-sub   {animation:rise 560ms var(--eo) both;animation-delay:calc(5300ms - var(--freeze,0s))}
+body.landed .w-rule  {animation:ruleIn 520ms var(--eo) both;animation-delay:calc(5390ms - var(--freeze,0s))}
+body.landed .stingers{animation:rise 620ms var(--eo) both;animation-delay:calc(5460ms - var(--freeze,0s))}
+body.landed .w-url   {animation:rise 560ms var(--eo) both;animation-delay:calc(5600ms - var(--freeze,0s))}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wFade{from{opacity:0}to{opacity:1}}
+@keyframes ruleIn{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:.55}}
+
+/* QA park */
+body.freeze *{animation-play-state:paused !important}
+
+/* ---- producer controls. Never on air by accident: ?ui=1 or press C. ---- */
+.pctl{position:absolute;right:44px;bottom:calc(var(--safe-b) + 24px);z-index:30;
+  display:flex;gap:8px;opacity:0;pointer-events:none;transition:opacity 200ms var(--eio)}
+body.ui .pctl{opacity:1;pointer-events:auto}
+.pctl button{font-family:var(--fm);font-size:10px;font-weight:600;letter-spacing:.16em;
+  color:var(--faint);background:rgba(10,10,12,.92);border:1px solid var(--line);
+  border-radius:999px;padding:10px 18px;cursor:pointer;
+  transition:color 120ms ease-out,border-color 120ms ease-out,transform 100ms ease-out}
+.pctl button:hover{color:var(--fg);border-color:rgba(255,193,7,.4)}
+.pctl button:active{transform:scale(.96)}
+.pctl button.go{color:var(--yellow);border-color:rgba(255,193,7,.5);background:rgba(255,193,7,.08)}
+.pctl .keys{margin-left:6px;padding:10px 14px;color:rgba(250,250,250,.3);
+  border-style:dashed;cursor:default}
+.pctl .keys:hover{color:rgba(250,250,250,.3);border-color:var(--line)}
+
+.g-tk{position:absolute;left:0;right:0;bottom:0;height:76px;z-index:10;display:none;
+  border-top:1px dashed rgba(255,193,7,.5);align-items:center;justify-content:center}
+body.guide .g-tk{display:flex}
+
+/* Reduced motion keeps the idea, loses every bit of travel. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important}
+  .flip,.words,.rim{display:none}
+  .sun{opacity:0}
+  .mark{opacity:1}
+  .mark .f-eye{opacity:1;transform:none}
+  .mark .f-mouth{clip-path:inset(-8% -2% -8% -2%)}
+  .welcome{opacity:1}
+  .w-rule{transform:scaleX(1);opacity:.55}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <span class="clockchip"><b class="num" id="clock">--:--</b> &middot; NAIROBI DESK &middot; EAT</span>
+
+  <div class="holder">
+    <div class="rim" aria-hidden="true"></div>
+    <div class="sun" aria-hidden="true"></div>
+
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg>
+    </div>
+  </div>
+
+  <div class="flip" id="flip">
+    <div class="card" data-i="0"><div class="in3d">
+      <div class="side front"><span class="dg" id="d0">0</span></div>
+      <div class="side back"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg></div>
+    </div></div>
+    <div class="card" data-i="1"><div class="in3d">
+      <div class="side front"><span class="dg" id="d1">0</span></div>
+      <div class="side back"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg></div>
+    </div></div>
+    <div class="colon"><i></i><i></i></div>
+    <div class="card" data-i="2"><div class="in3d">
+      <div class="side front"><span class="dg" id="d2">0</span></div>
+      <div class="side back"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg></div>
+    </div></div>
+    <div class="card" data-i="3"><div class="in3d">
+      <div class="side front"><span class="dg" id="d3">0</span></div>
+      <div class="side back"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#ffd100"/><path d="M4.16 12.91a7.9 7.9 0 0015.68 0" fill="none" stroke="#0a0900" stroke-width="1.32" stroke-linecap="round"/><circle cx="7" cy="8" r="1.5" fill="#0a0900"/><circle cx="17" cy="8" r="1.5" fill="#0a0900"/></svg></div>
+    </div></div>
+  </div>
+
+  <div class="words" aria-hidden="true">
+    <div class="coming">COMING SOON</div>
+    <div class="brand">SMILE.CO.KE</div>
+  </div>
+
+  <div class="welcome">
+    <div class="w-kick">THE DESK IS OPEN</div>
+    <h1 class="w-title">welcome to <span class="y">smileTV</span></h1>
+    <div class="w-sub">EPISODE <span class="num" id="ep">128</span> &middot; STREAM LIVE</div>
+    <div class="w-rule"></div>
+    <div class="stingers">
+      <span class="stinger" data-p="youtube">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><rect x="1.2" y="4.9" width="21.6" height="14.2" rx="4.1" fill="#FF0033"/><path d="M10.1 8.75v6.5L15.8 12z" fill="#fff"/></svg></span>
+        <span class="nm">YOUTUBE</span>
+      </span>
+      <span class="stinger" data-p="twitch">
+        <span class="mk"><svg viewBox="0 0 24 24"><g transform="translate(0 1.4)"><path fill="#9146FF" d="M11.571 4.714h1.715v5.143h-1.715zm4.715 0H18v5.143h-1.714zM6 0 1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></g></svg></span>
+        <span class="nm">TWITCH</span>
+      </span>
+      <span class="stinger" data-p="facebook">
+        <span class="mk"><svg viewBox="0 0 24 24" fill="none"><path fill="#1877F2" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg></span>
+        <span class="nm">FACEBOOK</span>
+      </span>
+      <span class="stinger" data-p="tiktok">
+        <span class="mk"><svg viewBox="0 0 24 24"><defs><linearGradient id="ttg-countdown-1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#25F4EE"/><stop offset=".42" stop-color="#ffffff"/><stop offset="1" stop-color="#FE2C55"/></linearGradient></defs><g transform="translate(1.6 0) scale(.9)"><path fill="url(#ttg-countdown-1)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg></span>
+        <span class="nm">TIKTOK</span>
+      </span>
+    </div>
+    <div class="w-url">smile<b>.co.ke</b></div>
+  </div>
+
+  <div class="pctl" aria-hidden="true">
+    <button class="go" id="btnGo" type="button">GO LIVE</button>
+    <button id="btnReplay" type="button">REPLAY</button>
+    <span class="keys">SPACE / G / ENTER &middot; R REPLAY &middot; C PANEL</span>
+  </div>
+
+  <i class="g-tk" aria-hidden="true"></i>
+</div>
+
+<script>
+/* ONE gated interval — the clock. No rAF, no canvas.
+   Sixty seconds, then it STOPS resolving further. It never goes negative and
+   never nags: once the resolve starts the scene ends on the welcome and stays
+   there, so an open that slips costs nothing.
+
+   The resolve is a fixed choreography driven by CSS classes. The only JS is the
+   clock itself and the per-tick card flip, which swaps its glyph while the card
+   is edge-on and therefore invisible.
+
+   SPACE G ENTER   resolve now, skip the wait   (also GO LIVE)
+   R               replay the countdown        (also REPLAY)
+   C               show/hide the panel         (?ui=1 opens it)
+
+   ?m=60&s=0  countdown length   ?ep=128  episode
+   ?ui=1      open the panel     ?guide=1 zone map
+   ?t=zero|flip|merge|void|rise|eyes|blink|mouth|welcome   park a beat (QA) */
+(function(){
+  function get(k){var m=location.search.match(new RegExp('[?&]'+k+'=([^&]*)'));return m?decodeURIComponent(m[1].replace(/\+/g,' ')):'';}
+  function pad(n){return n<10?'0'+n:''+n}
+
+  document.getElementById('ep').textContent = get('ep') || '128';
+  if(get('guide')==='1') document.body.classList.add('guide');
+
+  var cards=[0,1,2,3].map(function(i){return document.querySelector('.card[data-i="'+i+'"]')});
+  var dgs=[0,1,2,3].map(function(i){return document.getElementById('d'+i)});
+  var flip=document.getElementById('flip');
+  var mark=document.querySelector('.mark');
+
+  var mins=parseInt(get('m'),10); if(!(mins>=0)) mins=1;
+  var secs=parseInt(get('s'),10); if(!(secs>=0&&secs<60)) secs=0;
+  var SPAN=(mins*60+secs)*1000;
+  if(SPAN<=0) SPAN=60000;
+  var HOLD=600;                 /* the beat. 00:00 sits before it resolves. */
+  var T0=Date.now();
+  var atZero=false, zeroAt=0, resolving=false, done=false, landTimer=0;
+  var last='';
+
+  var clock=document.getElementById('clock');
+
+  /* A card is invisible at the halfway point of its turn, so the glyph can be
+     replaced underneath it and nobody sees a seam. */
+  function setDigits(s){
+    if(s===last) return;
+    var first = last==='';
+    last=s;
+    for(var i=0;i<4;i++){
+      var ch=s.charAt(i);
+      if(dgs[i].textContent===ch) continue;
+      if(first||done){ dgs[i].textContent=ch; continue; }
+      (function(card,dg,ch){
+        card.classList.remove('turn');
+        void card.offsetWidth;                 /* restart the keyframe */
+        card.classList.add('turn');
+        setTimeout(function(){ dg.textContent=ch; },110);
+      })(cards[i],dgs[i],ch);
+    }
+  }
+
+  /* One way in, so whichever fires first the scene resolves exactly once. */
+  function reachZero(){
+    if(atZero) return;
+    atZero=true; zeroAt=Date.now();
+    setDigits('0000');
+    document.body.classList.add('zero');
+  }
+  function resolve(){
+    if(resolving) return;
+    resolving=true;
+    reachZero();
+    cards.forEach(function(c){c.classList.remove('turn')});
+    /* the phases are pure CSS: flip, merge, void, rise, eyes, blink, mouth */
+    var at=function(ms,fn){return setTimeout(fn,ms)};
+    at(1120,function(){ cards.forEach(function(c){c.classList.add('mrg')}) });
+    at(1880,function(){ cards[1].classList.add('void'); cards[2].classList.add('void');
+                        document.body.classList.add('voided') });
+    at(2900,function(){ document.body.classList.add('risen') });
+    at(3860,function(){ mark.classList.add('eyes') });
+    at(4180,function(){ mark.classList.add('blink') });
+    at(4420,function(){ mark.classList.add('mouth') });
+    at(5000,function(){ done=true; document.body.classList.add('landed') });
+  }
+  function go(){ if(resolving) return; reachZero(); clearTimeout(landTimer); landTimer=setTimeout(resolve,HOLD); }
+
+  function replay(){
+    clearTimeout(landTimer);
+    cards.forEach(function(c){c.className='card'});
+    mark.className='mark';
+    document.body.className=document.body.className.replace(/\b(zero|voided|risen|landed)\b/g,'').replace(/\s+/g,' ').trim();
+    if(get('guide')==='1') document.body.classList.add('guide');
+    void document.body.offsetWidth;
+    resolving=false; atZero=false; zeroAt=0; done=false; last='';
+    T0=Date.now();
+  }
+
+  function tick(){
+    if(document.hidden) return;
+    var d=new Date();
+    clock.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+
+    if(resolving) return;
+
+    var rem=SPAN-(Date.now()-T0);
+    if(rem>0){
+      var t=Math.ceil(rem/1000);
+      setDigits(pad(Math.floor(t/60))+pad(t%60));
+      return;
+    }
+    reachZero();
+    if((Date.now()-zeroAt)>=HOLD) resolve();
+  }
+
+  /* QA park — pauses the whole choreography at a chosen wall-clock moment.
+     Each beat adds ONLY the phases that have happened by then, and pins the
+     digits to 00:00, or the parked frame lies about where it is. */
+  var PARK={zero:'0.05s',flip:'0.60s',merge:'1.55s',void:'2.50s',rise:'3.50s',
+            eyes:'4.00s',blink:'4.28s',mouth:'4.66s',welcome:'6.00s'};
+  var t=get('t');
+  if(PARK[t]){
+    var order=['zero','flip','merge','void','rise','eyes','blink','mouth','welcome'];
+    var upto=order.indexOf(t);
+    atZero=true; resolving=true; zeroAt=0; last='0000';
+    for(var i=0;i<4;i++) dgs[i].textContent='0';
+    document.body.classList.add('zero');
+    if(upto>=1) cards.forEach(function(c){c.classList.add('flip')});
+    if(upto>=2) cards.forEach(function(c){c.classList.add('mrg')});
+    if(upto>=3){ cards[1].classList.add('void'); cards[2].classList.add('void');
+                 document.body.classList.add('voided'); }
+    if(upto>=4) document.body.classList.add('risen');
+    if(upto>=5) mark.classList.add('eyes');
+    if(upto>=6) mark.classList.add('blink');
+    if(upto>=7) mark.classList.add('mouth');
+    if(upto>=8){ done=true; document.body.classList.add('landed'); }
+    document.body.classList.add('freeze');
+    document.body.style.setProperty('--freeze',PARK[t]);
+  }
+
+  if(get('ui')==='1') document.body.classList.add('ui');
+  document.getElementById('btnGo').addEventListener('click',go);
+  document.getElementById('btnReplay').addEventListener('click',replay);
+
+  document.addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    var k=e.key.toLowerCase();
+    if(k===' '||k==='spacebar'||k==='enter'||k==='g'||k==='arrowup'){ go(); e.preventDefault(); }
+    else if(k==='r'){ replay(); e.preventDefault(); }
+    else if(k==='c'){ document.body.classList.toggle('ui'); e.preventDefault(); }
+  });
+
+  tick();
+  setInterval(tick,250);
+  document.addEventListener('visibilitychange',tick);
+})();
+</script>
+</body>
+</html>

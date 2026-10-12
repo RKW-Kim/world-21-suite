@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Presentation deck — SmileTV</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=Inter:wght@500;600;800&display=swap" rel="stylesheet">
+<style>
+/* PRESENTATION DECK — the control surface you drive the show from.
+ *
+   One view. The scene you are on fills the window, scaled from the 1920x1080
+   frame every scene is authored at. You move between scenes with the number
+   keys, the way a presenter moves between slides.
+ *
+   Serve it over http (./serve.sh) rather than opening the file. Two reasons,
+   and the second one is the real one:
+ *
+     1. meet.html embeds a YouTube player, and a page opened as file:// has no
+        referrer to send, so the player refuses to start and answers
+        "Error 153".
+     2. Over http the deck and the scenes are the same origin, so the keys the
+        meet scene needs (PageUp/PageDown to skip its playlist) can be handed
+        straight through to it. Opened from disk the frame is cross-origin and
+        those keys are simply lost.
+ *
+   The deck is an operator tool, not a broadcast scene. Never add this page to
+   OBS — add the scene file itself. */
+
+:root{
+  --yellow:#FFC107;
+  --fd:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:#000;overflow:hidden;
+  font-family:var(--fd);color:#fff;
+  -webkit-font-smoothing:antialiased;
+}
+
+#stage{
+  position:absolute;left:50%;top:50%;
+  width:1920px;height:1080px;
+  transform-origin:50% 50%;
+  background:#000;
+}
+#frame{display:block;width:100%;height:100%;border:0;background:#000}
+</style>
+</head>
+<body>
+
+<div id="stage"><iframe id="frame" title="Scene preview" allow="autoplay; encrypted-media; fullscreen"></iframe></div>
+
+<script>
+/* Presentation order — the run of show. */
+const SCENES = [
+  { file:'starting.html',    name:'Starting'      },
+  { file:'tech-diff.html',   name:'Tech diffs'    },
+  { file:'q%26a.html',       name:'Q&A'           },
+  { file:'offair.html',      name:'Off air'       },
+  { file:'meet.html',        name:'Meet'          },
+  { file:'end-credits.html', name:'End credits'   },
+];
+
+const frame = document.getElementById('frame');
+
+/* ---- fit the 1920x1080 frame into whatever window we were given ---- */
+const stage = document.getElementById('stage');
+function fit(){
+  const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = 'translate(-50%,-50%) scale(' + k + ')';
+}
+addEventListener('resize', fit);
+fit();
+
+/* ---- navigation ----
+   Wraps in both directions. Nothing is a dead end, including going back off the
+   first scene, because someone will always ask to see the thing you just showed
+   them again. */
+let cur = 0;
+function go(i){
+  cur = ((i % SCENES.length) + SCENES.length) % SCENES.length;
+  const s = SCENES[cur];
+
+  if (frame.getAttribute('src') === s.file) frame.contentWindow.location.reload();
+  else frame.setAttribute('src', s.file);
+
+  history.replaceState(null, '', '#' + (cur + 1));
+}
+
+/* ---- keys ----
+   The deck owns the keyboard, and the frame is deliberately NOT focused.
+   A keydown that happens inside an iframe never reaches the parent window,
+   so focusing the frame silently kills 1-6 and the arrows — which is exactly
+   the bug this replaced.
+
+   Keys the deck does not use are handed to the scene instead, so the meet
+   scene still owns volume and its playlist while the deck is driving. */
+function toScene(e){
+  try{ frame.contentWindow.postMessage({type:'smiletv-key', key:e.key}, '*'); }catch(_){}
+}
+function keys(e){
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+
+  if (k >= '1' && k <= String(SCENES.length)) { e.preventDefault(); go(+k - 1); return; }
+  if (k === 'Enter' || k === 'ArrowRight' || k === ' ') { e.preventDefault(); go(cur + 1); return; }
+  if (k === 'ArrowLeft' || k === 'Backspace')           { e.preventDefault(); go(cur - 1); return; }
+  if (k === 'f' || k === 'F' || k === 'p' || k === 'P') {
+    e.preventDefault();
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+    return;
+  }
+  toScene(e);
+}
+addEventListener('keydown', keys);
+
+/* If the presenter clicks into the scene, focus leaves the deck and the keys
+   land there instead. Over http the scene is same-origin so it can be reached;
+   from disk it throws and the deck goes quiet until it is clicked back. */
+frame.addEventListener('load', () => {
+  try{ frame.contentWindow.addEventListener('keydown', keys); }catch(_){}
+});
+
+/* #3 opens the third scene, so a link can point straight at one. */
+go((parseInt(location.hash.replace('#',''),10) || 1) - 1);
+</script>
+</body>
+</html>

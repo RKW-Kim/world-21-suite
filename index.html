@@ -5,20 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>SMILE · the scene kit</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='5.39 10.7 23.91 23.91'%3E%3Cpath d='m16.8 11c-5.8 0-11.4 4.5-11.2 11.7 0.1 6.2 4.5 11.5 11.4 11.6 6.4 0 12-4.7 12.1-11.5-0.2-6.6-5.2-11.8-12.3-11.8z' fill='%23ffd100'/%3E%3Cpath d='m12.3 17.2c-0.7 0-1.3 0.6-1.3 1.3s0.6 1.3 1.3 1.3 1.3-0.6 1.3-1.3c0.1-0.6-0.5-1.3-1.3-1.3z' fill='%230A0900'/%3E%3Cpath d='m22.3 17.2c-0.7 0-1.4 0.6-1.4 1.4 0 0.7 0.7 1.3 1.4 1.3s1.3-0.6 1.3-1.3c0-0.8-0.6-1.4-1.3-1.4z' fill='%230A0900'/%3E%3Cpath d='m24.5 22.4c-0.4 0-0.6 0.5-0.6 1-0.3 3.5-3 6.1-6.7 6.1s-6.5-2.5-6.8-6.2c-0.1-0.4-0.4-0.8-0.7-0.8s-0.9 0.3-0.8 1c0.5 3.8 3.2 7.5 8.3 7.5 5.2-0.1 8-3.8 8.3-7.8 0.1-0.6-0.4-1-1-0.8z' fill='%230A0900'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='12' fill='%23ffd100'/%3E%3Cpath d='M4.16 12.91a7.9 7.9 0 0015.68 0' fill='none' stroke='%230a0900' stroke-width='1.32' stroke-linecap='round'/%3E%3Ccircle cx='7' cy='8' r='1.5' fill='%230a0900'/%3E%3Ccircle cx='17' cy='8' r='1.5' fill='%230a0900'/%3E%3C/svg%3E">
 <style>
 :root{
   --yellow:#FFC107; --hot:#F5A623; --ink:#0a0a0a;
-  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#82828b;
+  --bg:#09090b; --border:#27272a; --fg:#fafafa; --muted:#a1a1aa; --faint:#9b9ba4;
   --up:#0ECB81; --down:#F6465D;
-  --fd:'Space Grotesk',system-ui,sans-serif;
+  --fd:'Inter',system-ui,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+body{background:var(--bg);color:var(--fg);font-family:var(--fd);
   min-height:100vh;-webkit-font-smoothing:antialiased}
 svg{display:block}
 .wrap{max-width:880px;margin:0 auto;padding:64px 24px 90px}
@@ -29,7 +26,7 @@ svg{display:block}
 .brand svg{height:30px;width:auto}
 .tagchip{font-family:var(--fm);font-size:10px;letter-spacing:.24em;color:var(--muted);
   border:1px solid var(--border);border-radius:999px;padding:8px 14px}
-h1{font-family:var(--fd);font-weight:700;font-size:clamp(34px,6vw,56px);line-height:1.04;
+h1{font-family:var(--fd);font-weight:800;font-size:clamp(34px,6vw,56px);line-height:1.04;
   letter-spacing:-.03em;margin:26px 0 14px;animation:rise .7s cubic-bezier(.2,.9,.3,1) .08s both}
 h1 .y{background:linear-gradient(180deg,#FFDE7A 10%,var(--yellow) 55%,var(--hot));
   -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -38,6 +35,10 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .lede{max-width:640px;color:var(--muted);font-size:15.5px;line-height:1.65;margin-bottom:44px;
   animation:rise .7s cubic-bezier(.2,.9,.3,1) .16s both}
 .lede b{color:var(--fg);font-weight:600}
+/* Base rule so the ~31 bare <code> runs in the docs body land on Plex Mono.
+   With none they fell through to the generic `monospace` keyword, which is
+   whatever fontconfig picks — the one place this page was off-brand. */
+code{font-family:var(--fm)}
 .lede code{font-family:var(--fm);font-size:12.5px;color:var(--yellow);background:rgba(255,193,7,.07);
   border:1px solid rgba(255,193,7,.2);border-radius:5px;padding:1px 7px}
 
@@ -49,13 +50,16 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
 .scene .tag{flex:none;width:74px;font-family:var(--fm);font-weight:600;font-size:9.5px;
   letter-spacing:.2em;color:var(--yellow);border:1px solid rgba(255,193,7,.3);border-radius:999px;
   padding:6px 0;text-align:center}
-.scene .name{flex:none;width:190px;font-family:var(--fd);font-weight:700;font-size:19px;letter-spacing:-.01em}
+.scene .name{flex:none;width:190px;font-family:var(--fd);font-weight:800;font-size:19px;letter-spacing:-.01em}
 .scene .what{flex:1;color:var(--muted);font-size:13.5px;line-height:1.5}
 .scene .go{flex:none;font-family:var(--fm);font-size:10.5px;letter-spacing:.2em;color:var(--faint);
   transition:color .25s}
 .scene:hover .go{color:var(--yellow)}
 .scene .live{flex:none;width:7px;height:7px;border-radius:50%;background:var(--up)}
 .scene .live.amber{background:var(--yellow)}
+.scene .live.gray{background:#4a4a52}
+.scene .name .arch{font-style:normal;font-family:var(--fm);font-size:9px;font-weight:400;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px}
 .scene .live.red{background:var(--down)}
 
 .klabel{display:flex;align-items:center;gap:14px;margin:44px 0 0;
@@ -130,14 +134,14 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     Every board below is a <b>standalone full-screen page</b> — open it directly, fill any window,
     no frames, no wrappers. The <b>watermark</b>, the <b>ticker</b>, the <b>stingers</b> and the
     <b>coming-up bumper</b> are not baked into the scenes: they are <b>modules</b> — their own OBS
-    browser sources, layered over any scene, in any combination. Scenes keep the bottom 96px and
-    the corners clear for them. Every board also speaks the <b>schedule contract</b> — URL params
+    browser sources, layered over any scene, in any combination. Scenes keep the bottom 76px —
+    the ticker's exact dock height — and the corners clear for them. Every board also speaks the <b>schedule contract</b> — URL params
     like <code>?plan=</code>, <code>?who=</code>, <code>?next=</code> — so Streamer.bot can say
     what's coming, by who and when. The zone map below is the law.
   </p>
 
   <nav class="kit">
-    <a class="scene" href="starting-soon.html">
+    <a class="scene" href="countdown.html">
       <span class="tag">SOON</span>
       <span class="name">Starting Soon</span>
       <span class="what">Countdown that holds at “about to start”, loading tiles, rotating tagline — no clock times.</span>
@@ -214,50 +218,15 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <a class="scene" href="ticker.html">
       <span class="tag">TK</span>
       <span class="name">Market Ticker</span>
-      <span class="what">The stingers-era merged pill — smile cap, masked marquee, 1920×76 bottom dock. Pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
+      <span class="what">The pill, wearing Prism's coat — the era's merged capsule shape, Prism's gradient smile cap, Space Grotesk cap label, diagonal sheen sweep and skewed sponsor cells. The slash separators are gone: cells ride a 26px gutter instead. 1920×76 bottom dock, pure market data; ?mode=offair adds sponsors + socials, ?scale= resizes.</span>
       <span class="live amber"></span>
       <span class="go">OPEN →</span>
     </a>
-    <a class="scene" href="ticker-b.html">
-      <span class="tag">TK·B</span>
-      <span class="name">Ticker — Signal</span>
-      <span class="what">Terminal readout — black cells with hairline dividers, blinking block cursor, slow amber scan shimmer. Same 1920×76 dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-c.html">
+    <a class="scene" href="archive/2026-09-lab/lab/tickers/ticker-c-prism.html">
       <span class="tag">TK·C</span>
-      <span class="name">Ticker — Prism</span>
-      <span class="what">Skewed broadcast chyron — yellow blade, slash separators, diagonal sheen sweep. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-d.html">
-      <span class="tag">TK·D</span>
-      <span class="name">Ticker — Orbit</span>
-      <span class="what">Naked type over the stream — no pill at all, a comet scanner rides the hairline rail, text-shadow carries legibility. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-e.html">
-      <span class="tag">TK·E</span>
-      <span class="name">Ticker — Circuit</span>
-      <span class="what">HUD ruler — tick marks top and bottom, breathing level bars per cell, a cool sweep gliding the strip. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-f.html">
-      <span class="tag">TK·F</span>
-      <span class="name">Ticker — Aurora</span>
-      <span class="what">Glass pill over a drifting multi-stop gradient — the calm one; the backdrop breathes while the marquee rolls. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
-      <span class="go">OPEN →</span>
-    </a>
-    <a class="scene" href="ticker-g.html">
-      <span class="tag">TK·G</span>
-      <span class="name">Ticker — Hairline</span>
-      <span class="what">The quiet luxury strip — two rules, mono type, dash separators and one breathing yellow square. Same dock + ?mode=offair · ?scale=.</span>
-      <span class="live amber"></span>
+      <span class="name">Ticker — Prism <i class="arch">· archived, merged into TK</i></span>
+      <span class="what">The source take for the current ticker — skewed broadcast chyron, yellow blade, diagonal sheen. Kept for reference; the slash separators it used are what the live TK dropped. Same dock + ?mode=offair · ?scale=.</span>
+      <span class="live gray"></span>
       <span class="go">OPEN →</span>
     </a>
     <a class="scene" href="coming-up.html">
@@ -310,7 +279,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     </div>
     <div class="zlegend">
       <div class="row"><b class="y">WATERMARK</b><span>corners, 28px margins — always on, still by default, its own OBS source over any scene.</span></div>
-      <div class="row"><b class="y">TICKER</b><span>bottom dock — 1920×76 transparent source, seven design takes (ticker → ticker-g); the speaking scene sizes its bottom to the exact dock.</span></div>
+      <div class="row"><b class="y">TICKER</b><span>bottom dock — 1920×76 transparent source, one live take (ticker.html: the pill shape with Prism's craft); the speaking scene sizes its bottom to the exact dock. Five other takes and the Prism original are archived under the lab.</span></div>
       <div class="row"><b class="g">STINGERS</b><span>center stage, transient — they fire over anything and leave. Streamer.bot-ready, HTML only.</span></div>
       <div class="row"><b class="y">COMING-UP</b><span>center stage, self-clearing bumper — what's next, by who, at when. Fires on load; reload to re-fire.</span></div>
       <div class="row"><b>SCENE</b><span>the full-bleed stage itself — content stays out of the module zones, so modules never collide with it and future modules inherit the map.</span></div>
@@ -372,7 +341,7 @@ h1 .g{background:linear-gradient(180deg,#fafafa 25%,#86868e 90%);
     <code>?chat=right</code> / <code>?nochat=1</code> + <code>?bg=studio</code> (repaint the room
     for previews — default is a fully transparent overlay) + <code>?guide=1</code> (outlines the
     reserved chat zone and the exact 76px ticker dock; setup only);
-    the ticker family (ticker → ticker-g) all share the 1920×76 dock and
+    the ticker module (ticker.html) is a 1920×76 dock with
     <code>?mode=offair</code> + <code>?scale=</code>;
     end-credits takes <code>?ep=</code> + <code>?next=</code> + <code>?host=</code> + <code>?what=</code>.
   </p>
