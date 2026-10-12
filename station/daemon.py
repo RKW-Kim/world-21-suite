@@ -378,7 +378,11 @@ def cmd_loop(renderer):
     mtime = os.path.getmtime(PLAYLIST)
 
     renderer.on_media_ended(lambda src: on_ended(renderer, decks, src))
-    advance(renderer, state, data, decks)
+    try:
+        advance(renderer, state, data, decks)
+    except RuntimeError as e:
+        print("cannot start loop: %s. Is the render plane running?" % e)
+        return 2
     alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
     while True:
         try:
@@ -499,7 +503,7 @@ def main():
         r.set_scene("PROGRAM")
         alert("Returned to PROGRAM.", "INFO")
     elif args.cmd == "loop":
-        cmd_loop(r)
+        return cmd_loop(r)
     return 0
 
 

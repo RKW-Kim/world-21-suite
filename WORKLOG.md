@@ -1,0 +1,105 @@
+# Worklog — world-21-suite station track
+
+Running record of what was decided, built, broken, and learned. For the
+operator and for future agents: the hiccups are the point — each one cost
+real debugging time and each fix is load-bearing. Newest first.
+
+## 2026-10-12 — Stress test #1: brownout murder drill (PASS)
+
+- Sender SIGKILLed at wall-t=10.0s. Receiver file: 10.36s, h264+aac present,
+  decodes 100% clean. The take survives the contributor's death exactly as
+  the local-record rule promises.
+- Datum: listener-side dead-peer detection took ~7s (receiver exited at 17s).
+  SRT doesn't signal a dead caller instantly; watchdog trip time must assume
+  seconds, not milliseconds. Follow-up: tune peer-idle timeouts so the
+  TECHDIFF cut lands faster than the audience notices.
+
+### Hiccup log, continued
+8. `pkill -9 -f "srt://IP:port"` matched our own shell (pattern is substring
+   of our command line) and murdered the test harness, not the sender.
+   Kill exact PIDs (Python subprocess handle), never patterns — or use the
+   `[s]rt://` bracket trick. Lost 20 minutes to this.
+9. Kill-drills are INVALID without realtime pacing: lavfi sources encode
+   faster than wallclock (~3x here), so a 30s receiver finished before the
+   10s murder landed — three "clean" runs proved nothing. Rule: senders in
+   any timing test get `-re` on every lavfi input, or wall-time means nothing.
+10. SRT listener does not exit promptly on caller death (see datum above).
+    Design watchdog thresholds around measured detection latency, not zero.
+
+## 2026-10-12 — SRT laptop-to-laptop proof (PASS with tuning debt)
+
+- MBA (OBS 31.0.4, SRT caller) → Arch box (ffmpeg listener) held ~4 min.
+  Firewall was the blocker; lossy WiFi is the tuning item. Nothing disconnected.
+- Worst burst survived: 956 dropped packets at once. Stream degraded, never died.
+  This is the SRT thesis demonstrating itself (RTMP would have collapsed).
+- Tuning prescribed: MBA 720p30 ≤1500 kbps ultrafast, latency 1500 ms BOTH ends
+  (effective window = max of both; `receive.sh --latency` added for this),
+  wired Air for load-bearing nights. Re-run `--sample` and compare drop counts.
+
+### Hiccup log (each found by testing, not reasoning)
+1. `tee` + any output failed: ffmpeg 9's tee needs explicit `-map`
+   (auto-map doesn't propagate). Fix in `send.sh`; verified with plain files.
+2. `tee` single output failed: tee can't infer format without extension —
+   always prefix `[f=mpegts]`. Error was "Unable to choose an output format".
+3. Receiver double-bound :9000 in `--sample` (ffplay + ffmpeg). Sample mode now
+   records only. One listener per port, always.
+4. `daemon.py status` traceback with no OBS: `_call` now converts `OSError` to
+   `RuntimeError("render plane unreachable")`; commands degrade to JSON + exit 1.
+5. ufw default-DROP on Arch silently killed MBA→Arch SRT while loopback passed.
+   ICMP was allowed, so ping lied. Fix: `ufw allow 9000:9001/udp`; `setup.sh`
+   now opens SRT ports. Lesson: loopback proves the stack, only two-machine
+   runs prove the path. VPS provisioning must include the firewall step.
+6. `q&a.html` shipped with triple `</script>` closers (harmless, parsers forgive).
+  Listener edit collapsed them to one — validated balanced by html.parser.
+7. `/tmp` on this box is cleaned between sessions (samples vanished). Never rely
+   on `/tmp` persistence; tapes go to `--record DIR`, never /tmp.
+
+## 2026-10-12 — Station scaffold (`station/`, commit `1d1f608` + grill `979bbd4`)
+
+- `daemon.py` (stdlib-only): `Renderer` ABC + obs-websocket v5 adapter,
+  playlist loop w/ shuffle + A/B deck, progress-based watchdog (3×/hr → OFF-AIR),
+  Telegram + SQLite log, CLI intents. `overlay_server.py` (127.0.0.1:7070,
+  SSE push; verified POST→push→no-reload). `intake.py` (fetch-once → broadcast
+  profile → verify → atomic queue). `setup.sh` (broadcast root, 0600 secrets,
+  Flatpak OBS pin in `station/manifest/`).
+- Grill fixes (all root-caused, all verified): deck visibility never toggled
+  (loop would advance on a frozen frame); every media-ended routed to advance
+  (ident end now cuts LIVE, unknown sources ignored); callback exception could
+  kill the event thread silently (wrapped); total cache miss recursed
+  (now loops to TECHDIFF); corrupt playlist edit crashed loop (keeps old order);
+  50 GB cap was a comment (`evict_cache()` runs in loop + pre-intake; intake
+  refuses when disk critical). `selftest` covers deck/route/evict/stall offline.
+- Overlays: EventSource listeners on `ticker`/`speaking`/`q&a` (no-op without
+  `/events`; params stay defaults; chat text via textContent only; q&a clones
+  same-platform bubbles, caps 6 live). `meet.html` header marks `?yt=` embed
+  preview-only, never air path (debrief §19).
+- Proven on this box: SRT A+V loopback, intake file→queue, overlay push,
+  daemon-no-OBS degradation, `selftest` green.
+
+## 2026-10-12 — Repo surgery (commits `45116d5`, `c37f7ad`, `027f0dc`)
+
+- `prototype` (209 commits of overlay work) is now `main`; old Python-server
+  `main` preserved at tag `archive/main-legacy-20261012`; `origin/prototype`
+  deleted; `gh-pages` kept + redeployed. Deploy script + README repointed.
+- `core/`, `font-test/`, `bubble-lab.html` → `archive/` via `git mv` (zero
+  functional references; deploy/serve touch `overlay/` only). README/PRODUCT/
+  sync-docstring/CI triggers updated.
+- Caught pre-commit: dirty `ticker.html` flipped Nairobi EAT +3→−1 against its
+  own comment. Reverted. `end-credits.html` scroll-snap rework kept.
+- Open, not fixed: `tech-diff.html` holds `--muted #8c8c8c` vs 16 pages on
+  `#a1a1aa` (`sync-brand-tokens.py --check` FAILs; pre-existing).
+
+## 2026-10-12 — Design audit (two independent passes)
+
+- Full chat (5,834 lines) + both debrief fragments + repo docs extracted to 55
+  items, then re-audited against two newer full exports (markdown + 3.1 MB JSON).
+- Result: zero contradictions. JSON holds the complete §§1–27 debrief
+  (node `d40a2592`) — nothing is reconstructed anymore.
+- Real tensions recorded: PRODUCT.md assumes host+producer present running OBS
+  locally (current-kit truth, wrong target — VPS-sole-compositor wins);
+  scene mapping PROGRAM→meet etc. is proposal, ungrounded; `meet.html ?yt=`
+  preview-only label was missing (added); token drift above.
+- Standing decisions: Ubuntu LTS VPS + Arch lab, Flatpak pin, small-daemon-first
+  (Node-RED only if something hurts), same-repo `station/` subfolder,
+  local-proof-before-VPS-migration. Empirical list unchanged (soak, steal,
+  RTT→SRT budget, overlay soak, captions, Flatpak parity, CPU flags).

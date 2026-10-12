@@ -20,6 +20,17 @@ done
 mkdir -p "$ROOT"/{media,assets/idents,overlays,backups,recordings} station/manifest
 [ -f "$ROOT/media/playlist.json" ] || cp station/playlist.json "$ROOT/media/playlist.json"
 
+# Firewall: open exactly the SRT ingest ports, nothing else.
+# (Lab lesson 2026-10-12: ufw default-DROP silently killed laptop-to-laptop
+# SRT while loopback passed and ping lied. Only a two-machine run reveals it.)
+if command -v ufw >/dev/null; then
+  if sudo ufw allow 9000:9001/udp comment 'station SRT ingest' 2>/dev/null; then
+    echo "ufw: opened 9000:9001/udp for SRT ingest"
+  else
+    echo "::warning::could not open SRT ports via ufw; do it by hand."
+  fi
+fi
+
 if [ ! -f "$ROOT/secrets.env" ]; then
   cat > "$ROOT/secrets.env" <<'EOF'
 # Stream key lives HERE ONLY. Never commit. Never show presenters.
