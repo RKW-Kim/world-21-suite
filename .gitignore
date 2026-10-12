@@ -32,3 +32,7 @@ active.json
 
 # Node modules (if anyone runs html-validate locally)
 node_modules/
+
+# MediaMTX self-signed certs (regenerated on demand)
+auto.crt
+auto.key
