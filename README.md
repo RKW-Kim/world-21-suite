@@ -12,7 +12,7 @@ size, done.
 
 ```
 overlay/     the kit — 14 live pages + the museum + the lab archive   (5.7M)
-core/        source-of-truth originals and the Qwen design reference  (384K)
+archive/core/  old source-of-truth originals + Qwen design ref (archived, nothing loads it)
 docs/        SKILLS-GUIDE.md — every agent skill installed on this box
 audit/       best-moment reference frames, one per scene              (8.3M)
 scripts/     deploy-pages-branch.sh — the only script that matters

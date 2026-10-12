@@ -5,9 +5,9 @@ name: validate
 
 on:
   push:
-    branches: [prototype, main]
+    branches: [main]
   pull_request:
-    branches: [prototype, main]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

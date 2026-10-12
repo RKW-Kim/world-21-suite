@@ -92,8 +92,8 @@ a variety show that happens to be about markets.
 ## Evidence on Hand
 
 - `overlay/` — 14 live pages, the working kit.
-- `core/` — source-of-truth originals, the approved logo files, and the
-  original Qwen design reference the kit grew out of.
+- `archive/core/` — old source-of-truth originals, the approved logo files, and the
+  original Qwen design reference the kit grew out of (archived; nothing loads it).
 - `audit/frames/` — one curated best-moment reference frame per scene, captured
   across each scene's animation cycle rather than at a fixed moment.
 - `brand.json` — **stale and must not be trusted.** `--muted` is recorded as

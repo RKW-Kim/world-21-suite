@@ -5,9 +5,10 @@ Regenerate brand.json from the overlay CSS — the single source of truth.
 WHY THIS EXISTS
 brand.json used to be hand-maintained and silently rotted: it claimed
 --muted #8c8c8c while every page used #A1A1AA, carried five tokens no page
-ever reads, and omitted seven the pages depend on. core/smile-mark.js fetches
-this file and pushes its tokens onto document.documentElement as CSS custom
-properties, so the drift was not cosmetic — it shipped wrong values to the DOM.
+ever reads, and omitted seven the pages depend on. The archived
+archive/core/smile-mark.js used to fetch this file and push its tokens onto
+document.documentElement as CSS custom properties, so the drift was not
+cosmetic — it shipped wrong values to the DOM.
 
 The fix is not a corrected file, it is removing the hand-editing. Extract the
 tokens from the pages, write brand.json, and fail CI when the two disagree.
