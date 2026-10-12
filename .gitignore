@@ -9,6 +9,10 @@ secrets.env
 secrets.env.local
 .env
 
+# Station lab runtime (local state, never commit; rebuild via station/setup.sh)
+broadcast/
+station/overlay_state.json
+
 # Build artifacts
 dist/
 _site/

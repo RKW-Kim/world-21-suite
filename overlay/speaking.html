@@ -758,5 +758,22 @@ body.guide .cfoot{display:none}
   document.addEventListener('visibilitychange',tick);
 })();
 </script>
+<script>
+/* LIVE-DATA: localhost overlay-server push (station/overlay_server.py).
+   No-op unless served beside /events. Same fields as the ?names=/?emojis=
+   params, applied live in place — no reload, no OBS restart. */
+(function(){try{
+  var es=new EventSource('/events');
+  es.onmessage=function(e){
+    try{
+      var d=JSON.parse(e.data),seats=document.querySelectorAll('.set');
+      if(d.names&&d.names.length)seats.forEach(function(s,i){
+        if(i<d.names.length){var b=s.querySelector('.ntag b');if(b)b.textContent=d.names[i];}});
+      if(d.emojis&&d.emojis.length)seats.forEach(function(s,i){
+        if(i>0&&i-1<d.emojis.length)s.querySelectorAll('.av').forEach(function(av){av.textContent=d.emojis[i-1];});});
+    }catch(_){}
+  };
+}catch(_){}})();
+</script>
 </body>
 </html>

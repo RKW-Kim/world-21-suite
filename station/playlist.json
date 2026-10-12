@@ -1,0 +1,11 @@
+{
+  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file.",
+  "shuffle_on_complete": true,
+  "idents": ["ident_evening.mp4"],
+  "items": [
+    {"file": "PLACEHOLDER_doc_ep1.mp4", "title": "Documentary Ep 1", "duration": 3600},
+    {"file": "PLACEHOLDER_interview_accra.mp4", "title": "Interview: Accra", "duration": 2700},
+    {"file": "PLACEHOLDER_maths_04.mp4", "title": "Maths Lesson 4", "duration": 1800},
+    {"file": "PLACEHOLDER_sponsor_acme.mp4", "title": "Sponsor: Acme Corp", "duration": 30}
+  ]
+}

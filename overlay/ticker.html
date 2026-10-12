@@ -502,5 +502,19 @@
   });
 })();
 </script>
+<script>
+/* LIVE-DATA: localhost overlay-server push (station/overlay_server.py).
+   No-op unless served beside /events. URL params stay the one-shot defaults;
+   a pushed state overrides them in place — no reload, no OBS restart. */
+(function(){try{
+  var es=new EventSource('/events');
+  es.onmessage=function(e){
+    try{
+      var d=JSON.parse(e.data);
+      if(d.next){var n=document.getElementById('tknext');if(n)n.textContent=d.next;}
+    }catch(_){}
+  };
+}catch(_){}})();
+</script>
 </body>
 </html>

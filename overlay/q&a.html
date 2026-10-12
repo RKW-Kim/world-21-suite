@@ -401,6 +401,34 @@ to{opacity:.62;transform:scaleY(1)}}
    GPU — including the nine card borders, whose conic sweep is a static gradient
    precisely because animating it repainted every frame. */
 </script>
-</script>
+<script>
+/* LIVE-DATA: localhost overlay-server push (station/overlay_server.py).
+   No-op unless served beside /events. A pushed {chat:{platform,handle,text}}
+   clones a same-platform bubble already on stage (identical styling, zero new
+   CSS), starts its rise now, and retires the oldest live bubble past six —
+   baked bubbles are never touched. Text is set via textContent only. */
+(function(){try{
+  var stage=document.querySelector('.scn')||document.body;
+  function push(chat){
+    var pool={yt:'yt',youtube:'yt',fb:'fb',facebook:'fb',x:'x',twitter:'x',tt:'tt',tiktok:'tt'};
+    var cls=pool[String(chat.platform||'yt').toLowerCase()]||'yt';
+    var src=document.querySelector('.bub .bcard.'+cls);
+    if(!src)src=document.querySelector('.bub .bcard');
+    if(!src)return;
+    var bub=src.closest('.bub').cloneNode(true);
+    bub.setAttribute('data-live','1');
+    bub.style.left=(60+Math.floor(Math.random()*1500))+'px';
+    bub.style.top='1000px';
+    bub.style.setProperty('--bdel','0s');
+    var h=bub.querySelector('.h b'),q=bub.querySelector('.q');
+    if(h)h.textContent=String(chat.handle||'@live').slice(0,40);
+    if(q)q.textContent=String(chat.text||'').slice(0,200);
+    stage.appendChild(bub);
+    var live=stage.querySelectorAll('.bub[data-live]');
+    if(live.length>6)live[0].parentNode.removeChild(live[0]);
+  }
+  var es=new EventSource('/events');
+  es.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.chat)push(d.chat);}catch(_){}};
+}catch(_){}})();
 </script>
 </body></html>
