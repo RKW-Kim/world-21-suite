@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # scripts/deploy-pages-branch.sh
 #
-# Regenerate the `gh-pages` branch from `prototype/overlay/` and push it.
+# Regenerate the `gh-pages` branch from `main/overlay/` and push it.
 # GitHub Pages (in "Deploy from a branch" mode) will then auto-deploy.
 #
 # This bypasses GitHub Actions entirely — useful when Actions can't allocate runners.
 #
-# Run from the repo root, on the prototype branch:
+# Run from the repo root, on the main branch:
 #   bash scripts/deploy-pages-branch.sh
 #
 # Idempotent: safe to run repeatedly. Each run rewrites gh-pages from scratch.
@@ -21,9 +21,9 @@ if [ ! -d .git ]; then
 fi
 
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-if [ "$CURRENT_BRANCH" != "prototype" ]; then
-  echo "::error::Must be on the 'prototype' branch (currently on '$CURRENT_BRANCH')."
-  echo "  Run: git checkout prototype && git pull"
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "::error::Must be on the 'main' branch (currently on '$CURRENT_BRANCH')."
+  echo "  Run: git checkout main && git pull"
   exit 1
 fi
 
@@ -45,10 +45,10 @@ if [ "$(git config user.email)" != "rkw.kim22@gmail.com" ]; then
   git config user.name "RKW-Kim"
 fi
 
-# --- save any uncommitted changes on prototype so we can restore them ---
+# --- save any uncommitted changes on main so we can restore them ---
 STASHED=0
 if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "=== Stashing uncommitted changes on prototype ==="
+  echo "=== Stashing uncommitted changes on main ==="
   git stash 2>&1 | tail -2
   STASHED=1
 fi
@@ -59,7 +59,7 @@ echo "  Overlay files:"
 ls -1 overlay/ | sed 's/^/    /'
 echo ""
 
-# --- snapshot prototype overlay/ contents ---
+# --- snapshot main overlay/ contents ---
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"; if [ "$STASHED" = "1" ]; then git stash pop 2>&1 | tail -2 || true; fi' EXIT
@@ -106,12 +106,12 @@ git add -A
 # Check if there are any changes to commit
 if git diff --cached --quiet; then
   echo "=== No changes since last deploy — skipping commit/push ==="
-  git checkout prototype 2>&1 | tail -3
+  git checkout main 2>&1 | tail -3
   echo "=== Done (no changes) ==="
   exit 0
 fi
 
-COMMIT_MSG="chore(pages): regenerate gh-pages from prototype/overlay/
+COMMIT_MSG="chore(pages): regenerate gh-pages from main/overlay/
 
 Files deployed:
 $(ls -1 *.html 2>/dev/null | sed 's/^/  - /')

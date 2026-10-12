@@ -26,7 +26,7 @@ Deploy with:
 bash scripts/deploy-pages-branch.sh
 ```
 
-It regenerates `gh-pages` from `prototype/overlay/` and pushes. Live at
+It regenerates `gh-pages` from `overlay/` on `main` and pushes. Live at
 `https://rkw-kim.github.io/world-21-suite/`.
 
 > The folder is `overlay/` — singular. It has been called `overly/` before and
