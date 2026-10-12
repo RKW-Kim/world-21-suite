@@ -20,6 +20,12 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from daemon import evict_cache
+except ImportError:  # running from anywhere odd; cap still enforced by daemon loop
+    evict_cache = lambda cap=None, pinned=frozenset(): 0
+
 ROOT = os.environ.get("BROADCAST_ROOT", os.path.join(os.getcwd(), "broadcast"))
 MEDIA = os.path.join(ROOT, "media")
 PLAYLIST = os.path.join(MEDIA, "playlist.json")
@@ -93,6 +99,9 @@ def intake(source, title=None, queue=False):
     if done and os.path.exists(os.path.join(MEDIA, done)):
         print("already cached as %s; skipping (quota-safe)." % done)
         return done
+    if shutil.disk_usage(MEDIA if os.path.exists(MEDIA) else "/tmp").free < 5 * 1024**3:
+        raise RuntimeError("disk too full to intake; free space or raise the cap first.")
+    evict_cache()  # make room before the burst, not after
     workdir = os.path.join(MEDIA, ".intake-tmp")
     os.makedirs(workdir, exist_ok=True)
     raw = fetch_source(source, workdir)

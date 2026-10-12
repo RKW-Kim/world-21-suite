@@ -11,6 +11,8 @@
 set -euo pipefail
 ROOT="${BROADCAST_ROOT:-./broadcast}"
 
+[ -d overlay ] || { echo "::error::run from the repo root (no overlay/ found)."; exit 1; }
+
 for bin in ffmpeg ffprobe python3; do
   command -v "$bin" >/dev/null || { echo "::error::$bin missing. Install ffmpeg + python3 first."; exit 1; }
 done

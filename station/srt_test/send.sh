@@ -10,7 +10,9 @@
 # --latency MS  retransmit budget (default 800; raise on bad wifi, costs delay)
 # --record DIR  also save a local tape alongside the push (brownout insurance)
 #
-# Works on Linux and macOS (avfoundation). Env knobs for weak machines
+# Works on Linux and macOS (avfoundation). NOTE: the macOS branch is written
+# against ffmpeg/avfoundation docs, untested on this Linux box — first MBA run
+# is the test. Env knobs for weak machines
 # (e.g. a 2013 laptop): SIZE=640x480 PRESET=ultrafast VBITRATE=1000k
 #
 # On the other laptop, run: station/srt_test/receive.sh [--sample 15]

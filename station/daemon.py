@@ -14,6 +14,7 @@ Usage (run from repo root, lab defaults to ./broadcast):
   python3 station/daemon.py return          # back to PROGRAM, resume playlist
   python3 station/daemon.py status          # print health, exit 0/1
   python3 station/daemon.py watch           # one watchdog pass, exit 0/1
+  python3 station/daemon.py selftest        # offline logic check, exit 0/1
 
 Env:
   BROADCAST_ROOT  media/state home (default: ./broadcast)
@@ -29,7 +30,6 @@ import os
 import random
 import shutil
 import sqlite3
-import subprocess
 import sys
 import threading
 import time
@@ -51,9 +51,10 @@ class Renderer:
 
     def set_scene(self, name): raise NotImplementedError
     def set_media_source(self, source, path): raise NotImplementedError
+    def set_source_visible(self, scene, source, visible): raise NotImplementedError
     def get_media_status(self, source): raise NotImplementedError  # {time_ms, duration_ms, state}
     def set_transition(self, style, duration_ms): raise NotImplementedError
-    def get_stream_status(self): raise NotImplementedError  # {active, dropped_frames, cpu}
+    def get_stream_status(self): raise NotImplementedError  # {active, dropped_frames}
     def on_media_ended(self, callback): raise NotImplementedError
 
 
@@ -120,6 +121,16 @@ class OBSRenderer(Renderer):
             "inputSettings": {"local_file": path},
             "overlay": True})
 
+    def set_source_visible(self, scene, source, visible):
+        items = self._call("GetSceneItemList", {"sceneName": scene}).get("sceneItems", [])
+        for it in items:
+            if it.get("sourceName") == source:
+                self._call("SetSceneItemEnabled",
+                           {"sceneName": scene, "sceneItemId": it["sceneItemId"],
+                            "sceneItemEnabled": bool(visible)})
+                return
+        raise RuntimeError("source %s not in scene %s" % (source, scene))
+
     def get_media_status(self, source):
         try:
             d = self._call("GetMediaInputStatus", {"inputName": source})
@@ -147,7 +158,6 @@ class OBSRenderer(Renderer):
         t.start()
 
     def _events(self):
-        import socket
         while True:
             try:
                 s, f = self._connect()
@@ -155,7 +165,12 @@ class OBSRenderer(Renderer):
                     msg = json.loads(f.readline().decode())
                     if msg.get("op") == 5 and msg["d"].get("eventType") == "MediaInputPlaybackEnded":
                         if self._ended_cb:
-                            self._ended_cb(msg["d"]["eventData"].get("inputName"))
+                            try:
+                                self._ended_cb(msg["d"]["eventData"].get("inputName"))
+                            except Exception as e:
+                                # A dying callback must never kill the event thread:
+                                # that would silently stop all playlist advance.
+                                print("event callback failed: %s" % e, file=sys.stderr, flush=True)
                 s.close()
             except Exception:
                 time.sleep(5)  # reconnect; the loop must not die with the socket
@@ -268,27 +283,70 @@ class Watchdog:
 
 
 # ------------------------------------------------------------------- loop ---
+# Scene model (OBS side): scene PROGRAM holds PLAYOUT_A + PLAYOUT_B (one
+# visible at a time) plus overlay sources; scene STARTING holds source IDENT;
+# TECHDIFF / OFF-AIR / LIVE / END are static scenes. Names are fixed here so
+# the state machine can reason about them; rename in OBS and here together.
+PROGRAM, DECK_A, DECK_B, IDENT_SRC = "PROGRAM", "PLAYOUT_A", "PLAYOUT_B", "IDENT"
+TRANSITION = os.environ.get("TRANSITION", "Fade")
+
+
+def evict_cache(cap=CACHE_CAP, pinned=frozenset()):
+    """Enforce the byte cap: delete LRU .mp4 files, never pinned ones.
+    Returns bytes freed. .intake-tmp, playlist.json and intake.db are exempt."""
+    try:
+        files = [(os.path.getmtime(os.path.join(MEDIA, f)), f)
+                 for f in os.listdir(MEDIA)
+                 if f.endswith(".mp4") and f not in pinned]
+    except OSError:
+        return 0
+    total = sum(os.path.getsize(os.path.join(MEDIA, f)) for _, f in files)
+    freed = 0
+    for _, f in sorted(files):
+        if total <= cap:
+            break
+        p = os.path.join(MEDIA, f)
+        try:
+            size = os.path.getsize(p)
+            os.remove(p)
+            total -= size
+            freed += size
+            alert("Evicted %s (cache cap)." % f, "INFO")
+        except OSError:
+            pass
+    return freed
+
+
 def advance(renderer, state, data, deck_sources):
-    """Play next item on the idle deck, cut under a transition."""
-    items = data["items"]
+    """Play next item on the idle deck, cut under a transition.
+
+    Loop, not recursion: a fully-missing playlist must end on TECHDIFF,
+    not in RecursionError."""
+    items = data.get("items", [])
     if not items:
         renderer.set_scene("TECHDIFF")
         alert("Playlist empty; holding.", "WARN")
         return
-    idx = state.get("index", 0) % len(items)
-    item = items[idx]
-    deck = "B" if state.get("deck", "A") == "A" else "A"
-    src = deck_sources[deck]
-    path = os.path.join(MEDIA, item["file"])
-    if not os.path.exists(path):
+    skipped = 0
+    while skipped < len(items):
+        idx = state.get("index", 0) % len(items)
+        item = items[idx]
+        path = os.path.join(MEDIA, item["file"])
+        if os.path.exists(path):
+            break
         alert("Cache miss: %s. Skipping to next." % item["file"], "WARN")
         state["index"] = idx + 1
-        save_state(state)
-        return advance(renderer, state, data, deck_sources)
+        skipped += 1
+    else:
+        renderer.set_scene("TECHDIFF")
+        alert("Every playlist item missing; holding.", "CRIT")
+        return
+    deck = "B" if state.get("deck", "A") == "A" else "A"
+    src, other = deck_sources[deck], deck_sources["B" if deck == "A" else "A"]
     renderer.set_media_source(src, path)
-    renderer.set_transition("Fade", 750)
-    # visibility swap PLAYOUT_B <-> PLAYOUT_A happens in OBS scene "PROGRAM";
-    # media source restart-on-activate covers the file change.
+    renderer.set_source_visible(PROGRAM, src, True)
+    renderer.set_source_visible(PROGRAM, other, False)
+    renderer.set_transition(TRANSITION, 750)
     state.update({"index": idx + 1, "deck": deck})
     if state["index"] >= len(items) and data.get("shuffle_on_complete"):
         random.shuffle(data["items"])
@@ -298,25 +356,40 @@ def advance(renderer, state, data, deck_sources):
     save_state(state)
 
 
+def on_ended(renderer, decks, source):
+    """Route a media-ended event by source name. Unknown sources are ignored."""
+    if source == IDENT_SRC:
+        renderer.set_scene("LIVE")  # ident played to completion; cut to live
+        alert("Ident done; LIVE on air.", "INFO")
+    elif source in decks.values():
+        advance(renderer, load_state(), load_playlist(), decks)
+    # anything else (sting, bed loop, preview) is not the daemon's business
+
+
 def cmd_loop(renderer):
-    data = load_playlist()
+    try:
+        data = load_playlist()
+    except (OSError, ValueError) as e:
+        print("cannot start: playlist unreadable (%s). Fix %s." % (e, PLAYLIST))
+        return 2
     state = load_state()
-    decks = {"A": "PLAYOUT_A", "B": "PLAYOUT_B"}
+    decks = {"A": DECK_A, "B": DECK_B}
     dog = Watchdog(renderer)
     mtime = os.path.getmtime(PLAYLIST)
 
-    def on_ended(source):
-        advance(renderer, load_state(), load_playlist(), decks)
-
-    renderer.on_media_ended(on_ended)
+    renderer.on_media_ended(lambda src: on_ended(renderer, decks, src))
     advance(renderer, state, data, decks)
-    alert("Loop running: %d items." % len(data["items"]), "INFO")
+    alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
     while True:
         try:
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
                 mtime = os.path.getmtime(PLAYLIST)
-                data = load_playlist()
-                alert("Playlist reloaded; takes effect at next transition.", "INFO")
+                try:
+                    data = load_playlist()
+                    alert("Playlist reloaded; takes effect at next transition.", "INFO")
+                except ValueError:
+                    alert("Playlist edit is not valid JSON; keeping old order.", "WARN")
+            evict_cache()  # cheap stat scan; pinning handled at intake time
             dog.check_stream()
             dog.check_disk()
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
@@ -325,10 +398,76 @@ def cmd_loop(renderer):
         time.sleep(10)
 
 
+# --------------------------------------------------------------- selftest ---
+class FakeRenderer(Renderer):
+    """Offline stand-in: records calls, serves scripted media positions."""
+
+    def __init__(self):
+        self.calls = []
+        self.pos = {}
+
+    def set_scene(self, name):
+        self.calls.append(("scene", name))
+
+    def set_media_source(self, source, path):
+        self.calls.append(("file", source, path))
+
+    def set_source_visible(self, scene, source, visible):
+        self.calls.append(("vis", scene, source, visible))
+
+    def get_media_status(self, source):
+        return {"time_ms": self.pos.get(source, 0), "duration_ms": 1000, "state": "playing"}
+
+    def set_transition(self, style, duration_ms):
+        self.calls.append(("trans", style))
+
+    def get_stream_status(self):
+        return {"active": True, "dropped_frames": 0}
+
+    def on_media_ended(self, callback):
+        self._cb = callback
+
+
+def selftest():
+    """One runnable check for the non-trivial logic. No OBS, no network."""
+    import tempfile
+    global MEDIA, PLAYLIST, STATE, DB
+    tmp = tempfile.mkdtemp()
+    MEDIA, PLAYLIST = os.path.join(tmp, "media"), os.path.join(tmp, "media", "playlist.json")
+    STATE, DB = os.path.join(tmp, "state.json"), os.path.join(tmp, "a.db")
+    os.makedirs(MEDIA)
+    open(os.path.join(MEDIA, "a.mp4"), "w").write("x")
+    save_playlist({"shuffle_on_complete": True,
+                   "items": [{"file": "a.mp4", "title": "A", "duration": 1},
+                             {"file": "gone.mp4", "title": "G", "duration": 1}]})
+    r, decks = FakeRenderer(), {"A": DECK_A, "B": DECK_B}
+    advance(r, load_state(), load_playlist(), decks)  # plays a.mp4 on B, visible
+    assert ("file", DECK_B, os.path.join(MEDIA, "a.mp4")) in r.calls, r.calls
+    assert ("vis", PROGRAM, DECK_B, True) in r.calls, r.calls
+    assert ("vis", PROGRAM, DECK_A, False) in r.calls, r.calls
+    on_ended(r, decks, IDENT_SRC)  # ident end cuts LIVE, never advances playlist
+    assert ("scene", "LIVE") in r.calls, r.calls
+    live_calls = len(r.calls)
+    on_ended(r, decks, "SOME_PREVIEW")  # unknown sources are ignored
+    assert len(r.calls) == live_calls, r.calls
+    evict_cache(cap=0, pinned=frozenset({"a.mp4"}))  # pinned survives any cap...
+    assert os.path.exists(os.path.join(MEDIA, "a.mp4")), "pinned file evicted!"
+    evict_cache(cap=0)  # ...unpinned, it goes
+    assert not os.path.exists(os.path.join(MEDIA, "a.mp4")), "eviction skipped!"
+    dog = Watchdog(r)  # stall detector: frozen position faults once stale
+    assert dog.check_source(DECK_A, on_air=False) is True
+    dog.last_progress[DECK_A] -= 10  # simulate 10s of no movement
+    assert dog.check_source(DECK_A, on_air=False) is False
+    assert ("scene", "TECHDIFF") not in [c for c in r.calls if c[0] == "scene"], r.calls
+    print("selftest: all checks passed.")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="Station playout daemon (lab-safe: no-ops without OBS).")
     ap.add_argument("cmd", choices=["loop", "scene", "go-live", "tech-diff",
-                                    "resume", "return", "status", "watch"],
+                                    "resume", "return", "status", "watch",
+                                    "selftest"],
                     help="intent to execute")
     ap.add_argument("arg", nargs="?", help="scene name for 'scene'")
     args = ap.parse_args()
@@ -342,6 +481,8 @@ def main():
         d = Watchdog(r)
         ok = d.check_stream() and d.check_disk()
         return 0 if ok else 1
+    if args.cmd == "selftest":
+        return selftest()
     if args.cmd == "scene":
         r.set_scene(args.arg)
         alert("Cut to %s." % args.arg, "INFO")
