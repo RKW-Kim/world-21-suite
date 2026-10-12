@@ -125,10 +125,10 @@ git commit -m "$COMMIT_MSG" 2>&1 | tail -3
 echo "=== Pushing gh-pages to origin (force, because we rewrote history) ==="
 git push origin gh-pages --force 2>&1 | tail -5
 
-# --- switch back to prototype ---
+# --- switch back to main ---
 
-echo "=== Switching back to prototype ==="
-git checkout prototype 2>&1 | tail -3
+echo "=== Switching back to main ==="
+git checkout main 2>&1 | tail -3
 
 echo ""
 echo "=== Done ==="
