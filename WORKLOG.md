@@ -33,6 +33,10 @@ real debugging time and each fix is load-bearing. Newest first.
 12. Overlapping background test runs pollute each other (stray publishers showed
     up in the bus log mid-drill). One drill per run: `pkill -x ffmpeg` first,
     fresh log, sequential Python-driven processes, no shell `&` chains.
+13. MBA brew ffmpeg has NO libsrt (`Protocol not found` on any srt:// URL).
+    No script survives a missing protocol: `send.sh` now preflights
+    `ffmpeg -protocols | grep -qw srt` and dies with the actual reason.
+    MBA falls back to OBS-push (its bundled SRT is proven working).
 
 ## 2026-10-12 — Headless OBS rig live (Flatpak 32.2.2 + Xvfb :99)
 

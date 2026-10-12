@@ -39,6 +39,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$MODE" ] && [ -n "$HOST" ] || { echo "usage: $0 [--test|--cam] [--screen] [--latency MS] [--record DIR] RECEIVER"; exit 1; }
+ffmpeg -hide_banner -protocols 2>/dev/null | grep -qw srt \
+  || { echo "::error::this ffmpeg build has no SRT support (no libsrt)."; echo "  macOS brew: check 'brew info ffmpeg'; or send via OBS instead (see WORKLOG)."; exit 1; }
 
 tee_out() { # $1 = srt url. tee always needs an explicit format (no extension to guess from).
   if [ -n "$RECORD" ]; then
