@@ -10,7 +10,18 @@
 # --latency MS  retransmit budget (default 800; raise on bad wifi, costs delay)
 # --record DIR  also save a local tape alongside the push (brownout insurance)
 #
+# Works on Linux and macOS (avfoundation). Env knobs for weak machines
+# (e.g. a 2013 laptop): SIZE=640x480 PRESET=ultrafast VBITRATE=1000k
+#
 # On the other laptop, run: station/srt_test/receive.sh [--sample 15]
+
+set -euo pipefail
+OS="$(uname -s)"
+SIZE="${SIZE:-1280x720}"
+if [ -z "${PRESET:-}" ]; then
+  if [ "$OS" = "Darwin" ]; then PRESET="ultrafast"; else PRESET="veryfast"; fi
+fi
+VBITRATE="${VBITRATE:-1500k}"
 
 set -euo pipefail
 MODE=""; SCREEN=0; HOST=""; LATENCY=800000; RECORD=""
@@ -44,26 +55,48 @@ if [ "$MODE" = "--test" ]; then
   # the network path works and the VPS will work — same protocol, same ports.
   # NOTE: ffmpeg 9's tee muxer needs explicit -map (auto-map doesn't propagate).
   ffmpeg -hide_banner -loglevel warning \
-    -f lavfi -i "testsrc2=size=1280x720:rate=30" \
+    -f lavfi -i "testsrc2=size=${SIZE}:rate=30" \
     -f lavfi -i "sine=frequency=440:sample_rate=48000" \
     -map 0:v -map 1:a \
-    -c:v libx264 -preset veryfast -tune zerolatency -b:v 1500k \
+    -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v "$VBITRATE" \
     -c:a aac -b:a 128k -f tee "$(tee_out "$AV_URL")"
+elif [ "$OS" = "Darwin" ]; then
+  # macOS: camera+mic via avfoundation (one device each, muxed for lip-sync).
+  # List devices first: ffmpeg -f avfoundation -list_devices true -i ""
+  # Env: CAM=0 MIC=0 (device indices).
+  CAM="${CAM:-0}"; MIC="${MIC:-0}"
+  ffmpeg -hide_banner -loglevel warning \
+    -f avfoundation -framerate 30 -video_size "$SIZE" -i "${CAM}:${MIC}" \
+    -map 0:v -map 0:a \
+    -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v "$VBITRATE" \
+    -c:a aac -b:a 96k -f tee "$(tee_out "$AV_URL")"
 else
   [ -e /dev/video0 ] || { echo "::error::no /dev/video0. Use --test, or plug in a camera."; exit 1; }
   MIC="-f alsa -i default"
   ffmpeg -hide_banner -loglevel warning -f pulse -i default 2>/dev/null \
     && MIC="-f pulse -i default" || true
   ffmpeg -hide_banner -loglevel warning \
-    -f v4l2 -framerate 30 -video_size 1280x720 -i /dev/video0 \
+    -f v4l2 -framerate 30 -video_size "$SIZE" -i /dev/video0 \
     $MIC \
     -map 0:v -map 1:a \
-    -c:v libx264 -preset veryfast -tune zerolatency -b:v 2500k \
+    -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v 2500k \
     -c:a aac -b:a 128k -f tee "$(tee_out "$AV_URL")"
 fi &
 
 if [ "$SCREEN" = "1" ]; then
-  if [ "${XDG_SESSION_TYPE:-}" != "x11" ] && [ -z "${DISPLAY:-}" ]; then
+  if [ "$OS" = "Darwin" ]; then
+    # macOS screen = an avfoundation video device ("Capture screen 0").
+    # Env: SCR=<screen-device-index> (see -list_devices). Audio: none (silent
+    # slides) or mux system audio by pointing MIC at a loopback and merging —
+    # out of scope for the proof run; see debrief edge case 2.
+    SCR="${SCR:-1}"
+    echo "== pushing screen to srt://$HOST:9001 (separate feed, no sync tie to face) =="
+    ffmpeg -hide_banner -loglevel warning \
+      -f avfoundation -framerate 30 -i "$SCR" \
+      -map 0:v -vf "scale=1280:-2" \
+      -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v "$VBITRATE" \
+      -f mpegts "srt://$HOST:9001?streamid=host_screen&latency=$LATENCY" &
+  elif [ "${XDG_SESSION_TYPE:-}" != "x11" ] && [ -z "${DISPLAY:-}" ]; then
     echo "::warning::screen capture needs X11 (this box is ${XDG_SESSION_TYPE:-unknown})."
     echo "  On Wayland: share the screen from OBS on this laptop, or skip --screen."
     echo "  Cam+mic feed above is unaffected."
