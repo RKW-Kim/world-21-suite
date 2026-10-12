@@ -4,6 +4,36 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-12 — Reconnect drill: direct listener vs bus (bus wins half)
+
+- Bug replicated cleanly (no MBA needed): ffmpeg SRT listener takes sender1's
+  8s, then sender2's reconnect never arrives (8.4s total). Same disease as the
+  MBA's OBS-restream failure and crash. Root cause: whoever owns a listener
+  socket can't reliably re-listen while the session is active.
+- MediaMTX v1.21.2 in the middle (pinned in setup.sh, binary gitignored):
+  PUBLISH-side reconnect is FREE — publisher2 takes over with zero action
+  ("closing existing publisher" in log). This alone ends the MBA's crash loop:
+  the bus accepts the new publish; nothing else moves.
+- READ-side still needs re-arm: a reader connected through a path drop does
+  NOT resume; a fresh reader connects fine (proven: 6.0s clean). Station rule:
+  daemon polls MTX API and re-arms the OBS SRT source on re-publish (Phase-4
+  job, now specified by measurement rather than theory).
+- Bus rules learned the hard way: SRT streamids need `publish:`/`read:`
+  prefixes (bare names are actively REJECTED); reader arriving before any
+  publisher is closed with "no stream available" — publisher MUST be up first,
+  readers retry. Daemon will own that ordering.
+- MediaMTX is RUNNING on this box now (SRT :9000, API 127.0.0.1:9997, PID in
+  /tmp/mtx.pid). MBA can push to it today:
+  `srt://<ARCH-IP>:9000?streamid=publish:host_av&latency=800000`.
+
+### Hiccup log, continued
+11. `pkill -f <pattern>` matches our own shell when the pattern is a substring
+    of our command — murdered two test harnesses. New law: PID files for
+    daemons (`/tmp/mtx.pid`), exact PIDs or `pkill -x <name>` for processes.
+12. Overlapping background test runs pollute each other (stray publishers showed
+    up in the bus log mid-drill). One drill per run: `pkill -x ffmpeg` first,
+    fresh log, sequential Python-driven processes, no shell `&` chains.
+
 ## 2026-10-12 — Headless OBS rig live (Flatpak 32.2.2 + Xvfb :99)
 
 - Daemon speaks real RFC6455 now (obs-websocket is framed WebSocket, not line

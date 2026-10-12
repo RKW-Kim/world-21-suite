@@ -1,0 +1,11 @@
+# MediaMTX: the ingest bus in front of the render plane.
+# Owns the volatile WAN socket (reconnects silently); OBS/ffmpeg pull LOCAL
+# streams that either have frames or don't — a state the watchdog can act on.
+# One SRT port; streamid selects the path. Control API on loopback only.
+logLevel: debug
+srtAddress: :9000
+api: yes
+apiAddress: 127.0.0.1:9997
+paths:
+  host_av:
+  host_screen:

@@ -13,6 +13,9 @@ secrets.env.local
 broadcast/
 station/overlay_state.json
 
+# Pinned third-party binaries (fetched by setup.sh, never committed)
+station/third_party/
+
 # Build artifacts
 dist/
 _site/

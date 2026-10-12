@@ -47,6 +47,24 @@ fi
 # pinned Flatpak build. setup.sh never installs system packages itself — OS
 # choices stay visible. Arch: sudo pacman -S xorg-server-xvfb.
 command -v Xvfb >/dev/null || echo "::warning::Xvfb missing — headless OBS needs xorg-server-xvfb."
+
+# MediaMTX (ingest bus): pinned static binary, no root needed, never committed.
+MTX_VER="v1.21.2"
+if [ ! -x station/third_party/mediamtx ]; then
+  case "$(uname -s)" in
+    Linux)  MTX_OS="linux_amd64" ;;
+    Darwin) MTX_OS="darwin_arm64" ;;  # Apple Silicon; Intel Macs: darwin_amd64
+    *) echo "::error::no MediaMTX asset mapped for $(uname -s). Fetch by hand."; exit 1 ;;
+  esac
+  echo "fetching MediaMTX $MTX_VER ($MTX_OS) ..."
+  curl -fSL -o /tmp/mtx.tar.gz \
+    "https://github.com/bluenviron/mediamtx/releases/download/$MTX_VER/mediamtx_${MTX_VER#v}_$MTX_OS.tar.gz"
+  mkdir -p station/third_party
+  tar xzf /tmp/mtx.tar.gz -C station/third_party/ mediamtx
+  rm -f /tmp/mtx.tar.gz
+fi
+echo "mediamtx: $(station/third_party/mediamtx --version 2>/dev/null || echo MISSING)"
+echo "run it: ./station/third_party/mediamtx station/mediamtx.yml  (SRT :9000, API loopback :9997)"
 # Pin the render-plane build: Arch and Ubuntu must run the same OBS.
 if command -v flatpak >/dev/null && flatpak info com.obsproject.Studio >/dev/null 2>&1; then
   {
