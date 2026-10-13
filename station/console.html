@@ -67,7 +67,7 @@ var q = new URLSearchParams(location.search);
 var host = q.get('obs') || location.hostname;
 var pass = q.get('pass') || '';
 var err = function(m){ document.getElementById('err').textContent = m || ''; };
-var seq = 0, pending = {}, ws = null;
+var seq = 0, pending = {}, ws = null, statusTimer = null;
 
 function b64(bytes){
   var s = '';
@@ -213,7 +213,9 @@ function connect(){
           ws.addEventListener('message', route);
           err('');
           refresh();
-          setInterval(setStatus, 5000);
+          // One poller ever: reconnects reuse it (ws is global). A new
+          // interval per connect would stack N pollers hammering the socket.
+          if (!statusTimer) statusTimer = setInterval(setStatus, 5000);
         };
         ws.addEventListener('message', identified);
       };

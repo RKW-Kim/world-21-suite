@@ -4,6 +4,26 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-13 — obs-web studied (reference only, never vendor)
+
+- Niek/obs-web (1.5k stars, GPL-3.0, Svelte, updated yesterday): static page,
+  direct browser→OBS, scenes, Studio Mode, 1fps screenshot previews, meters,
+  recording/streaming, phone-friendly. Read obs.js + ProgramPreview directly.
+- LEGAL: our repo is MIT; obs-web is GPL-3.0. Vendoring any of it would
+  infect our license. Reference the patterns, write our own lines. Decided.
+- Patterns worth stealing (ideas, not code): `obsws://host:port/password`
+  deeplink format (nicer than our ?obs=&pass=); InputVolumeMeters needs
+  explicit subscription (meters ARE available — earlier "no meters" note
+  corrected); named event handlers removed on destroy (reconnect listener
+  stacking is real — audit ours: console.html adds `route` once per connect()
+  but never removes on close → same stacking bug on every reconnect!).
+- Our console keeps its lane: station intents + deck transport, not a clone.
+  Full-feel test path for the operator: open obs-web against the Arch box.
+- Caught by the comparison and fixed same hour: our status poller WAS stacking
+  (new setInterval per reconnect → N pollers hammering). One global poller now.
+  (Message listeners were safe — they die with their socket; only the interval
+  leaked across reconnects.)
+
 ## 2026-10-13 — Director intents over HTTP (console grows up)
 
 - Console gained GO LIVE / TECH DIFF / RESUME / RETURN buttons POSTing to
