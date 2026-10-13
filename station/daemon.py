@@ -257,8 +257,13 @@ class OBSRenderer(Renderer):
     def get_media_status(self, source):
         try:
             d = self._call("GetMediaInputStatus", {"inputName": source})
-            return {"time_ms": d.get("mediaCursor", 0),
-                    "duration_ms": d.get("mediaDuration", 0),
+            # OBS returns explicit nulls when idle (key present, value None) —
+            # .get(key, default) does NOT cover that. Normalize or every idle
+            # source reads as a crash downstream.
+            cur = d.get("mediaCursor")
+            dur = d.get("mediaDuration")
+            return {"time_ms": cur if isinstance(cur, (int, float)) else -1,
+                    "duration_ms": dur if isinstance(dur, (int, float)) else 0,
                     "state": d.get("mediaState", "unknown")}
         except RuntimeError:
             return {"time_ms": -1, "duration_ms": 0, "state": "missing"}
@@ -360,6 +365,17 @@ class Watchdog:
         self.r = renderer
         self.last_ms = {}
         self.last_progress = {}
+        self._was_active = None
+        self._last_note = {}  # key -> ts of last repeatable notice
+
+    def _note(self, key, interval, level, msg):
+        """Repeatable notices, throttled: first occurrence alerts, repeats
+        at most once per interval. Alert fatigue is how a real incident gets
+        slept through."""
+        now = time.time()
+        if now - self._last_note.get(key, 0) >= interval:
+            self._last_note[key] = now
+            alert(msg, level)
 
     def check_source(self, source, on_air):
         st = self.r.get_media_status(source)
@@ -394,10 +410,18 @@ class Watchdog:
 
     def check_stream(self):
         st = self.r.get_stream_status()
-        if not st["active"]:
+        if st["active"]:
+            self._was_active = True
+            return True
+        if self._was_active is not False:
+            # Transition into inactive: loud once. While it stays down (lab
+            # has no stream key at all), hourly reminder, not per-poll spam.
             alert("Stream output not active!", "CRIT")
-            return False
-        return True
+            self._was_active = False
+        else:
+            self._note("stream-down", 3600, "WARN",
+                       "Stream output still not active.")
+        return False
 
     def check_disk(self):
         free = shutil.disk_usage(ROOT).free
@@ -514,6 +538,18 @@ def wait_ready(renderer, tries=None, pause=15):
 
 
 def cmd_loop(renderer):
+    import fcntl
+    try:
+        lock = open(os.path.join(ROOT, "daemon.lock"), "w")
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, IOError):
+        print("another loop already holds %s/daemon.lock; refusing a second driver." % ROOT)
+        return 2
+    with open(os.path.join(ROOT, "daemon.pid"), "w") as f:
+        # PID file: pgrep counting lies when launcher shells linger in the
+        # same command line (their cmdline contains our own pattern). Read
+        # this file and check /proc/<pid> for the truth.
+        f.write(str(os.getpid()))
     try:
         data = load_playlist()
     except (OSError, ValueError) as e:
@@ -562,8 +598,10 @@ def cmd_loop(renderer):
             dog.check_stream()
             dog.check_disk()
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
-        except Exception as e:
-            alert("loop error: %s" % e, "WARN")
+        except Exception:
+            import traceback
+            traceback.print_exc()  # full trace: a one-line message hid a real bug for hours
+            alert("loop error (see log for traceback).", "WARN")
         time.sleep(int(os.environ.get("WATCH_POLL", "10")))
 
 
