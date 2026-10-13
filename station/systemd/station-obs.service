@@ -2,6 +2,10 @@
 Description=Station render plane (headless OBS, SMILE collection)
 After=station-xvfb.service
 Requires=station-xvfb.service
+# Rate cap on restarts: a crash-looping renderer must hold STOPPED and shout,
+# not spin 20 restarts in 30 minutes behind our backs (seen 2026-10-14).
+StartLimitIntervalSec=600
+StartLimitBurst=3
 
 [Service]
 Type=simple
