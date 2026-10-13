@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # station/obs-restart.sh [COLLECTION] — restart headless OBS without clobbering.
+# THE only sanctioned way to launch OBS here. Never start a second instance
+# by hand for "a quick check": two renderers split no work and double the
+# CPU, and the stale one keeps its own websocket silence. If a test needs
+# isolation, say so explicitly and kill it right after.
 # Order matters and has bitten three times: OBS saves its in-memory collection
 # on graceful shutdown, so copy the fresh file only AFTER the old process is
 # fully gone (CEF teardown takes 10s+), then launch, then wait for boot.
@@ -28,3 +32,17 @@ done
 echo "collections installed: $(ls broadcast/scenes/*.json | xargs -n1 basename | tr '\n' ' ')"
 setsid bash -c "DISPLAY=:$DISP flatpak run --socket=x11 --env=DISPLAY=:$DISP com.obsproject.Studio --verbose --minimize-to-tray > /tmp/obs_headless.log 2>&1" < /dev/null > /dev/null 2>&1 & disown
 echo "launched; booting (~60s under CEF load)..."
+sleep 45
+# A dying instance can linger in teardown for a while; that is not a second
+# renderer, so recount patiently before accusing.
+n=0
+for _ in $(seq 1 6); do
+  n=$(pgrep -x obs 2>/dev/null | wc -l)
+  [ "$n" -le 1 ] && break
+  sleep 10
+done
+if [ "$n" -ne 1 ]; then
+  echo "::error::expected exactly 1 obs process, found $n. Kill extras by exact PID, never pattern."
+  exit 1
+fi
+echo "singleton OK (1 obs process)"
