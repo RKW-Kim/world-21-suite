@@ -68,15 +68,21 @@ echo "mediamtx: $(station/third_party/mediamtx --version 2>/dev/null || echo MIS
 echo "run it: ./station/third_party/mediamtx station/mediamtx.yml  (SRT :9000, API loopback :9997)"
 # Pin the render-plane build: Arch and Ubuntu must run the same OBS.
 if command -v flatpak >/dev/null && flatpak info com.obsproject.Studio >/dev/null 2>&1; then
-  {
+  NEW_COMMIT="$(flatpak info --show-commit com.obsproject.Studio)"
+  OLD_COMMIT="$(python3 -c "import json;print(json.load(open('station/manifest/flatpak.lock.json')).get('commit',''))" 2>/dev/null)"
+  if [ "$NEW_COMMIT" != "$OLD_COMMIT" ]; then
+    {
     echo "{"
     echo "  \"app\": \"com.obsproject.Studio\","
-    echo "  \"commit\": \"$(flatpak info --show-commit com.obsproject.Studio)\","
+    echo "  \"commit\": \"$NEW_COMMIT\","
     echo "  \"runtime\": \"$(flatpak info --show-runtime com.obsproject.Studio)\","
     echo "  \"pinned_on\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
     echo "}"
-  } > station/manifest/flatpak.lock.json
-  echo "pinned Flatpak OBS -> station/manifest/flatpak.lock.json"
+    } > station/manifest/flatpak.lock.json
+    echo "pinned Flatpak OBS -> station/manifest/flatpak.lock.json"
+  else
+    echo "Flatpak pin unchanged ($NEW_COMMIT)"
+  fi
 else
   echo "::warning::Flatpak OBS not found — install com.obsproject.Studio, then re-run to pin it."
 fi

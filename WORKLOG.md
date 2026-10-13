@@ -49,6 +49,22 @@ real debugging time and each fix is load-bearing. Newest first.
     `ffmpeg -protocols | grep -qw srt` and dies with the actual reason.
     MBA falls back to OBS-push (its bundled SRT is proven working).
 
+## 2026-10-12 — Missing-file dialog killed at the root
+
+- OBS "Missing Files" dialog (IDENT + PLAYOUT_A/B placeholders) is the template
+  working as designed, not breakage — but placeholders must never reach a
+  human. `render_scenes.py` now resolves decks to the first playlist items on
+  disk and IDENT to the first ident present (new `{{ASSETS}}` placeholder);
+  missing entries keep placeholder paths so the dialog names exactly what
+  intake hasn't delivered yet.
+- Real fixes underneath: media paths are ABSOLUTE (OBS resolves relative
+  against its own cwd, not the collection dir — relative paths silently miss);
+  generated a 6s `ident_evening.mp4` slate so IDENT exists; setup.sh pin is
+  idempotent now (was re-stamping the timestamp every run, dirtying git).
+- Operator action: restart OBS or switch collection away/back to load the
+  reinstalled file; the dialog should be gone. If it lists anything, that
+  file genuinely needs intaking.
+
 ## 2026-10-12 — Remote console for Mac-driven tests (console.html + BIND)
 
 - `station/console.html`: raw scene switching + media transport + status over
