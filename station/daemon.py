@@ -380,8 +380,12 @@ class Watchdog:
     def check_source(self, source, on_air):
         st = self.r.get_media_status(source)
         now = time.time()
-        if st["time_ms"] < 0:
+        if st["state"] == "missing":
             return self.fault(source, "source missing", on_air)
+        if st["time_ms"] < 0:
+            return True  # exists but idle/loading: nothing to measure yet.
+            # Faulting here caused a full false TECHDIFF→OFF-AIR cascade on a
+            # source that simply hadn't started playing. Only regressions fault.
         if st["time_ms"] == self.last_ms.get(source):
             if now - self.last_progress.get(source, now) > 5:
                 return self.fault(source, "stalled at %sms" % st["time_ms"], on_air)
@@ -389,6 +393,13 @@ class Watchdog:
             self.last_ms[source] = st["time_ms"]
             self.last_progress[source] = now
         return True
+
+    def _program_is_live(self):
+        try:
+            pgm = self.r._call("GetCurrentProgramScene")["currentProgramSceneName"]
+            return pgm in (SCENE_PROGRAM, SCENE_LIVE)
+        except Exception:
+            return True  # unknown: fail safe toward cutting, not toward silence
 
     def fault(self, source, reason, on_air):
         state = load_state()
@@ -398,12 +409,16 @@ class Watchdog:
         faults[key] = hist
         save_state(state)
         if len(hist) >= REPEAT_LIMIT:
-            alert("REPEATED FAILURE %s (%s) x%d in 1h. OFF-AIR, waiting for human."
-                  % (source, reason, len(hist)), "CRIT")
-            self.r.set_scene(SCENE_OFFAIR)
+            if len(hist) == REPEAT_LIMIT:
+                alert("REPEATED FAILURE %s (%s) x%d in 1h. OFF-AIR, waiting for human."
+                      % (source, reason, len(hist)), "CRIT")
+                self.r.set_scene(SCENE_OFFAIR)
+            else:
+                self._note(key + ":escalated", 3600, "CRIT",
+                           "Still failing: %s (%s). OFF-AIR held." % (source, reason))
             return False
         alert("%s: %s." % (source, reason), "CRIT")
-        if on_air:
+        if on_air and self._program_is_live():
             alert("Cutting to TECHDIFF; stream survives.", "INFO")
             self.r.set_scene(SCENE_TECHDIFF)
         return False
@@ -634,6 +649,9 @@ class FakeRenderer(Renderer):
     def on_media_ended(self, callback):
         self._cb = callback
 
+    def _call(self, req, data=None):
+        raise RuntimeError("nope")  # fail-safe probe: faults must still cut
+
 
 def selftest():
     """One runnable check for the non-trivial logic. No OBS, no network."""
@@ -666,6 +684,15 @@ def selftest():
     dog.last_progress[DECK_A] -= 10  # simulate 10s of no movement
     assert dog.check_source(DECK_A, on_air=False) is False
     assert ("scene", SCENE_TECHDIFF) not in [c for c in r.calls if c[0] == "scene"], r.calls
+    r.pos["IDLE"] = -1  # exists but never played: measured, never faulted
+    n = len(r.calls)
+    assert dog.check_source("IDLE", on_air=True) is True
+    assert len(r.calls) == n, r.calls
+    r.pos["STUCK"] = 5  # unseen program state: faults still cut (fail safe)
+    assert dog.check_source("STUCK", on_air=True) is True
+    dog.last_progress["STUCK"] -= 10
+    assert dog.check_source("STUCK", on_air=True) is False
+    assert ("scene", SCENE_TECHDIFF) in r.calls, r.calls
     print("selftest: all checks passed.")
     return 0
 

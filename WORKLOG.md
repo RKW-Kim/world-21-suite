@@ -71,6 +71,27 @@ real debugging time and each fix is load-bearing. Newest first.
   (source_uuid links, full item keys, `shutdown` normalization) — template
   stays minimal, OBS hydrates; do not hand-author hydrated fields.
 
+## 2026-10-12 — False-cascade night: idle ≠ missing, one driver, quiet server
+
+- Tonight's TECHDIFF→OFF-AIR cascade was a FALSE positive: a never-played deck
+  reports cursor null, which the watchdog read as "missing". Lifecycle is now
+  modeled honestly — missing (query failed) vs idle (exists, unmeasured) vs
+  playing vs stalled — and only regressions fault. Pre-first-reading sources
+  are measured, never faulted.
+- Cuts only fire from on-air scenes (PROGRAM/LIVE roles); a fault during
+  harbour/starting/credits alerts without yanking. Unreadable program state
+  fails safe toward cutting. Post-escalation repeats throttled to hourly.
+- Two self-inflicted wounds, both now structural: (1) TWO loop instances drove
+  one OBS (a timed-out launcher survived) → flock lock + PID file; verify via
+  /proc, never pgrep patterns near lingered shells. (2) Every loop failure was
+  4009-auth-close, not deafness — OBS_PASS lived only in chat history, never
+  in secrets.env. Close frames now carry code+reason so auth can never again
+  masquerade as a dead server.
+- Deaf-window pattern stands but narrowed: genuine stalls (TimeoutError with
+  correct auth) cluster post-boot and post-switch; quiet recovers. Persistent
+  connection + queued advance-retries + wait budget are the standing answer;
+  root cause (memory pressure vs CEF churn) still open, VPS re-proves it.
+
 ## 2026-10-12 — Loop night, part 1: deaf-server pattern + light collection
 
 - Websocket server goes DEAF in bursts (accepts TCP, then close-frames new
