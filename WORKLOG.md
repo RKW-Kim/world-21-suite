@@ -4,6 +4,20 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-13 — Cutover: station runs on systemd, survives reboot
+
+- `linger` on, all five units enabled+active (xvfb → obs → daemon chain,
+  mediamtx, overlay). Loop advancing + reshuffling under unit supervision;
+  throttle behavior nominal in journal. Reboot no longer kills the station.
+- Real bug from the cutover: transition check used a nonexistent
+  `GetTransitionList` (fail-open hid it). Correct request is
+  `GetSceneTransitionList` (verified live against 5.7.4); fail-fast stands.
+- Overlay unit exposes BIND=0.0.0.0 (home LAN for the Mac console; tunnel on
+  VPS). ufw still needs 7070/tcp for the MBA (told, unconfirmed).
+- Unplanned drill that got us here: the box rebooted overnight with nothing
+  supervised — total outage, zero self-recovery. That outage is now the
+  regression test for this entry.
+
 ## 2026-10-13 — Prefetch worker (look-ahead resolve, three misdiagnoses)
 
 - `prefetch_pass()` in the poll loop: next-2 items with `source` but no file
