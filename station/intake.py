@@ -135,6 +135,12 @@ def intake(source, title=None, queue=False):
             os.replace(tmp, PLAYLIST)  # atomic; loop picks it up at next cut
         print("OK %s (%.0fs, sha256 %.12s)" % (os.path.basename(dest), dur, digest))
         return os.path.basename(dest)
+    except Exception:
+        # A failed verify must not litter the cache: an unnamed partial would
+        # sit below the eviction radar (no playlist entry) yet eat the cap.
+        if os.path.exists(dest):
+            os.remove(dest)
+        raise
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 

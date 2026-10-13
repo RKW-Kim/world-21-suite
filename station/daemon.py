@@ -43,7 +43,6 @@ PLAYLIST = os.path.join(MEDIA, "playlist.json")
 STATE = os.path.join(ROOT, "state.json")
 DB = os.path.join(ROOT, "activity.db")
 CACHE_CAP = int(os.environ.get("CACHE_CAP_BYTES", 50 * 1024**3))
-WARM_DEPTH = 2
 REPEAT_LIMIT = 3  # same fault 3x/hour -> OFF-AIR + escalate
 
 
@@ -407,6 +406,8 @@ class Watchdog:
         key = "%s:%s" % (source, reason.split(" at ")[0])
         hist = [t for t in faults.get(key, []) if time.time() - t < 3600] + [time.time()]
         faults[key] = hist
+        faults = {k: v for k, v in faults.items() if v}  # don't grow dead keys
+        state["faults"] = faults
         save_state(state)
         if len(hist) >= REPEAT_LIMIT:
             if len(hist) == REPEAT_LIMIT:
@@ -441,7 +442,10 @@ class Watchdog:
     def check_disk(self):
         free = shutil.disk_usage(ROOT).free
         if free < 5 * 1024**3:
-            alert("Disk critical: %.1f GB free." % (free / 1024**3), "CRIT")
+            # Throttled: a full disk stays full for hours; per-poll CRIT is
+            # how an operator learns to mute the channel.
+            self._note("disk", 3600, "CRIT",
+                       "Disk critical: %.1f GB free." % (free / 1024**3))
             return False
         return True
 
@@ -528,6 +532,15 @@ def advance(renderer, state, data, deck_sources):
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
     if source == IDENT_SRC:
+        # ...unless the operator already moved on (RETURN mid-ident): cutting
+        # LIVE over their program would hijack the show from under them.
+        try:
+            pgm = renderer._call("GetCurrentProgramScene")["currentProgramSceneName"]
+        except Exception:
+            pgm = SCENE_STARTING  # unknown: honor the intent, cut anyway
+        if pgm != SCENE_STARTING:
+            alert("Ident ended but program is %s; leaving it." % pgm, "INFO")
+            return
         renderer.set_scene(SCENE_LIVE)  # ident played to completion; cut to live
         alert("Ident done; LIVE on air.", "INFO")
     elif source in decks.values():
@@ -573,6 +586,7 @@ def cmd_loop(renderer):
     state = load_state()
     decks = {"A": DECK_A, "B": DECK_B}
     dog = Watchdog(renderer)
+    last_loop_err = None
     mtime = os.path.getmtime(PLAYLIST)
     last_hash = json.dumps(data, sort_keys=True)
     ended = []  # media-ended events queue here; the poll loop drains them.
@@ -586,6 +600,15 @@ def cmd_loop(renderer):
     if not wait_ready(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
+    try:
+        names = [t["name"] for t in
+                 renderer._call("GetTransitionList").get("transitions", [])]
+        assert TRANSITION in names, "transition %r missing (have %s)" % (TRANSITION, names)
+    except AssertionError as e:
+        print("cannot start loop: %s." % e)
+        return 2
+    except RuntimeError as e:
+        print("cannot verify transitions (%s); starting anyway." % e)
     try:
         advance(renderer, state, data, decks)
     except RuntimeError as e:
@@ -628,8 +651,13 @@ def cmd_loop(renderer):
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
         except Exception:
             import traceback
-            traceback.print_exc()  # full trace: a one-line message hid a real bug for hours
-            alert("loop error (see log for traceback).", "WARN")
+            # Full trace once per distinct error; deaf windows repeat the same
+            # failure every poll and would drown the log otherwise.
+            sig = traceback.format_exc(limit=3)
+            if sig != last_loop_err:
+                last_loop_err = sig
+                traceback.print_exc()
+                alert("loop error (see log for traceback).", "WARN")
         time.sleep(int(os.environ.get("WATCH_POLL", "10")))
 
 
@@ -640,6 +668,7 @@ class FakeRenderer(Renderer):
     def __init__(self):
         self.calls = []
         self.pos = {}
+        self.program_scene = SCENE_STARTING
 
     def set_scene(self, name):
         self.calls.append(("scene", name))
@@ -663,7 +692,11 @@ class FakeRenderer(Renderer):
         self._cb = callback
 
     def _call(self, req, data=None):
-        raise RuntimeError("nope")  # fail-safe probe: faults must still cut
+        # fail-safe probe: faults must still cut. Doubles as the program
+        # reader for the ident-hijack guard (returns self.program_scene).
+        if req == "GetCurrentProgramScene":
+            return {"currentProgramSceneName": self.program_scene}
+        raise RuntimeError("nope")
 
 
 def selftest():
@@ -685,7 +718,10 @@ def selftest():
     assert ("vis", PROGRAM, DECK_A, False) in r.calls, r.calls
     on_ended(r, decks, IDENT_SRC)  # ident end cuts LIVE, never advances playlist
     assert ("scene", SCENE_LIVE) in r.calls, r.calls
+    r.program_scene = "SMILE | Meet"  # operator moved on mid-ident: no hijack
     live_calls = len(r.calls)
+    on_ended(r, decks, IDENT_SRC)
+    assert len(r.calls) == live_calls, r.calls
     on_ended(r, decks, "SOME_PREVIEW")  # unknown sources are ignored
     assert len(r.calls) == live_calls, r.calls
     evict_cache(cap=0, pinned=frozenset({"a.mp4"}))  # pinned survives any cap...
@@ -706,6 +742,9 @@ def selftest():
     dog.last_progress["STUCK"] -= 10
     assert dog.check_source("STUCK", on_air=True) is False
     assert ("scene", SCENE_TECHDIFF) in r.calls, r.calls
+    r2 = FakeRenderer()
+    del r2.program_scene  # unreadable program: cut anyway, never silence
+    assert Watchdog(r2)._program_is_live() is True
     print("selftest: all checks passed.")
     return 0
 

@@ -4,6 +4,26 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-12 — Audit pass: full daemon read-through + small sharp fixes
+
+- Read all 754 lines as-shipped. Real finds, all fixed: `WARM_DEPTH` dead
+  constant (deleted); disk-full CRIT spammed per-poll (hourly throttle now);
+  fault keys grew unbounded (pruned); IDENT-end hijacked program after a
+  mid-ident RETURN (guarded on program-still-Starting); missing transition
+  wedged advance into infinite deferred-retry (fail-fast check at loop start,
+  degrades to warning if the check itself can't run); poll tracebacks now
+  once-per-distinct-error; intake failure littered partials in cache
+  (removed on failure — verified live: rejected 3s file, zero litter);
+  overlay server hung on Ctrl+C with open SSE connections (daemon_threads);
+  setup.sh required curl without checking it + mapped all Darwins to arm64
+  (Intel MBA would have fetched the wrong MediaMTX — uname -m now).
+- Deliberately NOT changed: evict INFO-per-file (fine at real volumes);
+  intake corrupt-playlist crash (cron surfaces it); console enum strings
+  (server errors surface in-page by design); POST/state without auth
+  (documented trust: home LAN / tunnel-only users).
+- Failure-path verification: intake rejection leaves no litter; overlay
+  server exits with open SSE connections; all syntax + both selftests green.
+
 ## 2026-10-12 — Host standard decided: plain OBS GUI, no headless, no scripts
 
 - Hosts run normal OBS (minimized, preview off, VideoToolbox HW encode,

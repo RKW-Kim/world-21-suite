@@ -141,7 +141,13 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     bind = os.environ.get("BIND", "127.0.0.1")
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 7070
-    srv = ThreadingHTTPServer((bind, port), Handler)
+
+    class Server(ThreadingHTTPServer):
+        # SSE handlers block in queue.get() forever; without daemon threads
+        # Ctrl+C hangs on shutdown instead of exiting. Learned, not theorized.
+        daemon_threads = True
+
+    srv = Server((bind, port), Handler)
     print("overlay server on http://%s:%d/ (%s)" %
           (bind, port, "LOOPBACK ONLY" if bind in ("127.0.0.1", "localhost") else "LAN-EXPOSED: tunnel on VPS"),
           flush=True)

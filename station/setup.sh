@@ -13,8 +13,8 @@ ROOT="${BROADCAST_ROOT:-./broadcast}"
 
 [ -d overlay ] || { echo "::error::run from the repo root (no overlay/ found)."; exit 1; }
 
-for bin in ffmpeg ffprobe python3; do
-  command -v "$bin" >/dev/null || { echo "::error::$bin missing. Install ffmpeg + python3 first."; exit 1; }
+for bin in ffmpeg ffprobe python3 curl; do
+  command -v "$bin" >/dev/null || { echo "::error::$bin missing. Install ffmpeg + python3 + curl first."; exit 1; }
 done
 
 mkdir -p "$ROOT"/{media,assets/idents,overlays,backups,recordings} station/manifest
@@ -52,10 +52,11 @@ command -v Xvfb >/dev/null || echo "::warning::Xvfb missing — headless OBS nee
 # MediaMTX (ingest bus): pinned static binary, no root needed, never committed.
 MTX_VER="v1.21.2"
 if [ ! -x station/third_party/mediamtx ]; then
-  case "$(uname -s)" in
-    Linux)  MTX_OS="linux_amd64" ;;
-    Darwin) MTX_OS="darwin_arm64" ;;  # Apple Silicon; Intel Macs: darwin_amd64
-    *) echo "::error::no MediaMTX asset mapped for $(uname -s). Fetch by hand."; exit 1 ;;
+  case "$(uname -s).$(uname -m)" in
+    Linux.x86_64)  MTX_OS="linux_amd64" ;;
+    Darwin.arm64)  MTX_OS="darwin_arm64" ;;
+    Darwin.*)      MTX_OS="darwin_amd64" ;;  # Intel Macs, including the 2013 Air
+    *) echo "::error::no MediaMTX asset mapped for $(uname -s)/$(uname -m). Fetch by hand."; exit 1 ;;
   esac
   echo "fetching MediaMTX $MTX_VER ($MTX_OS) ..."
   curl -fSL -o /tmp/mtx.tar.gz \
