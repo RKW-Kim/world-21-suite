@@ -18,6 +18,13 @@ if pgrep -x obs >/dev/null; then
   exit 1
 fi
 cp "broadcast/scenes/$COLLECTION.json" "$SCENES_DIR/$COLLECTION.json"
-echo "collection $COLLECTION installed"
+# Install every rendered collection, not just the boot target: a stale file
+# in this dir is indistinguishable from a live one until OBS reads it, and
+# a runtime collection SWITCH wedges the websocket server for minutes.
+# Booting straight into the right file beats switching every time.
+for f in broadcast/scenes/*.json; do
+  cp "$f" "$SCENES_DIR/" 2>/dev/null || true
+done
+echo "collections installed: $(ls broadcast/scenes/*.json | xargs -n1 basename | tr '\n' ' ')"
 setsid bash -c "DISPLAY=:$DISP flatpak run --socket=x11 --env=DISPLAY=:$DISP com.obsproject.Studio --verbose --minimize-to-tray > /tmp/obs_headless.log 2>&1" < /dev/null > /dev/null 2>&1 & disown
 echo "launched; booting (~60s under CEF load)..."

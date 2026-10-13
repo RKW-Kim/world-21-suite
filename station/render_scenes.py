@@ -95,17 +95,17 @@ def check(col):
     scenes = [s for s in col["sources"] if s["id"] == "scene"]
     assert len(scenes) == 6, "want exactly the 6 deck scenes, got %d" % len(scenes)
     decks = {s["name"] for s in scenes}
-    assert decks == {"SMILE | Starting", "SMILE | Meet", "SMILE | Q&A",
-                     "SMILE | Tech Diffs", "SMILE | Off Air", "SMILE | End Credits"}, decks
-    meet_items = {i["name"] for i in by_name["SMILE | Meet"]["settings"]["items"]}
+    assert decks == {"starting.html", "meet.html", "q&a.html",
+                     "tech-diff.html", "offair.html", "end-credits.html"}, decks
+    meet_items = {i["name"] for i in by_name["meet.html"]["settings"]["items"]}
     assert {"PLAYOUT_A", "PLAYOUT_B"} <= meet_items
     if "MOD Ticker" in by_name:  # absent in LAB_LIGHT builds
         assert "MOD Ticker" in meet_items
-        for item in by_name["SMILE | Meet"]["settings"]["items"]:
+        for item in by_name["meet.html"]["settings"]["items"]:
             if item["name"] == "MOD Ticker":
                 assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
                 assert by_name["MOD Ticker"]["settings"]["height"] == TICKER_H
-    live_items = {i["name"] for i in by_name["SMILE | Q&A"]["settings"]["items"]}
+    live_items = {i["name"] for i in by_name["q&a.html"]["settings"]["items"]}
     assert {"SRT Cam", "SRT Screen"} <= live_items
     if "OB Speaking" in by_name:
         assert "OB Speaking" in live_items

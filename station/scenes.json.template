@@ -4,17 +4,17 @@
     "never hand-edited into OBS: placeholders {{MEDIA}} {{OVERLAY}} are filled at",
     "deploy time so Arch paths and VPS paths never leak into each other.",
     "Role mapping (daemon drives left, OBS shows right):",
-    "  STARTING -> SMILE | Starting   (starting.html hold + IDENT clip source)",
-    "  PROGRAM  -> SMILE | Meet       (PLAYOUT_A/B local files + ticker + watermark.",
+    "  STARTING -> starting.html   (starting.html hold + IDENT clip source)",
+    "  PROGRAM  -> meet.html       (PLAYOUT_A/B local files + ticker + watermark.",
     "                                   meet.html itself is NOT on air; the scene is",
-    "                                   named for its deck position.)",
-    "  LIVE     -> SMILE | Q&A        (SRT cam/screen sources + speaking.html overlay",
+    "                                   named for its overlay file, 1:1.)",
+    "  LIVE     -> q&a.html        (SRT cam/screen sources + speaking.html overlay",
     "                                   + ticker; floating q&a.html bubbles toggled",
     "                                   for audience segments.)",
-    "  TECHDIFF -> SMILE | Tech Diffs (fault framing per SCENES.md: names the problem,",
+    "  TECHDIFF -> tech-diff.html (fault framing per SCENES.md: names the problem,",
     "                                   bar fills while we work.)",
-    "  OFFAIR   -> SMILE | Off Air    (maintenance harbour. Never edited.)",
-    "  END      -> SMILE | End Credits(intentional shutdown.)",
+    "  OFFAIR   -> offair.html    (maintenance harbour. Never edited.)",
+    "  END      -> end-credits.html(intentional shutdown.)",
     "UNTESTED AGAINST REAL OBS (no Xvfb on the lab box yet): schema follows the",
     "documented collection layout; render_scenes.py --check enforces internal",
     "consistency only. First OBS load is an explicit verification step.",
@@ -25,47 +25,47 @@
     "bake-static (debrief 14) is what reduces the count, not unloading."
   ],
   "name": "SMILE Station",
-  "current_scene": "SMILE | Off Air",
-  "current_program_scene": "SMILE | Off Air",
+  "current_scene": "offair.html",
+  "current_program_scene": "offair.html",
   "current_transition": "Fade",
   "transition_duration": 300,
   "scene_order": [
-    {"name": "SMILE | Starting"},
-    {"name": "SMILE | Meet"},
-    {"name": "SMILE | Q&A"},
-    {"name": "SMILE | Tech Diffs"},
-    {"name": "SMILE | Off Air"},
-    {"name": "SMILE | End Credits"}
+    {"name": "starting.html"},
+    {"name": "meet.html"},
+    {"name": "q&a.html"},
+    {"name": "tech-diff.html"},
+    {"name": "offair.html"},
+    {"name": "end-credits.html"}
   ],
   "transitions": [
     {"name": "Fade", "id": "fade_transition", "settings": {}},
     {"name": "Cut", "id": "cut_transition", "settings": {}}
   ],
   "sources": [
-    {"name": "SMILE | Starting", "id": "scene", "settings": {"items": [
+    {"name": "starting.html", "id": "scene", "settings": {"items": [
       {"name": "OB Starting Page", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "IDENT", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
-    {"name": "SMILE | Meet", "id": "scene", "settings": {"items": [
+    {"name": "meet.html", "id": "scene", "settings": {"items": [
       {"name": "PLAYOUT_A", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "PLAYOUT_B", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "MOD Ticker", "visible": true, "pos": {"x": 0.0, "y": 1004.0}},
       {"name": "MOD Watermark", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
-    {"name": "SMILE | Q&A", "id": "scene", "settings": {"items": [
+    {"name": "q&a.html", "id": "scene", "settings": {"items": [
       {"name": "SRT Cam", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "SRT Screen", "visible": false, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "OB Speaking", "visible": true, "pos": {"x": 0.0, "y": 0.0}},
       {"name": "MOD Ticker", "visible": true, "pos": {"x": 0.0, "y": 1004.0}},
       {"name": "MOD Watermark", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
-    {"name": "SMILE | Tech Diffs", "id": "scene", "settings": {"items": [
+    {"name": "tech-diff.html", "id": "scene", "settings": {"items": [
       {"name": "OB Tech Diffs", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
-    {"name": "SMILE | Off Air", "id": "scene", "settings": {"items": [
+    {"name": "offair.html", "id": "scene", "settings": {"items": [
       {"name": "OB Off Air", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
-    {"name": "SMILE | End Credits", "id": "scene", "settings": {"items": [
+    {"name": "end-credits.html", "id": "scene", "settings": {"items": [
       {"name": "OB End Credits", "visible": true, "pos": {"x": 0.0, "y": 0.0}}
     ]}},
 

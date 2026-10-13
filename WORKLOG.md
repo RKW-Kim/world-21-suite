@@ -4,6 +4,25 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Scenes renamed to overlay filenames + OBS-Old verdict
+
+- Operator overruled SMILE|X: OBS scenes are now exactly the overlay filenames
+  (`starting.html`, `tech-diff.html`, `q&a.html`, `offair.html`, `meet.html`,
+  `end-credits.html`; note the two spellings that differ from guesses:
+  tech-diff not tech-diffs, offair not off-air). Self-documenting: scene name
+  IS the file. Daemon constants + renderer checks follow.
+- OBS-Old.md (476 KB "OBS Studio Web Edition" from another device): archived
+  to `archive/obs-web-edition/`. Verdict after inspection: static GUI-chrome
+  mockup — 64 menu labels, zero protocol code (2 "websocket" hits are menu
+  TEXT), external script.js/style.css companions missing, CDN deps, no
+  license. Nothing to wire, nothing licensed to take. Its one honest use is
+  the control inventory (which native buttons exist) for growing our console.
+  Same ruling as Codepen: visible is not licensed.
+- Restart/collection discipline x3: obs-restart installs ALL rendered
+  collections (a stale sibling is indistinguishable until read); boot lands
+  on last-used so runtime switches are never needed (they wedge the server
+  for minutes); verify scene names live via GetSceneList, never disk alone.
+
 ## 2026-10-14 — OBS exited 0 spontaneously; Restart=always + idle re-kick
 
 - Render plane exited clean (status 0, no crash, no log) after 5.5h; cause
