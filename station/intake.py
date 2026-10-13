@@ -19,11 +19,13 @@ import sqlite3
 import subprocess
 import sys
 import time
+import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    from daemon import evict_cache
+    from daemon import evict_cache, CACHE_CAP
 except ImportError:  # running from anywhere odd; cap still enforced by daemon loop
+    CACHE_CAP = 50 * 1024**3
     evict_cache = lambda cap=None, pinned=frozenset(): 0
 
 ROOT = os.environ.get("BROADCAST_ROOT", os.path.join(os.getcwd(), "broadcast"))
@@ -94,6 +96,45 @@ def verify(path, expect_min_s=5):
     return dur
 
 
+def _pinned_files():
+    """What the loop is playing, about to play, or the operator pinned.
+    Intake must never evict these — evicting the on-air file mid-play is
+    the one unrecoverable cache failure (everything else retries)."""
+    try:
+        items = json.load(open(PLAYLIST)).get("items", [])
+    except (OSError, ValueError):
+        return frozenset()
+    try:
+        idx = json.load(open(os.path.join(ROOT, "state.json"))).get("index", 0)
+    except (OSError, ValueError):
+        idx = 0
+    pinned, n = set(), len(items)
+    if n:
+        for o in (-1, 0, 1):
+            f = items[(idx + o) % n].get("file")
+            if f:
+                pinned.add(f)
+    pinned |= {i.get("file") for i in items if i.get("pinned") and i.get("file")}
+    return frozenset(pinned)
+
+
+def _estimate_size(source):
+    """Incoming bytes if knowable without downloading: local size, else HTTP
+    Content-Length. Anything else (yt-dlp URLs, streams) is None = proceed
+    on faith, verify after."""
+    if os.path.isfile(source):
+        return os.path.getsize(source)
+    if not source.startswith(("http://", "https://")):
+        return None
+    try:
+        req = urllib.request.Request(source, method="HEAD")
+        with urllib.request.urlopen(req, timeout=15) as r:
+            n = r.headers.get("Content-Length")
+            return int(n) if n else None
+    except Exception:
+        return None
+
+
 def intake(source, title=None, queue=False, target=None):
     done = already_done(source)
     if done and os.path.exists(os.path.join(MEDIA, done)):
@@ -116,7 +157,21 @@ def intake(source, title=None, queue=False, target=None):
     if shutil.disk_usage(MEDIA if os.path.exists(MEDIA) else "/tmp").free < int(
             os.environ.get("INTAKE_MIN_FREE_BYTES", 5 * 1024**3)):
         raise RuntimeError("disk too full to intake; free space or raise the cap first.")
-    evict_cache()  # make room before the burst, not after
+    pinned = _pinned_files()
+    est = _estimate_size(source)
+    if est is not None:
+        try:
+            sizes = {f: os.path.getsize(os.path.join(MEDIA, f)) for f in os.listdir(MEDIA)
+                     if f.endswith(".mp4")}
+        except OSError:
+            sizes = {}
+        room = CACHE_CAP - sum(sizes.get(f, 0) for f in pinned)
+        if est > room:
+            raise RuntimeError(
+                "cache cannot fit ~%d bytes: %d cap, %d pinned (playing/next/operator). "
+                "Unpin, raise the cap, or pick a smaller file. Nothing downloaded."
+                % (est, CACHE_CAP, sum(sizes.get(f, 0) for f in pinned)))
+    evict_cache(pinned=pinned)  # make room before the burst, not after
     workdir = os.path.join(MEDIA, ".intake-tmp")
     os.makedirs(workdir, exist_ok=True)
     raw = fetch_source(source, workdir)
@@ -143,6 +198,9 @@ def intake(source, title=None, queue=False, target=None):
                      time.strftime("%Y-%m-%d"), title or safe))
         con.commit()
         con.close()
+        # Estimates undershoot (normalised output can outgrow its input);
+        # settle the cap now that the real bytes are known.
+        evict_cache(pinned=pinned)
         if queue:
             try:
                 with open(PLAYLIST) as f:

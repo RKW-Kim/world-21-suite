@@ -1,11 +1,29 @@
 {
-  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Items may carry an optional source (URL or path): the prefetch worker resolves it in the background and fills in file when ready.",
+  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Optional per item: source (URL/path for prefetch to resolve), show (series tag for similar-replacement), status (active|dormant; dormant keeps its link but never airs), pinned (true = never evicted, never auto-replaced). Dormant + pinned items are the archive the operator curates; active unpinned items are the rotation the cache manages.",
   "shuffle_on_complete": true,
-  "idents": ["ident_evening.mp4"],
+  "idents": [
+    "ident_evening.mp4"
+  ],
   "items": [
-    {"file": "PLACEHOLDER_doc_ep1.mp4", "title": "Documentary Ep 1", "duration": 3600},
-    {"file": "PLACEHOLDER_interview_accra.mp4", "title": "Interview: Accra", "duration": 2700},
-    {"file": "PLACEHOLDER_maths_04.mp4", "title": "Maths Lesson 4", "duration": 1800},
-    {"file": "PLACEHOLDER_sponsor_acme.mp4", "title": "Sponsor: Acme Corp", "duration": 30}
+    {
+      "file": "PLACEHOLDER_doc_ep1.mp4",
+      "title": "Documentary Ep 1",
+      "duration": 3600
+    },
+    {
+      "file": "PLACEHOLDER_interview_accra.mp4",
+      "title": "Interview: Accra",
+      "duration": 2700
+    },
+    {
+      "file": "PLACEHOLDER_maths_04.mp4",
+      "title": "Maths Lesson 4",
+      "duration": 1800
+    },
+    {
+      "file": "PLACEHOLDER_sponsor_acme.mp4",
+      "title": "Sponsor: Acme Corp",
+      "duration": 30
+    }
   ]
 }
