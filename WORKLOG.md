@@ -49,6 +49,25 @@ real debugging time and each fix is load-bearing. Newest first.
     `ffmpeg -protocols | grep -qw srt` and dies with the actual reason.
     MBA falls back to OBS-push (its bundled SRT is proven working).
 
+## 2026-10-12 — Remote console for Mac-driven tests (console.html + BIND)
+
+- `station/console.html`: raw scene switching + media transport + status over
+  obs-websocket, served at `/console`. No server side: the VIEWER's browser
+  speaks ws:// directly, so no inbound hole beyond the OBS socket. Daemon
+  intents stay CLI-only until the dashboard phase (documented in-page).
+- `overlay_server.py` takes BIND (default loopback); LAN mode prints a
+  tunnel warning. MBA needs `sudo ufw allow 4455/tcp` on this box (agent has
+  no sudo) + `BIND=0.0.0.0` server + URL with `?obs=<ip>&pass=`.
+- Bugs caught before the Mac ever loaded the page: MBA-OBS filter excluded
+  the very ffmpeg inputs transport targets (inverted); `crypto.subtle` does
+  NOT exist on plain-http LAN origins, so auth uses an embedded SHA-256 —
+  verified against NIST vectors AND byte-identical to the daemon against a
+  real server challenge. GetInputList keys confirmed live.
+- Second unexplained OBS death (no FATAL, no OOM trace; first was D-Bus
+  abort). Two deaths in ~3h on 2 cores/3.8 GB with 12 CEF browsers. Stability
+  on lab hardware is NOT proven; systemd-restart covers exactly this class,
+  and the VPS spec doubles the headroom. Watching.
+
 ## 2026-10-12 — Archify architecture diagram (all gates pass, visually inspected)
 
 - `.archify/architecture-smile-station-20261013-032357/smile-station.html`:

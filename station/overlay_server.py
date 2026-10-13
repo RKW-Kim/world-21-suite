@@ -5,7 +5,14 @@ OBS browser sources point at http://127.0.0.1:7070/<page>.html.
 The dashboard/daemon POSTs to /state; pages listening on /events update
 in place — no reload, no OBS restart. Binds loopback only, never public.
 
+The /console page is the deliberate exception: it is a remote control, not
+a graphic, so for LAN tests the server takes BIND (default 127.0.0.1). The
+console talks to obs-websocket from the VIEWER's browser, so no inbound
+hole is needed beyond the OBS socket itself. Password rides in the URL:
+fine on a home LAN, SSH-tunnel-only on the VPS, never raw internet.
+
   python3 station/overlay_server.py [port]   # default 7070
+  BIND=0.0.0.0 python3 station/overlay_server.py 7070  # LAN test only
   curl -X POST 127.0.0.1:7070/state -d '{"presenter":"Wanjiru K."}'
 """
 
@@ -18,7 +25,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 OVERLAY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "overlay")
-STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "overlay_state.json")
+STATION_DIR = os.path.dirname(os.path.abspath(__file__))
+STATE_FILE = os.path.join(STATION_DIR, "overlay_state.json")
 SUBS = []
 LOCK = threading.Lock()
 
@@ -56,7 +64,9 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
 
     def do_GET(self):
-        if self.path == "/state":
+        if self.path == "/console" or self.path.startswith("/console?"):
+            self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html")
+        elif self.path == "/state":
             body = json.dumps(load_state()).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -109,13 +119,30 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _serve_file(self, path, ctype):
+        try:
+            with open(path, "rb") as f:
+                body = f.read()
+        except OSError:
+            self.send_error(404)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def log_message(self, fmt, *args):
         if self.path not in ("/events",):
             sys.stderr.write("overlay: %s\n" % (fmt % args))
 
 
 if __name__ == "__main__":
+    bind = os.environ.get("BIND", "127.0.0.1")
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 7070
-    srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print("overlay server on http://127.0.0.1:%d/ (loopback only)" % port, flush=True)
+    srv = ThreadingHTTPServer((bind, port), Handler)
+    print("overlay server on http://%s:%d/ (%s)" %
+          (bind, port, "LOOPBACK ONLY" if bind in ("127.0.0.1", "localhost") else "LAN-EXPOSED: tunnel on VPS"),
+          flush=True)
     srv.serve_forever()
