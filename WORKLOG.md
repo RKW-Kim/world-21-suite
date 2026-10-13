@@ -49,6 +49,19 @@ real debugging time and each fix is load-bearing. Newest first.
     `ffmpeg -protocols | grep -qw srt` and dies with the actual reason.
     MBA falls back to OBS-push (its bundled SRT is proven working).
 
+## 2026-10-12 — Archify architecture diagram (all gates pass, visually inspected)
+
+- `.archify/architecture-smile-station-20261013-032357/smile-station.html`:
+  13 nodes, 4 planes as boundaries, 14 labeled edges, repo-pinned evidence
+  (HEAD `8dd2d6e`). finalize: validate+deliver+check+browser-check green.
+  First layout failed 3 crossings; reflowed (daemon right of OBS, Discord/
+  YouTube stacked) and passed clean. Screenshot inspected: legible, no
+  overlapping labels; two routes bend more than ideal, meaning intact.
+- Alerts moved Telegram → Discord webhook (zero infra: no bot, no token
+  rotation). WhatsApp deliberately NOT built: no free official API; paths are
+  Twilio (paid), CallMeBot (free, phone opt-in, rate-limited), or fragile
+  bridges. If ever required, it's one function swap in `alert()`.
+
 ## 2026-10-12 — Headless OBS rig live (Flatpak 32.2.2 + Xvfb :99)
 
 - Daemon speaks real RFC6455 now (obs-websocket is framed WebSocket, not line

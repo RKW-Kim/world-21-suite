@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2bfd2165-189c-4ed7-aae2-573d9c768a9d",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/rkw/Documents/GitHub/world-21-suite/.archify/architecture-smile-station-20261013-032357/candidate.json",
+  "output": "/home/rkw/Documents/GitHub/world-21-suite/.archify/architecture-smile-station-20261013-032357/smile-station.html",
+  "specification": {
+    "sha256": "3272d544b46ca122426ea79f5b4feb948a9e2ae16896ec4da67c571b03a67ac9",
+    "bytes": 6334
+  },
+  "artifact": {
+    "sha256": "0a1fac608bc47ac46ac5219c8674f7cf28845212b6170a3db35f170208bf1e4c",
+    "bytes": 779804
+  }
+}
