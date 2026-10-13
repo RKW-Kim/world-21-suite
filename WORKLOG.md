@@ -71,6 +71,25 @@ real debugging time and each fix is load-bearing. Newest first.
   (source_uuid links, full item keys, `shutdown` normalization) — template
   stays minimal, OBS hydrates; do not hand-author hydrated fields.
 
+## 2026-10-12 — Loop night COMPLETE on live headless OBS
+
+- Full cycle observed: advance → deck progress → ENDED → advance → shuffle ×2,
+  stall induced at 57.8s → detected with exact cursor → TECHDIFF verified on
+  program → resumed → Meet, PLAYING 8s/65s. No crashes, no alert spam, one
+  driver throughout (PID file + flock held).
+- Media actions (PLAY/PAUSE) EXECUTE but their ACKs stall for minutes here —
+  the pause landed (cursor froze) while the caller timed out. Fire them
+  patiently; never treat their timeout as failure. Resume that works:
+  visibility-cycle (restart_on_activate); re-setting the identical file path
+  is a no-op, not a restart.
+- Program starts on Meet at loop start (deck previously played dark into the
+  Off Air harbour — caught live). Cuts fire only from on-air scenes.
+- Self reload notices debounced by content hash (own shuffle-save no longer
+  announces). Post-escalation repeats hourly, stream-down reminds hourly.
+- Lab box verdict: simultaneous SRT-fail log spam + 12-browser... (light
+  collection in use) — box survives the loop but every websocket call needs
+  patience. VPS doubles the headroom; numbers travel, conclusions don't.
+
 ## 2026-10-12 — False-cascade night: idle ≠ missing, one driver, quiet server
 
 - Tonight's TECHDIFF→OFF-AIR cascade was a FALSE positive: a never-played deck

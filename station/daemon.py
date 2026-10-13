@@ -574,6 +574,7 @@ def cmd_loop(renderer):
     decks = {"A": DECK_A, "B": DECK_B}
     dog = Watchdog(renderer)
     mtime = os.path.getmtime(PLAYLIST)
+    last_hash = json.dumps(data, sort_keys=True)
     ended = []  # media-ended events queue here; the poll loop drains them.
     end_lock = threading.Lock()  # ...so a deaf window delays advance, never drops it.
 
@@ -603,8 +604,13 @@ def cmd_loop(renderer):
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
                 mtime = os.path.getmtime(PLAYLIST)
                 try:
-                    data = load_playlist()
-                    alert("Playlist reloaded; takes effect at next transition.", "INFO")
+                    new_data = load_playlist()
+                    # Our own shuffle-save also bumps mtime; only announce
+                    # human edits, or the operator learns to ignore the log.
+                    if json.dumps(new_data, sort_keys=True) != last_hash:
+                        data = new_data
+                        last_hash = json.dumps(data, sort_keys=True)
+                        alert("Playlist reloaded; takes effect at next transition.", "INFO")
                 except ValueError:
                     alert("Playlist edit is not valid JSON; keeping old order.", "WARN")
             with end_lock:
