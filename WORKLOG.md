@@ -61,9 +61,15 @@ real debugging time and each fix is load-bearing. Newest first.
   against its own cwd, not the collection dir — relative paths silently miss);
   generated a 6s `ident_evening.mp4` slate so IDENT exists; setup.sh pin is
   idempotent now (was re-stamping the timestamp every run, dirtying git).
-- Operator action: restart OBS or switch collection away/back to load the
-  reinstalled file; the dialog should be gone. If it lists anything, that
-  file genuinely needs intaking.
+- Restart discipline (learned the hard way): OBS saves its in-memory
+  collection on graceful shutdown, and 12-CEF teardown takes 10s+. A
+  kill → sleep-4 → relaunch cycle lets the shutdown-save clobber a fresh copy
+  or races the old instance. Rule: poll `pgrep -x obs` to ZERO before
+  relaunch, reinstall the file, then verify via GetInputSettings (MEMORY),
+  never disk alone — disk can say absolute while memory holds stale relative.
+- Bonus from the hydrated file OBS writes back: the true on-disk schema
+  (source_uuid links, full item keys, `shutdown` normalization) — template
+  stays minimal, OBS hydrates; do not hand-author hydrated fields.
 
 ## 2026-10-12 — Remote console for Mac-driven tests (console.html + BIND)
 
