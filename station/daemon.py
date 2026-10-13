@@ -590,6 +590,13 @@ def cmd_loop(renderer):
     except RuntimeError as e:
         print("cannot start loop: %s. Is the render plane running?" % e)
         return 2
+    try:
+        # The deck plays wherever the files point, but nobody SEES it until
+        # program is the Meet scene. Caught live: a full advance cycle ran
+        # into the Off Air harbour because nothing cut program.
+        renderer.set_scene(SCENE_PROGRAM)
+    except RuntimeError as e:
+        alert("Program is not on Meet (%s); cut manually." % e, "WARN")
     alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
     while True:
         try:
