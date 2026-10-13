@@ -38,6 +38,13 @@ select{background:var(--panel);color:var(--fg);border:1px solid var(--line);
 <h1>SMILE · station console</h1>
 <div class="sub">raw switching + media transport · daemon intents live in the CLI</div>
 <div id="status">connecting…</div>
+<h2>Director intents</h2>
+<div class="grid">
+  <button data-intent="go-live">GO LIVE</button>
+  <button data-intent="tech-diff">TECH DIFF</button>
+  <button data-intent="resume">RESUME</button>
+  <button data-intent="return">RETURN</button>
+</div>
 <div id="err"></div>
 <h2>Scenes</h2><div class="grid" id="scenes"></div>
 <h2>Media transport</h2>
@@ -164,6 +171,16 @@ function transport(act){
   call('TriggerMediaInputAction', {inputName: name, mediaAction: 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_' + act})
     .catch(function(e){ err(String(e)); });
 }
+document.querySelectorAll('[data-intent]').forEach(function(b){
+  // Same functions the CLI runs (server-side); phone and terminal agree.
+  b.onclick = function(){
+    err('');
+    fetch('intent/' + b.getAttribute('data-intent'), {method: 'POST'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (!j.ok) err(j.error || 'intent failed'); else setStatus(); })
+      .catch(function(e){ err(String(e)); });
+  };
+});
 document.querySelectorAll('[data-act]').forEach(function(b){
   b.onclick = function(){ transport(b.getAttribute('data-act')); };
 });

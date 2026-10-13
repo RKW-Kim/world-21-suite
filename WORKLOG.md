@@ -4,6 +4,25 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-13 — Director intents over HTTP (console grows up)
+
+- Console gained GO LIVE / TECH DIFF / RESUME / RETURN buttons POSTing to
+  `/intent/*` on the overlay server, which runs the CLI's exact functions
+  (extracted to `do_*`, single implementation). Phone and terminal agree.
+- Found live: intent server started bare fails 4009 (OBS_PASS only in chat
+  history). `load_secrets()` now sources broadcast/secrets.env in daemon CLI
+  AND overlay server at startup. Verified: tech-diff + return both ok:true,
+  program confirmed on Meet.
+- Ident→LIVE chain fired again in the wild (loop log + program on Q&A) —
+  consistent with the MBA operator experimenting via console scene buttons
+  while the loop's event thread routes. System absorbs concurrent drivers.
+- Research verdict (web search, 2026-08): OBS ships NO official web UI;
+  Niek/obs-web is the closest existing thing (static page, scenes, Studio
+  Mode, 1fps previews, mobile-friendly). Decision: do NOT clone 1:1. Try
+  obs-web for the full-feel test; grow ours only toward station intents it
+  lacks. Full GUI parity is the wrong target (preview video + meters over
+  ws is a slideshow, not a switcher).
+
 ## 2026-10-12 — Audit pass: full daemon read-through + small sharp fixes
 
 - Read all 754 lines as-shipped. Real finds, all fixed: `WARM_DEPTH` dead

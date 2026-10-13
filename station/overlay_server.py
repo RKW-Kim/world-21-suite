@@ -30,6 +30,17 @@ STATE_FILE = os.path.join(STATION_DIR, "overlay_state.json")
 SUBS = []
 LOCK = threading.Lock()
 
+sys.path.insert(0, STATION_DIR)
+import daemon  # intents below reuse the CLI's exact functions (no second implementation)
+daemon.load_secrets()  # OBS_PASS + webhook for intent calls (see daemon.load_secrets)
+
+INTENTS = {
+    "go-live": daemon.do_go_live,
+    "tech-diff": daemon.do_tech_diff,
+    "resume": daemon.do_resume,
+    "return": daemon.do_return,
+}
+
 
 def load_state():
     try:
@@ -99,7 +110,10 @@ class Handler(SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
-        if urlparse(self.path).path != "/state":
+        path = urlparse(self.path).path
+        if path.startswith("/intent/"):
+            return self._intent(path[len("/intent/"):])
+        if path != "/state":
             self.send_error(404)
             return
         try:
@@ -115,6 +129,38 @@ class Handler(SimpleHTTPRequestHandler):
         body = b'{"ok":true}'
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _intent(self, name):
+        # Director intents over HTTP: same functions the CLI runs, so the
+        # phone and the terminal can never disagree about what GO LIVE does.
+        # Trust model = same as /state (LAN/tunnel-only users, no auth token).
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+        except ValueError:
+            body = {}
+        try:
+            r = daemon.OBSRenderer()
+            if name == "scene":
+                if not body.get("name"):
+                    return self._json(400, {"ok": False, "error": "scene needs {\"name\"}"})
+                daemon.do_scene(r, body["name"])
+            elif name in INTENTS:
+                INTENTS[name](r)
+            else:
+                return self._json(404, {"ok": False, "error": "unknown intent"})
+        except Exception as e:
+            return self._json(502, {"ok": False, "error": str(e)[:200]})
+        return self._json(200, {"ok": True})
+
+    def _json(self, code, obj):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

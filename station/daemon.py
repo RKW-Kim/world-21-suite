@@ -332,6 +332,24 @@ def alert(msg, level="WARN"):
 
 
 # ---------------------------------------------------------------- playlist ---
+def load_secrets():
+    """Source broadcast/secrets.env into the environment (no-op if absent).
+
+    Every entry point (CLI, loop, overlay server) needs OBS_PASS + webhook
+    without the operator remembering to export them. An evening was lost to
+    4009-auth failures from a server started bare; never again."""
+    path = os.path.join(ROOT, "secrets.env")
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip())
+    except OSError:
+        pass
+
+
 def load_playlist():
     with open(PLAYLIST) as f:
         return json.load(f)
@@ -749,6 +767,31 @@ def selftest():
     return 0
 
 
+def do_scene(renderer, name):
+    renderer.set_scene(name)
+    alert("Cut to %s." % name, "INFO")
+
+
+def do_go_live(renderer):
+    renderer.set_scene(SCENE_STARTING)  # ident plays; MediaInputPlaybackEnded -> LIVE
+    alert("GO LIVE: ident running, LIVE armed.", "INFO")
+
+
+def do_tech_diff(renderer):
+    renderer.set_scene(SCENE_TECHDIFF)
+    alert("TECH DIFF on air.", "WARN")
+
+
+def do_resume(renderer):
+    renderer.set_scene(SCENE_LIVE)  # short sting lives in the scene; no full re-intro
+    alert("Resumed LIVE.", "INFO")
+
+
+def do_return(renderer):
+    renderer.set_scene(SCENE_PROGRAM)
+    alert("Returned to PROGRAM.", "INFO")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Station playout daemon (lab-safe: no-ops without OBS).")
     ap.add_argument("cmd", choices=["loop", "scene", "go-live", "tech-diff",
@@ -757,6 +800,7 @@ def main():
                     help="intent to execute")
     ap.add_argument("arg", nargs="?", help="scene name for 'scene'")
     args = ap.parse_args()
+    load_secrets()
     r = OBSRenderer()
 
     if args.cmd == "status":
@@ -770,20 +814,15 @@ def main():
     if args.cmd == "selftest":
         return selftest()
     if args.cmd == "scene":
-        r.set_scene(args.arg)
-        alert("Cut to %s." % args.arg, "INFO")
+        do_scene(r, args.arg)
     elif args.cmd == "go-live":
-        r.set_scene(SCENE_STARTING)  # ident plays; MediaInputPlaybackEnded -> LIVE
-        alert("GO LIVE: ident running, LIVE armed.", "INFO")
+        do_go_live(r)
     elif args.cmd == "tech-diff":
-        r.set_scene(SCENE_TECHDIFF)
-        alert("TECH DIFF on air.", "WARN")
+        do_tech_diff(r)
     elif args.cmd == "resume":
-        r.set_scene(SCENE_LIVE)  # short sting lives in the scene; no full re-intro
-        alert("Resumed LIVE.", "INFO")
+        do_resume(r)
     elif args.cmd == "return":
-        r.set_scene(SCENE_PROGRAM)
-        alert("Returned to PROGRAM.", "INFO")
+        do_return(r)
     elif args.cmd == "loop":
         return cmd_loop(r)
     return 0
