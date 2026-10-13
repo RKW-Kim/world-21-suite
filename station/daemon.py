@@ -689,8 +689,8 @@ def cmd_loop(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
     try:
-        names = [t["name"] for t in
-                 renderer._call("GetTransitionList").get("transitions", [])]
+        names = [t["transitionName"] for t in
+                 renderer._call("GetSceneTransitionList").get("transitions", [])]
         assert TRANSITION in names, "transition %r missing (have %s)" % (TRANSITION, names)
     except AssertionError as e:
         print("cannot start loop: %s." % e)
