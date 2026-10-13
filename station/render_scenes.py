@@ -23,11 +23,15 @@ TEMPLATE = os.path.join(HERE, "scenes.json.template")
 CANVAS_W, CANVAS_H, TICKER_H = 1920, 1080, 76
 
 
-def render(media, overlay_url):
+def render(media, overlay_url, assets=None):
     with open(TEMPLATE) as f:
         text = f.read().replace("{{MEDIA}}", media).replace("{{OVERLAY}}", overlay_url)
+    if assets is None:
+        assets = os.path.join(os.path.dirname(media), "assets")
+    text = text.replace("{{ASSETS}}", assets)
     assert "{{" not in text, "unfilled placeholder survives"
     col = json.loads(text)
+    resolve_media(col, media, assets)
     names = [s["name"] for s in col["sources"]]
     assert len(names) == len(set(names)), "duplicate source names"
     by_name = {s["name"]: s for s in col["sources"]}
@@ -43,6 +47,35 @@ def render(media, overlay_url):
     order = [e["name"] for e in col["scene_order"]]
     assert all(n in by_name for n in order), "scene_order names unknown source"
     assert col["current_program_scene"] in order, "program scene not in order"
+    return col
+
+
+def resolve_media(col, media, assets):
+    """Point decks + ident at REAL files when they exist.
+
+    Decks take the first two playlist items present on disk (broadcast
+    playlist preferred, template fallback); IDENT takes the first ident
+    present. Anything missing keeps its placeholder path on purpose: OBS
+    shows its missing-file dialog, and the daemon skips missing items to
+    TECHDIFF instead of dying. A placeholder in the rendered file therefore
+    means 'intake has not delivered this yet', never 'config is broken'."""
+    have = {f for f in os.listdir(media) if f.endswith(".mp4")} if os.path.isdir(media) else set()
+    items = []
+    for pl in (os.path.join(media, "playlist.json"), os.path.join(HERE, "playlist.json")):
+        try:
+            items = json.load(open(pl)).get("items", [])
+            break
+        except (OSError, ValueError):
+            continue
+    lined = [i["file"] for i in items if i.get("file") in have]
+    idents = sorted(f for f in os.listdir(os.path.join(assets, "idents"))
+                    if f.endswith(".mp4")) if os.path.isdir(os.path.join(assets, "idents")) else []
+    by_name = {s["name"]: s for s in col["sources"]}
+    for src, default in (("PLAYOUT_A", lined[:1]), ("PLAYOUT_B", lined[1:2])):
+        if default:
+            by_name[src]["settings"]["local_file"] = os.path.join(media, default[0])
+    if idents:
+        by_name["IDENT"]["settings"]["local_file"] = os.path.join(assets, "idents", idents[0])
     return col
 
 
@@ -89,7 +122,7 @@ def main():
     args = ap.parse_args()
     if args.selftest:
         return selftest()
-    media = os.path.join(args.root, "media")
+    media = os.path.abspath(os.path.join(args.root, "media"))
     overlay = os.environ.get("OVERLAY_URL", "http://127.0.0.1:7070")
     col = render(media, overlay)
     check(col)

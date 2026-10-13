@@ -72,7 +72,7 @@
     {"name": "OB Starting Page", "id": "browser_source", "settings": {
       "url": "{{OVERLAY}}/starting.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},
     {"name": "IDENT", "id": "ffmpeg_source", "settings": {
-      "local_file": "{{MEDIA}}/ident_evening.mp4", "is_local_file": true, "looping": false}},
+      "local_file": "{{ASSETS}}/idents/ident_evening.mp4", "is_local_file": true, "looping": false}},
     {"name": "PLAYOUT_A", "id": "ffmpeg_source", "settings": {
       "local_file": "{{MEDIA}}/PLACEHOLDER_a.mp4", "is_local_file": true, "looping": false}},
     {"name": "PLAYOUT_B", "id": "ffmpeg_source", "settings": {
