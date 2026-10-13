@@ -78,10 +78,10 @@
     {"name": "PLAYOUT_B", "id": "ffmpeg_source", "settings": {
       "local_file": "{{MEDIA}}/PLACEHOLDER_b.mp4", "is_local_file": true, "looping": false}},
     {"name": "SRT Cam", "id": "ffmpeg_source", "settings": {
-      "input": "srt://0.0.0.0:9000?mode=listener&latency=800000",
+      "input": "srt://127.0.0.1:9000?streamid=read:host_av&latency=800000",
       "is_local_file": false, "looping": false}},
     {"name": "SRT Screen", "id": "ffmpeg_source", "settings": {
-      "input": "srt://0.0.0.0:9001?mode=listener&latency=800000",
+      "input": "srt://127.0.0.1:9000?streamid=read:host_screen&latency=800000",
       "is_local_file": false, "looping": false}},
     {"name": "OB Speaking", "id": "browser_source", "settings": {
       "url": "{{OVERLAY}}/speaking.html", "width": 1920, "height": 1080, "fps": 30, "shutdown": false}},

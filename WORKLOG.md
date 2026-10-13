@@ -71,6 +71,28 @@ real debugging time and each fix is load-bearing. Newest first.
   (source_uuid links, full item keys, `shutdown` normalization) — template
   stays minimal, OBS hydrates; do not hand-author hydrated fields.
 
+## 2026-10-12 — Loop night, part 1: deaf-server pattern + light collection
+
+- Websocket server goes DEAF in bursts (accepts TCP, then close-frames new
+  handshakes) and recovers after minutes of quiet — seen 4 times. Ruled OUT:
+  connection pileup (zero ESTABLISHED during deafness), death (process alive,
+  log clean), CEF-only load. Best model: thread starvation under memory
+  pressure (165 MB free) + 13 CEF mouths. Lab discipline until disproven:
+  batch diagnostics into single scripts, ≥60s spacing, never rapid-fire
+  one-liners — earlier "wedges" were partly self-inflicted probes.
+- Consequences shipped: `wait_ready` (no blind starts), `OBS_READY_TRIES`
+  (default 12, lab uses 60), `WATCH_POLL` (default 10, lab 30), per-item
+  "Now playing" air log, `station/obs-restart.sh` (kill→wait-zero→cp→launch;
+  never cp-then-kill: shutdown-save clobbers fresh copies).
+- `SMILE-Lab` light collection (no browser sources) for mechanics proof;
+  OBS enumerates by INTERNAL name, not filename (a same-named shadow file is
+  silently ignored — lost an hour). VPS runs full SMILE-Station.
+- Daemon/OBS contract note: collection switches wedge the server for minutes;
+  choose the boot collection by restart, never switch at runtime.
+- STILL OPEN at write time: loop waiting out the storm (60-try budget); first
+  real advance → deck progress → ENDED → second advance unobserved. CEF/slow
+  concerns from the full collection stand until the VPS re-proves them.
+
 ## 2026-10-12 — Remote console for Mac-driven tests (console.html + BIND)
 
 - `station/console.html`: raw scene switching + media transport + status over

@@ -91,7 +91,12 @@ echo "OK: broadcast root at $ROOT"
 ls -la "$ROOT"
 
 # Scene collection from template (env-driven paths, fresh UUIDs, validated).
-python3 station/render_scenes.py --root "$ROOT"
+# LAB_LIGHT=1 renders SMILE-Lab without browser sources for weak lab boxes.
+if [ -n "${LAB_LIGHT:-}" ]; then
+  python3 station/render_scenes.py --root "$ROOT" --light --name SMILE-Lab
+else
+  python3 station/render_scenes.py --root "$ROOT"
+fi
 
 cat <<'EOF'
 

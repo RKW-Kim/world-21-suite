@@ -60,16 +60,6 @@ class Renderer:
     def on_media_ended(self, callback): raise NotImplementedError
 
 
-class OBSRenderer(Renderer):
-    """obs-websocket v5 over stdlib sockets. No third-party dependency."""
-
-    def __init__(self, host=None, port=None, password=None):
-        self.host = host or os.environ.get("OBS_HOST", "127.0.0.1")
-        self.port = int(port or os.environ.get("OBS_PORT", "4455"))
-        self.password = password or os.environ.get("OBS_PASS", "")
-        self._seq = 0
-        self._ended_cb = None
-
 class _WS:
     """Minimal RFC6455 client (handshake + text frames). obs-websocket speaks
     real WebSocket framing, not line-delimited JSON — this is that."""
@@ -141,7 +131,16 @@ class _WS:
                 payload = bytes(c ^ m[i % 4] for i, c in enumerate(payload))
             self.buf = self.buf[off + ln:]
             if op == 0x8:
-                raise RuntimeError("websocket closed by server")
+                # Never swallow the code: 4009 means wrong password, 1002 a
+                # protocol bug on our side, 1001 server going away. Without
+                # this, auth failures masquerade as a dead server (learned
+                # the hard way: an entire evening of "deaf server" logs).
+                code, reason = None, ""
+                if len(payload) >= 2:
+                    code = struct.unpack(">H", payload[:2])[0]
+                    reason = payload[2:120].decode(errors="replace")
+                raise RuntimeError("websocket closed by server (code %s %s)"
+                                   % (code, reason))
             if op == 0x9:
                 self._frame(0xA)  # ping -> masked pong
                 continue
@@ -174,6 +173,8 @@ class OBSRenderer(Renderer):
         self.password = password or os.environ.get("OBS_PASS", "")
         self._seq = 0
         self._ended_cb = None
+        self._shared = None
+        self._lock = threading.Lock()
 
     def _connect(self, timeout="default"):
         # Calls default to 60s: on weak boxes a SetInputSettings can stall the
@@ -207,21 +208,32 @@ class OBSRenderer(Renderer):
         return ws
 
     def _call(self, req, data=None):
-        ws = self._connect()
-        try:
-            self._seq += 1
-            rid = "daemon-%d" % self._seq
-            ws.send({"op": 6, "d": {"requestType": req, "requestId": rid,
-                                    "requestData": data or {}}})
-            while True:
-                msg = ws.recv()
-                if msg.get("op") == 7 and msg["d"].get("requestId") == rid:
-                    d = msg["d"]
-                    if d["requestStatus"]["result"]:
-                        return d.get("responseData", {})
-                    raise RuntimeError("%s: %s" % (req, d["requestStatus"].get("comment")))
-        finally:
-            ws.close()
+        # One shared connection, reused across polls: every handshake is a
+        # chance to catch the server in a deaf window, so we pay it once and
+        # hold it. Any failure drops it; the next call reconnects.
+        with self._lock:
+            if self._shared is None:
+                self._shared = self._connect()
+            ws = self._shared
+            try:
+                self._seq += 1
+                rid = "daemon-%d" % self._seq
+                ws.send({"op": 6, "d": {"requestType": req, "requestId": rid,
+                                        "requestData": data or {}}})
+                while True:
+                    msg = ws.recv()
+                    if msg.get("op") == 7 and msg["d"].get("requestId") == rid:
+                        d = msg["d"]
+                        if d["requestStatus"]["result"]:
+                            return d.get("responseData", {})
+                        raise RuntimeError("%s: %s" % (req, d["requestStatus"].get("comment")))
+            except Exception:
+                try:
+                    ws.close()
+                except Exception:
+                    pass
+                self._shared = None
+                raise
 
     def set_scene(self, name):
         self._call("SetCurrentProgramScene", {"sceneName": name})
@@ -511,8 +523,14 @@ def cmd_loop(renderer):
     decks = {"A": DECK_A, "B": DECK_B}
     dog = Watchdog(renderer)
     mtime = os.path.getmtime(PLAYLIST)
+    ended = []  # media-ended events queue here; the poll loop drains them.
+    end_lock = threading.Lock()  # ...so a deaf window delays advance, never drops it.
 
-    renderer.on_media_ended(lambda src: on_ended(renderer, decks, src))
+    def note_ended(source):
+        with end_lock:
+            ended.append(source)
+
+    renderer.on_media_ended(note_ended)
     if not wait_ready(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
@@ -531,6 +549,15 @@ def cmd_loop(renderer):
                     alert("Playlist reloaded; takes effect at next transition.", "INFO")
                 except ValueError:
                     alert("Playlist edit is not valid JSON; keeping old order.", "WARN")
+            with end_lock:
+                pending, ended[:] = ended[:], []
+            for source in pending:  # failures stay queued for the next pass
+                try:
+                    on_ended(renderer, decks, source)
+                except Exception as e:
+                    alert("advance deferred (%s); retrying next pass." % e, "WARN")
+                    with end_lock:
+                        ended.append(source)
             evict_cache()  # cheap stat scan; pinning handled at intake time
             dog.check_stream()
             dog.check_disk()
