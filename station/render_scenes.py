@@ -23,7 +23,7 @@ TEMPLATE = os.path.join(HERE, "scenes.json.template")
 CANVAS_W, CANVAS_H, TICKER_H = 1920, 1080, 76
 
 
-def render(media, overlay_url, assets=None):
+def render(media, overlay_url, assets=None, light=False):
     with open(TEMPLATE) as f:
         text = f.read().replace("{{MEDIA}}", media).replace("{{OVERLAY}}", overlay_url)
     if assets is None:
@@ -31,6 +31,16 @@ def render(media, overlay_url, assets=None):
     text = text.replace("{{ASSETS}}", assets)
     assert "{{" not in text, "unfilled placeholder survives"
     col = json.loads(text)
+    if light:
+        # LAB ONLY (LAB_LIGHT=1): strip browser sources. The 2-core lab box
+        # cannot feed 12 resident CEF mouths; mechanics (advance, routing,
+        # watchdog) don't need them. VPS runs the full file. Never bake this
+        # difference into the template — it is a render-time flag.
+        dead = {s["name"] for s in col["sources"] if s["id"] == "browser_source"}
+        col["sources"] = [s for s in col["sources"] if s["id"] != "browser_source"]
+        for s in col["sources"]:
+            items = s.get("settings", {}).get("items", [])
+            s["settings"]["items"] = [i for i in items if i["name"] not in dead]
     resolve_media(col, media, assets)
     names = [s["name"] for s in col["sources"]]
     assert len(names) == len(set(names)), "duplicate source names"
@@ -88,27 +98,36 @@ def check(col):
     assert decks == {"SMILE | Starting", "SMILE | Meet", "SMILE | Q&A",
                      "SMILE | Tech Diffs", "SMILE | Off Air", "SMILE | End Credits"}, decks
     meet_items = {i["name"] for i in by_name["SMILE | Meet"]["settings"]["items"]}
-    assert {"PLAYOUT_A", "PLAYOUT_B", "MOD Ticker", "MOD Watermark"} <= meet_items
+    assert {"PLAYOUT_A", "PLAYOUT_B"} <= meet_items
+    if "MOD Ticker" in by_name:  # absent in LAB_LIGHT builds
+        assert "MOD Ticker" in meet_items
+        for item in by_name["SMILE | Meet"]["settings"]["items"]:
+            if item["name"] == "MOD Ticker":
+                assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
+                assert by_name["MOD Ticker"]["settings"]["height"] == TICKER_H
     live_items = {i["name"] for i in by_name["SMILE | Q&A"]["settings"]["items"]}
-    assert {"SRT Cam", "SRT Screen", "OB Speaking"} <= live_items
-    for item in by_name["SMILE | Meet"]["settings"]["items"]:
-        if item["name"] == "MOD Ticker":
-            assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
-            assert by_name["MOD Ticker"]["settings"]["height"] == TICKER_H
+    assert {"SRT Cam", "SRT Screen"} <= live_items
+    if "OB Speaking" in by_name:
+        assert "OB Speaking" in live_items
     for url_src in ["OB Starting Page", "OB Speaking", "MOD Ticker"]:
+        if url_src not in by_name:
+            continue
         url = by_name[url_src]["settings"]["url"]
         assert url.startswith("http://127.0.0.1:"), "overlay URL must be localhost: %s" % url
     for fsrc in ["PLAYOUT_A", "PLAYOUT_B", "IDENT"]:
         assert by_name[fsrc]["settings"].get("is_local_file") is True, fsrc
     for srt in ["SRT Cam", "SRT Screen"]:
         assert by_name[srt]["settings"].get("is_local_file") is False, srt
-        assert "mode=listener" in by_name[srt]["settings"]["input"], srt
+        assert "streamid=read:" in by_name[srt]["settings"]["input"], srt + " must pull from the bus, never listen (bus owns :9000)"
     return True
 
 
 def selftest():
     col = render("/tmp/media", "http://127.0.0.1:7070")
     assert check(col)
+    light = render("/tmp/media", "http://127.0.0.1:7070", light=True)
+    assert all(s["id"] != "browser_source" for s in light["sources"])
+    assert check(light)
     print("render selftest: 6 scenes, deck wired, dock exact, localhost-only. OK.")
     return 0
 
@@ -117,6 +136,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--light", action="store_true",
+                    help="lab-only: strip browser sources (see render())")
+    ap.add_argument("--name", default="SMILE-Station",
+                    help="collection name (SMILE-Lab for light builds)")
     ap.add_argument("--root", default=os.environ.get("BROADCAST_ROOT",
                                                      os.path.join(os.getcwd(), "broadcast")))
     args = ap.parse_args()
@@ -124,14 +147,15 @@ def main():
         return selftest()
     media = os.path.abspath(os.path.join(args.root, "media"))
     overlay = os.environ.get("OVERLAY_URL", "http://127.0.0.1:7070")
-    col = render(media, overlay)
+    col = render(media, overlay, light=args.light or bool(os.environ.get("LAB_LIGHT")))
+    col["name"] = args.name  # OBS enumerates collections by internal name, not filename
     check(col)
     if args.check:
         print("template consistent.")
         return 0
     outdir = os.path.join(args.root, "scenes")
     os.makedirs(outdir, exist_ok=True)
-    out = os.path.join(outdir, "SMILE-Station.json")
+    out = os.path.join(outdir, args.name + ".json")
     tmp = out + ".new"
     with open(tmp, "w") as f:
         json.dump(col, f, indent=2)
