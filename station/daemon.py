@@ -464,6 +464,7 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_source_visible(PROGRAM, src, True)
     renderer.set_source_visible(PROGRAM, other, False)
     renderer.set_transition(TRANSITION, 750)
+    alert("Now playing: %s." % item.get("title", item["file"]), "INFO")
     state.update({"index": idx + 1, "deck": deck})
     if state["index"] >= len(items) and data.get("shuffle_on_complete"):
         random.shuffle(data["items"])
@@ -483,6 +484,23 @@ def on_ended(renderer, decks, source):
     # anything else (sting, bed loop, preview) is not the daemon's business
 
 
+def wait_ready(renderer, tries=None, pause=15):
+    """Block until the render plane answers. A fresh boot under CEF load can
+    take minutes before the first Hello; crashing on it would make every
+    autostart a coin flip (systemd would restart-loop us)."""
+    import time as _t
+    if tries is None:
+        tries = int(os.environ.get("OBS_READY_TRIES", "12"))
+    for n in range(1, tries + 1):
+        try:
+            renderer._call("GetVersion")
+            return True
+        except Exception as e:
+            print("render plane not ready (%d/%d): %s" % (n, tries, e), flush=True)
+            _t.sleep(pause)
+    return False
+
+
 def cmd_loop(renderer):
     try:
         data = load_playlist()
@@ -495,6 +513,9 @@ def cmd_loop(renderer):
     mtime = os.path.getmtime(PLAYLIST)
 
     renderer.on_media_ended(lambda src: on_ended(renderer, decks, src))
+    if not wait_ready(renderer):
+        print("render plane never answered; refusing to start blind.")
+        return 2
     try:
         advance(renderer, state, data, decks)
     except RuntimeError as e:
@@ -516,7 +537,7 @@ def cmd_loop(renderer):
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
         except Exception as e:
             alert("loop error: %s" % e, "WARN")
-        time.sleep(10)
+        time.sleep(int(os.environ.get("WATCH_POLL", "10")))
 
 
 # --------------------------------------------------------------- selftest ---
