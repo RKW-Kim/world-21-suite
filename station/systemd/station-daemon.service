@@ -1,0 +1,17 @@
+[Unit]
+Description=Station playout daemon (loop, watchdog, cache, alerts)
+After=station-obs.service
+Requires=station-obs.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+EnvironmentFile=%h/Documents/GitHub/world-21-suite/broadcast/secrets.env
+Environment=OBS_READY_TRIES=60
+Environment=WATCH_POLL=30
+ExecStart=/usr/bin/python3 station/daemon.py loop
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

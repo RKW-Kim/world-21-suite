@@ -1,0 +1,14 @@
+[Unit]
+Description=Station overlay server (pages + SSE state push)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+ExecStart=/usr/bin/python3 station/overlay_server.py 7070
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

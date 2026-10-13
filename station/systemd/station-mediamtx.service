@@ -1,0 +1,14 @@
+[Unit]
+Description=Station ingest bus (MediaMTX SRT :9000, API loopback)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+ExecStart=%h/Documents/GitHub/world-21-suite/station/third_party/mediamtx station/mediamtx.yml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

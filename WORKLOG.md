@@ -71,6 +71,20 @@ real debugging time and each fix is load-bearing. Newest first.
   (source_uuid links, full item keys, `shutdown` normalization) — template
   stays minimal, OBS hydrates; do not hand-author hydrated fields.
 
+## 2026-10-12 — systemd units written, not yet switched on
+
+- `station/systemd/`: xvfb → obs → daemon chain plus mediamtx + overlay,
+  all `systemd-analyze verify` clean. Secrets via EnvironmentFile, restart
+  policy on-failure throughout. Installed to `~/.config/systemd/user/` but
+  NOT enabled/started: manual processes currently prove the soak, and two
+  drivers already burned us once.
+- `linger` NOT enabled (sudo window closed before we got there). Without it,
+  user units die at logout and autostart can't work. One command, needs sudo:
+  `sudo loginctl enable-linger rkw`. Do it with the VPS setup, or next window.
+- Cutover procedure when ready: stop manual loop/OBS/MTX/overlay,
+  `systemctl --user enable --now` all five, confirm via activity.db + program
+  scene, then walk away for the first unattended night.
+
 ## 2026-10-12 — Loop night COMPLETE on live headless OBS
 
 - Full cycle observed: advance → deck progress → ENDED → advance → shuffle ×2,

@@ -1,0 +1,12 @@
+[Unit]
+Description=Station virtual display (:99) for headless OBS
+Before=station-obs.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1920x1080x24
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

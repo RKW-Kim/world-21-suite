@@ -1,0 +1,14 @@
+[Unit]
+Description=Station render plane (headless OBS, SMILE collection)
+After=station-xvfb.service
+Requires=station-xvfb.service
+
+[Service]
+Type=simple
+Environment=DISPLAY=:99
+ExecStart=/usr/bin/flatpak run --socket=x11 --env=DISPLAY=:99 com.obsproject.Studio --verbose --minimize-to-tray
+Restart=on-failure
+RestartSec=20
+
+[Install]
+WantedBy=default.target
