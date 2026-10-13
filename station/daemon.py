@@ -19,7 +19,7 @@ Usage (run from repo root, lab defaults to ./broadcast):
 Env:
   BROADCAST_ROOT  media/state home (default: ./broadcast)
   OBS_HOST/PORT/PASS  render-plane control socket (default 127.0.0.1:4455)
-  TG_TOKEN/TG_CHAT    Telegram alerts; unset = log-only
+  DISCORD_WEBHOOK   alert channel (a Discord channel webhook URL); unset = log-only
 """
 
 import argparse
@@ -301,18 +301,18 @@ def alert(msg, level="WARN"):
     except Exception:
         pass
     print("[%s] %s" % (level, msg), flush=True)
-    tok, chat = os.environ.get("TG_TOKEN"), os.environ.get("TG_CHAT")
-    if not (tok and chat):
+    hook = os.environ.get("DISCORD_WEBHOOK")
+    if not hook:
         return
     try:
         emoji = {"CRIT": "\U0001f534", "WARN": "\U0001f7e1", "INFO": "\U0001f535"}[level]
         urllib.request.urlopen(urllib.request.Request(
-            "https://api.telegram.org/bot%s/sendMessage" % tok,
-            data=json.dumps({"chat_id": chat,
-                             "text": "%s [%s] %s" % (emoji, level, msg)}).encode(),
+            hook,
+            data=json.dumps({"username": "station",
+                             "content": "%s **[%s]** %s" % (emoji, level, msg)}).encode(),
             headers={"Content-Type": "application/json"}), timeout=10)
     except Exception as e:
-        print("[WARN] telegram failed: %s" % e, flush=True)
+        print("[WARN] discord failed: %s" % e, flush=True)
 
 
 # ---------------------------------------------------------------- playlist ---

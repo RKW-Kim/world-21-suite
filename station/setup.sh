@@ -36,8 +36,9 @@ if [ ! -f "$ROOT/secrets.env" ]; then
 # Stream key lives HERE ONLY. Never commit. Never show presenters.
 YOUTUBE_STREAM_KEY=paste-once-then-chmod-600
 OBS_PASS=change-me
-TG_TOKEN=
-TG_CHAT=
+# Discord channel webhook URL for alerts (Server Settings > Integrations > Webhooks).
+# No bot to host, no token to rotate. WhatsApp later if ever (needs Twilio/CallMeBot).
+DISCORD_WEBHOOK=
 EOF
   chmod 600 "$ROOT/secrets.env"
   echo "wrote $ROOT/secrets.env (mode 600) — fill in YOUTUBE_STREAM_KEY"
