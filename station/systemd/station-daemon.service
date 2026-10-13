@@ -10,7 +10,7 @@ EnvironmentFile=%h/Documents/GitHub/world-21-suite/broadcast/secrets.env
 Environment=OBS_READY_TRIES=60
 Environment=WATCH_POLL=30
 ExecStart=/usr/bin/python3 station/daemon.py loop
-Restart=on-failure
+Restart=always
 RestartSec=15
 
 [Install]

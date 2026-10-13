@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=%h/Documents/GitHub/world-21-suite
 ExecStart=%h/Documents/GitHub/world-21-suite/station/third_party/mediamtx station/mediamtx.yml
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]

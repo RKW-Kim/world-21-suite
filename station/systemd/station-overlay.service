@@ -10,7 +10,7 @@ WorkingDirectory=%h/Documents/GitHub/world-21-suite
 # here; on the VPS this stays behind the SSH tunnel (never raw internet).
 Environment=BIND=0.0.0.0
 ExecStart=/usr/bin/python3 station/overlay_server.py 7070
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]

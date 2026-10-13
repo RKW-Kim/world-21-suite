@@ -713,6 +713,7 @@ def cmd_loop(renderer):
     # In-flight fetches live across polls: a fresh dict per pass would make
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
+    idle_streak = 0  # polls in a row the on-air deck reported idle (see below)
     while True:
         try:
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
@@ -736,8 +737,40 @@ def cmd_loop(renderer):
                     alert("advance deferred (%s); retrying next pass." % e, "WARN")
                     with end_lock:
                         ended.append(source)
-            evict_cache()  # cheap stat scan; pinning handled at intake time
+            try:
+                items = data.get("items", [])
+                st8 = load_state()
+                pinned, n = set(), len(items)
+                if n:
+                    # Playing, previous and next stay resident; operator-pinned
+                    # items are never eviction candidates, whatever their age.
+                    for o in (-1, 0, 1):
+                        f = items[(st8.get("index", 0) + o) % n].get("file")
+                        if f:
+                            pinned.add(f)
+                    pinned |= {i.get("file") for i in items
+                               if i.get("pinned") and i.get("file")}
+                evict_cache(pinned=pinned)
+            except Exception as e:
+                alert("evict failed: %s." % e, "WARN")
             prefetch_pass(data, state, in_flight, failed)
+            try:
+                # Re-kick: after an OBS restart nothing is playing, so no
+                # ENDED event will ever arrive to advance us. Six idle polls
+                # (≈3 min) means stuck, not loading — replay current item.
+                # "missing" is excluded: that's fault()'s job (plane down).
+                mst = renderer.get_media_status(
+                    decks[load_state().get("deck", "A")])
+                if mst.get("state") in ("OBS_MEDIA_STATE_NONE", "unknown", None):
+                    idle_streak += 1
+                else:
+                    idle_streak = 0
+                if idle_streak >= 6:
+                    idle_streak = 0
+                    alert("Deck idle with nothing advancing; re-kicking.", "WARN")
+                    advance(renderer, load_state(), data, decks)
+            except Exception as e:
+                alert("re-kick failed (%s)." % e, "WARN")
             dog.check_stream()
             dog.check_disk()
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
