@@ -94,12 +94,27 @@ def verify(path, expect_min_s=5):
     return dur
 
 
-def intake(source, title=None, queue=False):
+def intake(source, title=None, queue=False, target=None):
     done = already_done(source)
     if done and os.path.exists(os.path.join(MEDIA, done)):
+        if target:
+            # --as is a contract: the exact name materializes, even if the
+            # bytes already lived here under another name. Hardlink: instant,
+            # no extra bytes, same filesystem guaranteed (MEDIA dir).
+            want = os.path.join(MEDIA, "".join(
+                c if c.isalnum() or c in "-_." else "_" for c in target).strip("_.") or "item.mp4")
+            have = os.path.join(MEDIA, done)
+            if want != have and not os.path.exists(want):
+                try:
+                    os.link(have, want)
+                except OSError:
+                    shutil.copyfile(have, want)
+            print("already cached as %s." % os.path.basename(want))
+            return os.path.basename(want)
         print("already cached as %s; skipping (quota-safe)." % done)
         return done
-    if shutil.disk_usage(MEDIA if os.path.exists(MEDIA) else "/tmp").free < 5 * 1024**3:
+    if shutil.disk_usage(MEDIA if os.path.exists(MEDIA) else "/tmp").free < int(
+            os.environ.get("INTAKE_MIN_FREE_BYTES", 5 * 1024**3)):
         raise RuntimeError("disk too full to intake; free space or raise the cap first.")
     evict_cache()  # make room before the burst, not after
     workdir = os.path.join(MEDIA, ".intake-tmp")
@@ -107,7 +122,14 @@ def intake(source, title=None, queue=False):
     raw = fetch_source(source, workdir)
     name = (title or os.path.splitext(os.path.basename(source))[0])[:80]
     safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in name).strip("_") or "item"
-    dest = os.path.join(MEDIA, "%s_%d.mp4" % (safe, int(time.time())))
+    if target:
+        # Prefetch names its target deterministically (see daemon) so the
+        # caller knows exactly which file to expect. Same source = same bytes;
+        # already_done() short-circuits repeats before we ever get here.
+        dest = os.path.join(MEDIA, "".join(
+            c if c.isalnum() or c in "-_." else "_" for c in target).strip("_.") or "item.mp4")
+    else:
+        dest = os.path.join(MEDIA, "%s_%d.mp4" % (safe, int(time.time())))
     try:
         normalise(raw, dest)
         dur = verify(dest)
@@ -150,10 +172,12 @@ if __name__ == "__main__":
     ap.add_argument("source", help="URL (needs yt-dlp) or local file path")
     ap.add_argument("--title", default=None)
     ap.add_argument("--playlist", action="store_true", help="append to playlist.json")
+    ap.add_argument("--as", dest="target", default=None,
+                    help="exact target basename (prefetch names its own output)")
     args = ap.parse_args()
     os.makedirs(MEDIA, exist_ok=True)
     try:
-        intake(args.source, args.title, args.playlist)
+        intake(args.source, args.title, args.playlist, args.target)
     except Exception as e:
         print("INTAKE FAILED: %s" % e)
         sys.exit(1)

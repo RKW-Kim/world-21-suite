@@ -32,12 +32,14 @@ import shutil
 import socket
 import sqlite3
 import struct
+import subprocess
 import sys
 import threading
 import time
 import urllib.request
 
 ROOT = os.environ.get("BROADCAST_ROOT", os.path.join(os.getcwd(), "broadcast"))
+HERE = os.path.dirname(os.path.abspath(__file__))
 MEDIA = os.path.join(ROOT, "media")
 PLAYLIST = os.path.join(MEDIA, "playlist.json")
 STATE = os.path.join(ROOT, "state.json")
@@ -583,6 +585,74 @@ def wait_ready(renderer, tries=None, pause=15):
     return False
 
 
+def prefetch_name(item):
+    base = (item.get("title") or "item")[:40]
+    safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in base).strip("_") or "item"
+    digest = hashlib.sha1(item["source"].encode()).hexdigest()[:8]
+    return "%s_%s.mp4" % (safe, digest)
+
+
+def prefetch_pass(data, state, in_flight, failed=None):
+    """Warm the next items: reap finished fetches, spawn at most one new one.
+
+    Runs inside the poll loop (no extra thread). Items carry an optional
+    "source" (URL or file path); the resolver runs as a SUBPROCESS, never
+    in-process — a hung yt-dlp dies with its process, not with the daemon.
+    Max 2 concurrent: weak boxes choke on parallel transcodes.
+    Persistently failing sources back off (15 min) instead of respawning
+    every pass — a doomed fetch churning fork+alert every 30s is how a
+    quiet box spends a night achieving nothing.
+    """
+    if failed is None:
+        failed = {}
+    now = time.time()
+    for source, proc in list(in_flight.items()):
+        if proc.poll() is None:
+            continue
+        del in_flight[source]
+        if proc.returncode == 0:
+            failed.pop(source, None)
+            for item in data.get("items", []):
+                if item.get("source") == source:
+                    name = prefetch_name(item)
+                    if os.path.exists(os.path.join(MEDIA, name)):
+                        item["file"] = name
+            save_playlist(data)
+            alert("Prefetched %s." % source[-60:], "INFO")
+        else:
+            failed[source] = now
+            alert("Prefetch failed for %s; retrying in 15 min." % source[-60:], "WARN")
+    items = data.get("items", [])
+    if not items or len(in_flight) >= 2:
+        return
+    idx = state.get("index", 0) % len(items)
+    for off in (0, 1):
+        item = items[(idx + off) % len(items)]
+        source = item.get("source")
+        if not source or source in in_flight:
+            continue
+        if now - failed.get(source, 0) < 900:
+            continue  # backing off a doomed fetch; see reap branch
+        if item.get("file") and os.path.exists(os.path.join(MEDIA, item["file"])):
+            continue  # already cached under its file name (empty = not cached:
+                      # exists() on the bare directory would lie True)
+        name = prefetch_name(item)
+        if os.path.exists(os.path.join(MEDIA, name)):
+            item["file"] = name  # fetched earlier, never linked into playlist
+            save_playlist(data)
+            continue
+        try:
+            env = dict(os.environ, BROADCAST_ROOT=os.path.dirname(MEDIA))
+            in_flight[source] = subprocess.Popen(
+                [sys.executable, os.path.join(HERE, "intake.py"),
+                 source, "--as", name, "--title", item.get("title", "")],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+            alert("Prefetching %s ..." % source[-60:], "INFO")
+        except OSError as e:
+            alert("Prefetch spawn failed: %s." % e, "WARN")
+        return  # one new fetch per pass; the next pass takes the next item
+
+
 def cmd_loop(renderer):
     import fcntl
     try:
@@ -640,6 +710,9 @@ def cmd_loop(renderer):
     except RuntimeError as e:
         alert("Program is not on Meet (%s); cut manually." % e, "WARN")
     alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
+    # In-flight fetches live across polls: a fresh dict per pass would make
+    # the spawn guard blind and duplicate every fetch.
+    in_flight, failed = {}, {}
     while True:
         try:
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
@@ -664,6 +737,7 @@ def cmd_loop(renderer):
                     with end_lock:
                         ended.append(source)
             evict_cache()  # cheap stat scan; pinning handled at intake time
+            prefetch_pass(data, state, in_flight, failed)
             dog.check_stream()
             dog.check_disk()
             dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
@@ -763,6 +837,22 @@ def selftest():
     r2 = FakeRenderer()
     del r2.program_scene  # unreadable program: cut anyway, never silence
     assert Watchdog(r2)._program_is_live() is True
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                    "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=5",
+                    "-t", "6", "-c:v", "libx264", "-preset", "ultrafast",
+                    os.path.join(tmp, "rawsrc.mp4")], check=True)
+    save_playlist({"shuffle_on_complete": False, "items": [
+        {"title": "P", "source": os.path.join(tmp, "rawsrc.mp4")}]})
+    st, flying, failed = {"index": 0, "deck": "A", "faults": {}}, {}, {}
+    os.environ["INTAKE_MIN_FREE_BYTES"] = "1024"  # selftest runs on tmpfs
+    for _ in range(45):  # prefetch resolves in background; wait it out
+        prefetch_pass(load_playlist(), st, flying, failed)
+        got = load_playlist()["items"][0].get("file", "")
+        if got and os.path.exists(os.path.join(MEDIA, got)):
+            break
+        time.sleep(2)
+    else:
+        raise AssertionError("prefetch never delivered: %s" % flying)
     print("selftest: all checks passed.")
     return 0
 

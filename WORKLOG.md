@@ -4,6 +4,25 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-13 — Prefetch worker (look-ahead resolve, three misdiagnoses)
+
+- `prefetch_pass()` in the poll loop: next-2 items with `source` but no file
+  get resolved via intake SUBPROCESS (crash-isolated, max 2 concurrent).
+  Deterministic `--as` names so the daemon knows what to expect; intake
+  hardlinks already-cached bytes under a new name instead of re-fetching.
+  Doomed sources back off 15 min (a fork+alert churn every 30s is how a quiet
+  box spends a night achieving nothing). Proven live in selftest.
+- Misdiagnosis chain, honestly recorded: (1) "hung subprocess" was a respawn
+  loop — tmpfs /tmp can never satisfy the 5 GB intake guard, so every pass
+  spawned a fetch that died instantly; fixed with backoff + test env
+  `INTAKE_MIN_FREE_BYTES`. (2) Then the 3s test file tripped the 5s verify
+  floor — correct rejection, wrong test asset (now 6s). (3) `pkill -f`
+  murdered my own shell a THIRD time (pattern contained the plain form).
+  New absolute law: no pkill-with-pattern, ever — PID files and exact PIDs.
+- Also fixed en route: intake failure litter, intake env override, playlist
+  `source` field documented, in-flight dict persistence across polls (a fresh
+  dict per pass blinds the spawn guard — caught by reading, not by failure).
+
 ## 2026-10-13 — obs-web studied (reference only, never vendor)
 
 - Niek/obs-web (1.5k stars, GPL-3.0, Svelte, updated yesterday): static page,

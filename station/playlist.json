@@ -1,5 +1,5 @@
 {
-  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file.",
+  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Items may carry an optional source (URL or path): the prefetch worker resolves it in the background and fills in file when ready.",
   "shuffle_on_complete": true,
   "idents": ["ident_evening.mp4"],
   "items": [
