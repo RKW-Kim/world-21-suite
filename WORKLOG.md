@@ -4,6 +4,19 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — OBS exited 0 spontaneously; Restart=always + idle re-kick
+
+- Render plane exited clean (status 0, no crash, no log) after 5.5h; cause
+  unknown. Units were Restart=on-failure, so it stayed dead. Now always.
+- Same incident exposed the resume gap: after any OBS restart nothing plays,
+  so no ENDED event ever arrives and the loop idles forever. Poll loop now
+  re-kicks the deck after 6 idle polls (~3 min). Verified live within minutes.
+- Codepen "OBS WebApp Clone": page chrome only via fetch (JS app, no code
+  visible) — and visibility isn't license anyway. Codepen pens default to
+  all-rights-reserved unless the author states otherwise: look, don't yoink.
+- MBA record-via-console confirmed landing in broadcast/ by the operator —
+  remote-control loop closed end-to-end (click on phone → file on disk).
+
 ## 2026-10-13 — Cutover: station runs on systemd, survives reboot
 
 - `linger` on, all five units enabled+active (xvfb → obs → daemon chain,
