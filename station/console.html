@@ -51,6 +51,8 @@ body.notoolbars .dtools{display:none}
 .view{background:#000;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .view .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--mut);
   padding:6px 10px;background:var(--panel)}
+.view .cap button{background:none;border:1px solid var(--line);border-radius:4px;
+  color:var(--fg);font-size:11px;padding:2px 8px;cursor:pointer;letter-spacing:0}
 .view img{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:contain}
 .docks{display:flex;gap:5px;padding:5px;height:250px;overflow-x:auto;flex:none}
 .dock{background:var(--panel);border:1px solid var(--line);border-radius:8px;
@@ -155,7 +157,7 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
 </style><link rel="icon" href="data:,"></head><body>
 <div class="menubar" id="menu"></div>
 <div class="stage one" id="stage">
-  <div class="view" id="programView"><div class="cap">PROGRAM</div><img id="programImg" alt=""></div>
+  <div class="view" id="programView"><div class="cap">PROGRAM <button id="watchBtn" title="Watch live program video (MJPEG tap, ~2fps)">▶ watch</button></div><img id="programImg" alt=""></div>
   <div class="view" id="previewView" style="display:none"><div class="cap">PREVIEW</div><img id="previewImg" alt=""></div>
 </div>
 <div class="textbar" id="textbar"><b id="textbarName"></b><input type="text" id="textbarInput" style="flex:1" placeholder="text source content"><button id="textbarApply">Apply</button></div>
@@ -664,7 +666,8 @@ function openMultiview(){
       if (i >= figs.length) return;
       var f = figs[i];
       call('GetSourceScreenshot', {sourceName: f.getAttribute('data-s'), imageFormat: 'jpg'}).then(function(shot){
-        f.querySelector('img').src = 'data:image/jpeg;base64,' + shot.imageData;
+        var src = shot.imageData;
+        f.querySelector('img').src = src.indexOf(',') >= 0 ? src : 'data:image/jpeg;base64,' + src;
       }).catch(function(){}).then(function(){ next(i + 1); });
     })(0);
   }).catch(function(e){ err(String(e)); });
@@ -863,11 +866,12 @@ function loadMixer(){
 function grabShot(which, img){
   call('GetSourceScreenshot', {sourceName: which, imageFormat: 'jpg'})
     .then(function(d){
-      img.src = 'data:image/jpeg;base64,' + d.imageData;
+      img.src = d.imageData.indexOf(',') >= 0 ? d.imageData : 'data:image/jpeg;base64,' + d.imageData;
     }).catch(function(){});
 }
 function previews(){
   if (window.prevLocked) return;  // View → Preview: locked holds the last frame
+  if (window.watchOn) return;  // MJPEG tap owns the program img while watching
   // 1fps program/preview stills. This is a slideshow by physics (full render
   // + encode + base64 per frame), not video — enough to confirm framing.
   call('GetStudioModeEnabled').then(function(d){
@@ -970,6 +974,21 @@ function menuMeta(){
     };
   });
 }
+document.getElementById('watchBtn').onclick = function(){
+  var img = document.getElementById('programImg');
+  if (!window.watchOn) {
+    window.watchOn = true;
+    img.src = 'tap.mjpeg?' + Date.now();
+    this.textContent = '■ stills';
+    this.title = 'Back to 1fps stills (stops the tap stream)';
+  } else {
+    window.watchOn = false;
+    img.removeAttribute('src');
+    this.textContent = '▶ watch';
+    this.title = 'Watch live program video (MJPEG tap, ~2fps)';
+    previews();
+  }
+};
 document.addEventListener('keydown', function(e){
   // Native-feel keys: arrows nudge the selected item (Shift = 1px),
   // F2 renames it. Ignored while typing anywhere.

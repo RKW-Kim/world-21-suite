@@ -4,6 +4,34 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Preview tap + music bed spike: both proven live
+
+- Tap: GET /tap.mjpeg serves program screenshots as MJPEG (~2fps measured:
+  40 frames in 20s). Zero OBS reconfiguration, zero new deps (plain <img>
+  renders it), zero extra encode on the weak box. Console PROGRAM cap has
+  a watch/stills toggle that pauses the stills poller while watching.
+- Grill bites found live and fixed: (1) 5.7.4 returns imageData as a DATA
+  URI, not bare base64 — tap decoder strips to the comma, and the console
+  was double-prefixing (worked by browser leniency; now correct).
+  (2) No vlc_source in this build — bed is ffmpeg_source, decided by
+  evidence not docs. (3) Full deaf windows recur under load (even
+  GetCurrentProgramScene stalls); held connections ride through, fresh
+  ones pay. Tap breaks cleanly on deafness; operator re-taps.
+- Music: GET/POST /music (list, set with auto-ensure, add via intake then
+  move to music/). Bed input auto-created in Starting/Off Air/End Credits
+  (verified in all three). Full chain proven with a synthesized tone:
+  fetch -> set -> PLAYING (cursor moving, 8s duration) -> STOP. Bed file
+  stays set but stopped. Bed restarts on scene cuts (v1 limitation, stated
+  in UI). Volume via mixer like any input.
+- Residue hunt: aborted first conform run left a collection + OBS-made
+  .bak files behind (API residue checks were clean — files are invisible
+  to the protocol). All deleted off disk; verified zero. CONFORM_Y still
+  listed via API after dir deletion = in-memory cache until OBS restart;
+  ghost only, no action (no restart mid-loop).
+- SRT-record tap REJECTED after spiking: needs ini archaeology, a second
+  x264 encode on a saturated box, and hijacks the recording output. MJPEG
+  wins on every axis except smoothness; documented, moving on.
+
 ## 2026-10-14 — Edge-case grill: parked/catalog model + promotion semantics
 
 - Operator killed "archive a new link": model renamed in the UI to

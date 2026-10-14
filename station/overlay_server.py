@@ -20,6 +20,7 @@ import json
 import os
 import queue
 import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -225,6 +226,45 @@ def library_view():
                      "cap": daemon.CACHE_CAP}}
 
 
+MUSIC_DIR = os.path.join(daemon.MEDIA, "music")
+os.makedirs(MUSIC_DIR, exist_ok=True)
+BED_INPUT = "Music Bed"
+BED_SCENES = ("Starting", "Off Air", "End Credits")
+
+
+def music_tracks():
+    try:
+        files = [f for f in sorted(os.listdir(MUSIC_DIR))
+                 if f.lower().endswith((".mp3", ".mp4", ".m4a", ".ogg", ".wav", ".flac"))
+                 and os.path.isfile(os.path.join(MUSIC_DIR, f))]
+    except OSError:
+        files = []
+    return files
+
+
+def ensure_bed():
+    """Music Bed ffmpeg loop input, present in the waiting-room scenes
+    (Starting / Off Air / End Credits). Audio beds cannot be global inputs, so one input lives in
+    each waiting scene; cuts between them restart the bed (documented,
+    accepted for v1). Returns the input name."""
+    ins = {i.get("inputName") for i in
+           obs_req()._call("GetInputList").get("inputs", [])}
+    if BED_INPUT not in ins:
+        scenes = [s.get("sceneName", "") for s in
+                  obs_req()._call("GetSceneList").get("scenes", [])]
+        targets = [s for s in scenes if any(k in s for k in BED_SCENES)]
+        first = targets[0] if targets else scenes[0]
+        obs_req()._call("CreateInput", {"sceneName": first, "inputName": BED_INPUT,
+                                        "inputKind": "ffmpeg_source",
+                                        "inputSettings": {"looping": True}})
+        for s in targets[1:]:
+            try:
+                obs_req()._call("CreateSceneItem", {"sceneName": s, "sourceName": BED_INPUT})
+            except Exception:
+                pass
+    return BED_INPUT
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
@@ -246,10 +286,14 @@ class Handler(SimpleHTTPRequestHandler):
             with METERS_LOCK:
                 snap = dict(METERS)
             self._json(200, snap)
+        elif self.path == "/tap.mjpeg":
+            return self._tap()
         elif self.path == "/library":
             self._json(200, library_view())
         elif self.path == "/intake":
             self._json(200, {"history": intake_history()})
+        elif self.path == "/music":
+            return self._music()
         elif self.path == "/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -282,6 +326,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._library_update()
         if path == "/obs":
             return self._obs_proxy()
+        if path == "/music":
+            return self._music()
         if path != "/state":
             self.send_error(404)
             return
@@ -453,6 +499,67 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._json(200, {"ok": False, "error": str(e)[:200]})
 
+    def _music(self):
+        # Music bed management. GET: tracks on disk + current bed file.
+        # POST {op:set, file}: validate, ensure the input, point + restart.
+        # POST {op:add, source, title}: intake to media/, then move to music/.
+        if self.command == "GET":
+            bed = None
+            try:
+                ins = {i.get("inputName") for i in
+                       obs_req()._call("GetInputList").get("inputs", [])}
+                if BED_INPUT in ins:
+                    bed = (obs_req()._call("GetInputSettings",
+                                           {"inputName": BED_INPUT})
+                           .get("inputSettings", {}).get("local_file"))
+            except Exception:
+                pass
+            return self._json(200, {"tracks": music_tracks(), "bed": bed})
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            return self._json(400, {"ok": False, "error": "bad JSON"})
+        op = body.get("op", "set")
+        if op == "add":
+            source = (body.get("source") or "").strip()
+            title = (body.get("title") or "music").strip()[:40]
+            if not source:
+                return self._json(400, {"ok": False, "error": "add needs {\"source\"}"})
+            safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in title).strip("_") or "music"
+            tmp = safe + "_m.mp4"
+            try:
+                p = subprocess.run(
+                    [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "intake.py"),
+                     source, "--as", tmp, "--title", title],
+                    capture_output=True, text=True, timeout=1800)
+            except Exception as e:
+                return self._json(502, {"ok": False, "error": "intake failed to start: %s" % e})
+            if p.returncode != 0:
+                return self._json(502, {"ok": False, "error": (p.stderr or p.stdout or "intake failed")[-300:]})
+            try:
+                os.rename(os.path.join(daemon.MEDIA, tmp), os.path.join(MUSIC_DIR, tmp))
+            except OSError as e:
+                return self._json(502, {"ok": False, "error": "move to music/ failed: %s" % e})
+            return self._json(200, {"ok": True, "file": tmp})
+        fname = (body.get("file") or "").strip()
+        if not fname or "/" in fname or fname.startswith("."):
+            return self._json(400, {"ok": False, "error": "set needs a plain filename"})
+        if not os.path.isfile(os.path.join(MUSIC_DIR, fname)):
+            return self._json(404, {"ok": False, "error": "not in music/"})
+        try:
+            ensure_bed()
+            obs_req()._call("SetInputSettings",
+                            {"inputName": BED_INPUT,
+                             "inputSettings": {"local_file": os.path.join(MUSIC_DIR, fname),
+                                               "looping": True},
+                             "overlay": True})
+            obs_req()._call("TriggerMediaInputAction",
+                            {"inputName": BED_INPUT, "mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART"})
+        except Exception as e:
+            return self._json(502, {"ok": False, "error": str(e)[:200]})
+        return self._json(200, {"ok": True, "file": fname})
+
     def _json(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
@@ -461,6 +568,44 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _tap(self):
+        # Confidence monitor: program stills as MJPEG (~2fps). No OBS
+        # reconfiguration, no second encode, no new dependency — a plain
+        # <img> renders it. Browsers drop the connection on navigate;
+        # anything else breaks the loop below.
+        import base64 as _b64
+        try:
+            pgm = obs_req()._call("GetCurrentProgramScene")["currentProgramSceneName"]
+        except Exception:
+            self.send_error(503, "render plane unreachable")
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=smileframe")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        n = 0
+        try:
+            while True:
+                if n % 10 == 0:
+                    try:
+                        pgm = obs_req()._call("GetCurrentProgramScene")["currentProgramSceneName"]
+                    except Exception:
+                        pass
+                shot = obs_req()._call("GetSourceScreenshot",
+                                       {"sourceName": pgm, "imageFormat": "jpg"})
+                img = shot["imageData"]
+                if "," in img:  # 5.7.4 returns a data URI, not bare base64
+                    img = img.split(",", 1)[1]
+                raw = _b64.b64decode(img)
+                self.wfile.write(b"--smileframe\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n" % len(raw))
+                self.wfile.write(raw + b"\r\n")
+                n += 1
+                time.sleep(0.45)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception as e:
+            sys.stderr.write("overlay: tap ended (%s)\n" % e)
 
     def _serve_file(self, path, ctype):
         try:

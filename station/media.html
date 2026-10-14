@@ -67,7 +67,19 @@ label.fl{display:block;margin:8px 0;font-size:12px;color:var(--mut)}
 <section><h2>Rotation — on-air loop</h2><div class="bd" id="rotation"></div></section>
 <section><h2>Pending — link registered, file not fetched yet</h2><div class="bd" id="pending"></div></section>
 <section><h2>Parked — held out of rotation</h2><div class="bd" id="archive"></div></section>
-<section><h2>Music bed</h2><div class="bd"><p class="note">Planned with the preview-tap spike: a VLC “Music Bed” input in the collection, playlist managed here through input settings, volume through the mixer. Music is a bed under scenes, never a fullscreen rotation item — the daemon would air it if it lived in the playlist.</p></div></section>
+<section><h2>Music bed</h2><div class="bd">
+<p class="note" id="bedline">…</p>
+<div id="musictracks"></div>
+<div class="formgrid"><div>
+<label class="fl">Link — fetched by intake, filed under music/<input type="text" id="m_src" placeholder="https://…"></label>
+</div><div>
+<label class="fl">Title<input type="text" id="m_title"></label>
+</div></div>
+<button id="m_add">Fetch into music/</button>
+<button id="m_play">Play bed</button>
+<button id="m_stop">Stop bed</button>
+<p class="note">Bed lives in the Starting / Off Air / End Credits scenes and restarts on cuts (v1 limitation). Volume rides the mixer like any input. Bed audio is NOT part of the playlist rotation.</p>
+</div></section>
 <section><h2>Catalog — every fetch on record</h2><div class="bd" id="history"></div></section>
 </main>
 <script>
@@ -135,6 +147,7 @@ function table(rows, emptyText){
   return tb;
 }
 function load(){
+  loadMusic();
   fetch('library').then(function(r){ return r.json(); }).then(function(l){
     var items = l.items || [];
     document.getElementById('diskline').textContent =
@@ -180,6 +193,56 @@ function load(){
     box.appendChild(tb);
   }).catch(function(e){ err(String(e)); });
 }
+function mpost(body, done, failLabel){
+  err('');
+  fetch('music', {method: 'POST', body: JSON.stringify(body)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (!j.ok) err((failLabel || 'music update failed') + ': ' + j.error); if (done) done(j); load(); })
+    .catch(function(e){ err(String(e)); });
+}
+function loadMusic(){
+  fetch('music').then(function(r){ return r.json(); }).then(function(m){
+    var tracks = m.tracks || [];
+    document.getElementById('bedline').innerHTML =
+      'Bed file: <b>' + esc(m.bed || '(none set — pick a track)') + '</b>';
+    var box = document.getElementById('musictracks'); box.innerHTML = '';
+    if (!tracks.length) { box.innerHTML = '<p class="note">No tracks yet — fetch one below.</p>'; return; }
+    var tb = document.createElement('table');
+    tracks.forEach(function(f){
+      var tr = document.createElement('tr');
+      var td0 = document.createElement('td'); td0.className = 'mono'; td0.textContent = f;
+      var td = document.createElement('td');
+      var sb = document.createElement('button'); sb.textContent = 'set as bed';
+      sb.onclick = function(){ mpost({op: 'set', file: f}); };
+      td.appendChild(sb); tr.appendChild(td0); tr.appendChild(td); tb.appendChild(tr);
+    });
+    box.appendChild(tb);
+  }).catch(function(e){ err(String(e)); });
+}
+function obsMedia(act){
+  err('');
+  fetch('obs', {method: 'POST', body: JSON.stringify({type: 'TriggerMediaInputAction',
+    data: {inputName: 'Music Bed', mediaAction: 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_' + act}})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (!j.ok) err(j.error || 'transport failed'); })
+    .catch(function(e){ err(String(e)); });
+}
+document.getElementById('m_add').onclick = function(){
+  var b = this; b.textContent = 'fetching…'; b.disabled = true;
+  fetch('music', {method: 'POST', body: JSON.stringify({op: 'add',
+    source: document.getElementById('m_src').value,
+    title: document.getElementById('m_title').value})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      b.textContent = 'Fetch into music/'; b.disabled = false;
+      if (!j.ok) err('fetch failed: ' + j.error);
+      else { document.getElementById('m_src').value = ''; }
+      load();
+    })
+    .catch(function(e){ b.textContent = 'Fetch into music/'; b.disabled = false; err(String(e)); });
+};
+document.getElementById('m_play').onclick = function(){ obsMedia('PLAY'); };
+document.getElementById('m_stop').onclick = function(){ obsMedia('STOP'); };
 document.getElementById('refresh').onclick = function(){ err(''); load(); };
 document.getElementById('add').onclick = function(){
   op({op: 'add',
