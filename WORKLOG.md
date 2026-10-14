@@ -4,6 +4,25 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Relay timeout kill + machine-independent file standard
+
+- Operator's disconnect, root-caused: the upstream socket kept its 10s
+  handshake timeout into the splice, so any 10 quiet seconds killed the
+  relay and the replica reported exactly "Disconnected from OBS". One-line
+  class of fix (both legs blocking now). Proven: 45s held connection with
+  12s quiet gaps, live stats throughout. This was deterministic, not load.
+- File standard (operator's instinct, formalized): collections reference
+  playable files as http://<host>:7070/files/<name>, never /home/... or
+  /Users/... paths. New ranged /files route rooted at media/ ONLY
+  (secrets.env lives one level up; traversal 403s raw and encoded,
+  missing 404s, ranges 206 with correct MIME). render_scenes.py supports
+  {{FILES}} (derived from OVERLAY_URL); template converts nothing yet —
+  cutover needs an OBS collection reload, scheduled with the operator.
+- Bytes travel two approved ways (URLs identical everywhere): intake
+  re-fetch per machine (catalog keeps every link), or explicit file sync.
+- Personal lint note, now enforced by habit not willpower: ast.parse +
+  `//` grep after every Python edit, after three same-night slips.
+
 ## 2026-10-14 — Zero-config studio connect + scene portability doc
 
 - Relay now BRIDGES authentication: the browser identifies however it

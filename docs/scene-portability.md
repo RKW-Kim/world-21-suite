@@ -33,6 +33,30 @@ paths, plugins absent on the target, encoder choice and bitrate headroom
 (MBA VideoToolbox vs VPS x264 — re-tune, never copy blindly), the stream
 key (lives in the profile, and profiles are NEVER committed).
 
+## File standard: URLs, never home directories
+
+Collections reference playable files as
+`http://<host>:7070/files/<name>`, served by the overlay server with range
+support straight out of that machine's `broadcast/media/`. Never
+`/home/…` or `/Users/…` paths — those are the #1 portability break, and
+the template enforces the rule with the `{{FILES}}` variable (rendered
+from `OVERLAY_URL`; daemon-driven decks still take absolute local paths,
+set at runtime per machine).
+
+What this buys: the same JSON airs on the MBA, the lab box, and the VPS
+with zero edits, as long as each machine HOLDS the bytes. Bytes travel two
+approved ways: intake links re-fetched per machine (catalog keeps every
+link), or explicit file sync for convenience. Both keep the
+URLs identical everywhere.
+
+What stays outside the file server: `secrets.env` (one level above media/,
+never served — the route is rooted at `media/` and traversal-guarded),
+encoder settings (profiles), and the stream key (never committed).
+
+Cutover note: switching a live collection's refs to `{{FILES}}` URLs takes
+an OBS collection reload (brief interruption). Schedule it with the
+operator present; verify with `render_scenes.py --check` first.
+
 ## Canvas discipline
 
 Both ends 1920x1080 base and output before export. A collection authored

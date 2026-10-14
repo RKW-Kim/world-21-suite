@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render scenes.json.template into an OBS scene collection.
 
-Fills {{MEDIA}} {{OVERLAY}}, stamps unique UUIDs, numbers scene items, and
+Fills {{MEDIA}} {{OVERLAY}} {{FILES}}, stamps unique UUIDs, numbers scene items, and
 validates internal consistency (unique names, every item resolves, no
 placeholder survives, ticker docked at y=1004). This checks OUR work, not
 OBS's acceptance — first load inside real OBS is still an explicit step.
@@ -23,9 +23,16 @@ TEMPLATE = os.path.join(HERE, "scenes.json.template")
 CANVAS_W, CANVAS_H, TICKER_H = 1920, 1080, 76
 
 
-def render(media, overlay_url, assets=None, light=False):
+def render(media, overlay_url, assets=None, light=False, files_url=None):
     with open(TEMPLATE) as f:
         text = f.read().replace("{{MEDIA}}", media).replace("{{OVERLAY}}", overlay_url)
+    if files_url is None:
+        # Machine-independent media standard: collections reference clips as
+        # http://<host>:7070/files/<name> (served by the overlay server with
+        # ranges), never /home/... paths, so the same JSON airs anywhere the
+        # bytes exist. Daemon-driven decks still take absolute local paths.
+        files_url = overlay_url.rstrip("/") + "/files"
+    text = text.replace("{{FILES}}", files_url)
     if assets is None:
         assets = os.path.join(os.path.dirname(media), "assets")
     text = text.replace("{{ASSETS}}", assets)

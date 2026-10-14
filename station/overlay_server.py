@@ -300,6 +300,8 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, snap)
         elif self.path == "/tap.mjpeg":
             return self._tap()
+        elif self.path.startswith("/files/"):
+            return self._serve_media(urlparse(self.path).path[7:])
         elif self.path == "/library":
             self._json(200, library_view())
         elif self.path == "/intake":
@@ -581,6 +583,59 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _serve_media(self, rel):
+        # Machine-independent file standard: every collection references
+        # media as http://<host>:7070/files/<name>, never /home/... paths,
+        # so the same JSON airs on any machine that holds the bytes (via
+        # intake links or explicit sync). Rooted at media/ ONLY: secrets.env
+        # lives one level up and must never be reachable. Range-capable so
+        # ffmpeg inputs and <video> can seek.
+        import mimetypes
+        import urllib.parse as _up
+        rel = _up.unquote(rel)
+        path = os.path.normpath(os.path.join(daemon.MEDIA, rel))
+        if path != daemon.MEDIA and not path.startswith(daemon.MEDIA + os.sep):
+            self.send_error(403)
+            return
+        if not os.path.isfile(path):
+            self.send_error(404)
+            return
+        ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+        size = os.path.getsize(path)
+        start, end, code = 0, size - 1, 200
+        rng = self.headers.get("Range", "")
+        if rng.startswith("bytes="):
+            try:
+                part = rng[6:].split("-", 1)
+                start = int(part[0]) if part[0] else 0
+                end = int(part[1]) if part[1] else size - 1
+                end = min(end, size - 1)
+                if start >= size:
+                    raise ValueError
+                code = 206
+            except ValueError:
+                self.send_error(416)
+                return
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(end - start + 1))
+        if code == 206:
+            self.send_header("Content-Range", "bytes %d-%d/%d" % (start, end, size))
+        self.end_headers()
+        with open(path, "rb") as f:
+            f.seek(start)
+            remaining = end - start + 1
+            while remaining > 0:
+                chunk = f.read(min(65536, remaining))
+                if not chunk:
+                    break
+                try:
+                    self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    break
+                remaining -= len(chunk)
+
     def _tap(self):
         # Confidence monitor: program stills as MJPEG (~2fps). No OBS
         # reconfiguration, no second encode, no new dependency — a plain
@@ -801,7 +856,13 @@ class Handler(SimpleHTTPRequestHandler):
                 pass
             return
         finally:
+            # Handshake timeouts must not leak into the splice: either leg
+            # going quiet (no events, muted scene) is normal and must hold.
             down.settimeout(None)
+            try:
+                up.settimeout(None)
+            except Exception:
+                pass
 
         def pump(src, dst):
             try:
