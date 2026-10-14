@@ -4,6 +4,22 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-5: zip reference mined, theme converged
+
+- Operator supplied obs-ywa-app.zip (21 entries). Unpacked to /tmp ONLY
+  (stays out of the repo; nothing vendored). Mined for measurements, not
+  code: token ramp (#1d1f26/#272a33/#2b2e38/#3c404d/#dfdfdf/#1e50a0/#4daafc),
+  Segoe 13px, 100vh flex column, 250px dock row, header-bar docks, 24px
+  icon buttons, 4px-radius #3c404d buttons, dark inputs, scrollbar.
+- Their script.js inventoried (84 fns): purely local compositing
+  (renderLoop, audio nodes, canvas) — zero remote protocol, as established.
+  No further wiring lessons; behavior spec unchanged.
+- Applied as OUR css: tokens, font, fixed 250px single-row docks with
+  internal scroll, filled header bars, 24px toolbars, dark inputs,
+  header-bar dialogs, sticky footer. Screenshot-verified against their
+  layout at the same viewport: structurally adjacent.
+- Boundary restated in repo history: reference informs, never ships.
+
 ## 2026-10-14 — Console parity-4: icon redraw, density pass, screenshot-verified
 
 - Verbatim paste refused once more, plainly: their code is proprietary with

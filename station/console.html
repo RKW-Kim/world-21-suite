@@ -14,13 +14,17 @@
    Open with socket address + password:
      http://<ARCH-IP>:7070/console?obs=<ARCH-IP>&pass=<OBS_PASS>
    LAB ONLY in this form (password in URL; SSH tunnel on VPS). */
-:root{--bg:#1e1e1e;--panel:#2d2d2d;--panel2:#383838;--line:#3f3f3f;--fg:#fafafa;
-  --mut:#a1a1aa;--yel:#ffc107;--ok:#0ecb81;--bad:#f6465d;--acc:#3fb6ff;
-  --mono:'IBM Plex Mono',ui-monospace,monospace}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
-  font-family:system-ui,sans-serif;padding:0;font-size:14px}
-.menubar{display:flex;gap:2px;background:var(--panel);border-bottom:1px solid var(--line);
-  padding:0 8px;font-size:13px;user-select:none}
+:root{--bg:#1d1f26;--panel:#272a33;--panel2:#2b2e38;--line:#3c404d;--fg:#dfdfdf;
+  --mut:#888;--yel:#ffc107;--ok:#4caf50;--bad:#f44336;--acc:#4daafc;
+  --mono:ui-monospace,monospace}
+ *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Segoe UI",Arial,sans-serif;padding:0;font-size:13px;height:100vh;
+  display:flex;flex-direction:column;overflow:hidden}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line);border:3px solid var(--bg);border-radius:6px}
+.menubar{display:flex;gap:2px;background:#1c1c1c;border-bottom:1px solid #111;
+  padding:0 8px;font-size:13px;user-select:none;flex:none}
 .mi{position:relative;padding:8px 10px;cursor:pointer}
 .mi:hover,.mi.open{background:var(--panel2)}
 .dd{display:none;position:absolute;top:100%;left:0;background:var(--panel2);
@@ -44,29 +48,28 @@ body.notoolbars .dtools{display:none}
 .topbar .pgm b{color:var(--yel);font-weight:600}
 .stage{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 0}
 .stage.one{grid-template-columns:1fr}
-.view{background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.view{background:#000;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .view .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--mut);
   padding:6px 10px;background:var(--panel)}
 .view img{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:contain}
-.docks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:10px;padding:12px}
-.dock{background:var(--panel);border:1px solid var(--line);border-radius:6px;
-  padding:10px 12px 12px;min-width:0}
+.docks{display:flex;gap:5px;padding:5px;height:250px;overflow-x:auto;flex:none}
+.dock{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:0;min-width:180px;flex:1;overflow:hidden}
 .dock>h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
   color:var(--mut);font-family:var(--mono);margin:0 0 8px;font-weight:600}
 .grid{display:flex;flex-wrap:wrap;gap:6px}
-button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
-  border-radius:5px;padding:9px 12px;font-size:13px;cursor:pointer}
+button{background:#3c404d;color:var(--fg);border:1px solid var(--line);
+  border-radius:4px;padding:7px 10px;font-size:13px;cursor:pointer}
 button.onair{border-color:var(--yel);color:var(--yel)}
 button.live{border-color:var(--bad);color:var(--bad)}
 button:active{transform:scale(.97)}
 button.eye{font-family:var(--mono);font-size:12px;padding:8px 10px}
 button.eye.off{opacity:.45;text-decoration:line-through}
 .row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-select,input[type=number]{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
-  border-radius:5px;padding:9px;max-width:100%}
-input[type=text],input[type=password],textarea{background:#141414;color:var(--fg);
-  border:1px solid var(--line);border-radius:5px;padding:8px;font-size:13px;
+select,input[type=number]{background:#1d1f26;color:var(--fg);border:1px solid var(--line);
+  border-radius:3px;padding:6px 8px;max-width:100%}
+input[type=text],input[type=password],textarea{background:#1d1f26;color:var(--fg);
+  border:1px solid var(--line);border-radius:3px;padding:6px 8px;font-size:13px;
   font-family:var(--mono)}
 textarea{width:100%;box-sizing:border-box}
 .dlg label.fl{display:block;margin:6px 0;font-size:12px;color:var(--mut)}
@@ -92,8 +95,9 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
 .dlg.open{display:grid}
 .dlg .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:16px;min-width:min(420px,92vw);font-size:13px;line-height:1.6}
-.dlg .box h3{margin:0 0 8px;font-size:14px}
+  padding:0;min-width:min(420px,92vw);font-size:13px;line-height:1.6;overflow:hidden}
+.dlg .box h3{margin:0;background:#3c404d;padding:8px 12px;font-size:14px}
+#dlgbody{padding:16px}
 /* OBS-arrangement pass: one slim bar, capped stage, dock chrome, footer */
 .menubar{position:sticky;top:0;z-index:30}
 .menubar .spacer{flex:1}
@@ -110,19 +114,18 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
   box-shadow:0 12px 28px rgba(0,0,0,.5)}
 .dd button.hasub{position:relative}
 .dd button.hasub:hover .sub{display:block}
-.stage{max-height:56vh}
-.stage img{max-height:calc(56vh - 34px)}
+.stage{flex:1;min-height:0}
+.stage img{max-height:100%}
 .dock{display:flex;flex-direction:column}
-.dock .dhead{display:flex;align-items:center;font-size:11px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--mut);font-family:var(--mono);
-  margin:0 0 8px;font-weight:600}
+.dock .dhead{display:flex;align-items:center;background:#3c404d;padding:6px 10px;
+  font-weight:600;font-size:13px;color:#e0e0e0;margin:0;flex:none}
 .dock .dhead .undock{margin-left:auto;background:none;border:0;color:var(--mut);
   padding:2px 4px;font-size:12px;cursor:pointer;line-height:1}
-.dock .dbody{flex:1;min-height:40px}
-.dock .dtools{display:flex;gap:2px;margin-top:8px;padding-top:8px;
-  border-top:1px solid var(--line);flex-wrap:wrap}
-.ibtn{background:none;border:1px solid transparent;border-radius:4px;padding:6px;
-  cursor:pointer;color:var(--fg);line-height:0}
+.dock .dbody{flex:1;min-height:0;overflow:auto;padding:8px 10px}
+.dock .dtools{display:flex;gap:4px;margin-top:0;padding:4px 6px;align-items:center;
+  border-top:1px solid var(--line);flex-wrap:wrap;flex:none}
+.ibtn{background:#2b2e38;border:1px solid var(--line);border-radius:4px;
+  width:24px;height:24px;padding:4px;cursor:pointer;color:var(--fg);line-height:0;flex:none}
 .ibtn:hover{background:#4a4a4a;border-color:var(--line)}
 .ibtn svg{display:block;width:14px;height:14px}
 .ibtn svg .s{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -145,9 +148,7 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
 .dock .dhead .undock svg{width:12px;height:12px}
 .mixrow{gap:2px 8px;margin-bottom:6px}
 .mixrow .nm{font-size:12px}
-.dock{padding:8px 10px 10px}
-.docks{gap:8px;padding:10px}
-.stage{padding:10px 12px 0}
+.stage{padding:5px 5px 0}
 </style><link rel="icon" href="data:,"></head><body>
 <div class="menubar" id="menu"></div>
 <div class="stage one" id="stage">
@@ -1059,7 +1060,7 @@ function menuMeta(){
   var bar = document.getElementById('menu');
   var sp = document.createElement('span'); sp.className = 'spacer'; bar.appendChild(sp);
   var meta = document.createElement('span'); meta.className = 'meta';
-  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-4</span><span>PGM <b id="pgm">…</b></span>';
+  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-5</span><span>PGM <b id="pgm">…</b></span>';
   bar.appendChild(meta);
   Array.prototype.forEach.call(document.querySelectorAll('.undock'), function(b){
     b.onclick = function(){
