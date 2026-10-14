@@ -7,5 +7,5 @@ srtAddress: :9000
 api: yes
 apiAddress: 127.0.0.1:9997
 paths:
-  host_av:
-  host_screen:
+  slot-cam:
+  slot-screen:

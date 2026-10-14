@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# station/srt_test/receive.sh — catch SRT feeds on the "VPS" side.
-# For the laptop-to-laptop proof, THIS side stands in for the VPS:
-# if cam+mic arrive here intact, they will arrive on the VPS identically.
+# station/srt_test/receive.sh — raw sender-verifier (no bus involved).
+# Answers one question: "can this sender push SRT at all?" Point send.sh at
+# THIS box with the bus STOPPED (it owns :9000 otherwise — two listeners on
+# one port is the failure, not the test): stop station-mediamtx first.
+# For the full path (sender -> bus -> OBS), use the bus log + OBS screenshots.
 #
 #   station/srt_test/receive.sh                 # watch both feeds (ffplay windows)
 #   station/srt_test/receive.sh --sample 15     # record 15s, verify A+V, print PASS/FAIL
@@ -9,7 +11,7 @@
 # --latency MS  must be >= the sender's budget; the effective window is the
 # maximum of both ends, so a sender-side raise alone changes nothing.
 #
-# Listens: :9000 = host_av (cam+mic), :9001 = host_screen.
+# Listens: :9000 = slot-cam (cam+mic), :9001 = slot-screen.
 
 set -euo pipefail
 SAMPLE=0; LATENCY=800000
@@ -44,9 +46,9 @@ listen() { # $1 port, $2 label
 
 if [ "$SAMPLE" -gt 0 ]; then
   echo "TIP: start the sender first, then run this within a few seconds."
-  listen 9000 "host_av cam+mic"
+  listen 9000 "slot-cam cam+mic"
 else
-  listen 9000 "host_av cam+mic" &
-  listen 9001 "host_screen" &
+  listen 9000 "slot-cam cam+mic" &
+  listen 9001 "slot-screen" &
   wait
 fi

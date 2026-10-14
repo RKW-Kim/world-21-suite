@@ -106,7 +106,7 @@ def check(col):
                 assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
                 assert by_name["ticker.html"]["settings"]["height"] == TICKER_H
     live_items = {i["name"] for i in by_name["SMILE | Q&A"]["settings"]["items"]}
-    assert {"SRT Cam", "SRT Screen"} <= live_items
+    assert {"Slot Cam", "Slot Screen"} <= live_items
     if "speaking.html" in by_name:
         assert "speaking.html" in live_items
     for url_src in ["OB Starting Page", "OB Speaking", "MOD Ticker"]:
@@ -116,7 +116,7 @@ def check(col):
         assert url.startswith("http://127.0.0.1:"), "overlay URL must be localhost: %s" % url
     for fsrc in ["PLAYOUT_A", "PLAYOUT_B", "IDENT"]:
         assert by_name[fsrc]["settings"].get("is_local_file") is True, fsrc
-    for srt in ["SRT Cam", "SRT Screen"]:
+    for srt in ["Slot Cam", "Slot Screen"]:
         assert by_name[srt]["settings"].get("is_local_file") is False, srt
         assert "streamid=read:" in by_name[srt]["settings"]["input"], srt + " must pull from the bus, never listen (bus owns :9000)"
     return True

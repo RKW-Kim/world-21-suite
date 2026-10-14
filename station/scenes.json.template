@@ -132,7 +132,7 @@
       "settings": {
         "items": [
           {
-            "name": "SRT Cam",
+            "name": "Slot Cam",
             "visible": true,
             "pos": {
               "x": 0.0,
@@ -140,7 +140,7 @@
             }
           },
           {
-            "name": "SRT Screen",
+            "name": "Slot Screen",
             "visible": false,
             "pos": {
               "x": 0.0,
@@ -269,19 +269,19 @@
       }
     },
     {
-      "name": "SRT Cam",
+      "name": "Slot Cam",
       "id": "ffmpeg_source",
       "settings": {
-        "input": "srt://127.0.0.1:9000?streamid=read:host_av&latency=800000",
+        "input": "srt://127.0.0.1:9000?streamid=read:slot-cam&latency=800000",
         "is_local_file": false,
         "looping": false
       }
     },
     {
-      "name": "SRT Screen",
+      "name": "Slot Screen",
       "id": "ffmpeg_source",
       "settings": {
-        "input": "srt://127.0.0.1:9000?streamid=read:host_screen&latency=800000",
+        "input": "srt://127.0.0.1:9000?streamid=read:slot-screen&latency=800000",
         "is_local_file": false,
         "looping": false
       }

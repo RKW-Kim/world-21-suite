@@ -6,7 +6,7 @@
 #   station/srt_test/send.sh --cam RECEIVER             # /dev/video0 + mic, muxed (keeps lip-sync)
 #   station/srt_test/send.sh --cam --screen RECEIVER    # + screen as a second feed (X11 only)
 #
-# RECEIVER = other laptop's LAN IP. Ports: 9000 = cam+mic, 9001 = screen.
+# RECEIVER = bus host (VPS, or this box proving it). One SRT port (:9000);
 # --latency MS  retransmit budget (default 800; raise on bad wifi, costs delay)
 # --record DIR  also save a local tape alongside the push (brownout insurance)
 #
@@ -51,7 +51,7 @@ tee_out() { # $1 = srt url. tee always needs an explicit format (no extension to
   fi
 }
 
-AV_URL="srt://$HOST:9000?streamid=host_av&latency=$LATENCY"
+AV_URL="srt://$HOST:9000?streamid=publish:slot-cam&latency=$LATENCY"
 echo "== pushing cam+mic to $AV_URL (latency budget $((LATENCY/1000))ms) =="
 
 if [ "$MODE" = "--test" ]; then
@@ -94,23 +94,23 @@ if [ "$SCREEN" = "1" ]; then
     # slides) or mux system audio by pointing MIC at a loopback and merging —
     # out of scope for the proof run; see debrief edge case 2.
     SCR="${SCR:-1}"
-    echo "== pushing screen to srt://$HOST:9001 (separate feed, no sync tie to face) =="
+    echo "== pushing screen to bus slot-screen (separate feed, no sync tie to face) =="
     ffmpeg -hide_banner -loglevel warning \
       -f avfoundation -framerate 30 -i "$SCR" \
       -map 0:v -vf "scale=1280:-2" \
       -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v "$VBITRATE" \
-      -f mpegts "srt://$HOST:9001?streamid=host_screen&latency=$LATENCY" &
+      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen&latency=$LATENCY" &
   elif [ "${XDG_SESSION_TYPE:-}" != "x11" ] && [ -z "${DISPLAY:-}" ]; then
     echo "::warning::screen capture needs X11 (this box is ${XDG_SESSION_TYPE:-unknown})."
     echo "  On Wayland: share the screen from OBS on this laptop, or skip --screen."
     echo "  Cam+mic feed above is unaffected."
   else
     sleep 1
-    echo "== pushing screen to srt://$HOST:9001 (separate feed, no sync tie to face) =="
+    echo "== pushing screen to bus slot-screen (separate feed, no sync tie to face) =="
     ffmpeg -hide_banner -loglevel warning \
       -f x11grab -framerate 30 -video_size 1920x1080 -i "${DISPLAY:-:0}.0+0,0" \
       -c:v libx264 -preset veryfast -tune zerolatency -b:v 3000k \
-      -f mpegts "srt://$HOST:9001?streamid=host_screen&latency=$LATENCY" &
+      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen&latency=$LATENCY" &
   fi
 fi
 wait

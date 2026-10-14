@@ -4,6 +4,20 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Slot model: presenters come and go, scenes never change
+
+- Bus paths renamed person-neutral: `slot-cam` / `slot-screen` (was host_av).
+  OBS sources follow: "Slot Cam" / "Slot Screen". Whoever publishes to a slot
+  IS that slot: today the operator, tomorrow Ted, zero scene/source edits.
+  Audio rides muxed with its camera (lip-sync rule); screen travels alone.
+- send.sh now targets the bus only (:9000 + publish: prefixes); the direct
+  port-per-feed mode died with the listener weakness it depended on.
+  receive.sh kept as raw sender-verifier, with a header warning about the
+  :9000 conflict (stop the bus first).
+- Remote-access model confirmed: TD needs no OBS anywhere — browser
+  console (scenes/intents/transport) + browser guest-send page. Off-LAN reach
+  is Tailscale-or-tunnel (VPS runbook); loopback-only binds never change.
+
 ## 2026-10-14 — Cache stress battery: 7/7, caught a real bug day one
 
 - `station/stress_cache.py`: proportional edges (rotation, pin survival,
