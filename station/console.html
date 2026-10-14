@@ -135,6 +135,19 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
   margin:0 12px 10px;font-size:13px}
 .textbar.on{display:flex}
 .textbar b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+/* density pass toward the reference arrangement */
+.menubar .mi{padding:6px 10px}
+#scenes,#items{display:flex;flex-direction:column;gap:2px}
+#scenes button,#items button.eye{border-radius:4px;text-align:left;width:100%}
+#scenes button.onair{background:#1e50a0;border-color:#1e50a0;color:#fff}
+.grid.col{flex-direction:column;align-items:stretch}
+.grid.col button{width:100%}
+.dock .dhead .undock svg{width:12px;height:12px}
+.mixrow{gap:2px 8px;margin-bottom:6px}
+.mixrow .nm{font-size:12px}
+.dock{padding:8px 10px 10px}
+.docks{gap:8px;padding:10px}
+.stage{padding:10px 12px 0}
 </style><link rel="icon" href="data:,"></head><body>
 <div class="menubar" id="menu"></div>
 <div class="stage one" id="stage">
@@ -144,33 +157,33 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
 <div class="textbar" id="textbar"><b id="textbarName"></b><input type="text" id="textbarInput" style="flex:1" placeholder="text source content"><button id="textbarApply">Apply</button></div>
 <div id="status" style="display:none"></div>
 <div class="docks" id="docks">
-<div class="dock" id="dock-intents"><div class="dhead">Director intents<button class="undock" data-dock="dock-intents" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-intents"><div class="dhead">Director intents<button class="undock" data-dock="dock-intents" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="grid">
   <button data-intent="go-live">GO LIVE</button>
   <button data-intent="tech-diff">TECH DIFF</button>
   <button data-intent="resume">RESUME</button>
   <button data-intent="return">RETURN</button>
 </div></div></div>
-<div class="dock" id="dock-scenes"><div class="dhead">Scenes<button class="undock" data-dock="dock-scenes" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-scenes"><div class="dhead">Scenes<button class="undock" data-dock="dock-scenes" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="grid" id="scenes"></div></div>
 <div class="dtools"><button class="ibtn" id="sceneAdd" title="Add scene"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="sceneDel" title="Remove scene"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="sceneRename" title="Rename scene"><svg><use href="#i-pencil"/></svg></button><button class="ibtn" id="mvOpen" title="Multiview"><svg><use href="#i-grid"/></svg></button></div></div>
-<div class="dock" id="dock-sources"><div class="dhead">Sources &middot; <span id="srcscene"></span><button class="undock" data-dock="dock-sources" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-sources"><div class="dhead">Sources &middot; <span id="srcscene"></span><button class="undock" data-dock="dock-sources" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="grid" id="items"></div></div>
 <div class="dtools"><button class="ibtn" id="srcAdd" title="Add source"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="srcDel" title="Remove source"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="srcProps" title="Properties"><svg><use href="#i-gear"/></svg></button><button class="ibtn" id="srcFilters" title="Filters"><svg><use href="#i-sliders"/></svg></button><button class="ibtn" id="srcUp" title="Move up"><svg><use href="#i-up"/></svg></button><button class="ibtn" id="srcDown" title="Move down"><svg><use href="#i-down"/></svg></button><button class="ibtn" id="srcRename" title="Rename"><svg><use href="#i-pencil"/></svg></button></div></div>
-<div class="dock" id="dock-trans"><div class="dhead">Scene transitions<button class="undock" data-dock="dock-trans" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-trans"><div class="dhead">Scene transitions<button class="undock" data-dock="dock-trans" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="row"><select id="trans"></select>
 <input type="number" id="transdur" min="50" max="5000" step="50" value="300" style="width:90px" title="ms"></div>
 <div class="grid"><button id="dotrans">Transition</button><button id="studio">Studio Mode: off</button></div></div></div>
-<div class="dock" id="dock-mixer"><div class="dhead">Audio mixer<button class="undock" data-dock="dock-mixer" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-mixer"><div class="dhead">Audio mixer<button class="undock" data-dock="dock-mixer" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div id="mixer"></div></div>
 <div class="dtools"><button class="ibtn" id="advAudio" title="Advanced audio properties"><svg><use href="#i-gear"/></svg></button></div></div>
-<div class="dock" id="dock-controls"><div class="dhead">Controls<button class="undock" data-dock="dock-controls" title="Hide (Docks menu)">⧉</button></div>
-<div class="dbody"><div class="grid">
+<div class="dock" id="dock-controls"><div class="dhead">Controls<button class="undock" data-dock="dock-controls" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dbody"><div class="grid col">
   <button id="stream">Start Streaming</button>
   <button id="rec">Start Recording</button>
   <button id="vcam">Virtual Camera</button>
 </div></div></div>
-<div class="dock" id="dock-media"><div class="dhead">Media transport<button class="undock" data-dock="dock-media" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-media"><div class="dhead">Media transport<button class="undock" data-dock="dock-media" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="row"><select id="src"></select></div>
 <div class="grid">
   <button data-act="RESTART">Restart</button>
@@ -179,18 +192,19 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
   <button data-act="STOP">Stop</button>
   <button id="mute">Mute/Unmute source</button>
 </div></div></div>
-<div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)">⧉</button></div>
+<div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
 <div class="dbody"><div class="row"><button id="librefresh">↻ refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
 </div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<svg id="i-plus" viewBox="0 0 14 14"><path class="s" d="M7 2v10M2 7h10"/></svg>
-<svg id="i-trash" viewBox="0 0 14 14"><path class="s" d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.8 7.5h4.4L10 4"/></svg>
-<svg id="i-pencil" viewBox="0 0 14 14"><path class="s" d="M9.5 2.5l2 2L5 11H3V9z"/></svg>
-<svg id="i-up" viewBox="0 0 14 14"><path class="s" d="M7 11V3M3.5 6.5L7 3l3.5 3.5"/></svg>
-<svg id="i-down" viewBox="0 0 14 14"><path class="s" d="M7 3v8M3.5 7.5L7 11l3.5-3.5"/></svg>
-<svg id="i-gear" viewBox="0 0 14 14"><circle class="s" cx="7" cy="7" r="2.1"/><path class="s" d="M7 1.2v1.8M7 11v1.8M1.2 7H3M11 7h1.8M3 3l1.3 1.3M9.7 9.7L11 11M11 3L9.7 4.3M4.3 9.7L3 11"/></svg>
-<svg id="i-sliders" viewBox="0 0 14 14"><path class="s" d="M2 4.5h10M2 9.5h10"/><circle class="f" cx="9" cy="4.5" r="1.5"/><circle class="f" cx="5" cy="9.5" r="1.5"/></svg>
-<svg id="i-grid" viewBox="0 0 14 14"><path class="f" d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
+<svg id="i-plus" viewBox="0 0 14 14"><path class="s" d="M7 2.5v9M2.5 7h9"/></svg>
+<svg id="i-trash" viewBox="0 0 14 14"><path class="s" d="M2.5 4h9M5.8 4V2.6h2.4V4M4.2 4l.7 7.3h4.2L9.8 4M6.2 6.3v3M7.8 6.3v3"/></svg>
+<svg id="i-pencil" viewBox="0 0 14 14"><path class="s" d="M9.3 2.7l2 2L5.2 10.8l-2.6.6.6-2.6zM8 4l2 2"/></svg>
+<svg id="i-up" viewBox="0 0 14 14"><path class="s" d="M7 11V3.2M3.6 6.6L7 3.2l3.4 3.4"/></svg>
+<svg id="i-down" viewBox="0 0 14 14"><path class="s" d="M7 3v7.8M3.6 7.4L7 10.8l3.4-3.4"/></svg>
+<svg id="i-gear" viewBox="0 0 14 14"><circle class="s" cx="7" cy="7" r="2.2"/><path class="s" d="M7 1.2v1.8M7 11v1.8M1.2 7H3M11 7h1.8M3 3l1.3 1.3M9.7 9.7L11 11M11 3L9.7 4.3M4.3 9.7L3 11"/></svg>
+<svg id="i-sliders" viewBox="0 0 14 14"><path class="s" d="M2 4.5h10M2 9.5h10"/><circle class="f" cx="9" cy="4.5" r="1.6"/><circle class="f" cx="5" cy="9.5" r="1.6"/></svg>
+<svg id="i-grid" viewBox="0 0 14 14"><path class="f" d="M2 2h4.5v4.5H2zM7.5 2H12v4.5H7.5zM2 7.5h4.5V12H2zM7.5 7.5H12V12H7.5z"/></svg>
+<svg id="i-pop" viewBox="0 0 14 14"><path class="s" d="M5.2 2.2h6.6v6.6M2.2 4.8v6.6h6.6"/></svg>
 </defs></svg>
 <div id="err"></div>
 <div class="statusbar" id="stats"></div>
@@ -629,7 +643,7 @@ function customDock(){
     var d = document.createElement('div'); d.className = 'dock'; d.id = 'dock-custom-' + Date.now();
     d.innerHTML = '<div class="dhead"></div><div class="dbody"><iframe src="' + escHtml(u) + '" style="width:100%;height:220px;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe></div>';
     d.querySelector('.dhead').textContent = n;
-    var x = document.createElement('button'); x.className = 'undock'; x.title = 'Remove'; x.textContent = '⧉';
+    var x = document.createElement('button'); x.className = 'undock'; x.title = 'Remove'; x.innerHTML = '<svg><use href="#i-pop"/></svg>';
     x.onclick = function(){ d.remove(); };
     d.querySelector('.dhead').appendChild(x);
     document.getElementById('docks').appendChild(d);
@@ -1045,7 +1059,7 @@ function menuMeta(){
   var bar = document.getElementById('menu');
   var sp = document.createElement('span'); sp.className = 'spacer'; bar.appendChild(sp);
   var meta = document.createElement('span'); meta.className = 'meta';
-  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-3</span><span>PGM <b id="pgm">…</b></span>';
+  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-4</span><span>PGM <b id="pgm">…</b></span>';
   bar.appendChild(meta);
   Array.prototype.forEach.call(document.querySelectorAll('.undock'), function(b){
     b.onclick = function(){

@@ -4,6 +4,23 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-4: icon redraw, density pass, screenshot-verified
+
+- Verbatim paste refused once more, plainly: their code is proprietary with
+  no license, and their engine cannot drive our render plane. No paid icon
+  set fetched (no license to use it); standing offer: hand over a set you
+  own and it gets wired in same-day.
+- Icons redrawn sharper (plus/trash/pencil/chevrons/gear/sliders/grid +
+  pop-out undock), still self-drawn inline SVG, still zero dependencies.
+- Density toward reference, verified by headless screenshots of BOTH pages:
+  scene/source buttons are now full-width list rows with blue on-air row,
+  Controls stacked full-width, menu bar tightened, dock/stage padding
+  tightened, mixer rows compacted. Current shot is structurally adjacent
+  to the reference at the same viewport.
+- Pass discipline: bounded edit → screenshot → fix → confirm, then stop.
+  Next pass only after operator eyes on parity-4 (private window,
+  corrected URL without :4455).
+
 ## 2026-10-14 — Protocol conformance: server's own request list as ground truth
 
 - Asked the render plane for GetVersion.availableRequests (5.7.4) and
