@@ -4,6 +4,21 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-7: interaction parity, all proven live
+
+- Live fader drags (was change-on-release), arrow-key nudge (Shift=1px,
+  read-modify-write transform), F2 rename, studio Cut/Fade buttons (shown
+  only in studio mode), right-click context menus on scenes and sources,
+  scene duplicate via item-by-item clone (no such protocol call),
+  preview-scaling submenu, stats modal refreshing while open.
+- Proven live, scratch-only except one self-inflicted program cut (preview
+  never set -> trigger cut stale preview; restored via RETURN, lab only,
+  no audience): transition select/duration/trigger ok, CreateSceneItem
+  clone ok, preview-set ok IN studio (refuses outside it, correctly —
+  console already gates on studioOn), program untouched throughout.
+- In passing: one TAKE back — SetCurrentPreviewScene outside studio mode
+  is refused by design, not a bug; test was wrong, console was right.
+
 ## 2026-10-14 — Console parity-6: native OBS icon set, licensed and local
 
 - Native set identified WITHOUT copying it: OBS binary resource names
