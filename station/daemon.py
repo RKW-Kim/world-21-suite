@@ -689,6 +689,26 @@ def cmd_loop(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
     try:
+        # Code/collection version skew breaks advance() with cryptic
+        # GetSceneItemList errors and crash-loops the daemon (seen live:
+        # new-code daemon vs old-name collection). Fail fast naming names.
+        have_scenes = {s["sceneName"] for s in
+                       renderer._call("GetSceneList").get("scenes", [])}
+        want_scenes = {SCENE_STARTING, SCENE_PROGRAM, SCENE_LIVE,
+                       SCENE_TECHDIFF, SCENE_OFFAIR, SCENE_END}
+        missing = want_scenes - have_scenes
+        assert not missing, "scenes missing in OBS: %s (collection skew?)" % sorted(missing)
+        have_items = {i.get("sourceName") for i in
+                      renderer._call("GetSceneItemList",
+                                     {"sceneName": SCENE_PROGRAM}).get("sceneItems", [])}
+        for src in (DECK_A, DECK_B):
+            assert src in have_items, "%s not in %s (collection skew?)" % (src, SCENE_PROGRAM)
+    except AssertionError as e:
+        print("cannot start loop: %s." % e)
+        return 2
+    except RuntimeError as e:
+        print("cannot verify scenes (%s); starting anyway." % e)
+    try:
         names = [t["transitionName"] for t in
                  renderer._call("GetSceneTransitionList").get("transitions", [])]
         assert TRANSITION in names, "transition %r missing (have %s)" % (TRANSITION, names)
