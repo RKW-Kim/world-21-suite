@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
 # station/obs-restart.sh [COLLECTION] — restart headless OBS without clobbering.
-# THE only sanctioned way to launch OBS here. Never start a second instance
-# by hand for "a quick check": two renderers split no work and double the
-# CPU, and the stale one keeps its own websocket silence. If a test needs
-# isolation, say so explicitly and kill it right after.
-# Order matters and has bitten three times: OBS saves its in-memory collection
+# THE only sanctioned way to (re)start OBS here. The systemd unit owns
+# execution; this script only prepares state and asks systemd. Never launch
+# flatpak OBS by hand: a direct launch alongside the managed instance splits
+# the world into two renderers fighting over one lock (seen live: 20 ghost
+# restarts, "already running" dialogs, mutually-clobbering collection saves).
+# Order matters and has bitten four times: OBS saves its in-memory collection
 # on graceful shutdown, so copy the fresh file only AFTER the old process is
-# fully gone (CEF teardown takes 10s+), then launch, then wait for boot.
+# fully gone (CEF teardown takes 10s+), then restart via the unit.
 #   station/obs-restart.sh               # SMILE-Station
 #   station/obs-restart.sh SMILE-Lab     # light lab build
 set -euo pipefail
 cd "$(dirname "$0")/.."
 COLLECTION="${1:-SMILE-Station}"
-DISP="${DISPLAY_NUM:-99}"
 SCENES_DIR="$HOME/.var/app/com.obsproject.Studio/config/obs-studio/basic/scenes"
 
+systemctl --user stop station-obs.service 2>/dev/null || true
+systemctl --user stop station-obs.service 2>/dev/null || true
 for pid in $(pgrep -x obs 2>/dev/null); do kill "$pid"; done
 for _ in $(seq 1 16); do pgrep -x obs >/dev/null || break; sleep 5; done
 if pgrep -x obs >/dev/null; then
@@ -30,9 +32,11 @@ for f in broadcast/scenes/*.json; do
   cp "$f" "$SCENES_DIR/" 2>/dev/null || true
 done
 echo "collections installed: $(ls broadcast/scenes/*.json | xargs -n1 basename | tr '\n' ' ')"
-setsid bash -c "DISPLAY=:$DISP flatpak run --socket=x11 --env=DISPLAY=:$DISP com.obsproject.Studio --verbose --minimize-to-tray > /tmp/obs_headless.log 2>&1" < /dev/null > /dev/null 2>&1 & disown
-echo "launched; booting (~60s under CEF load)..."
-sleep 45
+# A held unit (start-limit from an earlier storm) refuses start until reset.
+systemctl --user reset-failed station-obs.service 2>/dev/null || true
+systemctl --user start station-obs.service
+echo "restart requested via unit; booting (~60s under CEF load)..."
+sleep 60
 # A dying instance can linger in teardown for a while; that is not a second
 # renderer, so recount patiently before accusing.
 n=0
@@ -45,4 +49,4 @@ if [ "$n" -ne 1 ]; then
   echo "::error::expected exactly 1 obs process, found $n. Kill extras by exact PID, never pattern."
   exit 1
 fi
-echo "singleton OK (1 obs process)"
+echo "singleton OK (1 obs process, unit-managed)"

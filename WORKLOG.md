@@ -4,6 +4,18 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Restart storm root-caused: two launch lineages
+
+- 20 ghost restarts + "already running" dialogs = MY setsid launches racing
+  the systemd unit over one lock (plus crash-loop churn on a weak box).
+  obs-restart.sh now ONLY prepares state and calls `systemctl start`; direct
+  flatpak launches are banned by comment and by design. One owner per process.
+- Companion fixes in the same pass: unit rate caps hold-and-shout instead of
+  spinning; obs-restart resets stale holds before start; daemon re-baselines
+  its playlist hash after natural advances (own shuffle no longer announces).
+- Standing rule (third time written, first time enforced by construction):
+  nobody starts an OBS that isn't the unit. The script is the only path.
+
 ## 2026-10-14 — Scenes renamed to overlay filenames + OBS-Old verdict
 
 - Operator overruled SMILE|X: OBS scenes are now exactly the overlay filenames

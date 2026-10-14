@@ -7,7 +7,7 @@ local files handed to it through the Renderer interface below.
 
 Usage (run from repo root, lab defaults to ./broadcast):
   python3 station/daemon.py loop            # run the 24/7 loop (blocks)
-  python3 station/daemon.py scene "meet.html"  # one-shot cut (exact OBS name)
+  python3 station/daemon.py scene "SMILE | Meet"  # one-shot cut (exact OBS name)
   python3 station/daemon.py go-live         # ident, then cut to LIVE
   python3 station/daemon.py tech-diff       # hard cut to holding card
   python3 station/daemon.py resume          # short sting, back to LIVE
@@ -476,9 +476,9 @@ class Watchdog:
 # Role mapping: STARTING holds the IDENT clip; PROGRAM plays the PLAYOUT_A/B
 # deck under ticker+watermark; LIVE carries the SRT feeds under the speaking
 # overlay; TECHDIFF frames faults per SCENES.md; OFF-AIR is the harbour.
-SCENE_STARTING, SCENE_PROGRAM = "starting.html", "meet.html"
-SCENE_LIVE, SCENE_TECHDIFF = "q&a.html", "tech-diff.html"
-SCENE_OFFAIR, SCENE_END = "offair.html", "end-credits.html"
+SCENE_STARTING, SCENE_PROGRAM = "SMILE | Starting", "SMILE | Meet"
+SCENE_LIVE, SCENE_TECHDIFF = "SMILE | Q&A", "SMILE | Tech Diffs"
+SCENE_OFFAIR, SCENE_END = "SMILE | Off Air", "SMILE | End Credits"
 PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "IDENT"
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
@@ -757,6 +757,14 @@ def cmd_loop(renderer):
                     alert("advance deferred (%s); retrying next pass." % e, "WARN")
                     with end_lock:
                         ended.append(source)
+            # Natural advances (shuffle especially) rewrite the file behind
+            # our back; re-baseline the hash so the next poll doesn't announce
+            # our own shuffle as a human edit. A same-window human edit rides
+            # along silently — rare, harmless, content still loads.
+            try:
+                last_hash = json.dumps(load_playlist(), sort_keys=True)
+            except ValueError:
+                pass
             try:
                 items = data.get("items", [])
                 st8 = load_state()
@@ -863,7 +871,7 @@ def selftest():
     assert ("vis", PROGRAM, DECK_A, False) in r.calls, r.calls
     on_ended(r, decks, IDENT_SRC)  # ident end cuts LIVE, never advances playlist
     assert ("scene", SCENE_LIVE) in r.calls, r.calls
-    r.program_scene = "meet.html"  # operator moved on mid-ident: no hijack
+    r.program_scene = "SMILE | Meet"  # operator moved on mid-ident: no hijack
     live_calls = len(r.calls)
     on_ended(r, decks, IDENT_SRC)
     assert len(r.calls) == live_calls, r.calls
