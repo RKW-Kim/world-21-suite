@@ -4,6 +4,17 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — MBA→bus→OBS proven end to end, operator-confirmed
+
+- MBA OBS (composed screen + cam PiP) → bus slot-cam → OBS Slot Cam
+  PLAYING → composited Q&A screenshot shows the Rick wallpaper + mirrored
+  text + operator PiP. Operator confirmed the pixels are theirs. The last
+  unproven link is proven; contribution path closed.
+- Console v2 shipped: menu bar (working entries only), preview/program stills,
+  Studio Mode, transitions + duration, mixer (mute/volume/meters via explicit
+  subscription), stream/record/virtualcam, stats bar. MBA hard-reload needed
+  (browser caches v1).
+
 ## 2026-10-14 — Console restyled OBS-dark; menus refused on principle
 
 - console.html rebuilt as OBS-dark docks (Scenes / Sources / Transport /
