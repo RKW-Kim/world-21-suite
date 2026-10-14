@@ -4,6 +4,20 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — MBA sessions reconstructed; bus restarted on clean config
+
+- Bus log forensics closed the "streaming but nothing arrives" case: 01:30
+  host_av published fine (7.5 min); 04:48–04:49 MBA retried host_av SIX
+  times, all rejected ("path not configured") while OBS showed healthy
+  bitrate — a caller-side bitrate display means ENCODING, not DELIVERY.
+- Root cause, owned: renamed bus paths host_av→slot-cam WITHOUT restarting
+  MediaMTX, while the MBA still held the old URL. Rename + stale client +
+  no-restart = silent mismatch. Rule added: config changes ride WITH the
+  service restart that loads them, verified via API before announcing.
+- 04:49 and 04:56 slot-cam sessions then ran 6 and 21 minutes, clean EOF
+  closes. The new URL (MBA screenshot confirms it byte-perfect) works.
+- Bus restarted on current file: exactly slot-cam + slot-screen. Daemon restarted on current code.
+
 ## 2026-10-14 — Slot model: presenters come and go, scenes never change
 
 - Bus paths renamed person-neutral: `slot-cam` / `slot-screen` (was host_av).
