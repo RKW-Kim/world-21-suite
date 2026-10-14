@@ -629,6 +629,7 @@ class Handler(SimpleHTTPRequestHandler):
         import base64
         import hashlib
         import socket as _sock
+        import struct as _st
         try:
             port = int(parse_qs(urlparse(self.path).query).get("XTransformPort", [""])[0])
         except (TypeError, ValueError):
@@ -642,6 +643,48 @@ class Handler(SimpleHTTPRequestHandler):
             return
         accept = base64.b64encode(hashlib.sha1(
             (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()).decode()
+        def ws_read(sock):
+            # One unmasked server-role text frame -> parsed JSON. Pings get
+            # a masked pong (client role toward OBS) and we keep reading.
+            def rd(n):
+                buf = b""
+                while len(buf) < n:
+                    chunk = sock.recv(n - len(buf))
+                    if not chunk:
+                        raise RuntimeError("OBS EOF")
+                    buf += chunk
+                return buf
+            hdr = rd(2)
+            op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
+            if ln == 126:
+                ln = _st.unpack(">H", rd(2))[0]
+            elif ln == 127:
+                ln = _st.unpack(">Q", rd(8))[0]
+            if hdr[1] & 0x80:
+                raise RuntimeError("masked OBS frame")
+            payload = rd(ln)
+            if op == 0x8:
+                raise RuntimeError("OBS closed")
+            if op == 0x9:
+                mask = os.urandom(4)
+                sock.sendall(bytes([0x8A, 0x80 | 0]) + mask)
+                return ws_read(sock)
+            if op != 0x1:
+                raise RuntimeError("expected text frame")
+            return json.loads(payload.decode())
+
+        def ws_send_masked(obj):
+            payload = json.dumps(obj).encode()
+            n = len(payload)
+            mask = os.urandom(4)
+            if n < 126:
+                hdr = bytes([0x81, 0x80 | n])
+            elif n < 65536:
+                hdr = bytes([0x81, 0x80 | 126]) + _st.pack(">H", n)
+            else:
+                hdr = bytes([0x81, 0x80 | 127]) + _st.pack(">Q", n)
+            up.sendall(hdr + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
+
         try:
             up = _sock.create_connection(
                 (os.environ.get("OBS_HOST", "127.0.0.1"), port), timeout=10)
@@ -657,6 +700,9 @@ class Handler(SimpleHTTPRequestHandler):
                 uhead += chunk
             if b" 101 " not in uhead.split(b"\r\n", 1)[0]:
                 raise RuntimeError("OBS-side handshake rejected")
+            hello = ws_read(up)
+            if hello.get("op") != 0:
+                raise RuntimeError("not v5")
         except (OSError, RuntimeError) as e:
             try:
                 up.close()
@@ -674,6 +720,88 @@ class Handler(SimpleHTTPRequestHandler):
         sys.stderr.write("overlay: ws relay open (browser -> OBS :%d)\n" % port)
         self.close_connection = True
         down = self.connection
+
+        def srv_send(obj):
+            # server-role frame: unmasked, as browsers require.
+            payload = json.dumps(obj).encode()
+            n = len(payload)
+            hdr = bytes([0x81])
+            if n < 126:
+                hdr += bytes([n])
+            elif n < 65536:
+                hdr += bytes([126]) + _st.pack(">H", n)
+            else:
+                hdr += bytes([127]) + _st.pack(">Q", n)
+            down.sendall(hdr + payload)
+
+        def cli_read():
+            # browser-role frame: masked, as servers require. Answers ping,
+            # then keeps reading for the Identify.
+            hdr = b""
+            while len(hdr) < 2:
+                chunk = down.recv(2 - len(hdr))
+                if not chunk:
+                    raise RuntimeError("browser EOF")
+                hdr += chunk
+            op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
+            if ln == 126:
+                ln = _st.unpack(">H", _read_exact(2))[0]
+            elif ln == 127:
+                ln = _st.unpack(">Q", _read_exact(8))[0]
+            if not hdr[1] & 0x80:
+                raise RuntimeError("unmasked browser frame")
+            mask = _read_exact(4)
+            payload = _read_exact(ln)
+            data = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
+            if op == 0x8:
+                raise RuntimeError("browser closed")
+            if op == 0x9:  # ping -> pong, then keep reading for Identify
+                down.sendall(bytes([0x8A, 0x00]))
+                return cli_read()
+            if op != 0x1:
+                raise RuntimeError("expected text frame")
+            return json.loads(data.decode())
+
+        def _read_exact(n):
+            buf = b""
+            while len(buf) < n:
+                chunk = down.recv(n - len(buf))
+                if not chunk:
+                    raise RuntimeError("browser EOF")
+                buf += chunk
+            return buf
+
+        # Auth bridge: the browser identifies however it likes (empty
+        # password included); the relay completes authentication with the
+        # server-side secret and forwards an authenticated Identify.
+        down.settimeout(15)
+        try:
+            srv_send(hello)  # clients start from Hello, not from the 101.
+            ident = cli_read()
+            if ident.get("op") != 1:
+                raise RuntimeError("expected Identify")
+            auth = (hello.get("d") or {}).get("authentication")
+            if auth:
+                secret = base64.b64encode(hashlib.sha256(
+                    (os.environ.get("OBS_PASS", "") + auth["salt"]).encode()).digest()).decode()
+                ident["d"]["authentication"] = base64.b64encode(hashlib.sha256(
+                    (secret + auth["challenge"]).encode()).digest()).decode()
+            ws_send_masked(ident)
+            identified = ws_read(up)
+            if identified.get("op") != 2:
+                raise RuntimeError("identify rejected")
+            srv_send(identified)
+            sys.stderr.write("overlay: relay bridged (authenticated)\n")
+        except (OSError, RuntimeError, ValueError) as e:
+            sys.stderr.write("overlay: relay auth failed (%s)\n" % e)
+            self.close_connection = True
+            try:
+                up.close()
+            except Exception:
+                pass
+            return
+        finally:
+            down.settimeout(None)
 
         def pump(src, dst):
             try:

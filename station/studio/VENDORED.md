@@ -23,6 +23,9 @@
      change).
   6. `js/ws.js` mirror `reorderScene`: no such protocol call exists —
      replaced with a spoken warning, local order only.
+  7. `js/main.js` boot: auto-connect after first paint (gateway defaults
+     already target this server; the relay bridges authentication, so no
+     password is needed anywhere on the operator side).
 - **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
   browsers may cache; hard-reload after updates). OBS traffic goes through
   the overlay server's raw relay: the replica's gateway mode

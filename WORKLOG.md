@@ -4,6 +4,29 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Zero-config studio connect + scene portability doc
+
+- Relay now BRIDGES authentication: the browser identifies however it
+  likes (empty password included); the relay completes auth with the
+  server-side secret and splices transparently after. No secret ever
+  touches the operator side. Proven: empty-password Identify -> op2 ->
+  scene list, all through the relay.
+- Replica auto-connects 800ms after paint (LOCAL-PATCH, gateway defaults
+  already target this server). DOM-dump proof: `WebSocket: Connected`.
+  Earlier screenshots crying offline were racing the handshake, not
+  showing steady state — lesson: capture timing matters, trust logs.
+- Grill bites on the way: (1) relay v1 spliced TCP without the OBS-side
+  upgrade — 101 out, Hello never (OBS waits for Upgrade); fixed with a
+  real client handshake. (2) Forgot to forward Hello to the browser —
+  both sides waited forever; fixed. (3) _WS object into a byte pump
+  (AttributeError) — went all-socket with role-correct framers instead.
+  (4) My own `//` comments in Python, three times — ast.parse every time,
+  no exceptions, and noted as a personal lint rule.
+- docs/scene-portability.md: the MBA-design-then-push workflow is real.
+  Contract (six scene names, PLAYOUT_A/B + IDENT, Fade), transfers vs
+  rebinds, canvas discipline, export->commit->render->verify steps, and
+  profiles-travel-separately with the stream-key-never-committed rule.
+
 ## 2026-10-14 — Studio fixes: bare-URL redirect, one-password connect, live-not-mock audit
 
 - `/studio` (bare) broke all relative assets. Now 301 -> `/studio/`.

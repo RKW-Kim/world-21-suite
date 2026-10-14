@@ -402,6 +402,9 @@ function boot() {
 
   window.__obs = obs;         // debugging handle
   window.__ws = wsApi;
+  // LOCAL-PATCH (station): zero-config connect — gateway defaults already
+  // point at this server and the relay bridges authentication.
+  setTimeout(() => { try { wsApi.connect(); } catch {} }, 800);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
