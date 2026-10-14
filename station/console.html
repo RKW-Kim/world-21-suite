@@ -351,6 +351,7 @@ var MENUS = [
     ['Automatic scene switcher', null, {dis: 'Runs on the render plane; configure locally.'}],
     ['Scripts', null, {dis: 'Local files on the render plane.'}],
     '---',
+    ['Open studio (replica)', function(){ window.open('studio', '_blank'); }],
     ['Media manager', function(){ window.open('media', '_blank'); }],
     ['Console: refresh all', function(){ refresh(); setStatus(); }],
     ['Console: copy page URL', function(){ try { navigator.clipboard.writeText(location.href); } catch (e) { err(String(e)); } }]]},

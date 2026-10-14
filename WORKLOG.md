@@ -4,6 +4,28 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Third-party replica vended at /studio + raw WS relay
+
+- Rights confirmed by operator (commissioned work): tree vendored to
+  station/studio/ (index/css/js/README, 296K), pristine-tree policy in
+  VENDORED.md. Excluded: server.mjs, demo mock (port-4455 shadow hazard),
+  launchers, docs/. Deploy script only mirrors overlay/, so the control
+  surface is never published. Their tree untouched by our edits.
+- Pre-vendor audit: zero CDN/deps, hand-drawn icons, request names clean
+  (scary ones live only in its README). Known upstream notes recorded in
+  VENDORED.md (Linux-absent kinds, README row).
+- New relay: browser WS handshake on /?XTransformPort=<obs-port> (target
+  pinned to OBS port), OBS-side upgrade performed server-side, then raw
+  TCP splice both ways. Auth stays end-to-end via their connect dialog.
+- Grill bite, fixed: first version spliced TCP without the OBS-side
+  upgrade — handshake 101 succeeded but no Hello ever came (OBS waits for
+  Upgrade). Caught by the e2e test, fixed, re-proven: 101 -> Hello ->
+  Identify+auth -> Identified -> GetVersion 32.2.2, all through the relay.
+  Wrong-port probe correctly 400s.
+- Served with MIME-correct subtree routing (ES modules need real JS
+  MIME); headless screenshot shows the full replica booted offline-clean.
+  Console links it under Tools. Their client needs no changes at all.
+
 ## 2026-10-14 — Preview tap + music bed spike: both proven live
 
 - Tap: GET /tap.mjpeg serves program screenshots as MJPEG (~2fps measured:

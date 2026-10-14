@@ -25,7 +25,7 @@ import sys
 import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 OVERLAY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "overlay")
 STATION_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -270,10 +270,15 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
 
     def do_GET(self):
+        if self.headers.get("Upgrade", "").lower() == "websocket":
+            return self._ws_relay()
         if self.path == "/console" or self.path.startswith("/console?"):
             self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html")
         elif self.path == "/media" or self.path.startswith("/media?"):
             self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html")
+        elif self.path == "/studio" or self.path.startswith("/studio/"):
+            rel = urlparse(self.path).path[8:] or "index.html"
+            return self._serve_tree(os.path.join(STATION_DIR, "studio"), rel)
         elif self.path == "/state":
             body = json.dumps(load_state()).encode()
             self.send_response(200)
@@ -606,6 +611,94 @@ class Handler(SimpleHTTPRequestHandler):
             pass
         except Exception as e:
             sys.stderr.write("overlay: tap ended (%s)\n" % e)
+
+    def _ws_relay(self):
+        # Raw obs-websocket relay for full clients (the /studio replica):
+        # finish the browser handshake here, then splice TCP bytes to the
+        # render plane untouched. Auth stays end-to-end (their own connect
+        # dialog asks for the password); this endpoint only decides who may
+        # reach the socket at all (LAN/tunnel-only, same trust as /obs).
+        # Target pinned to the OBS port: a render-plane relay, not a proxy.
+        import base64
+        import hashlib
+        import socket as _sock
+        try:
+            port = int(parse_qs(urlparse(self.path).query).get("XTransformPort", [""])[0])
+        except (TypeError, ValueError):
+            port = 0
+        if port != int(os.environ.get("OBS_PORT", "4455")):
+            self.send_error(400, "relay target is the OBS port only")
+            return
+        key = self.headers.get("Sec-WebSocket-Key", "")
+        if not key:
+            self.send_error(400, "websocket upgrade required")
+            return
+        accept = base64.b64encode(hashlib.sha1(
+            (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()).decode()
+        try:
+            up = _sock.create_connection(
+                (os.environ.get("OBS_HOST", "127.0.0.1"), port), timeout=10)
+            ukey = base64.b64encode(os.urandom(16)).decode()
+            up.sendall(("GET / HTTP/1.1\r\nHost: 127.0.0.1:%d\r\nUpgrade: websocket\r\n"
+                        "Connection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
+                        "Sec-WebSocket-Version: 13\r\n\r\n" % (port, ukey)).encode())
+            uhead = b""
+            while b"\r\n\r\n" not in uhead:
+                chunk = up.recv(4096)
+                if not chunk:
+                    raise RuntimeError("OBS-side handshake EOF")
+                uhead += chunk
+            if b" 101 " not in uhead.split(b"\r\n", 1)[0]:
+                raise RuntimeError("OBS-side handshake rejected")
+        except (OSError, RuntimeError) as e:
+            try:
+                up.close()
+            except Exception:
+                pass
+            self.send_error(502, "render plane unreachable: %s" % e)
+            return
+        try:
+            self.request.sendall(
+                ("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n"
+                 "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n" % accept).encode())
+        except OSError:
+            up.close()
+            return
+        sys.stderr.write("overlay: ws relay open (browser -> OBS :%d)\n" % port)
+        self.close_connection = True
+        down = self.connection
+
+        def pump(src, dst):
+            try:
+                while True:
+                    chunk = src.recv(65536)
+                    if not chunk:
+                        break
+                    dst.sendall(chunk)
+            except OSError:
+                pass
+
+        threading.Thread(target=pump, args=(down, up), daemon=True).start()
+        pump(up, down)
+        try:
+            up.close()
+        except OSError:
+            pass
+        try:
+            down.shutdown(_sock.SHUT_RDWR)
+        except OSError:
+            pass
+
+    def _serve_tree(self, base, rel):
+        import mimetypes
+        path = os.path.normpath(os.path.join(base, rel))
+        if path != base and not path.startswith(base + os.sep):
+            self.send_error(403)
+            return
+        ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+        if path.endswith(".js"):
+            ctype = "text/javascript"  # ES modules refuse octet-stream
+        self._serve_file(path, ctype)
 
     def _serve_file(self, path, ctype):
         try:
