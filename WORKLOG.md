@@ -4,6 +4,28 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Library manager: add/replace/remove/move + music plan (parity-10)
+
+- POST /library grew ops (same atomic save, daemon reloads on hash change
+  — verified in code): add (link for intake-prefetch or file already in
+  media/, title/show/status/position), remove (+optional file delete with
+  traversal guard + still-referenced guard), move (index), set (pin/status/
+  title/show/source). Proven live: add dormant music-tagged probe -> 3
+  items with correct pending flags -> remove -> back to 2.
+- Console Library dock: + add dialog (link/file/show + cap note), per-row
+  up/down/pin/dormant/remove, double-click title/show edit. Cap honesty:
+  intake preflight refuses, loop evicts LRU over 50 GB, pinned never moves.
+- Music: NOT a playlist rotation (daemon would air it fullscreen). Plan:
+  a VLC "Music Bed" input in the collection, UI manages its playlist via
+  inputSettings, volume via mixer. Build with the preview-tap spike.
+- Preview tap (how the operator WATCHES the loop): record-to-SRT on the
+  render plane -> MediaMTX `preview` path -> HLS <video> in the console.
+  Uses existing Controls record buttons; archive stays YouTube-unlisted.
+- Jellyfin verdict: wrong tool (on-demand server, no linear playout, no
+  obs-websocket control, no cap-managed loop). MediaMTX stays as the pipe;
+  the manager is necessarily custom — nothing off-shelf does yt-dlp in,
+  normalize, cap-eviction, dormant/pin semantics, daemon playout.
+
 ## 2026-10-14 — Console parity-9: native select/toggle split in Sources
 
 - Operator was right: click-to-hide was a leftover conflation, not native

@@ -197,7 +197,7 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
   <button id="mute">Mute/Unmute source</button>
 </div></div></div>
 <div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
-<div class="dbody"><div class="row"><button id="librefresh" title="refresh"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-refresh"/></svg> refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
+<div class="dbody"><div class="row"><button id="libadd">+ add</button><button id="librefresh" title="refresh"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-refresh"/></svg> refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
 </div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <!-- Toolbar icons: Lucide v1.57.0 (ISC, (c) Lucide Contributors) — vendored locally, zero runtime requests. -->
@@ -969,7 +969,7 @@ function loadLib(){
       ' · disk free ' + libMB(l.disk.free);
     var box = document.getElementById('lib'); box.innerHTML = '';
     if (!libCache.length) { box.innerHTML = '<div class="row">empty</div>'; return; }
-    libCache.forEach(function(t){
+    libCache.forEach(function(t, i){
       var row = document.createElement('div'); row.className = 'mixrow';
       if (t.status === 'dormant') row.style.opacity = '.55';
       var nm = document.createElement('div'); nm.className = 'nm';
@@ -977,32 +977,58 @@ function loadLib(){
         ' · ' + (t.size != null ? libMB(t.size) : 'missing') +
         (t.show ? ' · ' + t.show : '') + (t.up_next ? '  ▸UP NEXT' : '');
       if (!t.present) nm.style.color = 'var(--bad)';
+      var up = document.createElement('button'); up.className = 'ibtn'; up.title = 'Move up';
+      up.innerHTML = '<svg><use href="#i-up"/></svg>';
+      up.onclick = (function(it, ix){ return function(){ libOp({op: 'move', file: it.file, to: ix - 1}); }; })(t, i);
+      var dn = document.createElement('button'); dn.className = 'ibtn'; dn.title = 'Move down';
+      dn.innerHTML = '<svg><use href="#i-down"/></svg>';
+      dn.onclick = (function(it, ix){ return function(){ libOp({op: 'move', file: it.file, to: ix + 1}); }; })(t, i);
       var pb = document.createElement('button');
       pb.innerHTML = t.pinned ? '<svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pin"/></svg> pinned' : 'pin';
       pb.onclick = (function(it){ return function(){ libSet(it, 'pinned', !it.pinned); }; })(t);
       var sb = document.createElement('button');
       sb.textContent = t.status === 'dormant' ? '💤 dormant' : '▶ active';
       sb.onclick = (function(it){ return function(){ libSet(it, 'status', it.status === 'dormant' ? 'active' : 'dormant'); }; })(t);
-      row.appendChild(nm); row.appendChild(pb); row.appendChild(sb);
+      var del = document.createElement('button'); del.className = 'ibtn'; del.title = 'Remove from playlist';
+      del.innerHTML = '<svg><use href="#i-minus"/></svg>';
+      del.onclick = (function(it){ return function(){
+        openDlg('Remove · ' + (it.title || it.file), '<label class="fl"><input type="checkbox" id="dlgdel"> Also delete the file (frees cap space)</label>', 'Remove', function(){
+          libOp({op: 'remove', file: it.file, delete_file: !!document.getElementById('dlgdel').checked});
+        });
+      }; })(t);
+      nm.ondblclick = (function(it){ return function(){
+        openDlg('Edit · ' + (it.file || 'pending'), '<label class="fl">Title<input type="text" id="dlgt" style="width:100%" value="' + escHtml(it.title || '') + '"></label><label class="fl">Show tag<input type="text" id="dlgs" style="width:100%" value="' + escHtml(it.show || '') + '"></label>', 'Apply', function(){
+          libOp({op: 'set', file: it.file, title: document.getElementById('dlgt').value, show: document.getElementById('dlgs').value});
+        });
+      }; })(t);
+      row.appendChild(nm); row.appendChild(up); row.appendChild(dn); row.appendChild(pb); row.appendChild(sb); row.appendChild(del);
       box.appendChild(row);
     });
   }).catch(function(e){ err(String(e)); });
 }
-function libSet(t, key, val){
+function libOp(b){
   err('');
-  var b = {file: t.file}; b[key] = val;
   fetch('library', {method: 'POST', body: JSON.stringify(b)})
     .then(function(r){ return r.json(); })
     .then(function(j){ if (!j.ok) err(j.error || 'library update failed'); loadLib(); })
     .catch(function(e){ err(String(e)); });
 }
+function libSet(t, key, val){
+  var b = {file: t.file}; b[key] = val;
+  libOp(b);
+}
+document.getElementById('libadd').onclick = function(){
+  openDlg('Add to playlist', '<label class="fl">Title<input type="text" id="dlgt" style="width:100%"></label><label class="fl">Link (YouTube/page URL — fetched by intake)<input type="text" id="dlgsrc" style="width:100%"></label><label class="fl">…or file already in media/<input type="text" id="dlgf" style="width:100%"></label><label class="fl">Show tag (e.g. music)<input type="text" id="dlgshow" style="width:100%"></label><p style="color:var(--mut)">Cap is enforced automatically: intake refuses what will not fit, the loop evicts LRU beyond 50 GB (pinned never).</p>', 'Add', function(){
+    libOp({op: 'add', title: document.getElementById('dlgt').value, source: document.getElementById('dlgsrc').value, file: document.getElementById('dlgf').value, show: document.getElementById('dlgshow').value});
+  });
+};
 function menuMeta(){
   // The old second header bar is gone; connection, build and program live
   // at the right end of the single menu bar instead.
   var bar = document.getElementById('menu');
   var sp = document.createElement('span'); sp.className = 'spacer'; bar.appendChild(sp);
   var meta = document.createElement('span'); meta.className = 'meta';
-  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-9</span><span>PGM <b id="pgm">…</b></span>';
+  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-10</span><span>PGM <b id="pgm">…</b></span>';
   bar.appendChild(meta);
   Array.prototype.forEach.call(document.querySelectorAll('.undock'), function(b){
     b.onclick = function(){

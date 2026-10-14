@@ -274,34 +274,87 @@ class Handler(SimpleHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
     def _library_update(self):
-        # Pin / dormant toggles from the console. Atomic save; the daemon
-        # reloads the playlist on hash change, so edits take effect at the
-        # next transition, never mid-air. Same trust model as /state.
+        # Library manager writes: pin/status toggles, metadata edits,
+        # add / remove / reorder. Atomic save; the daemon reloads the
+        # playlist on hash change, so edits take effect at the next
+        # transition, never mid-air. Same trust model as /state.
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self._json(400, {"ok": False, "error": "bad JSON"})
-        f = (body.get("file") or "")
-        if not f:
-            return self._json(400, {"ok": False, "error": "item needs {\"file\"}"})
         try:
             data = daemon.load_playlist()
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError):
             return self._json(502, {"ok": False, "error": "playlist unreadable"})
-        for it in data.get("items", []):
-            if it.get("file") == f:
-                break
-        else:
-            return self._json(404, {"ok": False, "error": "no such item"})
-        if "pinned" in body:
-            it["pinned"] = bool(body["pinned"])
-        if "status" in body:
-            if body["status"] not in ("active", "dormant"):
-                return self._json(400, {"ok": False, "error": "status is active|dormant"})
-            it["status"] = body["status"]
+        items = data.setdefault("items", [])
+        op = body.get("op", "set")
+        if op == "add":
+            title = (body.get("title") or "").strip()
+            source = (body.get("source") or "").strip()
+            fname = (body.get("file") or "").strip()
+            if not title:
+                return self._json(400, {"ok": False, "error": "add needs {\"title\"}"})
+            if not source and not fname:
+                return self._json(400, {"ok": False, "error": "add needs a link (source) or a file already in media/"})
+            if fname:
+                if "/" in fname or fname.startswith(".") or not os.path.isfile(os.path.join(daemon.MEDIA, fname)):
+                    return self._json(400, {"ok": False, "error": "file not in media/"})
+            item = {"title": title}
+            if fname:
+                item["file"] = fname
+            else:
+                item["file"] = ""
+                item["source"] = source  # prefetch resolves it, daemon links it
+            if body.get("show"):
+                item["show"] = body["show"]
+            if body.get("status") in ("active", "dormant"):
+                item["status"] = body["status"]
+            pos = body.get("position", "end")
+            if isinstance(pos, int) and 0 <= pos <= len(items):
+                items.insert(pos, item)
+            else:
+                items.append(item)
+        elif op == "remove":
+            f = body.get("file", "")
+            items[:] = [i for i in items if i.get("file") != f]
+            if body.get("delete_file") and f and "/" not in f and not f.startswith("."):
+                if not any(i.get("file") == f for i in items):
+                    try:
+                        os.remove(os.path.join(daemon.MEDIA, f))
+                    except OSError:
+                        pass
+        elif op == "move":
+            f = body.get("file", "")
+            try:
+                to = int(body.get("to", 0))
+            except (TypeError, ValueError):
+                return self._json(400, {"ok": False, "error": "move needs {\"file\", \"to\": index}"})
+            cur = next((i for i, it in enumerate(items) if it.get("file") == f), None)
+            if cur is None:
+                return self._json(404, {"ok": False, "error": "no such item"})
+            item = items.pop(cur)
+            items.insert(max(0, min(to, len(items))), item)
+        else:  # set: pin / status / title / show / source on one file
+            f = body.get("file", "")
+            if not f:
+                return self._json(400, {"ok": False, "error": "item needs {\"file\"}"})
+            for it in items:
+                if it.get("file") == f:
+                    break
+            else:
+                return self._json(404, {"ok": False, "error": "no such item"})
+            if "pinned" in body:
+                it["pinned"] = bool(body["pinned"])
+            if "status" in body:
+                if body["status"] not in ("active", "dormant"):
+                    return self._json(400, {"ok": False, "error": "status is active|dormant"})
+                it["status"] = body["status"]
+            for k in ("title", "show", "source"):
+                if body.get(k) is not None:
+                    it[k] = body[k]
         daemon.save_playlist(data)
-        return self._json(200, {"ok": True, "file": f})
+        return self._json(200, {"ok": True, "items": len(items)})
 
     def _obs_proxy(self):
         # Generic OBS passthrough over the held connection. Same trust as
