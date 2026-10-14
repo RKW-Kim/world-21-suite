@@ -117,6 +117,7 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
   <button id="rec">Start Recording</button>
   <button id="vcam">Virtual Camera</button>
 </div></div>
+<div class="dock"><h2>Library</h2><div class="row"><button id="librefresh">↻ refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div>
 </div>
 <div id="err"></div>
 <div class="statusbar" id="stats"></div>
@@ -512,8 +513,50 @@ function route(ev){
     }
   }
 }
+var libCache = [];
+function libMB(b){ return (b == null) ? '?' : (b / 1048576).toFixed(1) + ' MB'; }
+function loadLib(){
+  // Playlist + on-disk truth from the overlay server (same origin as the
+  // intents). Pin and dormant toggles POST back; the daemon picks them up
+  // at the next transition, never mid-air.
+  fetch('library').then(function(r){ return r.json(); }).then(function(l){
+    libCache = l.items || [];
+    document.getElementById('libdisk').textContent =
+      'media ' + libMB(l.disk.media_bytes) + ' / cap ' + libMB(l.disk.cap) +
+      ' · disk free ' + libMB(l.disk.free);
+    var box = document.getElementById('lib'); box.innerHTML = '';
+    if (!libCache.length) { box.innerHTML = '<div class="row">empty</div>'; return; }
+    libCache.forEach(function(t){
+      var row = document.createElement('div'); row.className = 'mixrow';
+      if (t.status === 'dormant') row.style.opacity = '.55';
+      var nm = document.createElement('div'); nm.className = 'nm';
+      nm.textContent = (t.present ? '● ' : '○ ') + (t.title || t.file) +
+        ' · ' + (t.size != null ? libMB(t.size) : 'missing') +
+        (t.show ? ' · ' + t.show : '') + (t.up_next ? '  ▸UP NEXT' : '');
+      if (!t.present) nm.style.color = 'var(--bad)';
+      var pb = document.createElement('button');
+      pb.textContent = t.pinned ? '🧷 pinned' : '📎 pin';
+      pb.onclick = (function(it){ return function(){ libSet(it, 'pinned', !it.pinned); }; })(t);
+      var sb = document.createElement('button');
+      sb.textContent = t.status === 'dormant' ? '💤 dormant' : '▶ active';
+      sb.onclick = (function(it){ return function(){ libSet(it, 'status', it.status === 'dormant' ? 'active' : 'dormant'); }; })(t);
+      row.appendChild(nm); row.appendChild(pb); row.appendChild(sb);
+      box.appendChild(row);
+    });
+  }).catch(function(e){ err(String(e)); });
+}
+function libSet(t, key, val){
+  err('');
+  var b = {file: t.file}; b[key] = val;
+  fetch('library', {method: 'POST', body: JSON.stringify(b)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (!j.ok) err(j.error || 'library update failed'); loadLib(); })
+    .catch(function(e){ err(String(e)); });
+}
 buildMenu();
 connect();
+document.getElementById('librefresh').onclick = function(){ err(''); loadLib(); };
+loadLib();
 })();
 </script>
 </body>

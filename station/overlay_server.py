@@ -19,6 +19,7 @@ fine on a home LAN, SSH-tunnel-only on the VPS, never raw internet.
 import json
 import os
 import queue
+import shutil
 import sys
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -70,6 +71,43 @@ def broadcast(state):
             SUBS.remove(q)
 
 
+def library_view():
+    """Playlist items enriched with on-disk truth. Read-only; the operator
+    sees presence, size, pin and status without ever opening a terminal."""
+    try:
+        data = daemon.load_playlist()
+    except (OSError, ValueError):
+        data = {"items": []}
+    items = data.get("items", [])
+    try:
+        st = daemon.load_state()
+    except (OSError, ValueError):
+        st = {}
+    out, media_bytes = [], 0
+    for i, it in enumerate(items):
+        f = it.get("file") or ""
+        p = os.path.join(daemon.MEDIA, f) if f else ""
+        present = bool(f) and os.path.isfile(p)
+        size = os.path.getsize(p) if present else None
+        if present:
+            media_bytes += size
+        out.append({"file": f, "title": it.get("title") or f,
+                    "show": it.get("show") or "",
+                    "status": it.get("status") or "active",
+                    "pinned": bool(it.get("pinned")),
+                    "has_source": bool(it.get("source")),
+                    "present": present, "size": size,
+                    "up_next": bool(items) and i == st.get("index", 0) % len(items)})
+    try:
+        free = shutil.disk_usage(daemon.ROOT).free
+    except OSError:
+        free = None
+    return {"items": out,
+            "state": {"index": st.get("index", 0), "deck": st.get("deck", "A")},
+            "disk": {"free": free, "media_bytes": media_bytes,
+                     "cap": daemon.CACHE_CAP}}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
@@ -85,6 +123,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+        elif self.path == "/library":
+            self._json(200, library_view())
         elif self.path == "/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -113,6 +153,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path.startswith("/intent/"):
             return self._intent(path[len("/intent/"):])
+        if path == "/library":
+            return self._library_update()
         if path != "/state":
             self.send_error(404)
             return
@@ -155,6 +197,36 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._json(502, {"ok": False, "error": str(e)[:200]})
         return self._json(200, {"ok": True})
+
+    def _library_update(self):
+        # Pin / dormant toggles from the console. Atomic save; the daemon
+        # reloads the playlist on hash change, so edits take effect at the
+        # next transition, never mid-air. Same trust model as /state.
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            return self._json(400, {"ok": False, "error": "bad JSON"})
+        f = (body.get("file") or "")
+        if not f:
+            return self._json(400, {"ok": False, "error": "item needs {\"file\"}"})
+        try:
+            data = daemon.load_playlist()
+        except (OSError, ValueError) as e:
+            return self._json(502, {"ok": False, "error": "playlist unreadable"})
+        for it in data.get("items", []):
+            if it.get("file") == f:
+                break
+        else:
+            return self._json(404, {"ok": False, "error": "no such item"})
+        if "pinned" in body:
+            it["pinned"] = bool(body["pinned"])
+        if "status" in body:
+            if body["status"] not in ("active", "dormant"):
+                return self._json(400, {"ok": False, "error": "status is active|dormant"})
+            it["status"] = body["status"]
+        daemon.save_playlist(data)
+        return self._json(200, {"ok": True, "file": f})
 
     def _json(self, code, obj):
         body = json.dumps(obj).encode()

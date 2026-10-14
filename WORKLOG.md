@@ -4,6 +4,28 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Library UI (playlist schema now visible + operable)
+
+- advance() never honored `status: dormant` (comment promised "never airs",
+  code aired everything on disk). Fixed: dormant skips silently (operator
+  intent, not a fault), all-dormant holds on TECHDIFF with its own CRIT,
+  file-less prefetch items hardened (.get, no KeyError). Selftest covers
+  both; verified against real daemon code in an isolated BROADCAST_ROOT.
+- Overlay server: GET /library (presence, size, pin, status, show, up_next,
+  disk vs cap) + POST /library (pin/status toggles, atomic save, daemon
+  picks up next transition). Proven live via curl both directions; test
+  toggles reverted, playlist left as found.
+- Console: Library dock (↻, disk line, per-item pin + active/dormant
+  buttons, UP NEXT marker, missing files red). Same URL, hard-reload on MBA.
+- Caution: two edit-tool misfires glued lines in overlay_server.py
+  (IndentationError, caught by ast.parse before restart, fixed). Lesson:
+  never send oldString==newString; verify with ast.parse/node --check
+  after every edit, not just at the end.
+- Correction to earlier message: console v2 talks direct browser→OBS:4455
+  for OBS ops (same as v1) + same-origin fetch for daemon intents. The
+  ?obs=&pass= params are still required. Intent-routing migration (no 4455
+  on the TD side) is still open work, not shipped.
+
 ## 2026-10-14 — MBA→bus→OBS proven end to end, operator-confirmed
 
 - MBA OBS (composed screen + cam PiP) → bus slot-cam → OBS Slot Cam

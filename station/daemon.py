@@ -528,19 +528,26 @@ def advance(renderer, state, data, deck_sources):
         renderer.set_scene(SCENE_TECHDIFF)
         alert("Playlist empty; holding.", "WARN")
         return
-    skipped = 0
-    while skipped < len(items):
+    skipped = dormant = 0
+    while skipped + dormant < len(items):
         idx = state.get("index", 0) % len(items)
         item = items[idx]
-        path = os.path.join(MEDIA, item["file"])
-        if os.path.exists(path):
+        if item.get("status") == "dormant":
+            dormant += 1  # operator intent, not a fault: silent, no alert
+            state["index"] = idx + 1
+            continue
+        path = os.path.join(MEDIA, item.get("file") or "")
+        if item.get("file") and os.path.exists(path):
             break
-        alert("Cache miss: %s. Skipping to next." % item["file"], "WARN")
+        alert("Cache miss: %s. Skipping to next." % item.get("file"), "WARN")
         state["index"] = idx + 1
         skipped += 1
     else:
         renderer.set_scene(SCENE_TECHDIFF)
-        alert("Every playlist item missing; holding.", "CRIT")
+        if dormant and not skipped:
+            alert("Every playlist item dormant; holding.", "CRIT")
+        else:
+            alert("Every playlist item missing; holding.", "CRIT")
         return
     deck = "B" if state.get("deck", "A") == "A" else "A"
     src, other = deck_sources[deck], deck_sources["B" if deck == "A" else "A"]
@@ -886,6 +893,19 @@ def selftest():
     assert len(r.calls) == live_calls, r.calls
     on_ended(r, decks, "SOME_PREVIEW")  # unknown sources are ignored
     assert len(r.calls) == live_calls, r.calls
+    open(os.path.join(MEDIA, "d.mp4"), "w").write("d")  # dormant never airs...
+    open(os.path.join(MEDIA, "e.mp4"), "w").write("e")
+    save_playlist({"shuffle_on_complete": False, "items": [
+        {"file": "d.mp4", "title": "D", "status": "dormant"},
+        {"file": "e.mp4", "title": "E"}]})
+    st2 = {"index": 0, "deck": "A", "faults": {}}
+    advance(r, st2, load_playlist(), decks)
+    assert ("file", DECK_B, os.path.join(MEDIA, "e.mp4")) in r.calls, r.calls
+    save_playlist({"shuffle_on_complete": False, "items": [  # ...all dormant holds
+        {"file": "d.mp4", "title": "D", "status": "dormant"}]})
+    n = len(r.calls)
+    advance(r, {"index": 0, "deck": "A", "faults": {}}, load_playlist(), decks)
+    assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
     evict_cache(cap=0, pinned=frozenset({"a.mp4"}))  # pinned survives any cap...
     assert os.path.exists(os.path.join(MEDIA, "a.mp4")), "pinned file evicted!"
     evict_cache(cap=0)  # ...unpinned, it goes
