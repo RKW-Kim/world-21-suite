@@ -4,6 +4,24 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console full-parity build, phase 1 (clean-room, our code)
+
+- obs.ywa.app inspected: proprietary (no license/source link), zero
+  obs-websocket (standalone in-browser compositor). Verbatim clone refused
+  (copyright) and useless (cannot drive our render plane). Operator chose
+  full functional parity instead: same coverage, our implementation, real
+  protocols. Their menus/docks/dialogs studied as functional spec only.
+- Shipped in console.html (same URL, hard-reload): scenes add/rename/remove
+  (no v5 scene-reorder exists; creation order rules), sources add (kind
+  picker from GetInputKindList) / remove / rename / reorder (ReorderSceneItems)
+  / props (friendly fields + raw inputSettings JSON, all kinds) / filters
+  (list, toggle, add from kind list, remove), Settings modal (stream incl.
+  key, video base/output/fps, record dir), click-to-cut Multiview (stills on
+  open only, on-air pane marked), full Stats modal. Selection follows clicks;
+  toolbar acts on it. Tools menu wires all three modals.
+- Verified: node --check clean, served page contains every new handler.
+  Live testing against OBS left to the operator (MBA hard-reload first).
+
 ## 2026-10-14 — Library UI (playlist schema now visible + operable)
 
 - advance() never honored `status: dormant` (comment promised "never airs",

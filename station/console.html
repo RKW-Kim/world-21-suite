@@ -61,6 +61,20 @@ button.eye.off{opacity:.45;text-decoration:line-through}
 .row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 select,input[type=number]{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
   border-radius:5px;padding:9px;max-width:100%}
+input[type=text],input[type=password],textarea{background:#141414;color:var(--fg);
+  border:1px solid var(--line);border-radius:5px;padding:8px;font-size:13px;
+  font-family:var(--mono)}
+textarea{width:100%;box-sizing:border-box}
+.dlg label.fl{display:block;margin:6px 0;font-size:12px;color:var(--mut)}
+.mv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mv figure{margin:0;cursor:pointer}
+.mv img{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:contain;
+  border:2px solid var(--line);border-radius:4px}
+.mv figure.onair img{border-color:var(--yel)}
+.mv figcaption{font-family:var(--mono);font-size:11px;color:var(--mut);padding:3px 2px}
+table.kv{border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+table.kv td{padding:3px 10px 3px 0;color:var(--mut)}
+table.kv td:last-child{color:var(--fg)}
 input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
 .mixrow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:8px}
 .mixrow .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -95,8 +109,10 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
   <button data-intent="resume">RESUME</button>
   <button data-intent="return">RETURN</button>
 </div></div>
-<div class="dock"><h2>Scenes</h2><div class="grid" id="scenes"></div></div>
-<div class="dock"><h2>Sources &middot; <span id="srcscene"></span></h2><div class="grid" id="items"></div></div>
+<div class="dock"><h2>Scenes</h2><div class="grid" id="scenes"></div>
+<div class="row" style="margin:8px 0 0"><button id="sceneAdd">+ add</button><button id="sceneRename">✎ rename</button><button id="sceneDel">− remove</button><button id="mvOpen">▦ multiview</button></div></div>
+<div class="dock"><h2>Sources &middot; <span id="srcscene"></span></h2><div class="grid" id="items"></div>
+<div class="row" style="margin:8px 0 0"><button id="srcAdd">+ add</button><button id="srcRename">✎ rename</button><button id="srcProps">⚙ props</button><button id="srcFilters">🎚 filters</button><button id="srcUp">↑</button><button id="srcDown">↓</button><button id="srcDel">− remove</button></div></div>
 <div class="dock"><h2>Scene transitions</h2>
 <div class="row"><select id="trans"></select>
 <input type="number" id="transdur" min="50" max="5000" step="50" value="300" style="width:90px" title="ms"></div>
@@ -212,6 +228,9 @@ var MENUS = [
     }).catch(function(e){ err(String(e)); }); }},
   {t: 'Tools', items: [
     ['Reconnect socket', function(){ try { ws.close(); } catch (e) {} }],
+    ['Settings (stream/video/record)', function(){ openSettings(); }],
+    ['Multiview', function(){ openMultiview(); }],
+    ['Stats', function(){ openStats(); }],
     ['Copy page URL', function(){ try { navigator.clipboard.writeText(location.href); } catch (e) { err(String(e)); } }]]},
   {t: 'Help', items: [
     ['About this console', function(){
@@ -223,6 +242,194 @@ function dlg(t, b){
   document.getElementById('dlgtitle').textContent = t;
   document.getElementById('dlgbody').textContent = b;
   document.getElementById('dlg').classList.add('open');
+}
+/* --- full-parity ops: selection follows clicks, toolbar acts on it --- */
+var selScene = null, selItem = null;
+function escHtml(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openDlg(title, bodyHTML, okLabel, onOk){
+  document.getElementById('dlgtitle').textContent = title;
+  var body = document.getElementById('dlgbody'); body.innerHTML = bodyHTML;
+  var ok = document.createElement('button'); ok.textContent = okLabel || 'OK'; ok.style.marginTop = '10px';
+  ok.onclick = function(){ document.getElementById('dlg').classList.remove('open'); if (onOk) onOk(); };
+  body.appendChild(ok);
+  document.getElementById('dlg').classList.add('open');
+  var inp = body.querySelector('input,select,textarea'); if (inp) inp.focus();
+}
+function needSel(){ if (!selItem) { err('pick a source first — click its eye button'); return false; } return true; }
+document.getElementById('sceneAdd').onclick = function(){
+  openDlg('Add scene', '<input type="text" id="dlgin" style="width:100%">', 'Add', function(){
+    var n = document.getElementById('dlgin').value.trim(); if (!n) return;
+    err(''); call('CreateScene', {sceneName: n}).then(function(){ selScene = n; refresh(); }).catch(function(e){ err(String(e)); });
+  });
+};
+document.getElementById('sceneRename').onclick = function(){
+  var cur = selScene || pgmName(); if (!cur) return;
+  openDlg('Rename scene · ' + cur, '<input type="text" id="dlgin" style="width:100%" value="' + escHtml(cur) + '">', 'Rename', function(){
+    var n = document.getElementById('dlgin').value.trim(); if (!n || n === cur) return;
+    err(''); call('SetSceneName', {sceneName: cur, newSceneName: n}).then(function(){ selScene = n; refresh(); }).catch(function(e){ err(String(e)); });
+  });
+};
+document.getElementById('sceneDel').onclick = function(){
+  var cur = selScene || pgmName(); if (!cur) return;
+  openDlg('Remove scene · ' + cur, '<p style="color:var(--mut)">The scene and its private items go away. Shared inputs survive.</p>', 'Remove', function(){
+    err(''); call('RemoveScene', {sceneName: cur}).then(function(){ if (selScene === cur) selScene = null; refresh(); }).catch(function(e){ err(String(e)); });
+  });
+};
+document.getElementById('mvOpen').onclick = function(){ openMultiview(); };
+document.getElementById('srcAdd').onclick = function(){
+  var scene = selScene || pgmName(); if (!scene) return;
+  call('GetInputKindList', {unversioned: true}).then(function(d){
+    var opts = (d.inputKinds || []).map(function(k){ return '<option>' + escHtml(k) + '</option>'; }).join('');
+    openDlg('Add source → ' + scene, '<label class="fl">Name<input type="text" id="dlgin" style="width:100%"></label><label class="fl">Kind<select id="dlgkind" style="width:100%">' + opts + '</select></label><p style="color:var(--mut)">Created empty — open ⚙ props next to point it at a file, URL or text.</p>', 'Add', function(){
+      var n = document.getElementById('dlgin').value.trim();
+      var k = document.getElementById('dlgkind').value;
+      if (!n || !k) return;
+      err(''); call('CreateInput', {sceneName: scene, inputName: n, inputKind: k}).then(function(){ lastItemsScene = null; loadItems(scene); }).catch(function(e){ err(String(e)); });
+    });
+  }).catch(function(e){ err(String(e)); });
+};
+document.getElementById('srcDel').onclick = function(){
+  if (!needSel()) return;
+  var n = selItem.name;
+  openDlg('Remove source · ' + n, '<p style="color:var(--mut)">Removes the input everywhere it is used. Cannot be undone.</p>', 'Remove', function(){
+    err(''); call('RemoveInput', {inputName: n}).then(function(){ selItem = null; lastItemsScene = null; }).catch(function(e){ err(String(e)); });
+  });
+};
+document.getElementById('srcRename').onclick = function(){
+  if (!needSel()) return;
+  var n = selItem.name;
+  openDlg('Rename · ' + n, '<input type="text" id="dlgin" style="width:100%" value="' + escHtml(n) + '">', 'Rename', function(){
+    var m = document.getElementById('dlgin').value.trim(); if (!m || m === n) return;
+    err(''); call('SetInputName', {inputName: n, newInputName: m}).then(function(){ selItem.name = m; lastItemsScene = null; }).catch(function(e){ err(String(e)); });
+  });
+};
+function srcMove(dir){
+  if (!needSel()) return;
+  var scene = selItem.scene, id = selItem.id;
+  call('GetSceneItemList', {sceneName: scene}).then(function(d){
+    var ids = (d.sceneItems || []).map(function(x){ return x.sceneItemId; });
+    var i = ids.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    ids.splice(j, 0, ids.splice(i, 1)[0]);
+    return call('ReorderSceneItems', {sceneName: scene, sceneItemIds: ids});
+  }).then(function(){ lastItemsScene = null; loadItems(scene); }).catch(function(e){ err(String(e)); });
+}
+document.getElementById('srcUp').onclick = function(){ srcMove(-1); };
+document.getElementById('srcDown').onclick = function(){ srcMove(1); };
+document.getElementById('srcProps').onclick = function(){
+  if (!needSel()) return;
+  var n = selItem.name;
+  call('GetInputSettings', {inputName: n}).then(function(d){
+    var s = d.inputSettings || {}, h = '';
+    [['text','Text'],['url','URL'],['local_file','Media file'],['file','Image file']].forEach(function(f){
+      if (typeof s[f[0]] === 'string') h += '<label class="fl">' + f[1] + '<input type="text" data-k="' + f[0] + '" value="' + escHtml(s[f[0]]) + '" style="width:100%"></label>';
+    });
+    if (typeof s.looping === 'boolean') h += '<label class="fl"><input type="checkbox" data-k="looping"' + (s.looping ? ' checked' : '') + '> Loop</label>';
+    h += '<label class="fl">Advanced — raw settings JSON<textarea id="propsraw" rows="7">' + escHtml(JSON.stringify(s, null, 1)) + '</textarea></label>';
+    openDlg('Properties · ' + n, h, 'Apply', function(){
+      var next;
+      try { next = JSON.parse(document.getElementById('propsraw').value); }
+      catch (e) { err('bad JSON: ' + e.message); return; }
+      Array.prototype.forEach.call(document.querySelectorAll('#dlgbody [data-k]'), function(el){
+        next[el.getAttribute('data-k')] = (el.type === 'checkbox') ? !!el.checked : el.value;
+      });
+      err(''); call('SetInputSettings', {inputName: n, inputSettings: next, overlay: true}).catch(function(e){ err(String(e)); });
+    });
+  }).catch(function(e){ err(String(e)); });
+};
+function openFilters(n){
+  call('GetSourceFilterList', {sourceName: n}).then(function(d){
+    var flts = d.filters || [], h = '<div>';
+    flts.forEach(function(f, ix){
+      h += '<div class="row"><button data-fe="' + ix + '">' + (f.filterEnabled ? '👁' : '🚫') + '</button><span style="flex:1">' + escHtml(f.filterName) + ' <span style="color:var(--mut)">(' + escHtml(f.filterKind) + ')</span></span><button data-fr="' + ix + '">✕</button></div>';
+    });
+    h += '</div><div class="row"><input type="text" id="fltname" placeholder="filter name" style="flex:1"><select id="fltkind"></select><button id="fltadd">+ add</button></div>';
+    openDlg('Filters · ' + n, h, 'Done', null);
+    Array.prototype.forEach.call(document.querySelectorAll('#dlgbody [data-fe]'), function(b){
+      b.onclick = function(){
+        var f = flts[+b.getAttribute('data-fe')];
+        err(''); call('SetSourceFilterEnabled', {sourceName: n, filterName: f.filterName, filterEnabled: !f.filterEnabled}).then(function(){ openFilters(n); }).catch(function(e){ err(String(e)); });
+      };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dlgbody [data-fr]'), function(b){
+      b.onclick = function(){
+        var f = flts[+b.getAttribute('data-fr')];
+        err(''); call('RemoveSourceFilter', {sourceName: n, filterName: f.filterName}).then(function(){ openFilters(n); }).catch(function(e){ err(String(e)); });
+      };
+    });
+    call('GetSourceFilterKindList').then(function(k){
+      var sel = document.getElementById('fltkind'); if (!sel) return;
+      (k.sourceFilterKinds || []).forEach(function(x){ var o = document.createElement('option'); o.textContent = x; sel.appendChild(o); });
+    }).catch(function(){});
+    document.getElementById('fltadd').onclick = function(){
+      var fn = document.getElementById('fltname').value.trim(), fk = document.getElementById('fltkind').value;
+      if (!fn || !fk) return;
+      err(''); call('AddSourceFilter', {sourceName: n, filterName: fn, filterKind: fk}).then(function(){ openFilters(n); }).catch(function(e){ err(String(e)); });
+    };
+  }).catch(function(e){ err(String(e)); });
+}
+document.getElementById('srcFilters').onclick = function(){ if (needSel()) openFilters(selItem.name); };
+function openSettings(){
+  Promise.all([call('GetStreamServiceSettings'), call('GetVideoSettings'), call('GetRecordDirectory')]).then(function(r){
+    var ss = r[0].streamServiceSettings || {}, v = r[1] || {}, dir = r[2].recordDirectory || '';
+    var h = '<label class="fl">Service<input type="text" id="setservice" style="width:100%" value="' + escHtml(ss.service || '') + '"></label>'
+      + '<label class="fl">Server<input type="text" id="setserver" style="width:100%" value="' + escHtml(ss.server || '') + '"></label>'
+      + '<label class="fl">Stream key<input type="password" id="setkey" style="width:100%" value="' + escHtml(ss.key || ss.stream_key || '') + '"></label>'
+      + '<div class="row"><button id="setapplystream">Apply stream</button></div>'
+      + '<label class="fl">Base (canvas)<div class="row"><input type="number" id="setbw" value="' + (v.baseWidth || 1920) + '"> × <input type="number" id="setbh" value="' + (v.baseHeight || 1080) + '"></div></label>'
+      + '<label class="fl">Output (scaled)<div class="row"><input type="number" id="setow" value="' + (v.outputWidth || 1920) + '"> × <input type="number" id="setoh" value="' + (v.outputHeight || 1080) + '"></div></label>'
+      + '<label class="fl">FPS<div class="row"><input type="number" id="setfpsn" value="' + (v.fpsNumerator || 30) + '"> / <input type="number" id="setfpsd" value="' + (v.fpsDenominator || 1) + '"></div></label>'
+      + '<div class="row"><button id="setapplyvideo">Apply video</button></div>'
+      + '<label class="fl">Record directory<input type="text" id="setdir" style="width:100%" value="' + escHtml(dir) + '"></label>'
+      + '<div class="row"><button id="setapplydir">Apply record dir</button></div>';
+    openDlg('Settings', h, 'Close', null);
+    document.getElementById('setapplystream').onclick = function(){
+      err(''); call('SetStreamServiceSettings', {streamServiceType: 'rtmp_common', streamServiceSettings: {service: document.getElementById('setservice').value, server: document.getElementById('setserver').value, key: document.getElementById('setkey').value}}).then(function(){ err('stream settings applied'); }).catch(function(e){ err(String(e)); });
+    };
+    document.getElementById('setapplyvideo').onclick = function(){
+      var g = function(id){ return +document.getElementById(id).value || 0; };
+      err(''); call('SetVideoSettings', {baseWidth: g('setbw'), baseHeight: g('setbh'), outputWidth: g('setow'), outputHeight: g('setoh'), fpsNumerator: g('setfpsn'), fpsDenominator: g('setfpsd')}).catch(function(e){ err(String(e)); });
+    };
+    document.getElementById('setapplydir').onclick = function(){
+      err(''); call('SetRecordDirectory', {recordDirectory: document.getElementById('setdir').value}).catch(function(e){ err(String(e)); });
+    };
+  }).catch(function(e){ err(String(e)); });
+}
+function openStats(){
+  Promise.all([call('GetStats'), call('GetStreamStatus'), call('GetRecordStatus')]).then(function(r){
+    var s = r[0], st = r[1], rec = r[2];
+    var row = function(k, v){ return '<tr><td>' + k + '</td><td>' + v + '</td></tr>'; };
+    openDlg('Stats', '<table class="kv">'
+      + row('CPU', s.cpuUsage.toFixed(1) + '%') + row('FPS', s.activeFps.toFixed(2) + ' / ' + s.fps.toFixed(2))
+      + row('Render lag', s.renderMissedFrames + ' / ' + s.renderTotalFrames)
+      + row('Encode lag', s.outputSkippedFrames + ' / ' + s.outputTotalFrames)
+      + row('Memory', (s.memoryUsage / 1024).toFixed(1) + ' GB')
+      + row('Disk free', (s.availableDiskSpace / 1024).toFixed(1) + ' GB')
+      + row('Stream', st.outputActive ? st.outputBytes / 1048576 + ' MiB @ ' + st.outputBitrate + ' kbps, ' + st.outputDroppedFrames + ' dropped' : 'inactive')
+      + row('Record', rec.outputActive ? rec.outputBytes / 1048576 + ' MiB, ' + rec.outputTimecode : 'inactive')
+      + '</table>', 'Close', null);
+  }).catch(function(e){ err(String(e)); });
+}
+function openMultiview(){
+  call('GetSceneList').then(function(d){
+    var scenes = d.scenes || [];
+    var h = '<div class="mv">' + scenes.map(function(s){ return '<figure data-s="' + escHtml(s.sceneName) + '"><img alt=""><figcaption>' + escHtml(s.sceneName) + '</figcaption></figure>'; }).join('') + '</div><p style="color:var(--mut)">Click a pane to cut it to program. Stills grab on open only — spare the render plane.</p>';
+    openDlg('Multiview', h, 'Close', null);
+    var figs = document.querySelectorAll('#dlgbody .mv figure');
+    Array.prototype.forEach.call(figs, function(f){
+      f.onclick = function(){ err(''); call('SetCurrentProgramScene', {sceneName: f.getAttribute('data-s')}).then(function(){ document.getElementById('dlg').classList.remove('open'); }).catch(function(e){ err(String(e)); }); };
+    });
+    call('GetCurrentProgramScene').then(function(p){
+      Array.prototype.forEach.call(figs, function(f){ if (f.getAttribute('data-s') === p.currentProgramSceneName) f.className = 'onair'; });
+    }).catch(function(){});
+    (function next(i){
+      if (i >= figs.length) return;
+      var f = figs[i];
+      call('GetSourceScreenshot', {sourceName: f.getAttribute('data-s'), imageFormat: 'jpg'}).then(function(shot){
+        f.querySelector('img').src = 'data:image/jpeg;base64,' + shot.imageData;
+      }).catch(function(){}).then(function(){ next(i + 1); });
+    })(0);
+  }).catch(function(e){ err(String(e)); });
 }
 function buildMenu(){
   var bar = document.getElementById('menu');
@@ -288,16 +495,17 @@ function loadItems(pgm){
       var b = document.createElement('button');
       b.className = 'eye' + (it.sceneItemEnabled === false ? ' off' : '');
       b.textContent = (it.sceneItemEnabled === false ? 'show ' : 'hide ') + it.sourceName;
-      b.onclick = (function(id){
+      b.onclick = (function(it){
         return function(){
           err('');
+          selItem = {scene: pgm, id: it.sceneItemId, name: it.sourceName};
           call('GetSceneItemList', {sceneName: pgm}).then(function(dd){
-            var cur = (dd.sceneItems || []).filter(function(x){ return x.sceneItemId === id; })[0];
+            var cur = (dd.sceneItems || []).filter(function(x){ return x.sceneItemId === it.sceneItemId; })[0];
             var want = !(cur && cur.sceneItemEnabled !== false);
-            return call('SetSceneItemEnabled', {sceneName: pgm, sceneItemId: id, sceneItemEnabled: want});
+            return call('SetSceneItemEnabled', {sceneName: pgm, sceneItemId: it.sceneItemId, sceneItemEnabled: want});
           }).then(function(){ lastItemsScene = null; loadItems(pgm); }).catch(function(e){ err(String(e)); });
         };
-      })(it.sceneItemId);
+      })(it);
       box.appendChild(b);
     });
   }).catch(function(e){ err(String(e)); });
@@ -310,6 +518,7 @@ function refresh(){
       b.textContent = s.sceneName;
       b.onclick = function(){
         err('');
+        selScene = s.sceneName;
         if (studioOn) call('SetCurrentPreviewScene', {sceneName: s.sceneName}).then(setStatus).catch(function(e){ err(String(e)); });
         else call('SetCurrentProgramScene', {sceneName: s.sceneName}).then(setStatus).catch(function(e){ err(String(e)); });
       };
