@@ -4,6 +4,18 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-9: native select/toggle split in Sources
+
+- Operator was right: click-to-hide was a leftover conflation, not native
+  behavior. Rows are now [eye toggle] + [name selects + highlights];
+  rename on double-click; Lucide eye/eye-off vendored (12 icons, ISC).
+- Screenshot-verified live through the proxy (bare URL, zero params):
+  green dot, PGM label, blue on-air scene row, source row with eye+name,
+  transitions, media, Library, footer stats. An empty first capture was
+  poll timing under load, not a bug — confirmed by a longer capture.
+- Program sat on Tech Diffs after conformance churn (watchdog cut, correct
+  supervision); loop itself never stopped.
+
 ## 2026-10-14 — Intent-routing migration shipped (parity-8): console holds no socket
 
 - Measured justification first: fresh OBS handshakes stall 10s+ under load
