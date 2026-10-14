@@ -4,6 +4,33 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Protocol conformance: server's own request list as ground truth
+
+- Asked the render plane for GetVersion.availableRequests (5.7.4) and
+  diffed all 62 request names the console uses: 58 exist, 4 did not.
+  Fixed: AddSourceFilter -> CreateSourceFilter (v5 rename), ReorderSceneItems
+  -> get-index/set-index relative moves (no such request), WebSocket
+  settings get/set -> do not exist in 5.7.4 (row now disabled-with-reason).
+- Live write lifecycle on scratch scenes (program untouched throughout):
+  scene/input/settings/rename/duplicate/index/enable/transform all ok;
+  filter create/enable-off/settings-roundtrip (brightness 0.5 MATCH via
+  GetSourceFilter)/remove ok; profile create ok; collection create ok
+  (lands on it, switch back ok, RETURN restores Meet).
+- Two silent no-ops found (ok returned, nothing happens): gain_filter on a
+  sourceless text input (no audio pin; video filters attach fine), and
+  RemoveProfile (persists across calls — server bug/quirk). Console offers
+  neither lie: filter kinds are the operator's pick, Profile Remove is now
+  disabled-with-reason. Scratch residue deleted off disk (profiles +
+  collection file), lists verified clean.
+- Deaf windows are real and recurring: new handshakes and mid-connection
+  calls stall 10s+ under load (CEF contention), then recover. Daemon's
+  persistent conn rides through; every fresh client pays the lottery. This
+  is measured justification for the intent-routing migration (console via
+  the server's held connection instead of direct :4455): tracked, not built.
+- Impeccable skill loaded (context run); console is Operate mode. Visual
+  pass against reference screenshots done structurally (parity-3); remaining
+  delta is taste-level spacing/type, queued behind function.
+
 ## 2026-10-14 — Console parity-3: full OBS menu tree, dock chrome, text bar
 
 - Reference (saved YWA DOM, studied as functional spec only — no code, no

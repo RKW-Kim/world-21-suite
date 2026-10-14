@@ -329,12 +329,7 @@ var MENUS = [
         var n = document.getElementById('dlgin').value.trim(); if (!n) return;
         err(''); call('CreateProfile', {profileName: n}).catch(function(e){ err(String(e)); });
       }); }],
-    ['Remove…', function(){
-      call('GetProfileList').then(function(d){
-        openDlg('Remove profile · ' + d.currentProfileName, '<p style="color:var(--mut)">Removes the current profile. Switch away first if it is active.</p>', 'Remove', function(){
-          err(''); call('RemoveProfile', {profileName: d.currentProfileName}).catch(function(e){ err(String(e)); });
-        });
-      }).catch(function(e){ err(String(e)); }); }],
+    ['Remove', null, {dis: 'Server accepts RemoveProfile but never removes (verified live): delete on the render plane.'}],
     ['Duplicate…', null, {dis: 'No duplicate in the remote protocol: create, then copy parameters.'}],
     ['Rename…', null, {dis: 'No rename in the remote protocol.'}],
     ['Import…', null, {dis: 'Profile files live on the render plane.'}],
@@ -355,6 +350,7 @@ var MENUS = [
         var n = document.getElementById('dlgin').value.trim(); if (!n) return;
         err(''); call('CreateSceneCollection', {sceneCollectionName: n}).then(refresh).catch(function(e){ err(String(e)); });
       }); }],
+    ['Remove', null, {dis: 'No remove in the remote protocol.'}],
     ['Check for missing files', null, {dis: 'No remote scan: missing files announce themselves as cache misses.'}],
     '---'], dyn: function(box, close){
     call('GetSceneCollectionList').then(function(d){
@@ -367,7 +363,7 @@ var MENUS = [
       });
     }).catch(function(e){ err(String(e)); }); }},
   {t: 'Tools', items: [
-    ['WebSocket server settings', function(){ openWsSettings(); }],
+    ['WebSocket server settings', null, {dis: 'No remote protocol in 5.7.4: set it in the render plane UI.'}],
     ['Output timer', function(){ outputTimerDlg(); }],
     '---',
     ['Auto-configuration wizard', null, {dis: 'Local analysis on the render plane.'}],
@@ -451,14 +447,13 @@ document.getElementById('srcRename').onclick = function(){
   });
 };
 function srcMove(dir){
+  // No ReorderSceneItems in the protocol (verified against the server's own
+  // request list): relative moves via get-index / set-index instead.
   if (!needSel()) return;
   var scene = selItem.scene, id = selItem.id;
-  call('GetSceneItemList', {sceneName: scene}).then(function(d){
-    var ids = (d.sceneItems || []).map(function(x){ return x.sceneItemId; });
-    var i = ids.indexOf(id), j = i + dir;
-    if (i < 0 || j < 0 || j >= ids.length) return;
-    ids.splice(j, 0, ids.splice(i, 1)[0]);
-    return call('ReorderSceneItems', {sceneName: scene, sceneItemIds: ids});
+  call('GetSceneItemIndex', {sceneName: scene, sceneItemId: id}).then(function(d){
+    var j = Math.max(0, d.sceneItemIndex + dir);
+    return call('SetSceneItemIndex', {sceneName: scene, sceneItemId: id, sceneItemIndex: j});
   }).then(function(){ lastItemsScene = null; loadItems(scene); }).catch(function(e){ err(String(e)); });
 }
 document.getElementById('srcUp').onclick = function(){ srcMove(-1); };
@@ -511,7 +506,7 @@ function openFilters(n){
     document.getElementById('fltadd').onclick = function(){
       var fn = document.getElementById('fltname').value.trim(), fk = document.getElementById('fltkind').value;
       if (!fn || !fk) return;
-      err(''); call('AddSourceFilter', {sourceName: n, filterName: fn, filterKind: fk}).then(function(){ openFilters(n); }).catch(function(e){ err(String(e)); });
+      err(''); call('CreateSourceFilter', {sourceName: n, filterName: fn, filterKind: fk}).then(function(){ openFilters(n); }).catch(function(e){ err(String(e)); });
     };
   }).catch(function(e){ err(String(e)); });
 }
@@ -611,21 +606,6 @@ function openAdvAudio(){
         var n = el.closest('.row').getAttribute('data-an');
         err(''); call('SetInputAudioMonitorType', {inputName: n, monitorType: el.value}).catch(function(e){ err(String(e)); });
       };
-    });
-  }).catch(function(e){ err(String(e)); });
-}
-function openWsSettings(){
-  call('GetWebSocketServerSettings').then(function(d){
-    var h = '<label class="fl">Enabled <input type="checkbox" id="wsEnabled"' + (d.enabled ? ' checked' : '') + '></label>'
-      + '<label class="fl">Port<input type="number" id="wsPort" style="width:100%" value="' + d.serverPort + '"></label>'
-      + '<label class="fl">Password<input type="password" id="wsPass" style="width:100%" placeholder="(unchanged if blank)"></label>'
-      + '<p style="color:var(--mut)">Changing the port or password drops this console session. Reconnect with the new values.</p>';
-    openDlg('WebSocket server settings', h, 'Apply', function(){
-      var patch = {enabled: document.getElementById('wsEnabled').checked,
-                   serverPort: +document.getElementById('wsPort').value || 4455};
-      var pwd = document.getElementById('wsPass').value;
-      if (pwd) patch.serverPassword = pwd;
-      err(''); call('SetWebSocketServerSettings', patch).catch(function(e){ err(String(e)); });
     });
   }).catch(function(e){ err(String(e)); });
 }
