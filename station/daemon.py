@@ -483,13 +483,20 @@ PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "I
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
 
-def evict_cache(cap=CACHE_CAP, pinned=frozenset()):
+def evict_cache(cap=None, pinned=frozenset()):
     """Enforce the byte cap: delete LRU .mp4 files, never pinned ones.
-    Returns bytes freed. .intake-tmp, playlist.json and intake.db are exempt."""
+    Returns bytes freed. .intake-tmp, playlist.json and intake.db are exempt.
+    Cap resolves at CALL time (not def time): tests and small boxes retune
+    CACHE_CAP live, and a stale default would silently enforce 50 GB."""
+    if cap is None:
+        cap = CACHE_CAP
     try:
+        # Total counts EVERYTHING (pinned bytes still occupy the cap); only
+        # the selection skips pinned. Counting only unpinned here passed all
+        # tests with empty pin sets and silently evicted nothing otherwise.
         files = [(os.path.getmtime(os.path.join(MEDIA, f)), f)
                  for f in os.listdir(MEDIA)
-                 if f.endswith(".mp4") and f not in pinned]
+                 if f.endswith(".mp4")]
     except OSError:
         return 0
     total = sum(os.path.getsize(os.path.join(MEDIA, f)) for _, f in files)
@@ -497,6 +504,8 @@ def evict_cache(cap=CACHE_CAP, pinned=frozenset()):
     for _, f in sorted(files):
         if total <= cap:
             break
+        if f in pinned:
+            continue
         p = os.path.join(MEDIA, f)
         try:
             size = os.path.getsize(p)

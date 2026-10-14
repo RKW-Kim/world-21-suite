@@ -4,6 +4,23 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Cache stress battery: 7/7, caught a real bug day one
+
+- `station/stress_cache.py`: proportional edges (rotation, pin survival,
+  50-vs-49.9 scaled, pinned-wiring, all-pinned refusal with zero bytes moved,
+  failure litter, LRU order). Scaling is honest: policy compares only bytes
+  and mtimes. Exit nonzero on any FAIL.
+- Battery's first run caught a live accounting bug: evict total EXCLUDED
+  pinned files, so any pressure with pins present compared a partial total
+  against the full cap and evicted nothing, silently. Total now counts all
+  bytes; only selection skips pinned. Fixes like this are why the battery
+  exists before the 50 GB deployment, not after.
+- Companion fixes: cap resolves at call time (stale def-time default would
+  have enforced 50 GB in tests); intake `--as` hardlink path; INTAKE_MIN_FREE
+  override for tmpfs-bound tests; pin set wired from playlist+state into
+  both loop and intake (playing/prev/next + operator pins can never be
+  evicted, including by intake's own pre-burst sweep).
+
 ## 2026-10-14 — Q&A carries its page; scenes/sources split settled
 
 - Operator correction taken: scenes are SMILE|X shells, SOURCES are the html
