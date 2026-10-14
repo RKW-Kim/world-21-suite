@@ -150,6 +150,7 @@ class ObsEngine extends Emitter {
     this.wsMode = false;
     this._load();
     this._sim = { levels: new Map(), peak: new Map(), phase: Math.random() * 100 };
+    this._liveLevels = new Map();  // LOCAL-PATCH (station): real-name -> peak, fed by InputVolumeMeters.
     this._startTimers();
   }
 
@@ -462,6 +463,12 @@ class ObsEngine extends Emitter {
   getLevel(id) {
     const s = this.sourceById(id);
     if (!s || s.muted) return { level: 0, peak: 0 };
+    // LOCAL-PATCH (station): attached mode reads the live peak pushed by
+    // the websocket layer; anything else (or a silent input) simulates.
+    if (this.wsMode) {
+      const live = this._liveLevels.get(s.name);
+      if (live != null) return { level: live, peak: live };
+    }
     const now = performance.now() / 1000;
     const seed = this._sim.phase + hashStr(id);
     let base;
@@ -469,6 +476,14 @@ class ObsEngine extends Emitter {
     else base = musicEnv(now * 0.7 + seed);                                            // desktop/media
     const mul = dbToMul(s.volumeDb);
     return { level: clamp(base * mul, 0, 1.0), peak: clamp(base * mul, 0, 1) };
+  }
+
+  /* LOCAL-PATCH (station): live peak sink for the websocket layer. */
+  setLiveLevel(name, peak) {
+    this._liveLevels.set(name, Math.max(0, Math.min(1, +peak || 0)));
+  }
+  clearLiveLevels() {
+    this._liveLevels.clear();
   }
 
   /* ---------- outputs ---------- */

@@ -4,6 +4,27 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Studio fixes: bare-URL redirect, one-password connect, live-not-mock audit
+
+- `/studio` (bare) broke all relative assets. Now 301 -> `/studio/`.
+  Connect is already near password-only: gateway mode (default ON) ignores
+  the host field and uses the page origin, port defaults 4455 — type the
+  password, Connect, done. Three taps: Tools -> Connect to OBS -> password.
+- Live-vs-mock audit of the replica, three real gaps found and patched
+  (marked LOCAL-PATCH, listed in VENDORED.md for re-application):
+  1. Transitions dock was DEAD live: wrong field name
+     (`sceneTransitionName` vs real `transitionName`), failing silently.
+  2. Scene reorder called a nonexistent `ReorderScenes`: now a spoken
+     warning, local order only (no such protocol call exists, verified).
+  3. Mixer dB was sim-only: no Meters subscription bit, no event consumer.
+     Added both + live-level sink with disconnect clearing. Proven:
+     InputVolumeMeters events flow through the relay with the exact patched
+     subscription (PLAYOUT_B at live level), consumer reviewed defensive
+     against empty level arrays (seen live on idle inputs).
+- Verified still-live (not mock): preview screenshots, scene/source CRUD,
+  mixer mute/volume, outputs, studio mode, transitions (post-fix), meters
+  (post-fix) — all real RPC or events. Sim-only by design when offline.
+
 ## 2026-10-14 — Third-party replica vended at /studio + raw WS relay
 
 - Rights confirmed by operator (commissioned work): tree vendored to

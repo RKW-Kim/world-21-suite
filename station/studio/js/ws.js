@@ -159,6 +159,7 @@ function disconnect(silent) {
   if (state.ws) { try { state.ws.onclose = null; state.ws.close(); } catch {} state.ws = null; }
   unpatchEngine();
   obs.wsMode = false;
+  obs.clearLiveLevels();  // LOCAL-PATCH (station): no frozen meters after a drop.
   if (!silent) setStatus('offline');
 }
 
@@ -168,7 +169,8 @@ async function handle(msg) {
     const hello = msg.d || {};
     state.obsVersion = (hello.obsWebSocketVersion || '').replace(/^(\d+\.\d+\.\d+).*$/, '$1');
     // EventSubscriptions: Config|Scenes|Inputs|Transitions|Filters|Outputs|MediaInputs|Vendors|Ui = bits 0..8
-    const identify = { op: 1, d: { rpcVersion: 1, eventSubscriptions: 0x1FF } };
+    // LOCAL-PATCH (station): + Meters bit 16 — without it live mixer levels never arrive.
+    const identify = { op: 1, d: { rpcVersion: 1, eventSubscriptions: 0x1FF | 0x10000 } };
     if (hello.authentication) {
       const { challenge, salt } = hello.authentication;
       const secret = await sha256B64(state.config.password + salt);
@@ -268,7 +270,9 @@ function patchEngine() {
   wrap(E, 'createScene', ([name]) => request('CreateScene', { sceneName: name }).catch(() => {}));
   wrap(E, 'removeScene', ([id]) => request('RemoveScene', { sceneName: sceneName(id) }).catch(() => {}));
   wrap(E, 'renameScene', ([id, name]) => request('SetSceneName', { sceneName: sceneName(id), newSceneName: name }).catch(() => {}));
-  wrap(E, 'reorderScene', (args) => request('ReorderScenes', { scenes: obs.S.scenes.map(s => ({ sceneName: s.name })) }).catch(() => {}));
+  // LOCAL-PATCH (station): no scene-reorder exists in obs-websocket v5;
+  // the old call failed silently. Local order only, said out loud.
+  wrap(E, 'reorderScene', () => { obs.log('warn', 'Server scene order is fixed; reorder applies locally only.'); });
   wrap(E, 'setProgram', ([id]) => request('SetCurrentProgramScene', { sceneName: sceneName(id) }).catch(() => {}));
   wrap(E, 'setPreview', ([id]) => request('SetCurrentPreviewScene', { sceneName: sceneName(id) }).catch(() => {}));
   wrap(E, 'createSource', ([kind, name, settings, opts], r) => {
@@ -307,7 +311,8 @@ function patchEngine() {
   wrap(E, 'toggleVCam', () => request('ToggleVirtualCam').catch(() => {}));
   wrap(E, 'toggleReplay', () => request('ToggleReplayBuffer').catch(() => {}));
   wrap(E, 'saveReplay', () => request('SaveReplayBuffer').catch(() => {}));
-  wrap(E, 'setTransition', ([name]) => request('SetCurrentSceneTransition', { sceneTransitionName: name }).catch(() => {}));
+  // LOCAL-PATCH (station): real v5 field is transitionName, not sceneTransitionName.
+  wrap(E, 'setTransition', ([name]) => request('SetCurrentSceneTransition', { transitionName: name }).catch(() => {}));
   wrap(E, 'setTransitionDur', ([ms]) => request('SetCurrentSceneTransitionDuration', { sceneTransitionDuration: ms }).catch(() => {}));
   wrap(E, 'triggerTransition', () => request('TriggerStudioModeTransition').catch(() => {}));
   wrap(E, 'setStudioMode', ([on]) => request('SetStudioModeEnabled', { studioModeEnabled: !!on }).catch(() => {}));
@@ -582,6 +587,15 @@ function handleEvent(d) {
       case 'InputVolumeChanged': {
         const src = obs.S.sources.find(s => s.name === d.eventData.inputName);
         if (src) { src.volumeDb = d.eventData.inputVolumeDb; obs.emit('mixer', { id: src.id }); }
+        break;
+      }
+      // LOCAL-PATCH (station): feed live meter peaks into the engine; the
+      // mixer animation reads them via getLevel() when attached.
+      case 'InputVolumeMeters': {
+        for (const i of d.eventData.inputs || []) {
+          const lv = (i.inputLevelsMul && i.inputLevelsMul[0]) || [0];
+          obs.setLiveLevel(i.inputName, lv[1] != null ? lv[1] : lv[0]);
+        }
         break;
       }
       case 'InputSettingsChanged': {

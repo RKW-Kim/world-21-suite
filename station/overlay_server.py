@@ -277,6 +277,13 @@ class Handler(SimpleHTTPRequestHandler):
         elif self.path == "/media" or self.path.startswith("/media?"):
             self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html")
         elif self.path == "/studio" or self.path.startswith("/studio/"):
+            if self.path == "/studio":
+                # Bare path breaks relative assets (css/ resolves to /css/).
+                # Redirect so the browser lands on /studio/ instead.
+                self.send_response(301)
+                self.send_header("Location", "/studio/")
+                self.end_headers()
+                return
             rel = urlparse(self.path).path[8:] or "index.html"
             return self._serve_tree(os.path.join(STATION_DIR, "studio"), rel)
         elif self.path == "/state":
