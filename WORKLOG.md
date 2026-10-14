@@ -4,6 +4,25 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Intent-routing migration shipped (parity-8): console holds no socket
+
+- Measured justification first: fresh OBS handshakes stall 10s+ under load
+  while the daemon's held connection rides through. Every new client paid
+  the lottery — including the TD's browser on every page load.
+- Overlay server now holds ONE request connection (locked _call) plus an
+  event-only connection (meters cache + scene/studio changes onto the
+  existing SSE bus). New: POST /obs passthrough (type allow-listed to
+  request names, data must be an object) and GET /obs/meters.
+- Console deleted ~130 lines: SHA-256 auth, handshake, reconnect, route
+  demux, ?obs/?pass params. call() is now a fetch with the same signature
+  (zero call-site changes); meters poll 1s; scene changes arrive over SSE
+  with the 5s poll as backstop. No OBS port or password on the TD side.
+- Proven: /obs GetVersion -> 32.2.2, /obs/meters live, headless screenshot
+  of bare /console (no params) shows scenes/transitions/media/library all
+  populated through the proxy. PRODUCT.md updated to the new trust shape.
+- Tooling lesson: headless screenshots hang on open SSE streams; use
+  --timeout, not --virtual-time-budget, for evented pages.
+
 ## 2026-10-14 — Console parity-7: interaction parity, all proven live
 
 - Live fader drags (was change-on-release), arrow-key nudge (Shift=1px,

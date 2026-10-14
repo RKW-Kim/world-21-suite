@@ -110,6 +110,9 @@ a variety show that happens to be about markets.
   dynamic names, chat) stays in HTML fed by the local overlay server.
 - The station control surface (console + intents) sends commands and data,
   never pixels. The operator's connection quality never affects the broadcast.
+- The console talks only to the overlay server over plain HTTPS-fetchable
+  endpoints; the server holds the single OBS connection and the password.
+  No OBS port or secret ever touches the operator's machine.
 - Everything is driven by URL parameters and the local data channel today.
   There is **no** remote live-data bridge and no external site dependency.
 

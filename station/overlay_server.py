@@ -22,6 +22,7 @@ import queue
 import shutil
 import sys
 import threading
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
@@ -41,6 +42,74 @@ INTENTS = {
     "resume": daemon.do_resume,
     "return": daemon.do_return,
 }
+
+OBS_REQ = None  # one held request connection (OBSRenderer._call is locked)
+OBS_LOCK = threading.Lock()
+METERS = {}  # inputName -> peak 0..1, fed by the event loop below
+METERS_LOCK = threading.Lock()
+
+
+def obs_req():
+    global OBS_REQ
+    with OBS_LOCK:
+        if OBS_REQ is None:
+            OBS_REQ = daemon.OBSRenderer(
+                host=os.environ.get("OBS_HOST", "127.0.0.1"),
+                port=int(os.environ.get("OBS_PORT", "4455")))
+        return OBS_REQ
+
+
+def obs_event_loop():
+    # Second connection, events only. Meters feed the console cache;
+    # scene/studio changes fan out over the existing SSE bus (overlay
+    # pages ignore the extra 'obs' key). Reconnects forever: a deaf
+    # window must not silently end the event feed.
+    import base64
+    import hashlib
+    host = os.environ.get("OBS_HOST", "127.0.0.1")
+    port = int(os.environ.get("OBS_PORT", "4455"))
+    while True:
+        ws = None
+        try:
+            ws = daemon._WS(host, port, timeout=60)
+            hello = ws.recv()
+            if hello.get("op") != 0:
+                raise RuntimeError("not v5")
+            d = {"rpcVersion": 1, "eventSubscriptions": 2047 | 65536}
+            auth = (hello.get("d") or {}).get("authentication")
+            if auth:
+                secret = base64.b64encode(hashlib.sha256(
+                    (os.environ.get("OBS_PASS", "") + auth["salt"]).encode()).digest()).decode()
+                d["authentication"] = base64.b64encode(hashlib.sha256(
+                    (secret + auth["challenge"]).encode()).digest()).decode()
+            ws.send({"op": 1, "d": d})
+            if ws.recv().get("op") != 2:
+                raise RuntimeError("identify rejected")
+            while True:
+                m = ws.recv()
+                if m.get("op") != 5 or not m.get("d"):
+                    continue
+                et, ed = m["d"].get("eventType"), m["d"].get("eventData", {}) or {}
+                if et == "InputVolumeMeters":
+                    with METERS_LOCK:
+                        for i in ed.get("inputs", []) or []:
+                            lv = i.get("inputLevelsMul") or [[0]]
+                            peak = lv[0][1] if len(lv[0]) > 1 else lv[0][0]
+                            METERS[i.get("inputName")] = peak
+                elif et == "CurrentProgramSceneChanged" and ed.get("sceneName"):
+                    broadcast({"obs": {"programScene": ed["sceneName"]}})
+                elif et == "CurrentPreviewSceneChanged" and ed.get("sceneName"):
+                    broadcast({"obs": {"previewScene": ed["sceneName"]}})
+                elif et == "StudioModeStateChanged":
+                    broadcast({"obs": {"studioMode": bool(ed.get("studioModeEnabled"))}})
+        except Exception as e:
+            sys.stderr.write("overlay: obs events down (%s); retry in 5s\n" % e)
+            try:
+                if ws is not None:
+                    ws.close()
+            except Exception:
+                pass
+            time.sleep(5)
 
 
 def load_state():
@@ -123,6 +192,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+        elif self.path == "/obs/meters":
+            with METERS_LOCK:
+                snap = dict(METERS)
+            self._json(200, snap)
         elif self.path == "/library":
             self._json(200, library_view())
         elif self.path == "/events":
@@ -155,6 +228,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._intent(path[len("/intent/"):])
         if path == "/library":
             return self._library_update()
+        if path == "/obs":
+            return self._obs_proxy()
         if path != "/state":
             self.send_error(404)
             return
@@ -228,6 +303,26 @@ class Handler(SimpleHTTPRequestHandler):
         daemon.save_playlist(data)
         return self._json(200, {"ok": True, "file": f})
 
+    def _obs_proxy(self):
+        # Generic OBS passthrough over the held connection. Same trust as
+        # /state (LAN/tunnel-only): the browser never sees :4455 or the
+        # password, and never pays a handshake.
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            return self._json(400, {"ok": False, "error": "bad JSON"})
+        rtype = body.get("type", "")
+        if not rtype or not rtype.isalpha():
+            return self._json(400, {"ok": False, "error": "call needs {\"type\"}"})
+        data = body.get("data") or {}
+        if not isinstance(data, dict):
+            return self._json(400, {"ok": False, "error": "data must be an object"})
+        try:
+            return self._json(200, {"ok": True, "response": obs_req()._call(rtype, data)})
+        except Exception as e:
+            return self._json(200, {"ok": False, "error": str(e)[:200]})
+
     def _json(self, code, obj):
         body = json.dumps(obj).encode()
         self.send_response(code)
@@ -269,4 +364,5 @@ if __name__ == "__main__":
     print("overlay server on http://%s:%d/ (%s)" %
           (bind, port, "LOOPBACK ONLY" if bind in ("127.0.0.1", "localhost") else "LAN-EXPOSED: tunnel on VPS"),
           flush=True)
+    threading.Thread(target=obs_event_loop, daemon=True).start()
     srv.serve_forever()
