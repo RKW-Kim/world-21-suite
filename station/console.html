@@ -30,6 +30,10 @@
 .dd button{display:block;width:100%;text-align:left;background:none;border:0;
   color:var(--fg);padding:9px 12px;font-size:13px;border-radius:0;cursor:pointer}
 .dd button:hover{background:#4a4a4a}
+.dd button{display:flex;align-items:center;text-align:left}
+.menubar .meta b{color:var(--yel);font-weight:600}
+body.notoolbars .dtools{display:none}
+#items.iconic button.eye{font-size:16px;padding:6px 10px}
 .dd .sep{border-top:1px solid var(--line);margin:4px 0}
 .topbar{display:flex;align-items:center;gap:10px;background:var(--panel);
   border-bottom:1px solid var(--line);padding:8px 14px;font-size:14px}
@@ -90,52 +94,104 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
 .dlg .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;
   padding:16px;min-width:min(420px,92vw);font-size:13px;line-height:1.6}
 .dlg .box h3{margin:0 0 8px;font-size:14px}
-</style></head><body>
+/* OBS-arrangement pass: one slim bar, capped stage, dock chrome, footer */
+.menubar{position:sticky;top:0;z-index:30}
+.menubar .spacer{flex:1}
+.menubar .meta{display:flex;align-items:center;gap:10px;padding:0 10px;
+  font-family:var(--mono);font-size:11px;color:var(--mut);white-space:nowrap}
+.dd button.dis{opacity:.45;cursor:not-allowed}
+.dd .sep{border-top:1px solid var(--line);margin:4px 2px}
+.dd button .ck{color:var(--ok);margin-right:6px}
+.dd button .key{margin-left:auto;color:var(--mut);font-size:11px;
+  font-family:var(--mono);padding-left:18px}
+.dd button .arr{margin-left:auto;color:var(--mut);padding-left:18px}
+.dd .sub{position:absolute;left:100%;top:0;min-width:200px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:0 6px 6px 0;display:none;
+  box-shadow:0 12px 28px rgba(0,0,0,.5)}
+.dd button.hasub{position:relative}
+.dd button.hasub:hover .sub{display:block}
+.stage{max-height:56vh}
+.stage img{max-height:calc(56vh - 34px)}
+.dock{display:flex;flex-direction:column}
+.dock .dhead{display:flex;align-items:center;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--mut);font-family:var(--mono);
+  margin:0 0 8px;font-weight:600}
+.dock .dhead .undock{margin-left:auto;background:none;border:0;color:var(--mut);
+  padding:2px 4px;font-size:12px;cursor:pointer;line-height:1}
+.dock .dbody{flex:1;min-height:40px}
+.dock .dtools{display:flex;gap:2px;margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--line);flex-wrap:wrap}
+.ibtn{background:none;border:1px solid transparent;border-radius:4px;padding:6px;
+  cursor:pointer;color:var(--fg);line-height:0}
+.ibtn:hover{background:#4a4a4a;border-color:var(--line)}
+.ibtn svg{display:block;width:14px;height:14px}
+.ibtn svg .s{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ibtn svg .f{fill:currentColor}
+body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
+#scenes.compact button{padding:4px 8px;font-size:12px}
+.statusbar{position:sticky;bottom:0;z-index:20}
+.textbar{display:none;gap:8px;align-items:center;background:var(--panel);
+  border:1px solid var(--line);border-radius:6px;padding:8px 12px;
+  margin:0 12px 10px;font-size:13px}
+.textbar.on{display:flex}
+.textbar b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+</style><link rel="icon" href="data:,"></head><body>
 <div class="menubar" id="menu"></div>
-<div class="topbar"><span class="dot" id="conn"></span>
-  <span class="title">SMILE &middot; station console</span>
-  <span class="pgm" style="font-family:var(--mono);font-size:11px;color:var(--mut)">build parity-2</span>
-  <span class="pgm">PGM <b id="pgm">&hellip;</b></span>
-</div>
 <div class="stage one" id="stage">
   <div class="view" id="programView"><div class="cap">PROGRAM</div><img id="programImg" alt=""></div>
   <div class="view" id="previewView" style="display:none"><div class="cap">PREVIEW</div><img id="previewImg" alt=""></div>
 </div>
+<div class="textbar" id="textbar"><b id="textbarName"></b><input type="text" id="textbarInput" style="flex:1" placeholder="text source content"><button id="textbarApply">Apply</button></div>
 <div id="status" style="display:none"></div>
-<div class="docks">
-<div class="dock"><h2>Director intents</h2>
-<div class="grid">
+<div class="docks" id="docks">
+<div class="dock" id="dock-intents"><div class="dhead">Director intents<button class="undock" data-dock="dock-intents" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="grid">
   <button data-intent="go-live">GO LIVE</button>
   <button data-intent="tech-diff">TECH DIFF</button>
   <button data-intent="resume">RESUME</button>
   <button data-intent="return">RETURN</button>
-</div></div>
-<div class="dock"><h2>Scenes</h2><div class="grid" id="scenes"></div>
-<div class="row" style="margin:8px 0 0"><button id="sceneAdd">+ add</button><button id="sceneRename">✎ rename</button><button id="sceneDel">− remove</button><button id="mvOpen">▦ multiview</button></div></div>
-<div class="dock"><h2>Sources &middot; <span id="srcscene"></span></h2><div class="grid" id="items"></div>
-<div class="row" style="margin:8px 0 0"><button id="srcAdd">+ add</button><button id="srcRename">✎ rename</button><button id="srcProps">⚙ props</button><button id="srcFilters">🎚 filters</button><button id="srcUp">↑</button><button id="srcDown">↓</button><button id="srcDel">− remove</button></div></div>
-<div class="dock"><h2>Scene transitions</h2>
-<div class="row"><select id="trans"></select>
+</div></div></div>
+<div class="dock" id="dock-scenes"><div class="dhead">Scenes<button class="undock" data-dock="dock-scenes" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="grid" id="scenes"></div></div>
+<div class="dtools"><button class="ibtn" id="sceneAdd" title="Add scene"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="sceneDel" title="Remove scene"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="sceneRename" title="Rename scene"><svg><use href="#i-pencil"/></svg></button><button class="ibtn" id="mvOpen" title="Multiview"><svg><use href="#i-grid"/></svg></button></div></div>
+<div class="dock" id="dock-sources"><div class="dhead">Sources &middot; <span id="srcscene"></span><button class="undock" data-dock="dock-sources" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="grid" id="items"></div></div>
+<div class="dtools"><button class="ibtn" id="srcAdd" title="Add source"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="srcDel" title="Remove source"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="srcProps" title="Properties"><svg><use href="#i-gear"/></svg></button><button class="ibtn" id="srcFilters" title="Filters"><svg><use href="#i-sliders"/></svg></button><button class="ibtn" id="srcUp" title="Move up"><svg><use href="#i-up"/></svg></button><button class="ibtn" id="srcDown" title="Move down"><svg><use href="#i-down"/></svg></button><button class="ibtn" id="srcRename" title="Rename"><svg><use href="#i-pencil"/></svg></button></div></div>
+<div class="dock" id="dock-trans"><div class="dhead">Scene transitions<button class="undock" data-dock="dock-trans" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="row"><select id="trans"></select>
 <input type="number" id="transdur" min="50" max="5000" step="50" value="300" style="width:90px" title="ms"></div>
-<div class="grid"><button id="dotrans">Transition</button><button id="studio">Studio Mode: off</button></div></div>
-<div class="dock"><h2>Audio mixer</h2><div id="mixer"></div></div>
-<div class="dock"><h2>Media transport</h2>
-<div class="row"><select id="src"></select></div>
+<div class="grid"><button id="dotrans">Transition</button><button id="studio">Studio Mode: off</button></div></div></div>
+<div class="dock" id="dock-mixer"><div class="dhead">Audio mixer<button class="undock" data-dock="dock-mixer" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div id="mixer"></div></div>
+<div class="dtools"><button class="ibtn" id="advAudio" title="Advanced audio properties"><svg><use href="#i-gear"/></svg></button></div></div>
+<div class="dock" id="dock-controls"><div class="dhead">Controls<button class="undock" data-dock="dock-controls" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="grid">
+  <button id="stream">Start Streaming</button>
+  <button id="rec">Start Recording</button>
+  <button id="vcam">Virtual Camera</button>
+</div></div></div>
+<div class="dock" id="dock-media"><div class="dhead">Media transport<button class="undock" data-dock="dock-media" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="row"><select id="src"></select></div>
 <div class="grid">
   <button data-act="RESTART">Restart</button>
   <button data-act="PLAY">Play</button>
   <button data-act="PAUSE">Pause</button>
   <button data-act="STOP">Stop</button>
   <button id="mute">Mute/Unmute source</button>
-</div></div>
-<div class="dock"><h2>Controls</h2>
-<div class="grid">
-  <button id="stream">Start Streaming</button>
-  <button id="rec">Start Recording</button>
-  <button id="vcam">Virtual Camera</button>
-</div></div>
-<div class="dock"><h2>Library</h2><div class="row"><button id="librefresh">↻ refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div>
+</div></div></div>
+<div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)">⧉</button></div>
+<div class="dbody"><div class="row"><button id="librefresh">↻ refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
 </div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<svg id="i-plus" viewBox="0 0 14 14"><path class="s" d="M7 2v10M2 7h10"/></svg>
+<svg id="i-trash" viewBox="0 0 14 14"><path class="s" d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.8 7.5h4.4L10 4"/></svg>
+<svg id="i-pencil" viewBox="0 0 14 14"><path class="s" d="M9.5 2.5l2 2L5 11H3V9z"/></svg>
+<svg id="i-up" viewBox="0 0 14 14"><path class="s" d="M7 11V3M3.5 6.5L7 3l3.5 3.5"/></svg>
+<svg id="i-down" viewBox="0 0 14 14"><path class="s" d="M7 3v8M3.5 7.5L7 11l3.5-3.5"/></svg>
+<svg id="i-gear" viewBox="0 0 14 14"><circle class="s" cx="7" cy="7" r="2.1"/><path class="s" d="M7 1.2v1.8M7 11v1.8M1.2 7H3M11 7h1.8M3 3l1.3 1.3M9.7 9.7L11 11M11 3L9.7 4.3M4.3 9.7L3 11"/></svg>
+<svg id="i-sliders" viewBox="0 0 14 14"><path class="s" d="M2 4.5h10M2 9.5h10"/><circle class="f" cx="9" cy="4.5" r="1.5"/><circle class="f" cx="5" cy="9.5" r="1.5"/></svg>
+<svg id="i-grid" viewBox="0 0 14 14"><path class="f" d="M2 2h4v4H2zM8 2h4v4H8zM2 8h4v4H2zM8 8h4v4H8z"/></svg>
+</defs></svg>
 <div id="err"></div>
 <div class="statusbar" id="stats"></div>
 <div class="dlg" id="dlg"><div class="box"><h3 id="dlgtitle"></h3><div id="dlgbody"></div>
@@ -208,38 +264,126 @@ function call(type, data){
     setTimeout(function(){ if (pending[id]) { delete pending[id]; rej(new Error('timeout ' + type)); } }, 20000);
   });
 }
-/* ---- menus: only working entries. File/Edit administer the local desktop
-   app and have no protocol surface, so they are absent, not disabled. ---- */
+/* ---- menus: the full OBS tree, real names. Rows with a protocol surface
+   work; rows without one are present but disabled WITH the reason on hover.
+   Nothing here is decorative. ---- */
+var showIcons = false, lockDocks = false;
 var MENUS = [
+  {t: 'File', items: [
+    ['Show recordings', function(){ call('GetRecordDirectory').then(function(d){ dlg('Recordings', 'Record directory on the render plane:\n' + d.recordDirectory + '\n\nFiles stay there; fetch them off-box, never through this page.'); }).catch(function(e){ err(String(e)); }); }],
+    ['Remux recordings', null, {dis: 'No remote protocol: remux on the render plane.'}],
+    '---',
+    ['Settings', function(){ openSettings(); }],
+    ['Show settings folder', null, {dis: 'Local path on the render plane.'}],
+    ['Show profile folder', null, {dis: 'Local path on the render plane.'}],
+    '---',
+    ['Exit', null, {dis: 'Would kill the render plane for everyone.'}]]},
+  {t: 'Edit', items: [
+    ['Duplicate', function(){ dupSel(); }],
+    ['Copy', null, {dis: 'No clipboard in the remote protocol.'}],
+    ['Paste (reference)', null, {dis: 'No clipboard in the remote protocol.'}],
+    '---',
+    ['Transform', null, {sub: [
+      ['Reset transform', function(){ resetTransform(); }],
+      ['Flip horizontal', function(){ flipSel('x'); }],
+      ['Flip vertical', function(){ flipSel('y'); }]]}],
+    ['Order', null, {sub: [
+      ['Move up', function(){ srcMove(-1); }],
+      ['Move down', function(){ srcMove(1); }]]}],
+    ['Copy filters', null, {dis: 'No clipboard in the remote protocol.'}],
+    ['Paste filters', null, {dis: 'No clipboard in the remote protocol.'}],
+    '---',
+    ['Advanced audio properties', function(){ openAdvAudio(); }]]},
   {t: 'View', items: [
-    ['Fullscreen interface', function(){ if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }]]},
-  {t: 'Profile', items: [], dyn: function(box, close){
+    ['Fullscreen interface', function(){ if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }, {key: 'F11'}],
+    '---',
+    ['Preview: locked', function(){ window.prevLocked = !window.prevLocked; }, {check: function(){ return !!window.prevLocked; }}],
+    ['Scene list: compact', function(){ document.getElementById('scenes').classList.toggle('compact'); }, {check: function(){ return document.getElementById('scenes').classList.contains('compact'); }}],
+    ['Dock toolbars', function(){ document.body.classList.toggle('notoolbars'); }, {check: function(){ return !document.body.classList.contains('notoolbars'); }}],
+    ['Source icons', function(){ showIcons = !showIcons; document.getElementById('items').classList.toggle('iconic', showIcons); lastItemsScene = null; }, {check: function(){ return showIcons; }}],
+    ['Status bar', function(){ var s = document.getElementById('stats'); s.style.display = (s.style.display === 'none') ? '' : 'none'; }, {check: function(){ return document.getElementById('stats').style.display !== 'none'; }}],
+    '---',
+    ['Stats', function(){ openStats(); }],
+    '---',
+    ['Open multiview', function(){ openMultiview(); }],
+    ['Always on top', null, {dis: 'Window flag of the desktop app.'}]]},
+  {t: 'Docks', items: [], dyn: function(box, close){
+    Array.prototype.forEach.call(document.querySelectorAll('#docks .dock'), function(d){
+      var head = d.querySelector('.dhead');
+      var name = head ? head.firstChild.textContent.trim() : d.id;
+      var b = document.createElement('button');
+      if (d.style.display !== 'none') { var ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓'; b.appendChild(ck); }
+      var nm = document.createElement('span'); nm.textContent = name; b.appendChild(nm);
+      b.onclick = function(){ close(); d.style.display = (d.style.display === 'none') ? '' : 'none'; };
+      box.appendChild(b);
+    });
+    var s = document.createElement('div'); s.className = 'sep'; box.appendChild(s);
+    [['Lock docks', function(){ lockDocks = !lockDocks; document.body.classList.toggle('locked', lockDocks); }, {check: function(){ return lockDocks; }}],
+     ['Reset docks', function(){ resetUI(); }, {}],
+     ['Custom browser dock…', function(){ customDock(); }, {}]
+    ].forEach(function(it){ box.appendChild(menuRow(it, close)); });
+  }},
+  {t: 'Profile', items: [
+    ['New…', function(){
+      openDlg('New profile', '<input type="text" id="dlgin" style="width:100%">', 'Create', function(){
+        var n = document.getElementById('dlgin').value.trim(); if (!n) return;
+        err(''); call('CreateProfile', {profileName: n}).catch(function(e){ err(String(e)); });
+      }); }],
+    ['Remove…', function(){
+      call('GetProfileList').then(function(d){
+        openDlg('Remove profile · ' + d.currentProfileName, '<p style="color:var(--mut)">Removes the current profile. Switch away first if it is active.</p>', 'Remove', function(){
+          err(''); call('RemoveProfile', {profileName: d.currentProfileName}).catch(function(e){ err(String(e)); });
+        });
+      }).catch(function(e){ err(String(e)); }); }],
+    ['Duplicate…', null, {dis: 'No duplicate in the remote protocol: create, then copy parameters.'}],
+    ['Rename…', null, {dis: 'No rename in the remote protocol.'}],
+    ['Import…', null, {dis: 'Profile files live on the render plane.'}],
+    ['Export…', null, {dis: 'Profile files live on the render plane.'}],
+    '---'], dyn: function(box, close){
     call('GetProfileList').then(function(d){
       (d.profiles || []).forEach(function(p){
-        var b = document.createElement('button'); b.textContent = p + (p === d.currentProfileName ? ' ✓' : '');
+        var b = document.createElement('button');
+        if (p === d.currentProfileName) { var ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓'; b.appendChild(ck); }
+        var nm = document.createElement('span'); nm.textContent = p; b.appendChild(nm);
         b.onclick = function(){ close(); err(''); call('SetCurrentProfile', {profileName: p}).catch(function(e){ err(String(e)); }); };
         box.appendChild(b);
       });
     }).catch(function(e){ err(String(e)); }); }},
-  {t: 'Scene Collection', items: [], dyn: function(box, close){
+  {t: 'Scene Collection', items: [
+    ['New…', function(){
+      openDlg('New scene collection', '<input type="text" id="dlgin" style="width:100%">', 'Create', function(){
+        var n = document.getElementById('dlgin').value.trim(); if (!n) return;
+        err(''); call('CreateSceneCollection', {sceneCollectionName: n}).then(refresh).catch(function(e){ err(String(e)); });
+      }); }],
+    ['Check for missing files', null, {dis: 'No remote scan: missing files announce themselves as cache misses.'}],
+    '---'], dyn: function(box, close){
     call('GetSceneCollectionList').then(function(d){
       (d.sceneCollections || []).forEach(function(c){
-        var b = document.createElement('button'); b.textContent = c + (c === d.currentSceneCollectionName ? ' ✓' : '');
+        var b = document.createElement('button');
+        if (c === d.currentSceneCollectionName) { var ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓'; b.appendChild(ck); }
+        var nm = document.createElement('span'); nm.textContent = c; b.appendChild(nm);
         b.onclick = function(){ close(); err(''); call('SetCurrentSceneCollection', {sceneCollectionName: c}).then(refresh).catch(function(e){ err(String(e)); }); };
         box.appendChild(b);
       });
     }).catch(function(e){ err(String(e)); }); }},
   {t: 'Tools', items: [
-    ['Reconnect socket', function(){ try { ws.close(); } catch (e) {} }],
-    ['Settings (stream/video/record)', function(){ openSettings(); }],
-    ['Multiview', function(){ openMultiview(); }],
-    ['Stats', function(){ openStats(); }],
-    ['Copy page URL', function(){ try { navigator.clipboard.writeText(location.href); } catch (e) { err(String(e)); } }]]},
+    ['WebSocket server settings', function(){ openWsSettings(); }],
+    ['Output timer', function(){ outputTimerDlg(); }],
+    '---',
+    ['Auto-configuration wizard', null, {dis: 'Local analysis on the render plane.'}],
+    ['Captions (experimental)', null, {dis: 'No remote protocol.'}],
+    ['Automatic scene switcher', null, {dis: 'Runs on the render plane; configure locally.'}],
+    ['Scripts', null, {dis: 'Local files on the render plane.'}],
+    '---',
+    ['Console: reconnect socket', function(){ try { ws.close(); } catch (e) {} }],
+    ['Console: copy page URL', function(){ try { navigator.clipboard.writeText(location.href); } catch (e) { err(String(e)); } }]]},
   {t: 'Help', items: [
-    ['About this console', function(){
-      call('GetVersion').then(function(d){
-        dlg('About', 'Station console (own code) talking to OBS ' + d.obsVersion + ' / websocket ' + d.obsWebSocketVersion + '. Password rides in the URL: tunnel on VPS, never raw.');
-      }).catch(function(e){ err(String(e)); }); }]]}
+    ['About', function(){ aboutDlg(); }],
+    ['Check for updates', function(){ updateDlg(); }],
+    ['Release notes', null, {dis: 'No remote changelog surface.'}],
+    '---',
+    ['Log files', null, {dis: 'Files on the render plane.'}],
+    ['Console: reconnect socket', function(){ try { ws.close(); } catch (e) {} }]]}
 ];
 function dlg(t, b){
   document.getElementById('dlgtitle').textContent = t;
@@ -413,6 +557,132 @@ function openStats(){
       + '</table>', 'Close', null);
   }).catch(function(e){ err(String(e)); });
 }
+var inputKinds = {};
+function refreshKinds(){
+  call('GetInputList').then(function(d){
+    inputKinds = {};
+    (d.inputs || []).forEach(function(i){ inputKinds[i.inputName] = i.inputKind; });
+  }).catch(function(){});
+}
+function dupSel(){
+  if (!needSel()) return;
+  err(''); call('DuplicateSceneItem', {sceneName: selItem.scene, sceneItemId: selItem.id}).then(function(){ lastItemsScene = null; }).catch(function(e){ err(String(e)); });
+}
+function resetTransform(){
+  if (!needSel()) return;
+  err(''); call('SetSceneItemTransform', {sceneName: selItem.scene, sceneItemId: selItem.id, sceneItemTransform: {positionX: 0, positionY: 0, scaleX: 1, scaleY: 1, rotation: 0, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0}}).catch(function(e){ err(String(e)); });
+}
+function flipSel(axis){
+  if (!needSel()) return;
+  err('');
+  call('GetSceneItemTransform', {sceneName: selItem.scene, sceneItemId: selItem.id}).then(function(d){
+    var t = d.sceneItemTransform || {};
+    if (axis === 'x') t.scaleX = -(t.scaleX || 1); else t.scaleY = -(t.scaleY || 1);
+    return call('SetSceneItemTransform', {sceneName: selItem.scene, sceneItemId: selItem.id, sceneItemTransform: t});
+  }).catch(function(e){ err(String(e)); });
+}
+function openAdvAudio(){
+  call('GetSpecialInputs').then(function(d){
+    var names = ['desktop1', 'desktop2', 'mic1', 'mic2', 'mic3', 'mic4'].map(function(k){ return d[k]; }).filter(Boolean);
+    var h = '';
+    names.forEach(function(n, ix){
+      h += '<div class="row" data-an="' + escHtml(n) + '"><span style="flex:1">' + escHtml(n) + '</span><input type="number" data-av="' + ix + '" title="volume dB" style="width:80px"><select data-am="' + ix + '"><option value="OBS_MONITORING_TYPE_NONE">Monitor off</option><option value="OBS_MONITORING_TYPE_MONITOR_ONLY">Monitor only</option><option value="OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT">Monitor + output</option></select></div>';
+    });
+    openDlg('Advanced audio properties', h, 'Close', null);
+    names.forEach(function(n, ix){
+      call('GetInputVolume', {inputName: n}).then(function(v){
+        var el = document.querySelector('#dlgbody [data-av="' + ix + '"]');
+        if (el && v.inputVolumeDb != null) el.value = (+v.inputVolumeDb).toFixed(1);
+      }).catch(function(){});
+      call('GetInputAudioMonitorType', {inputName: n}).then(function(v){
+        var el = document.querySelector('#dlgbody [data-am="' + ix + '"]');
+        if (el && v.monitorType) el.value = v.monitorType;
+      }).catch(function(){});
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dlgbody [data-av]'), function(el){
+      el.onchange = function(){
+        var n = el.closest('.row').getAttribute('data-an'), v = parseFloat(el.value);
+        if (isNaN(v)) return;
+        err(''); call('SetInputVolume', {inputName: n, inputVolumeDb: v}).catch(function(e){ err(String(e)); });
+      };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dlgbody [data-am]'), function(el){
+      el.onchange = function(){
+        var n = el.closest('.row').getAttribute('data-an');
+        err(''); call('SetInputAudioMonitorType', {inputName: n, monitorType: el.value}).catch(function(e){ err(String(e)); });
+      };
+    });
+  }).catch(function(e){ err(String(e)); });
+}
+function openWsSettings(){
+  call('GetWebSocketServerSettings').then(function(d){
+    var h = '<label class="fl">Enabled <input type="checkbox" id="wsEnabled"' + (d.enabled ? ' checked' : '') + '></label>'
+      + '<label class="fl">Port<input type="number" id="wsPort" style="width:100%" value="' + d.serverPort + '"></label>'
+      + '<label class="fl">Password<input type="password" id="wsPass" style="width:100%" placeholder="(unchanged if blank)"></label>'
+      + '<p style="color:var(--mut)">Changing the port or password drops this console session. Reconnect with the new values.</p>';
+    openDlg('WebSocket server settings', h, 'Apply', function(){
+      var patch = {enabled: document.getElementById('wsEnabled').checked,
+                   serverPort: +document.getElementById('wsPort').value || 4455};
+      var pwd = document.getElementById('wsPass').value;
+      if (pwd) patch.serverPassword = pwd;
+      err(''); call('SetWebSocketServerSettings', patch).catch(function(e){ err(String(e)); });
+    });
+  }).catch(function(e){ err(String(e)); });
+}
+function outputTimerDlg(){
+  Promise.all([call('GetStreamStatus'), call('GetRecordStatus')]).then(function(r){
+    openDlg('Output timer', '<table class="kv"><tr><td>Stream</td><td>' + (r[0].outputActive ? r[0].outputTimecode : 'inactive') + '</td></tr><tr><td>Record</td><td>' + (r[1].outputActive ? r[1].outputTimecode : 'inactive') + '</td></tr></table><p style="color:var(--mut)">Read-only here: the daemon owns start/stop (GO LIVE / Controls).</p>', 'Close', null);
+  }).catch(function(e){ err(String(e)); });
+}
+function aboutDlg(){
+  call('GetVersion').then(function(d){
+    openDlg('About', '<table class="kv"><tr><td>Console</td><td>station console · build parity-3 · own code, zero dependencies</td></tr><tr><td>OBS</td><td>' + escHtml(d.obsVersion) + '</td></tr><tr><td>obs-websocket</td><td>' + escHtml(d.obsWebSocketVersion) + '</td></tr><tr><td>Platform</td><td>' + escHtml(d.platform || '') + '</td></tr></table><p style="color:var(--mut)">Password rides in the URL: tunnel on VPS, never raw.</p>', 'Close', null);
+  }).catch(function(e){ err(String(e)); });
+}
+function updateDlg(){
+  openDlg('Check for updates', '<p>The console ships with the repo: pull <b>origin/main</b> on the render plane and hard-reload this page.</p><p style="color:var(--mut)">This build: parity-3.</p>', 'Close', null);
+}
+function customDock(){
+  openDlg('Custom browser dock', '<label class="fl">Name<input type="text" id="dlgin" style="width:100%"></label><label class="fl">URL<input type="text" id="dlgin2" style="width:100%" value="http://127.0.0.1:7070/state"></label>', 'Add', function(){
+    var n = document.getElementById('dlgin').value.trim() || 'Custom';
+    var u = document.getElementById('dlgin2').value.trim(); if (!u) return;
+    var d = document.createElement('div'); d.className = 'dock'; d.id = 'dock-custom-' + Date.now();
+    d.innerHTML = '<div class="dhead"></div><div class="dbody"><iframe src="' + escHtml(u) + '" style="width:100%;height:220px;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe></div>';
+    d.querySelector('.dhead').textContent = n;
+    var x = document.createElement('button'); x.className = 'undock'; x.title = 'Remove'; x.textContent = '⧉';
+    x.onclick = function(){ d.remove(); };
+    d.querySelector('.dhead').appendChild(x);
+    document.getElementById('docks').appendChild(d);
+  });
+}
+function resetUI(){
+  var box = document.getElementById('docks');
+  ['dock-intents', 'dock-scenes', 'dock-sources', 'dock-trans', 'dock-mixer', 'dock-controls', 'dock-media', 'dock-lib'].forEach(function(id){
+    var d = document.getElementById(id);
+    if (d) { d.style.display = ''; box.appendChild(d); }
+  });
+  document.body.classList.remove('locked', 'notoolbars'); lockDocks = false;
+  document.getElementById('scenes').classList.remove('compact');
+  document.getElementById('stats').style.display = '';
+}
+function textbarFor(item){
+  // Reference shows a quick-edit bar for text sources under the preview.
+  // Ours appears only for text kinds, reads live, writes on Apply.
+  var bar = document.getElementById('textbar');
+  var kind = inputKinds[item.name] || '';
+  if (kind.indexOf('text_') !== 0) { bar.classList.remove('on'); bar.dataset.input = ''; return; }
+  call('GetInputSettings', {inputName: item.name}).then(function(d){
+    document.getElementById('textbarName').textContent = item.name;
+    document.getElementById('textbarInput').value = (d.inputSettings || {}).text || '';
+    bar.classList.add('on'); bar.dataset.input = item.name;
+  }).catch(function(){ bar.classList.remove('on'); });
+}
+document.getElementById('textbarApply').onclick = function(){
+  var bar = document.getElementById('textbar'), n = bar.dataset.input;
+  if (!n) return;
+  err(''); call('SetInputSettings', {inputName: n, inputSettings: {text: document.getElementById('textbarInput').value}, overlay: true}).catch(function(e){ err(String(e)); });
+};
+document.getElementById('advAudio').onclick = function(){ openAdvAudio(); };
 function openMultiview(){
   call('GetSceneList').then(function(d){
     var scenes = d.scenes || [];
@@ -434,6 +704,28 @@ function openMultiview(){
     })(0);
   }).catch(function(e){ err(String(e)); });
 }
+function menuRow(it, close){
+  // Menu grammar: '---' separator, [label, fn], or [label, fn, opts] with
+  // {dis, key, check, sub}. Disabled rows say WHY (hover title) instead of
+  // pretending: a dead button is worse than an explained one.
+  if (it === '---') { var sp = document.createElement('div'); sp.className = 'sep'; return sp; }
+  var b = document.createElement('button'), o = it[2] || {};
+  var ch = (typeof o.check === 'function') ? o.check() : o.check;
+  if (ch) { var ck = document.createElement('span'); ck.className = 'ck'; ck.textContent = '✓'; b.appendChild(ck); }
+  var nm = document.createElement('span'); nm.textContent = it[0]; b.appendChild(nm);
+  if (o.key) { var k = document.createElement('span'); k.className = 'key'; k.textContent = o.key; b.appendChild(k); }
+  if (o.dis) { b.className = 'dis'; b.title = o.dis; b.onclick = function(e){ e.stopPropagation(); }; }
+  else if (o.sub) {
+    b.className = 'hasub';
+    var ar = document.createElement('span'); ar.className = 'arr'; ar.textContent = '▸'; b.appendChild(ar);
+    var sd = document.createElement('div'); sd.className = 'sub';
+    o.sub.forEach(function(si){ sd.appendChild(menuRow(si, close)); });
+    b.appendChild(sd);
+    b.onclick = function(e){ e.stopPropagation(); };
+  }
+  else b.onclick = function(){ close(); it[1](); };
+  return b;
+}
 function buildMenu(){
   var bar = document.getElementById('menu');
   MENUS.forEach(function(m){
@@ -446,10 +738,7 @@ function buildMenu(){
       var was = mi.classList.contains('open');
       document.querySelectorAll('.mi.open').forEach(function(x){ x.classList.remove('open'); });
       if (!was) { mi.classList.add('open'); dd.innerHTML = '';
-        m.items.forEach(function(it){
-          var b = document.createElement('button'); b.textContent = it[0];
-          b.onclick = function(){ close(); it[1](); }; dd.appendChild(b);
-        });
+        m.items.forEach(function(it){ dd.appendChild(menuRow(it, close)); });
         if (m.dyn) m.dyn(dd, close);
       }
     };
@@ -471,8 +760,8 @@ function setStatus(){
         el.innerHTML = 'CPU <b>' + st.cpuUsage.toFixed(1) + '%</b> · ' +
           st.activeFps.toFixed(0) + ' fps · dropped <b class="' +
           (st.outputSkippedFrames > 0 ? 'bad">' : '">') + st.outputSkippedFrames + '</b> · stream ' +
-          (s.outputActive ? '<b class="on">LIVE</b>' : '<b class="off">off</b>') +
-          ' · rec ' + (rec.outputActive ? '<b class="on">on</b>' : 'off') +
+          (s.outputActive ? '<b class="on">LIVE</b> ' + (s.outputTimecode || '') : '<b class="off">off</b>') +
+          ' · rec ' + (rec.outputActive ? '<b class="on">on</b> ' + (rec.outputTimecode || '') : 'off') +
           ' · disk ' + (st.availableDiskSpace / 1024).toFixed(1) + ' GB';
       }).catch(function(){});
       document.querySelectorAll('#scenes button').forEach(function(b){
@@ -497,11 +786,14 @@ function loadItems(pgm){
     (d.sceneItems || []).forEach(function(it){
       var b = document.createElement('button');
       b.className = 'eye' + (it.sceneItemEnabled === false ? ' off' : '');
-      b.textContent = (it.sceneItemEnabled === false ? 'show ' : 'hide ') + it.sourceName;
+      var en = it.sceneItemEnabled !== false;
+      b.textContent = showIcons ? (en ? '👁' : '🚫') : ((en ? 'hide ' : 'show ') + it.sourceName);
+      b.title = it.sourceName;
       b.onclick = (function(it){
         return function(){
           err('');
           selItem = {scene: pgm, id: it.sceneItemId, name: it.sourceName};
+          textbarFor(selItem);
           call('GetSceneItemList', {sceneName: pgm}).then(function(dd){
             var cur = (dd.sceneItems || []).filter(function(x){ return x.sceneItemId === it.sceneItemId; })[0];
             var want = !(cur && cur.sceneItemEnabled !== false);
@@ -551,6 +843,7 @@ function refresh(){
     });
   }).catch(function(){});
   loadMixer();
+  refreshKinds();
 }
 function loadMixer(){
   // Audio rows come from the special-inputs registry (desktop/mic slots),
@@ -592,6 +885,7 @@ function grabShot(which, img){
     }).catch(function(){});
 }
 function previews(){
+  if (window.prevLocked) return;  // View → Preview: locked holds the last frame
   // 1fps program/preview stills. This is a slideshow by physics (full render
   // + encode + base64 per frame), not video — enough to confirm framing.
   call('GetStudioModeEnabled').then(function(d){
@@ -765,7 +1059,23 @@ function libSet(t, key, val){
     .then(function(j){ if (!j.ok) err(j.error || 'library update failed'); loadLib(); })
     .catch(function(e){ err(String(e)); });
 }
+function menuMeta(){
+  // The old second header bar is gone; connection, build and program live
+  // at the right end of the single menu bar instead.
+  var bar = document.getElementById('menu');
+  var sp = document.createElement('span'); sp.className = 'spacer'; bar.appendChild(sp);
+  var meta = document.createElement('span'); meta.className = 'meta';
+  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-3</span><span>PGM <b id="pgm">…</b></span>';
+  bar.appendChild(meta);
+  Array.prototype.forEach.call(document.querySelectorAll('.undock'), function(b){
+    b.onclick = function(){
+      var d = document.getElementById(b.getAttribute('data-dock')) || b.closest('.dock');
+      if (d) d.style.display = 'none';
+    };
+  });
+}
 buildMenu();
+menuMeta();
 connect();
 document.getElementById('librefresh').onclick = function(){ err(''); loadLib(); };
 loadLib();

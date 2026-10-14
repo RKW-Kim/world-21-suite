@@ -4,6 +4,38 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-3: full OBS menu tree, dock chrome, text bar
+
+- Reference (saved YWA DOM, studied as functional spec only — no code, no
+  CSS, no assets taken) vs ours compared via headless screenshots of both.
+  Gaps found: no File/Edit/Docks menus, double header, stage hogging the
+  viewport, no dock toolbars, no per-kind bars, no footer timecodes.
+- Shipped: single slim menu bar (meta: conn dot, build chip, PGM) with the
+  FULL tree File/Edit/View/Docks/Profile/Scene Collection/Tools/Help, real
+  names, submenu support, live checkmarks, shortcuts, disabled-with-reason
+  rows (hover says why: no remote protocol / render-plane-local / would
+  kill the broadcast). Settings moved to File where it belongs.
+- Working entries, all real protocol: scenes/sources CRUD + reorder,
+  props + filters, transforms (reset/flip via read-modify-write),
+  duplicate, advanced audio (volume dB + monitor type per input),
+  websocket server settings (get + set, with own-foot warning), output
+  timer (read-only timecodes), profiles/collections create + switch +
+  remove, custom browser docks (self-maintaining in Docks menu), lock/
+  reset docks, dock toolbars toggle, source icons toggle, scene-list
+  compact, preview lock (holds last frame), statusbar toggle, text
+  quick-edit bar (appears for text kinds only), stream/record timecodes
+  in the footer.
+- Icons: self-drawn inline SVG (plus/trash/pencil/chevrons/gear/sliders/
+  grid), zero CDN, zero downloads, zero external requests anywhere in the
+  console (audited: no http refs except code comments). Favicon inlined as
+  data: to silence the 404. Nothing phones home; no outbound links at all.
+- Deviations from the reference, deliberate: Director-intents + Library +
+  Media docks (station value-adds, same chrome), NLE editor + hotkeys +
+  appearance/accessibility pages (local-app concerns, no remote surface),
+  display/audio-capture source kinds (capture the VIEWER's hardware — wrong
+  machine for a remote console).
+- Verified: node --check clean, every new handler present in served bytes.
+
 ## 2026-10-14 — Console full-parity build, phase 1 (clean-room, our code)
 
 - obs.ywa.app inspected: proprietary (no license/source link), zero
