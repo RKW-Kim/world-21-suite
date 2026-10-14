@@ -99,6 +99,32 @@ else
   python3 station/render_scenes.py --root "$ROOT"
 fi
 
+# System services: the station autostarts or it isn't a station. Installs the
+# units (rewritten to THIS checkout's path, so a VPS clone anywhere works),
+# enables autostart, reloads. Does NOT start obs/daemon: the operator starts
+# those deliberately after verifying secrets + media (see docs/VPS.md).
+# (Lab lesson: an unsupervised reboot with manual-only processes is a total
+# silent outage. This block exists because of one.)
+UNIT_SRC="station/systemd"
+if [ "$(id -u)" = "0" ]; then
+  UNIT_DST="/etc/systemd/system"; SYS="systemctl"
+else
+  UNIT_DST="$HOME/.config/systemd/user"; SYS="systemctl --user"
+fi
+mkdir -p "$UNIT_DST"
+for u in "$UNIT_SRC"/station-*.service; do
+  sed "s|%h/Documents/GitHub/world-21-suite|$PWD|g" "$u" > "$UNIT_DST/$(basename "$u")"
+done
+$SYS daemon-reload
+# shellcheck disable=SC2046
+$SYS enable $(cd "$UNIT_SRC" && ls station-*.service) 2>&1 | tail -n 2
+if [ "$(id -u)" != "0" ]; then
+  if [ "$(loginctl show-user "$USER" 2>/dev/null | grep -c Linger=yes)" = "0" ]; then
+    echo "::warning::linger is OFF — user units die at logout and autostart can't work."
+    echo "  Run once with sudo: sudo loginctl enable-linger $USER"
+  fi
+fi
+
 cat <<'EOF'
 
 OBS profile checklist (set once in the GUI; profiles can't be safely templated):
