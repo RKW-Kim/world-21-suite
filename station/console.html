@@ -158,33 +158,33 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
 <div class="textbar" id="textbar"><b id="textbarName"></b><input type="text" id="textbarInput" style="flex:1" placeholder="text source content"><button id="textbarApply">Apply</button></div>
 <div id="status" style="display:none"></div>
 <div class="docks" id="docks">
-<div class="dock" id="dock-intents"><div class="dhead">Director intents<button class="undock" data-dock="dock-intents" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dock" id="dock-intents"><div class="dhead">Director intents<button class="undock" data-dock="dock-intents" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="grid">
   <button data-intent="go-live">GO LIVE</button>
   <button data-intent="tech-diff">TECH DIFF</button>
   <button data-intent="resume">RESUME</button>
   <button data-intent="return">RETURN</button>
 </div></div></div>
-<div class="dock" id="dock-scenes"><div class="dhead">Scenes<button class="undock" data-dock="dock-scenes" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dock" id="dock-scenes"><div class="dhead">Scenes<button class="undock" data-dock="dock-scenes" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="grid" id="scenes"></div></div>
-<div class="dtools"><button class="ibtn" id="sceneAdd" title="Add scene"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="sceneDel" title="Remove scene"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="sceneRename" title="Rename scene"><svg><use href="#i-pencil"/></svg></button><button class="ibtn" id="mvOpen" title="Multiview"><svg><use href="#i-grid"/></svg></button></div></div>
-<div class="dock" id="dock-sources"><div class="dhead">Sources &middot; <span id="srcscene"></span><button class="undock" data-dock="dock-sources" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dtools"><button class="ibtn" id="sceneAdd" title="Add scene"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="sceneDel" title="Remove scene"><svg><use href="#i-minus"/></svg></button><button class="ibtn" id="mvOpen" title="Multiview"><svg><use href="#i-grid"/></svg></button></div></div>
+<div class="dock" id="dock-sources"><div class="dhead">Sources &middot; <span id="srcscene"></span><button class="undock" data-dock="dock-sources" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="grid" id="items"></div></div>
-<div class="dtools"><button class="ibtn" id="srcAdd" title="Add source"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="srcDel" title="Remove source"><svg><use href="#i-trash"/></svg></button><button class="ibtn" id="srcProps" title="Properties"><svg><use href="#i-gear"/></svg></button><button class="ibtn" id="srcFilters" title="Filters"><svg><use href="#i-sliders"/></svg></button><button class="ibtn" id="srcUp" title="Move up"><svg><use href="#i-up"/></svg></button><button class="ibtn" id="srcDown" title="Move down"><svg><use href="#i-down"/></svg></button><button class="ibtn" id="srcRename" title="Rename"><svg><use href="#i-pencil"/></svg></button></div></div>
-<div class="dock" id="dock-trans"><div class="dhead">Scene transitions<button class="undock" data-dock="dock-trans" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dtools"><button class="ibtn" id="srcAdd" title="Add source"><svg><use href="#i-plus"/></svg></button><button class="ibtn" id="srcDel" title="Remove source"><svg><use href="#i-minus"/></svg></button><button class="ibtn" id="srcProps" title="Properties"><svg><use href="#i-gear"/></svg></button><button class="ibtn" id="srcFilters" title="Filters"><svg><use href="#i-sliders"/></svg></button><button class="ibtn" id="srcUp" title="Move up"><svg><use href="#i-up"/></svg></button><button class="ibtn" id="srcDown" title="Move down"><svg><use href="#i-down"/></svg></button></div></div>
+<div class="dock" id="dock-trans"><div class="dhead">Scene transitions<button class="undock" data-dock="dock-trans" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="row"><select id="trans"></select>
 <input type="number" id="transdur" min="50" max="5000" step="50" value="300" style="width:90px" title="ms"></div>
 <div class="grid"><button id="dotrans">Transition</button><button id="studio">Studio Mode: off</button></div></div></div>
-<div class="dock" id="dock-mixer"><div class="dhead">Audio mixer<button class="undock" data-dock="dock-mixer" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dock" id="dock-mixer"><div class="dhead">Audio mixer<button class="undock" data-dock="dock-mixer" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div id="mixer"></div></div>
 <div class="dtools"><button class="ibtn" id="advAudio" title="Advanced audio properties"><svg><use href="#i-gear"/></svg></button></div></div>
-<div class="dock" id="dock-controls"><div class="dhead">Controls<button class="undock" data-dock="dock-controls" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dock" id="dock-controls"><div class="dhead">Controls<button class="undock" data-dock="dock-controls" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="grid col">
   <button id="stream">Start Streaming</button>
   <button id="rec">Start Recording</button>
   <button id="vcam">Virtual Camera</button>
 </div></div></div>
-<div class="dock" id="dock-media"><div class="dhead">Media transport<button class="undock" data-dock="dock-media" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
+<div class="dock" id="dock-media"><div class="dhead">Media transport<button class="undock" data-dock="dock-media" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
 <div class="dbody"><div class="row"><select id="src"></select></div>
 <div class="grid">
   <button data-act="RESTART">Restart</button>
@@ -193,19 +193,21 @@ body.locked .ibtn,body.locked .undock{pointer-events:none;opacity:.4}
   <button data-act="STOP">Stop</button>
   <button id="mute">Mute/Unmute source</button>
 </div></div></div>
-<div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)"><svg><use href="#i-pop"/></svg></button></div>
-<div class="dbody"><div class="row"><button id="librefresh">↻ refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
+<div class="dock" id="dock-lib"><div class="dhead">Library<button class="undock" data-dock="dock-lib" title="Hide (Docks menu)"><svg><use href="#i-ext"/></svg></button></div>
+<div class="dbody"><div class="row"><button id="librefresh" title="refresh"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-refresh"/></svg> refresh</button><span id="libdisk" style="color:var(--mut);font-size:12px"></span></div><div id="lib"></div></div></div>
 </div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-<svg id="i-plus" viewBox="0 0 14 14"><path class="s" d="M7 2.5v9M2.5 7h9"/></svg>
-<svg id="i-trash" viewBox="0 0 14 14"><path class="s" d="M2.5 4h9M5.8 4V2.6h2.4V4M4.2 4l.7 7.3h4.2L9.8 4M6.2 6.3v3M7.8 6.3v3"/></svg>
-<svg id="i-pencil" viewBox="0 0 14 14"><path class="s" d="M9.3 2.7l2 2L5.2 10.8l-2.6.6.6-2.6zM8 4l2 2"/></svg>
-<svg id="i-up" viewBox="0 0 14 14"><path class="s" d="M7 11V3.2M3.6 6.6L7 3.2l3.4 3.4"/></svg>
-<svg id="i-down" viewBox="0 0 14 14"><path class="s" d="M7 3v7.8M3.6 7.4L7 10.8l3.4-3.4"/></svg>
-<svg id="i-gear" viewBox="0 0 14 14"><circle class="s" cx="7" cy="7" r="2.2"/><path class="s" d="M7 1.2v1.8M7 11v1.8M1.2 7H3M11 7h1.8M3 3l1.3 1.3M9.7 9.7L11 11M11 3L9.7 4.3M4.3 9.7L3 11"/></svg>
-<svg id="i-sliders" viewBox="0 0 14 14"><path class="s" d="M2 4.5h10M2 9.5h10"/><circle class="f" cx="9" cy="4.5" r="1.6"/><circle class="f" cx="5" cy="9.5" r="1.6"/></svg>
-<svg id="i-grid" viewBox="0 0 14 14"><path class="f" d="M2 2h4.5v4.5H2zM7.5 2H12v4.5H7.5zM2 7.5h4.5V12H2zM7.5 7.5H12V12H7.5z"/></svg>
-<svg id="i-pop" viewBox="0 0 14 14"><path class="s" d="M5.2 2.2h6.6v6.6M2.2 4.8v6.6h6.6"/></svg>
+<!-- Toolbar icons: Lucide v1.57.0 (ISC, (c) Lucide Contributors) — vendored locally, zero runtime requests. -->
+<svg id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>
+<svg id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+<svg id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
+<svg id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /> <path d="m19 12-7 7-7-7" /></svg>
+<svg id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" /></svg>
+<svg id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H3" /> <path d="M12 19H3" /> <path d="M14 3v4" /> <path d="M16 17v4" /> <path d="M21 12h-9" /> <path d="M21 19h-5" /> <path d="M21 5h-7" /> <path d="M8 10v4" /> <path d="M8 12H3" /></svg>
+<svg id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+<svg id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>
+<svg id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5" /> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" /></svg>
+<svg id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
 </defs></svg>
 <div id="err"></div>
 <div class="statusbar" id="stats"></div>
@@ -420,13 +422,13 @@ document.getElementById('sceneAdd').onclick = function(){
     err(''); call('CreateScene', {sceneName: n}).then(function(){ selScene = n; refresh(); }).catch(function(e){ err(String(e)); });
   });
 };
-document.getElementById('sceneRename').onclick = function(){
+function renameScene(){
   var cur = selScene || pgmName(); if (!cur) return;
   openDlg('Rename scene · ' + cur, '<input type="text" id="dlgin" style="width:100%" value="' + escHtml(cur) + '">', 'Rename', function(){
     var n = document.getElementById('dlgin').value.trim(); if (!n || n === cur) return;
     err(''); call('SetSceneName', {sceneName: cur, newSceneName: n}).then(function(){ selScene = n; refresh(); }).catch(function(e){ err(String(e)); });
   });
-};
+}
 document.getElementById('sceneDel').onclick = function(){
   var cur = selScene || pgmName(); if (!cur) return;
   openDlg('Remove scene · ' + cur, '<p style="color:var(--mut)">The scene and its private items go away. Shared inputs survive.</p>', 'Remove', function(){
@@ -453,14 +455,14 @@ document.getElementById('srcDel').onclick = function(){
     err(''); call('RemoveInput', {inputName: n}).then(function(){ selItem = null; lastItemsScene = null; }).catch(function(e){ err(String(e)); });
   });
 };
-document.getElementById('srcRename').onclick = function(){
+function renameSource(){
   if (!needSel()) return;
   var n = selItem.name;
   openDlg('Rename · ' + n, '<input type="text" id="dlgin" style="width:100%" value="' + escHtml(n) + '">', 'Rename', function(){
     var m = document.getElementById('dlgin').value.trim(); if (!m || m === n) return;
     err(''); call('SetInputName', {inputName: n, newInputName: m}).then(function(){ selItem.name = m; lastItemsScene = null; }).catch(function(e){ err(String(e)); });
   });
-};
+}
 function srcMove(dir){
   // No ReorderSceneItems in the protocol (verified against the server's own
   // request list): relative moves via get-index / set-index instead.
@@ -644,7 +646,7 @@ function customDock(){
     var d = document.createElement('div'); d.className = 'dock'; d.id = 'dock-custom-' + Date.now();
     d.innerHTML = '<div class="dhead"></div><div class="dbody"><iframe src="' + escHtml(u) + '" style="width:100%;height:220px;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe></div>';
     d.querySelector('.dhead').textContent = n;
-    var x = document.createElement('button'); x.className = 'undock'; x.title = 'Remove'; x.innerHTML = '<svg><use href="#i-pop"/></svg>';
+    var x = document.createElement('button'); x.className = 'undock'; x.title = 'Remove'; x.innerHTML = '<svg><use href="#i-ext"/></svg>';
     x.onclick = function(){ d.remove(); };
     d.querySelector('.dhead').appendChild(x);
     document.getElementById('docks').appendChild(d);
@@ -796,6 +798,7 @@ function loadItems(pgm){
           }).then(function(){ lastItemsScene = null; loadItems(pgm); }).catch(function(e){ err(String(e)); });
         };
       })(it);
+      b.ondblclick = function(){ renameSource(); };
       box.appendChild(b);
     });
   }).catch(function(e){ err(String(e)); });
@@ -806,6 +809,8 @@ function refresh(){
     d.scenes.forEach(function(s){
       var b = document.createElement('button');
       b.textContent = s.sceneName;
+      b.title = s.sceneName + ' (double-click to rename)';
+      b.ondblclick = function(){ selScene = s.sceneName; renameScene(); };
       b.onclick = function(){
         err('');
         selScene = s.sceneName;
@@ -1036,7 +1041,7 @@ function loadLib(){
         (t.show ? ' · ' + t.show : '') + (t.up_next ? '  ▸UP NEXT' : '');
       if (!t.present) nm.style.color = 'var(--bad)';
       var pb = document.createElement('button');
-      pb.textContent = t.pinned ? '🧷 pinned' : '📎 pin';
+      pb.innerHTML = t.pinned ? '<svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-pin"/></svg> pinned' : 'pin';
       pb.onclick = (function(it){ return function(){ libSet(it, 'pinned', !it.pinned); }; })(t);
       var sb = document.createElement('button');
       sb.textContent = t.status === 'dormant' ? '💤 dormant' : '▶ active';
@@ -1060,7 +1065,7 @@ function menuMeta(){
   var bar = document.getElementById('menu');
   var sp = document.createElement('span'); sp.className = 'spacer'; bar.appendChild(sp);
   var meta = document.createElement('span'); meta.className = 'meta';
-  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-5</span><span>PGM <b id="pgm">…</b></span>';
+  meta.innerHTML = '<span class="dot" id="conn"></span><span>SMILE · station console</span><span>build parity-6</span><span>PGM <b id="pgm">…</b></span>';
   bar.appendChild(meta);
   Array.prototype.forEach.call(document.querySelectorAll('.undock'), function(b){
     b.onclick = function(){

@@ -4,6 +4,19 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console parity-6: native OBS icon set, licensed and local
+
+- Native set identified WITHOUT copying it: OBS binary resource names
+  (plus/minus/up/down/filter/refresh/media_*/recording-*/network-*) map 1:1
+  onto Lucide, which OBS itself derives them from. GPL assets untouched.
+- Lucide v1.57.0 (ISC) fetched once, 10 icons vendored INLINE into the
+  single console.html with attribution comment; zero runtime requests,
+  then and now. Hand-drawn set fully retired, zero remnants.
+- Toolbars now native: scenes + − grid, sources + − gear sliders ↑ ↓,
+  mixer gear, external-link undocks, refresh/pin glyphs. Rename buttons
+  removed (native has none); rename lives on double-click for scenes and
+  sources, exactly like the desktop, with title hints. Screenshot-verified.
+
 ## 2026-10-14 — Console parity-5: zip reference mined, theme converged
 
 - Operator supplied obs-ywa-app.zip (21 entries). Unpacked to /tmp ONLY
