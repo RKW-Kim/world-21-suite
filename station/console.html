@@ -11,43 +11,59 @@
    The page talks DIRECTLY to obs-websocket (ws://<obs>:4455) from the
    browser: no inbound holes beyond the OBS socket itself, no server side.
    LAB ONLY in this form: the password rides in the URL. On the VPS this
-   page is served behind an SSH tunnel, never raw. Daemon intents (go-live
-   with ident chaining, auto TECHDIFF) are NOT here — those live in the
-   daemon CLI until the dashboard phase. This is raw switching + transport. */
-:root{--bg:#0a0a0a;--panel:#141417;--line:#27272a;--fg:#fafafa;--mut:#a1a1aa;
-  --yel:#ffc107;--ok:#0ecb81;--bad:#f6465d;--mono:'IBM Plex Mono',ui-monospace,monospace}
+   page is served behind an SSH tunnel, never raw.
+   LOOK: OBS-dark dock arrangement (Scenes / Sources / Controls), our own
+   code, no copied assets. Deliberately NO File/Edit/View menu bar: menus
+   administer the local app (profiles, remux, updates, hotkeys), none of
+   which is a show operation. Everything a TD does on air lives in docks. */
+:root{--bg:#1e1e1e;--panel:#2d2d2d;--panel2:#383838;--line:#3f3f3f;--fg:#fafafa;
+  --mut:#a1a1aa;--yel:#ffc107;--ok:#0ecb81;--bad:#f6465d;
+  --mono:'IBM Plex Mono',ui-monospace,monospace}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
-  font-family:system-ui,sans-serif;padding:16px;max-width:720px}
-h1{font-size:18px;margin:0 0 4px}.sub{color:var(--mut);font-size:12px;margin-bottom:14px;
-  font-family:var(--mono)}
-#status{font-family:var(--mono);font-size:12px;background:var(--panel);
-  border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:14px}
-#status b.on{color:var(--ok)}#status b.off{color:var(--bad)}
-h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);
-  font-family:var(--mono);margin:16px 0 8px}
-.grid{display:flex;flex-wrap:wrap;gap:8px}
-button{background:var(--panel);color:var(--fg);border:1px solid var(--line);
-  border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer}
+  font-family:system-ui,sans-serif;padding:0}
+.topbar{display:flex;align-items:center;gap:10px;background:var(--panel);
+  border-bottom:1px solid var(--line);padding:8px 14px;font-size:14px;
+  position:sticky;top:0;z-index:5}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mut);flex:none}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
+.topbar .title{font-weight:700}
+.topbar .pgm{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.topbar .pgm b{color:var(--yel);font-weight:600}
+.docks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px;padding:12px}
+.dock{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:10px 12px 12px;min-width:0}
+.dock>h2{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--mut);font-family:var(--mono);margin:0 0 8px;font-weight:600}
+.grid{display:flex;flex-wrap:wrap;gap:6px}
+button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:5px;padding:9px 12px;font-size:13px;cursor:pointer}
 button.onair{border-color:var(--yel);color:var(--yel)}
 button:active{transform:scale(.97)}
-.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-select{background:var(--panel);color:var(--fg);border:1px solid var(--line);
-  border-radius:8px;padding:10px}
-#err{color:var(--bad);font-family:var(--mono);font-size:12px;min-height:18px}
-</style></head><body>
-<h1>SMILE · station console</h1>
-<div class="sub">raw switching + media transport · daemon intents live in the CLI</div>
-<div id="status">connecting…</div>
-<h2>Director intents</h2>
+button.eye{font-family:var(--mono);font-size:12px;padding:8px 10px}
+button.eye.off{opacity:.45;text-decoration:line-through}
+.row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:5px;padding:9px;max-width:100%}
+#status{font-family:var(--mono);font-size:12px;color:var(--mut);padding:0 14px}
+#status b.on{color:var(--ok)}#status b.off{color:var(--bad)}
+#err{color:var(--bad);font-family:var(--mono);font-size:12px;min-height:18px;padding:4px 14px}</style></head><body>
+<div class="topbar"><span class="dot" id="conn"></span>
+  <span class="title">SMILE &middot; station console</span>
+  <span class="pgm">PGM <b id="pgm">&hellip;</b></span>
+</div>
+<div id="status">connecting&hellip;</div>
+<div class="docks">
+<div class="dock"><h2>Director intents</h2>
 <div class="grid">
   <button data-intent="go-live">GO LIVE</button>
   <button data-intent="tech-diff">TECH DIFF</button>
   <button data-intent="resume">RESUME</button>
   <button data-intent="return">RETURN</button>
-</div>
-<div id="err"></div>
-<h2>Scenes</h2><div class="grid" id="scenes"></div>
-<h2>Media transport</h2>
+</div></div>
+<div class="dock"><h2>Scenes</h2><div class="grid" id="scenes"></div></div>
+<div class="dock"><h2>Sources &middot; <span id="srcscene"></span></h2><div class="grid" id="items"></div></div>
+<div class="dock"><h2>Media transport</h2>
 <div class="row"><select id="src"></select></div>
 <div class="grid">
   <button data-act="RESTART">Restart</button>
@@ -55,12 +71,13 @@ select{background:var(--panel);color:var(--fg);border:1px solid var(--line);
   <button data-act="PAUSE">Pause</button>
   <button data-act="STOP">Stop</button>
   <button id="mute">Mute/Unmute source</button>
-</div>
-<h2>Output</h2>
+</div></div>
+<div class="dock"><h2>Output</h2>
 <div class="grid">
   <button id="rec">Start/Stop recording</button>
+</div></div>
 </div>
-<script>
+<div id="err"></div><script>
 (function(){
 "use strict";
 var q = new URLSearchParams(location.search);
@@ -131,14 +148,42 @@ function setStatus(){
   Promise.all([call('GetStreamStatus'), call('GetRecordStatus'), call('GetCurrentProgramScene')])
     .then(function(r){
       var s = r[0], rec = r[1], pgm = r[2].currentProgramSceneName;
+      document.getElementById('pgm').textContent = pgm;
+      document.getElementById('conn').className = 'dot ok';
       document.getElementById('status').innerHTML =
-        'program <b class="on">' + pgm + '</b> · stream ' +
-        (s.outputActive ? '<b class="on">LIVE</b>' : '<b class="off">off</b>') +
+        'stream ' + (s.outputActive ? '<b class="on">LIVE</b>' : '<b class="off">off</b>') +
         ' · rec ' + (rec.outputActive ? '<b class="on">on</b>' : 'off');
       document.querySelectorAll('#scenes button').forEach(function(b){
         b.classList.toggle('onair', b.textContent === pgm);
       });
+      loadItems(pgm);
     }).catch(function(){});
+}
+var lastItemsScene = null;
+function loadItems(pgm){
+  // Rebuild only on scene change (polling rebuilds would steal taps/focus).
+  if (pgm === lastItemsScene) return;
+  lastItemsScene = pgm;
+  document.getElementById('srcscene').textContent = pgm;
+  call('GetSceneItemList', {sceneName: pgm}).then(function(d){
+    var box = document.getElementById('items'); box.innerHTML = '';
+    (d.sceneItems || []).forEach(function(it){
+      var b = document.createElement('button');
+      b.className = 'eye' + (it.sceneItemEnabled === false ? ' off' : '');
+      b.textContent = (it.sceneItemEnabled === false ? 'show ' : 'hide ') + it.sourceName;
+      b.onclick = (function(id, name){
+        return function(){
+          err('');
+          call('GetSceneItemList', {sceneName: pgm}).then(function(dd){
+            var cur = (dd.sceneItems || []).filter(function(x){ return x.sceneItemId === id; })[0];
+            var want = !(cur && cur.sceneItemEnabled !== false);
+            return call('SetSceneItemEnabled', {sceneName: pgm, sceneItemId: id, sceneItemEnabled: want});
+          }).then(function(){ lastItemsScene = null; loadItems(pgm); }).catch(function(e){ err(String(e)); });
+        };
+      })(it.sceneItemId, it.sourceName);
+      box.appendChild(b);
+    });
+  }).catch(function(e){ err(String(e)); });
 }
 function refresh(){
   call('GetSceneList').then(function(d){
@@ -227,8 +272,8 @@ function connect(){
     };
     ws.addEventListener('message', hello);
   };
-  ws.onerror = function(){ err('socket error — is obs-websocket up at ' + host + ':4455?'); };
-  ws.onclose = function(){ err('socket closed — reconnecting…'); setTimeout(connect, 3000); };
+  ws.onerror = function(){ document.getElementById('conn').className = 'dot bad'; err('socket error — is obs-websocket up at ' + host + ':4455?'); };
+  ws.onclose = function(){ document.getElementById('conn').className = 'dot bad'; err('socket closed — reconnecting…'); setTimeout(connect, 3000); };
 }
 function route(ev){
   var m;
