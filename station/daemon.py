@@ -365,9 +365,16 @@ def save_playlist(data):
 def load_state():
     try:
         with open(STATE) as f:
-            return json.load(f)
+            st = json.load(f)
     except (OSError, ValueError):
         return {"index": 0, "deck": "A", "faults": {}}
+    if not isinstance(st, dict):
+        return {"index": 0, "deck": "A", "faults": {}}
+    try:
+        st["index"] = int(st.get("index", 0))
+    except (TypeError, ValueError):
+        st["index"] = 0  # hand-edited or torn state must not crash the loop
+    return st
 
 def save_state(state):
     tmp = STATE + ".new"
@@ -528,23 +535,35 @@ def advance(renderer, state, data, deck_sources):
         renderer.set_scene(SCENE_TECHDIFF)
         alert("Playlist empty; holding.", "WARN")
         return
-    skipped = dormant = 0
-    while skipped + dormant < len(items):
-        idx = state.get("index", 0) % len(items)
+    skipped = dormant = pending = 0
+    while skipped + dormant + pending < len(items):
+        sidx = state.get("index", 0)
+        idx = (sidx if isinstance(sidx, int) else 0) % len(items)
         item = items[idx]
         if item.get("status") == "dormant":
             dormant += 1  # operator intent, not a fault: silent, no alert
             state["index"] = idx + 1
             continue
-        path = os.path.join(MEDIA, item.get("file") or "")
-        if item.get("file") and os.path.exists(path):
+        if not item.get("file"):
+            if item.get("source"):
+                pending += 1  # link registered, file not here yet: silent
+                state["index"] = idx + 1
+                continue
+            skipped += 1  # entry names nothing at all: fault, loud below
+            alert("Playlist entry names no file: %s. Skipping." % item.get("title", "?"), "WARN")
+            state["index"] = idx + 1
+            continue
+        path = os.path.join(MEDIA, item["file"])
+        if os.path.exists(path):
             break
-        alert("Cache miss: %s. Skipping to next." % item.get("file"), "WARN")
+        alert("Cache miss: %s. Skipping to next." % item["file"], "WARN")
         state["index"] = idx + 1
         skipped += 1
     else:
         renderer.set_scene(SCENE_TECHDIFF)
-        if dormant and not skipped:
+        if pending and not skipped and not dormant:
+            alert("Every playlist item still fetching; holding.", "WARN")
+        elif dormant and not skipped and not pending:
             alert("Every playlist item dormant; holding.", "CRIT")
         else:
             alert("Every playlist item missing; holding.", "CRIT")
@@ -608,6 +627,20 @@ def prefetch_name(item):
     return "%s_%s.mp4" % (safe, digest)
 
 
+def prefetch_order(data, index):
+    """Candidate order, pure so the edge tests can pin it: the next two
+    items first (just-in-time), then every other item in rotation order.
+    A parked-then-returned link must already be warm when it rejoins, so
+    the scan is not limited to the head — the spawn caps (max 2 in flight,
+    one new per pass) are what protect weak boxes, not a short scan."""
+    items = data.get("items", [])
+    n = len(items)
+    if not n:
+        return []
+    idx = index if isinstance(index, int) else 0
+    return [(idx + off) % n for off in range(n)]
+
+
 def prefetch_pass(data, state, in_flight, failed=None):
     """Warm the next items: reap finished fetches, spawn at most one new one.
 
@@ -641,9 +674,8 @@ def prefetch_pass(data, state, in_flight, failed=None):
     items = data.get("items", [])
     if not items or len(in_flight) >= 2:
         return
-    idx = state.get("index", 0) % len(items)
-    for off in (0, 1):
-        item = items[(idx + off) % len(items)]
+    for i in prefetch_order(data, state.get("index", 0)):
+        item = items[i]
         source = item.get("source")
         if not source or source in in_flight:
             continue
@@ -906,6 +938,22 @@ def selftest():
     n = len(r.calls)
     advance(r, {"index": 0, "deck": "A", "faults": {}}, load_playlist(), decks)
     assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
+    save_playlist({"shuffle_on_complete": False, "items": [  # pending: silent
+        {"title": "P", "source": "http://example.invalid/x"}]})
+    n = len(r.calls)
+    st3 = {"index": 0, "deck": "A", "faults": {}}
+    advance(r, st3, load_playlist(), decks)
+    assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
+    assert st3["index"] == 1, st3
+    save_playlist({"shuffle_on_complete": False, "items": [  # nameless: loud
+        {"file": "gone.mp4", "title": "G"}]})
+    n = len(r.calls)
+    advance(r, {"index": 0, "deck": "A", "faults": {}}, load_playlist(), decks)
+    assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
+    open(STATE, "w").write('{"index": "oops", "deck": "A"}')  # corrupt: coerce
+    assert load_state()["index"] == 0
+    assert prefetch_order({"items": [{}, {}, {}]}, 5) == [2, 0, 1]
+    assert prefetch_order({"items": []}, 0) == []
     evict_cache(cap=0, pinned=frozenset({"a.mp4"}))  # pinned survives any cap...
     assert os.path.exists(os.path.join(MEDIA, "a.mp4")), "pinned file evicted!"
     evict_cache(cap=0)  # ...unpinned, it goes
@@ -913,8 +961,9 @@ def selftest():
     dog = Watchdog(r)  # stall detector: frozen position faults once stale
     assert dog.check_source(DECK_A, on_air=False) is True
     dog.last_progress[DECK_A] -= 10  # simulate 10s of no movement
+    n = len(r.calls)
     assert dog.check_source(DECK_A, on_air=False) is False
-    assert ("scene", SCENE_TECHDIFF) not in [c for c in r.calls if c[0] == "scene"], r.calls
+    assert ("scene", SCENE_TECHDIFF) not in r.calls[n:], r.calls
     r.pos["IDLE"] = -1  # exists but never played: measured, never faulted
     n = len(r.calls)
     assert dog.check_source("IDLE", on_air=True) is True
@@ -922,8 +971,9 @@ def selftest():
     r.pos["STUCK"] = 5  # unseen program state: faults still cut (fail safe)
     assert dog.check_source("STUCK", on_air=True) is True
     dog.last_progress["STUCK"] -= 10
+    n = len(r.calls)
     assert dog.check_source("STUCK", on_air=True) is False
-    assert ("scene", SCENE_TECHDIFF) in r.calls, r.calls
+    assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
     r2 = FakeRenderer()
     del r2.program_scene  # unreadable program: cut anyway, never silence
     assert Watchdog(r2)._program_is_live() is True

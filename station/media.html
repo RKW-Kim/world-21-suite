@@ -60,15 +60,15 @@ label.fl{display:block;margin:8px 0;font-size:12px;color:var(--mut)}
 <div><label class="fl">…or file already in media/<input type="text" id="f_file" placeholder="clip.mp4"></label>
 <label class="fl">Show tag (e.g. music)<input type="text" id="f_show"></label></div>
 </div>
-<div><label class="fl">Status <select id="f_status" style="width:auto"><option value="active">active — airs in rotation</option><option value="dormant">dormant — archived, never airs</option></select></label></div>
+<div><label class="fl">Status <select id="f_status" style="width:auto"><option value="active">active — airs in rotation</option><option value="dormant">parked — registered but held out of rotation</option></select></label></div>
 <button id="add" style="margin-top:6px">Add to playlist</button>
 <p class="note">Cap is structural, not trust: intake refuses what will not fit, the loop evicts least-recently-used past 50 GB, pinned items never move. A link becomes a pending row until prefetch resolves it.</p>
 </div></section>
 <section><h2>Rotation — on-air loop</h2><div class="bd" id="rotation"></div></section>
 <section><h2>Pending — link registered, file not fetched yet</h2><div class="bd" id="pending"></div></section>
-<section><h2>Archive — dormant, never airs</h2><div class="bd" id="archive"></div></section>
+<section><h2>Parked — held out of rotation</h2><div class="bd" id="archive"></div></section>
 <section><h2>Music bed</h2><div class="bd"><p class="note">Planned with the preview-tap spike: a VLC “Music Bed” input in the collection, playlist managed here through input settings, volume through the mixer. Music is a bed under scenes, never a fullscreen rotation item — the daemon would air it if it lived in the playlist.</p></div></section>
-<section><h2>Intake history — past fetches</h2><div class="bd" id="history"></div></section>
+<section><h2>Catalog — every fetch on record</h2><div class="bd" id="history"></div></section>
 </main>
 <script>
 (function(){
@@ -76,6 +76,8 @@ label.fl{display:block;margin:8px 0;font-size:12px;color:var(--mut)}
 var err = function(m){ document.getElementById('err').textContent = m || ''; };
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function MB(b){ return (b == null) ? '?' : (b / 1048576).toFixed(1) + ' MB'; }
+function fmtDur(s){ s = Math.round(s); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = ('0' + (s % 60)).slice(-2);
+  return h ? h + ':' + ('0' + m).slice(-2) + ':' + ss : m + ':' + ss; }
 function op(b){
   err('');
   fetch('library', {method: 'POST', body: JSON.stringify(b)})
@@ -100,14 +102,15 @@ function itemRow(t, i, pending){
     + (t.pinned ? '<span class="badge pin">pinned</span> ' : '')
     + (pending ? '<span class="badge pend">pending</span>' : (t.present ? '' : ' <span class="badge">missing</span>'))
     + (t.up_next ? ' <span class="badge act">up next</span>' : '');
-  meta.innerHTML = (t.size != null ? MB(t.size) : (pending ? 'awaiting fetch' : '?')) + '<br>' + tags;
+  meta.innerHTML = (t.size != null ? MB(t.size) : (pending ? 'awaiting fetch' : '?'))
+    + (t.duration != null ? ' · ' + fmtDur(t.duration) : '') + '<br>' + tags;
   tr.appendChild(meta);
   var act = document.createElement('td');
   var id = {index: i};
   var up = rowBtn('↑', 'Move up', function(){ id.to = i - 1; id.op = 'move'; op(id); });
   var dn = rowBtn('↓', 'Move down', function(){ id.to = i + 1; id.op = 'move'; op(id); });
   var pin = rowBtn(t.pinned ? 'unpin' : 'pin', null, function(){ op({op: 'set', index: i, pinned: !t.pinned}); });
-  var st = rowBtn(t.status === 'dormant' ? 'activate' : 'archive', null, function(){ op({op: 'set', index: i, status: t.status === 'dormant' ? 'active' : 'dormant'}); });
+  var st = rowBtn(t.status === 'dormant' ? 'unpark' : 'park', t.status === 'dormant' ? 'Back into rotation' : 'Hold out of rotation (link kept)', function(){ op({op: 'set', index: i, status: t.status === 'dormant' ? 'active' : 'dormant'}); });
   var ed = rowBtn('edit', 'Title + show tag', function(){
     var nt = prompt('Title', t.title || ''); if (nt === null) return;
     var ns = prompt('Show tag', t.show || ''); if (ns === null) return;
@@ -147,12 +150,15 @@ function load(){
     });
     rot.appendChild(table(rt, 'Playlist is empty — add the first item above.'));
     pen.appendChild(table(pp, 'No pending fetches — links appear here until prefetch resolves them.'));
-    arc.appendChild(table(ar, 'No archived items — set a row dormant to park it here.'));
+    arc.appendChild(table(ar, 'Empty — park a row to hold it here; its link stays on record.'));
   }).catch(function(e){ err(String(e)); });
   fetch('intake').then(function(r){ return r.json(); }).then(function(h){
     var box = document.getElementById('history'); box.innerHTML = '';
     var rows = h.history || [];
     if (!rows.length) { box.innerHTML = '<p class="note">No fetches recorded yet.</p>'; return; }
+    var note = document.createElement('p'); note.className = 'note';
+    note.textContent = 'The revert trail: every link and file the station ever fetched. Queue re-registers one — re-fetching from its link if the file was evicted.';
+    box.appendChild(note);
     var tb = document.createElement('table');
     rows.forEach(function(r){
       var tr = document.createElement('tr');
@@ -160,6 +166,15 @@ function load(){
         + '<td class="mono">' + esc(r.file || '') + '</td>'
         + '<td class="mono">' + (r.duration != null ? Math.round(r.duration) + 's' : '?') + '</td>'
         + '<td class="dim">' + esc(r.date || '') + '</td>';
+      var qc = document.createElement('td');
+      var qb = document.createElement('button'); qb.textContent = 'queue';
+      qb.title = 'Re-register into the playlist';
+      qb.onclick = (function(rr){ return function(){
+        var hasSrc = !!(rr.source);
+        op({op: 'add', title: rr.title || rr.file || 're-queue',
+            source: hasSrc ? rr.source : '', file: hasSrc ? '' : (rr.file || '')});
+      }; })(r);
+      qc.appendChild(qb); tr.appendChild(qc);
       tb.appendChild(tr);
     });
     box.appendChild(tb);

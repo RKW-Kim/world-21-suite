@@ -1,5 +1,5 @@
 {
-  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Optional per item: source (URL/path for prefetch to resolve), show (series tag for similar-replacement), status (active|dormant; dormant keeps its link but never airs), pinned (true = never evicted, never auto-replaced). Dormant + pinned items are the archive the operator curates; active unpinned items are the rotation the cache manages.",
+  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Optional per item: source (URL/path for prefetch to resolve), show (series tag for similar-replacement), status (active|dormant; dormant is PARKED in the UI — keeps its link but never airs, one click returns it), pinned (true = never evicted, never auto-replaced). Parked + pinned items are the bench the operator curates; active unpinned items are the rotation the cache manages. Removing an aimed item promotes whatever slides into its place; edits never disturb the playing deck.",
   "shuffle_on_complete": true,
   "idents": [
     "ident_evening.mp4"

@@ -4,6 +4,34 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Edge-case grill: parked/catalog model + promotion semantics
+
+- Operator killed "archive a new link": model renamed in the UI to
+  Parked (held out, link kept, one click back) and Catalog (every fetch
+  on record, each row queueable = the revert trail, re-fetching if the
+  file was evicted). Code enum stays `dormant` (internal); UI never says
+  archive again. Template comment rewritten in the same language.
+- Grill results, all fixed + tested (23/23 in station/test_playlist_edges.py,
+  selftest + stress_cache still green):
+  1. Dormant COULD display up-next while never airing (marker lied,
+     playout was right). up_next is now a forward playable scan.
+  2. Remove/move/add shifted state.index blindly (replay/skip). Edits now
+     preserve aim via adjust_index (pure, table-tested); removing the aimed
+     item promotes whatever slides in — proven end to end (RB plays).
+  3. Pending items spammed WARN every pass. Silent while a source exists;
+     all-pending holds on TECHDIFF with WARN (fetch may land), not CRIT.
+  4. Prefetch only warmed index/index+1: a parked-then-returned link missed
+     at airtime. Now scans the whole rotation (spawn caps unchanged).
+  5. Corrupt state.json (non-int index, non-dict) crashed advance +% ops.
+     load_state coerces; advance/prefetch/view belt-and-suspenders.
+  6. Nameless entries (no file, no source) faulted silently-ish: now loud.
+  7. Selftest's shared call-log assertions went order-dependent with the
+     new TECHDIFF cuts: snapshotted per-assertion (strictly stronger).
+- Left as documented behavior, not bugs: concurrent editors last-writer-wins
+  (single-operator station); removing the PLAYING file degrades to a
+  cache-miss skip; dormant prefetch burns some bandwidth to keep the bench
+  warm; index grows unboundedly across all-skip passes (modulo contains it).
+
 ## 2026-10-14 — Media manager split out to /media (parity-10 stands)
 
 - Library dock removed from the console (replaced by Tools -> Media

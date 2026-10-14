@@ -156,6 +156,25 @@ def intake_history(limit=20):
              "duration": r[3], "date": r[4]} for r in rows]
 
 
+def adjust_index(op, pos, ni, to=None):
+    """Keep state.index aimed at the same ITEM across library edits.
+    Pure, so the edge tests can pin it. pos: inserted/removed/moved-from
+    position; to: move destination; ni: current index. Removing the aimed
+    item promotes whatever slides into its place (no jump, no replay)."""
+    if op == "add":
+        if 0 <= pos <= ni:
+            return ni + 1
+    elif op == "remove":
+        if pos is not None and pos < ni:
+            return max(0, ni - 1)
+    elif op == "move" and pos is not None and to is not None:
+        if pos < ni <= to:
+            return ni - 1
+        if to <= ni < pos:
+            return ni + 1
+    return ni
+
+
 def library_view():
     """Playlist items enriched with on-disk truth. Read-only; the operator
     sees presence, size, pin and status without ever opening a terminal."""
@@ -169,6 +188,18 @@ def library_view():
     except (OSError, ValueError):
         st = {}
     out, media_bytes = [], 0
+    dex = st.get("index", 0)
+    dex = dex if isinstance(dex, int) else 0
+    nxt = None  # what advance() would ACTUALLY play next: first playable
+    for off in range(len(items)):  # at/after the cursor, wrapping once
+        i = (dex + off) % len(items)
+        it = items[i]
+        if it.get("status") == "dormant":
+            continue
+        f = it.get("file") or ""
+        if f and os.path.isfile(os.path.join(daemon.MEDIA, f)):
+            nxt = i
+            break
     for i, it in enumerate(items):
         f = it.get("file") or ""
         p = os.path.join(daemon.MEDIA, f) if f else ""
@@ -182,7 +213,8 @@ def library_view():
                     "pinned": bool(it.get("pinned")),
                     "has_source": bool(it.get("source")),
                     "present": present, "size": size,
-                    "up_next": bool(items) and i == st.get("index", 0) % len(items)})
+                    "duration": it.get("duration"),
+                    "up_next": nxt is not None and i == nxt})
     try:
         free = shutil.disk_usage(daemon.ROOT).free
     except OSError:
@@ -316,6 +348,7 @@ class Handler(SimpleHTTPRequestHandler):
             idx = body["index"]
         elif body.get("file"):
             idx = next((i for i, it in enumerate(items) if it.get("file") == body["file"]), None)
+        at = moved = None
         if op == "add":
             title = (body.get("title") or "").strip()
             source = (body.get("source") or "").strip()
@@ -340,8 +373,10 @@ class Handler(SimpleHTTPRequestHandler):
             pos = body.get("position", "end")
             if isinstance(pos, int) and 0 <= pos <= len(items):
                 items.insert(pos, item)
+                at = pos
             else:
                 items.append(item)
+                at = len(items) - 1
         elif op == "remove":
             if idx is None:
                 return self._json(404, {"ok": False, "error": "no such item (pending items need {\"index\"})"})
@@ -361,7 +396,9 @@ class Handler(SimpleHTTPRequestHandler):
             except (TypeError, ValueError):
                 return self._json(400, {"ok": False, "error": "move needs {\"to\": index}"})
             item = items.pop(idx)
-            items.insert(max(0, min(to, len(items))), item)
+            newp = max(0, min(to, len(items)))
+            items.insert(newp, item)
+            moved = (idx, newp)
         else:  # set: pin / status / title / show / source on one item
             if idx is None:
                 return self._json(404, {"ok": False, "error": "no such item (pending items need {\"index\"})"})
@@ -375,6 +412,24 @@ class Handler(SimpleHTTPRequestHandler):
             for k in ("title", "show", "source"):
                 if body.get(k) is not None:
                     it[k] = body[k]
+        if op in ("add", "remove", "move"):
+            # Aim state.index at the same ITEM across the edit; the loop
+            # reloads state fresh at every transition, so this sticks.
+            try:
+                st8 = daemon.load_state()
+            except (OSError, ValueError):
+                st8 = None
+            if st8 is not None and isinstance(st8.get("index"), int):
+                ni = st8["index"]
+                if op == "add" and at is not None:
+                    ni = adjust_index("add", at, ni)
+                elif op == "remove" and idx is not None:
+                    ni = adjust_index("remove", idx, ni)
+                elif op == "move" and moved is not None:
+                    ni = adjust_index("move", moved[0], ni, moved[1])
+                if ni != st8["index"]:
+                    st8["index"] = ni
+                    daemon.save_state(st8)
         daemon.save_playlist(data)
         return self._json(200, {"ok": True, "items": len(items)})
 
