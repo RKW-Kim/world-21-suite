@@ -4,6 +4,21 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Q&A carries its page; scenes/sources split settled
+
+- Operator correction taken: scenes are SMILE|X shells, SOURCES are the html
+  files (starting/speaking/tech-diff/offair/end-credits/ticker/watermark.html
+  + functional IDENT/PLAYOUT_A/B/SRT Cam/Screen). q&a.html added as a hidden
+  source in the Q&A scene (audience mode on toggle; live-talk by default).
+  Verified live via GetSceneItemList: 6 items, correct visibility.
+- Shared-source question resolved by inspection: ticker/watermark were ALREADY
+  single definitions referenced from two scenes (Add-Existing pattern) —
+  no plugin needed, nothing to change. That is also why they cost one CEF
+  instance, not two.
+- Meet scene recommendation (operator asked): video deck + ticker + watermark
+  as separate native layers; meet.html stays OUT of the air path (its ?yt=
+  embed is intake-preview only). Confirmed as the standing composition.
+
 ## 2026-10-14 — Restart storm root-caused: two launch lineages
 
 - 20 ghost restarts + "already running" dialogs = MY setsid launches racing

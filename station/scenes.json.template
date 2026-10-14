@@ -170,6 +170,14 @@
               "x": 0.0,
               "y": 0.0
             }
+          },
+          {
+            "name": "q&a.html",
+            "visible": false,
+            "pos": {
+              "x": 0.0,
+              "y": 0.0
+            }
           }
         ]
       }
@@ -338,6 +346,17 @@
       "id": "browser_source",
       "settings": {
         "url": "{{OVERLAY}}/watermark.html?corner=tl",
+        "width": 1920,
+        "height": 1080,
+        "fps": 30,
+        "shutdown": false
+      }
+    },
+    {
+      "name": "q&a.html",
+      "id": "browser_source",
+      "settings": {
+        "url": "{{OVERLAY}}/q&a.html",
         "width": 1920,
         "height": 1080,
         "fps": 30,
