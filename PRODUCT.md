@@ -4,29 +4,45 @@
 
 ## Platform
 
-web
+web (overlay kit) + linux VPS (station runtime)
 
 ## Users
 
-Two people, both present during a stream:
+Three people, rarely in the same room — often just one:
 
-- **The host** — on camera, going live. Not operating OBS. They are thinking
-  about what they are saying, not about the overlay.
-- **The producer/editor** — runs OBS: builds browser sources, switches scenes,
-  pastes chat, triggers stingers.
+- **The operator / technical director** — runs the entire station, usually
+  alone, usually not watching it. Operates from a laptop or a phone through
+  the station console and the daemon CLI. Does graphics, engineering,
+  presenting, and scheduling, mostly after midnight.
+- **The contributors** — a host and one or two guests at a time, each on
+  their own device and network. They send camera, microphone, and screen as
+  raw feeds. They never see a stream key, never touch OBS, never decide what
+  is on air. A guest who has never broadcast can be live in minutes from a
+  browser link.
+- **The audience** — a general public livestream audience watching on
+  YouTube, on anything from a small phone to a 100-inch television. The
+  viewing distance and size are unknown and not controllable. This is the
+  single most consequential fact about the audience and it governs type and
+  contrast across every surface.
 
-The audience is a general public livestream audience watching on YouTube and
-Twitch, **on anything from a small phone to a 100-inch television.** The
-viewing distance and size are unknown and not controllable. This is the single
-most consequential fact about the audience and it governs type and contrast
-across every surface.
+An earlier version of this file described a host plus a present producer
+running local OBS. That was the kit's origin; it is not the target. The
+target is one person running a station that survives without them.
 
 ## Product Purpose
 
-A set of full-screen scenes and transparent modules for a Smile.co.ke livestream
-about markets, presented in an entertainment register. Success is that a scene
-can go on air without anyone thinking about it, and that it holds up whether
-the viewer is on a phone in a car or on a wall-sized screen across the room.
+Two artifacts, one station:
+
+1. **The overlay kit** (`overlay/`) — full-screen scenes and transparent
+   modules for a Smile.co.ke livestream about markets, presented in an
+   entertainment register. Success is that a scene can go on air without
+   anyone thinking about it, and that it holds up whether the viewer is on
+   a phone in a car or on a wall-sized screen across the room.
+2. **The station system** (`station/`) — the daemon, intake worker, overlay
+   server, contribution bus, and console that run a 24/7 broadcast on a
+   headless render plane with nobody watching. Success is a week of airtime
+   with zero manual interventions and every incident already in the log with
+   its recovery attached.
 
 ## Positioning
 
@@ -36,19 +52,37 @@ a variety show that happens to be about markets.
 
 ## Operating Context
 
-- Every page is a standalone **OBS Browser Source**. No build step, no
-  framework, no runtime dependencies. Reload in OBS and the edit is live.
-- The producer adds a scene as a full-screen source, then layers the
-  transparent modules (ticker, watermark) above it.
+- Every overlay page is a standalone **OBS Browser Source**. No build step, no
+  framework, no runtime dependencies. The render plane may be a laptop OBS or
+  a headless VPS OBS — the pages do not know or care.
+- The VPS is the only compositor and the only holder of the stream key. It
+  pulls every source; nothing pushes to the audience except it. The
+  operator's laptop can die mid-show and the broadcast continues.
+- A small daemon drives the render plane over obs-websocket (intents, never
+  pixels): playlist loop with shuffle, event-driven ident chaining, watchdog
+  with automatic fallback, cache rotation, alerts. Routine control is a CLI
+  and a phone-sized console; a web dashboard arrives later, if ever needed.
+- Contribution feeds arrive over the local network or the internet into a
+  media bus in front of the render plane, which absorbs their chaos and
+  exposes their health. Presenters ship raw signals (camera, microphone,
+  screen); all composition happens on the VPS.
+- Prerecorded material enters through an intake pipeline (link → fetch once →
+  normalise → verify → publish to cache → queue). The loop plays local files
+  only; links never appear in the air path.
 - Scenes and modules follow **opposite** compositing rules and must not be
   confused. This distinction is the core architectural fact of the kit.
-- Content that changes per episode — host names, dates, episode numbers,
-  schedules — currently means editing the HTML by hand. This is the most
-  frequent source of friction.
-- Deployed to GitHub Pages by a single script that mirrors `prototype/overlay/`
+- Content that changes per episode is driven two ways: static URL parameters
+  (baked at source-add time) and a live localhost data channel the pages
+  listen on (updated in place, no reload). There is no remote website in the
+  air path.
+- The repo is the source of truth. Preview deploys to GitHub Pages by a
+  single script; the VPS runs tagged, rehearsed commits pulled from here and
+  nothing else. The development laptop is the lab and the staging instance.
+- Deployed to GitHub Pages by a single script that mirrors the overlay kit
   to the `gh-pages` branch. The `overlay/` path is load-bearing and the
   published URLs depend on it.
-- Streamer.bot switches scenes and triggers stingers via URL parameters.
+- Streamer.bot switching via URL parameters belongs to the kit's origin era;
+  the station path is daemon intents and the console.
 
 ## Capabilities and Constraints
 
@@ -56,7 +90,7 @@ a variety show that happens to be about markets.
 
 | Type | Pages | Rule |
 |---|---|---|
-| Painted scene | 9 — `starting-soon`, `brb`, `intermission`, `intermission-b`, `qa`, `tech-diff`, `end`, `end-credits`, `coming-up` | paints its own background, always dark |
+| Painted scene | 9 — `starting`, `brb`, `intermission`, `intermission-b`, `q&a`, `tech-diff`, `end`, `end-credits`, `coming-up` | paints its own background, always dark |
 | Transparent module | 4 — `ticker`, `watermark`, `speaking` (+ `coming-up` in bumper mode) | must composite over gameplay |
 
 - A `color-scheme` meta tag must **not** appear on transparent pages: it makes
@@ -71,9 +105,13 @@ a variety show that happens to be about markets.
   half-finished animation.
 - Output survives h.264 compression at 1080p on an unknown display. Small text
   is the first thing that fails.
-- Everything is driven by URL parameters today. There is **no** live data
-  bridge — `state.json` was once documented but never implemented, and no
-  scene reads it.
+- Static graphics get baked to video where it matters (no browser cost, no
+  renderer-stutter class, frame-accurate); genuinely live data (ticker,
+  dynamic names, chat) stays in HTML fed by the local overlay server.
+- The station control surface (console + intents) sends commands and data,
+  never pixels. The operator's connection quality never affects the broadcast.
+- Everything is driven by URL parameters and the local data channel today.
+  There is **no** remote live-data bridge and no external site dependency.
 
 ## Brand Commitments
 
@@ -92,13 +130,23 @@ a variety show that happens to be about markets.
 ## Evidence on Hand
 
 - `overlay/` — 14 live pages, the working kit.
-- `archive/core/` — old source-of-truth originals, the approved logo files, and the
-  original Qwen design reference the kit grew out of (archived; nothing loads it).
+- `station/` — daemon, intake, overlay server, console, scene templates,
+  contribution test kit, systemd units, cache stress battery.
+- `archive/core/` — old source-of-truth originals, the approved logo files,
+  and the original Qwen design reference the kit grew out of (archived;
+  nothing loads it).
+- `archive/obs-web-edition/` — a saved visual mockup of an OBS-like web UI,
+  kept as a control-surface reference only (no protocol code, no license to
+  take).
 - `audit/frames/` — one curated best-moment reference frame per scene, captured
   across each scene's animation cycle rather than at a fixed moment.
-- `brand.json` — **stale and must not be trusted.** `--muted` is recorded as
-  `#8c8c8c` while every page uses `#a1a1aa`; five of its tokens are used by no
-  page; seven tokens the pages depend on are absent from it.
+- `brand.json` — generated from the overlay CSS by
+  `scripts/sync-brand-tokens.py` (do not hand-edit; CI fails on drift).
+- `docs/VPS.md` — the runbook: fresh box to verified air.
+- `.archify/` — the validated station architecture diagram with repo-pinned
+  evidence.
+- `WORKLOG.md` — every decision, failure, and fix in chronological order.
+- `SCENES.md` — the presenter's script: what each screen is for.
 
 **Future work must not fabricate:** viewer numbers, engagement, sponsorship
 rates, audience demographics, or any testimonial. None exist.
@@ -116,6 +164,12 @@ rates, audience demographics, or any testimonial. None exist.
    by editing markup. This is a correctness problem, not a convenience one.
 5. **Motion must mean something.** An animation that cannot be justified in one
    sentence does not ship. A ticker may loop; a live indicator may pulse.
+6. **The station survives without a human.** Every automation decision is
+   judged by the 3 a.m. test: asleep operator, no intervention, no
+   embarrassment. Boring beats clever.
+7. **Intents, never pixels.** Control surfaces command and inform; they never
+   carry the broadcast. The operator's laptop, network, and power are all
+   allowed to die mid-show.
 
 ## Accessibility & Inclusion
 
@@ -125,5 +179,8 @@ rates, audience demographics, or any testimonial. None exist.
 - Views small and large must both work. No information may exist only in a
   size that suits one of them.
 - `prefers-reduced-motion` is honoured as a real state on every page.
+- The operator console must be fully usable from a phone, one-handed, on a
+  bad connection: big targets, no hover-dependent controls, no pixel
+  previews where a state readout suffices.
 - Entertainment-led, not regulated financial advice, so no disclaimer or
   compliance framing is a design requirement.
