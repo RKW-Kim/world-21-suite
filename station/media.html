@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMILE · media manager</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#1d1f26;--panel:#272a33;--line:#3c404d;--fg:#dfdfdf;
+  --mut:#888;--yel:#ffc107;--ok:#4caf50;--bad:#f44336;--acc:#1e50a0;
+  --mono:ui-monospace,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Segoe UI",Arial,sans-serif;font-size:13px;padding:0 0 40px}
+header{position:sticky;top:0;z-index:10;display:flex;gap:12px;align-items:center;
+  background:#1c1c1c;border-bottom:1px solid #111;padding:8px 16px;flex-wrap:wrap}
+header h1{font-size:14px;margin:0;font-weight:600}
+header h1 span{color:var(--mut);font-weight:400}
+#err{color:var(--bad);font-family:var(--mono);font-size:12px;min-height:18px;padding:6px 16px 0}
+main{max-width:1100px;margin:0 auto;padding:0 16px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  margin:14px 0;overflow:hidden}
+section>h2{margin:0;background:var(--line);padding:6px 12px;font-size:13px;color:#e0e0e0}
+section>.bd{padding:10px 12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:var(--mut);font-weight:600;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;
+  border-bottom:1px solid var(--line)}
+td{padding:6px 8px;border-bottom:1px solid #2b2e38;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.upnext td:first-child{border-left:3px solid var(--acc);padding-left:5px}
+tr.pending td{color:var(--yel)}
+.dim{color:var(--mut)}.mono{font-family:var(--mono);font-size:11.5px}
+button{background:#3c404d;color:var(--fg);border:1px solid var(--line);
+  border-radius:4px;padding:5px 10px;font-size:12.5px;cursor:pointer;margin:1px}
+button:active{transform:scale(.97)}
+button.danger{border-color:var(--bad);color:var(--bad)}
+input[type=text],input[type=number],select,textarea{background:#1d1f26;color:var(--fg);
+  border:1px solid var(--line);border-radius:3px;padding:6px 8px;font-size:13px;
+  font-family:var(--mono);width:100%}
+label.fl{display:block;margin:8px 0;font-size:12px;color:var(--mut)}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:700px){.formgrid{grid-template-columns:1fr}}
+.diskbar{height:10px;background:#141414;border-radius:5px;overflow:hidden;margin:8px 0 4px}
+.diskbar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),var(--yel))}
+.note{color:var(--mut);font-size:12px;line-height:1.6}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;
+  border:1px solid var(--line);color:var(--mut)}
+.badge.pin{border-color:var(--yel);color:var(--yel)}
+.badge.act{border-color:var(--ok);color:var(--ok)}
+.badge.pend{border-color:var(--yel);color:var(--yel)}
+</style></head><body>
+<header><h1>SMILE · media manager <span id="build">standalone</span></h1>
+<span class="dim mono" id="diskline">…</span>
+<span style="flex:1"></span><button id="refresh">Refresh</button></header>
+<div id="err"></div>
+<main>
+<section><h2>Add to playlist</h2><div class="bd"><div class="formgrid">
+<div><label class="fl">Title<input type="text" id="f_title"></label>
+<label class="fl">Link — YouTube / page URL, fetched by intake<input type="text" id="f_src" placeholder="https://…"></label></div>
+<div><label class="fl">…or file already in media/<input type="text" id="f_file" placeholder="clip.mp4"></label>
+<label class="fl">Show tag (e.g. music)<input type="text" id="f_show"></label></div>
+</div>
+<div><label class="fl">Status <select id="f_status" style="width:auto"><option value="active">active — airs in rotation</option><option value="dormant">dormant — archived, never airs</option></select></label></div>
+<button id="add" style="margin-top:6px">Add to playlist</button>
+<p class="note">Cap is structural, not trust: intake refuses what will not fit, the loop evicts least-recently-used past 50 GB, pinned items never move. A link becomes a pending row until prefetch resolves it.</p>
+</div></section>
+<section><h2>Rotation — on-air loop</h2><div class="bd" id="rotation"></div></section>
+<section><h2>Pending — link registered, file not fetched yet</h2><div class="bd" id="pending"></div></section>
+<section><h2>Archive — dormant, never airs</h2><div class="bd" id="archive"></div></section>
+<section><h2>Music bed</h2><div class="bd"><p class="note">Planned with the preview-tap spike: a VLC “Music Bed” input in the collection, playlist managed here through input settings, volume through the mixer. Music is a bed under scenes, never a fullscreen rotation item — the daemon would air it if it lived in the playlist.</p></div></section>
+<section><h2>Intake history — past fetches</h2><div class="bd" id="history"></div></section>
+</main>
+<script>
+(function(){
+"use strict";
+var err = function(m){ document.getElementById('err').textContent = m || ''; };
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function MB(b){ return (b == null) ? '?' : (b / 1048576).toFixed(1) + ' MB'; }
+function op(b){
+  err('');
+  fetch('library', {method: 'POST', body: JSON.stringify(b)})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (!j.ok) err(j.error || 'update failed'); load(); })
+    .catch(function(e){ err(String(e)); });
+}
+function rowBtn(label, title, fn, danger){
+  var b = document.createElement('button');
+  b.textContent = label; if (title) b.title = title; if (danger) b.className = 'danger';
+  b.onclick = fn; return b;
+}
+function itemRow(t, i, pending){
+  var tr = document.createElement('tr');
+  if (t.up_next) tr.className = 'upnext';
+  if (pending) tr.className = 'pending';
+  var name = document.createElement('td');
+  name.innerHTML = '<b>' + esc(t.title || t.file || '(untitled)') + '</b><br><span class="dim mono">' + esc(t.file || t.source || '') + '</span>';
+  tr.appendChild(name);
+  var meta = document.createElement('td');
+  var tags = (t.show ? '<span class="badge">' + esc(t.show) + '</span> ' : '')
+    + (t.pinned ? '<span class="badge pin">pinned</span> ' : '')
+    + (pending ? '<span class="badge pend">pending</span>' : (t.present ? '' : ' <span class="badge">missing</span>'))
+    + (t.up_next ? ' <span class="badge act">up next</span>' : '');
+  meta.innerHTML = (t.size != null ? MB(t.size) : (pending ? 'awaiting fetch' : '?')) + '<br>' + tags;
+  tr.appendChild(meta);
+  var act = document.createElement('td');
+  var id = {index: i};
+  var up = rowBtn('↑', 'Move up', function(){ id.to = i - 1; id.op = 'move'; op(id); });
+  var dn = rowBtn('↓', 'Move down', function(){ id.to = i + 1; id.op = 'move'; op(id); });
+  var pin = rowBtn(t.pinned ? 'unpin' : 'pin', null, function(){ op({op: 'set', index: i, pinned: !t.pinned}); });
+  var st = rowBtn(t.status === 'dormant' ? 'activate' : 'archive', null, function(){ op({op: 'set', index: i, status: t.status === 'dormant' ? 'active' : 'dormant'}); });
+  var ed = rowBtn('edit', 'Title + show tag', function(){
+    var nt = prompt('Title', t.title || ''); if (nt === null) return;
+    var ns = prompt('Show tag', t.show || ''); if (ns === null) return;
+    op({op: 'set', index: i, title: nt, show: ns});
+  });
+  var del = rowBtn('remove', 'Remove from playlist', function(){
+    if (!confirm('Remove “' + (t.title || t.file) + '” from the playlist?' + (t.present ? '\n\nOK = also delete the file.' : ''))) return;
+    op({op: 'remove', index: i, delete_file: t.present && confirm('Also DELETE the file ' + t.file + ' (frees cap space)?')});
+  }, true);
+  [up, dn, pin, st, ed, del].forEach(function(b){ act.appendChild(b); });
+  tr.appendChild(act);
+  return tr;
+}
+function table(rows, emptyText){
+  if (!rows.length) {
+    var p = document.createElement('p');
+    p.className = 'note'; p.textContent = emptyText || 'Empty.';
+    return p;
+  }
+  var tb = document.createElement('table');
+  rows.forEach(function(r){ tb.appendChild(r); });
+  return tb;
+}
+function load(){
+  fetch('library').then(function(r){ return r.json(); }).then(function(l){
+    var items = l.items || [];
+    document.getElementById('diskline').textContent =
+      'media ' + MB(l.disk.media_bytes) + ' / cap ' + MB(l.disk.cap) + ' · disk free ' + MB(l.disk.free);
+    var rot = document.getElementById('rotation'); rot.innerHTML = '';
+    var pen = document.getElementById('pending'); pen.innerHTML = '';
+    var arc = document.getElementById('archive'); arc.innerHTML = '';
+    var rt = [], pp = [], ar = [];
+    items.forEach(function(t, i){
+      if (!t.file && t.source) pp.push(itemRow(t, i, true));
+      else if ((t.status || 'active') === 'dormant') ar.push(itemRow(t, i, false));
+      else rt.push(itemRow(t, i, false));
+    });
+    rot.appendChild(table(rt, 'Playlist is empty — add the first item above.'));
+    pen.appendChild(table(pp, 'No pending fetches — links appear here until prefetch resolves them.'));
+    arc.appendChild(table(ar, 'No archived items — set a row dormant to park it here.'));
+  }).catch(function(e){ err(String(e)); });
+  fetch('intake').then(function(r){ return r.json(); }).then(function(h){
+    var box = document.getElementById('history'); box.innerHTML = '';
+    var rows = h.history || [];
+    if (!rows.length) { box.innerHTML = '<p class="note">No fetches recorded yet.</p>'; return; }
+    var tb = document.createElement('table');
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><b>' + esc(r.title || '(untitled)') + '</b><br><span class="dim mono">' + esc(r.source || '') + '</span></td>'
+        + '<td class="mono">' + esc(r.file || '') + '</td>'
+        + '<td class="mono">' + (r.duration != null ? Math.round(r.duration) + 's' : '?') + '</td>'
+        + '<td class="dim">' + esc(r.date || '') + '</td>';
+      tb.appendChild(tr);
+    });
+    box.appendChild(tb);
+  }).catch(function(e){ err(String(e)); });
+}
+document.getElementById('refresh').onclick = function(){ err(''); load(); };
+document.getElementById('add').onclick = function(){
+  op({op: 'add',
+    title: document.getElementById('f_title').value,
+    source: document.getElementById('f_src').value,
+    file: document.getElementById('f_file').value,
+    show: document.getElementById('f_show').value,
+    status: document.getElementById('f_status').value});
+  document.getElementById('f_title').value = '';
+  document.getElementById('f_src').value = '';
+  document.getElementById('f_file').value = '';
+};
+load();
+})();
+</script>
+</body></html>

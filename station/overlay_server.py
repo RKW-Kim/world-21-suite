@@ -140,6 +140,22 @@ def broadcast(state):
             SUBS.remove(q)
 
 
+def intake_history(limit=20):
+    """Past fetches, newest first. Read-only: the intake worker owns writes."""
+    import sqlite3
+    try:
+        con = sqlite3.connect("file:%s?mode=ro" % os.path.join(daemon.MEDIA, "intake.db"),
+                              uri=True, timeout=2)
+        rows = con.execute(
+            "SELECT title, source, filename, duration, intake_date FROM intake ORDER BY rowid DESC LIMIT ?",
+            (limit,)).fetchall()
+        con.close()
+    except Exception:
+        return []
+    return [{"title": r[0], "source": r[1], "file": r[2],
+             "duration": r[3], "date": r[4]} for r in rows]
+
+
 def library_view():
     """Playlist items enriched with on-disk truth. Read-only; the operator
     sees presence, size, pin and status without ever opening a terminal."""
@@ -184,6 +200,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/console" or self.path.startswith("/console?"):
             self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html")
+        elif self.path == "/media" or self.path.startswith("/media?"):
+            self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html")
         elif self.path == "/state":
             body = json.dumps(load_state()).encode()
             self.send_response(200)
@@ -198,6 +216,8 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, snap)
         elif self.path == "/library":
             self._json(200, library_view())
+        elif self.path == "/intake":
+            self._json(200, {"history": intake_history()})
         elif self.path == "/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -289,6 +309,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(502, {"ok": False, "error": "playlist unreadable"})
         items = data.setdefault("items", [])
         op = body.get("op", "set")
+        # Pending items (source, no file yet) share file:"" — address them
+        # by position. Cached items match by file name as before.
+        idx = None
+        if isinstance(body.get("index"), int) and 0 <= body["index"] < len(items):
+            idx = body["index"]
+        elif body.get("file"):
+            idx = next((i for i, it in enumerate(items) if it.get("file") == body["file"]), None)
         if op == "add":
             title = (body.get("title") or "").strip()
             source = (body.get("source") or "").strip()
@@ -316,8 +343,10 @@ class Handler(SimpleHTTPRequestHandler):
             else:
                 items.append(item)
         elif op == "remove":
-            f = body.get("file", "")
-            items[:] = [i for i in items if i.get("file") != f]
+            if idx is None:
+                return self._json(404, {"ok": False, "error": "no such item (pending items need {\"index\"})"})
+            item = items.pop(idx)
+            f = item.get("file") or ""
             if body.get("delete_file") and f and "/" not in f and not f.startswith("."):
                 if not any(i.get("file") == f for i in items):
                     try:
@@ -325,25 +354,18 @@ class Handler(SimpleHTTPRequestHandler):
                     except OSError:
                         pass
         elif op == "move":
-            f = body.get("file", "")
+            if idx is None:
+                return self._json(404, {"ok": False, "error": "no such item (pending items need {\"index\"})"})
             try:
                 to = int(body.get("to", 0))
             except (TypeError, ValueError):
-                return self._json(400, {"ok": False, "error": "move needs {\"file\", \"to\": index}"})
-            cur = next((i for i, it in enumerate(items) if it.get("file") == f), None)
-            if cur is None:
-                return self._json(404, {"ok": False, "error": "no such item"})
-            item = items.pop(cur)
+                return self._json(400, {"ok": False, "error": "move needs {\"to\": index}"})
+            item = items.pop(idx)
             items.insert(max(0, min(to, len(items))), item)
-        else:  # set: pin / status / title / show / source on one file
-            f = body.get("file", "")
-            if not f:
-                return self._json(400, {"ok": False, "error": "item needs {\"file\"}"})
-            for it in items:
-                if it.get("file") == f:
-                    break
-            else:
-                return self._json(404, {"ok": False, "error": "no such item"})
+        else:  # set: pin / status / title / show / source on one item
+            if idx is None:
+                return self._json(404, {"ok": False, "error": "no such item (pending items need {\"index\"})"})
+            it = items[idx]
             if "pinned" in body:
                 it["pinned"] = bool(body["pinned"])
             if "status" in body:

@@ -4,6 +4,19 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Media manager split out to /media (parity-10 stands)
+
+- Library dock removed from the console (replaced by Tools -> Media
+  manager, new tab); all lib JS moved out with it, zero remnants.
+- station/media.html: add form (link/file/show/status), rotation table
+  with up-next + per-row move/pin/archive/edit/remove, pending table
+  (link registered, file unresolved), dormant archive, music-bed plan
+  note, intake history from intake.db. Pending items addressed by index
+  server-side (they share file:"").
+- One render bug caught by screenshot (appendChild of a string on empty
+  tables), fixed, re-verified clean. Endpoints proven: /media 200,
+  /intake real rows, add/remove round-trip byte-clean.
+
 ## 2026-10-14 — Library manager: add/replace/remove/move + music plan (parity-10)
 
 - POST /library grew ops (same atomic save, daemon reloads on hash change
