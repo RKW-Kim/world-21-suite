@@ -5,30 +5,45 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SMILE · station console</title>
 <style>
-/* STATION CONSOLE — remote control for the headless render plane.
-   Open from the machine under test with the socket address + password:
+/* STATION CONSOLE v2 — OBS arrangement, our code throughout.
+   Menu bar carries ONLY working entries (View/Profile/Collection/Tools/Help).
+   File/Edit are omitted on purpose: they administer the local desktop app
+   (undo, clipboard, remux, updates), none of which is a show operation and
+   none of which has a protocol surface. A menu of dead buttons is worse
+   than no menu. What a TD does on air lives in docks + preview/program.
+   Open with socket address + password:
      http://<ARCH-IP>:7070/console?obs=<ARCH-IP>&pass=<OBS_PASS>
-   The page talks DIRECTLY to obs-websocket (ws://<obs>:4455) from the
-   browser: no inbound holes beyond the OBS socket itself, no server side.
-   LAB ONLY in this form: the password rides in the URL. On the VPS this
-   page is served behind an SSH tunnel, never raw.
-   LOOK: OBS-dark dock arrangement (Scenes / Sources / Controls), our own
-   code, no copied assets. Deliberately NO File/Edit/View menu bar: menus
-   administer the local app (profiles, remux, updates, hotkeys), none of
-   which is a show operation. Everything a TD does on air lives in docks. */
+   LAB ONLY in this form (password in URL; SSH tunnel on VPS). */
 :root{--bg:#1e1e1e;--panel:#2d2d2d;--panel2:#383838;--line:#3f3f3f;--fg:#fafafa;
-  --mut:#a1a1aa;--yel:#ffc107;--ok:#0ecb81;--bad:#f6465d;
+  --mut:#a1a1aa;--yel:#ffc107;--ok:#0ecb81;--bad:#f6465d;--acc:#3fb6ff;
   --mono:'IBM Plex Mono',ui-monospace,monospace}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
-  font-family:system-ui,sans-serif;padding:0}
+  font-family:system-ui,sans-serif;padding:0;font-size:14px}
+.menubar{display:flex;gap:2px;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:0 8px;font-size:13px;user-select:none}
+.mi{position:relative;padding:8px 10px;cursor:pointer}
+.mi:hover,.mi.open{background:var(--panel2)}
+.dd{display:none;position:absolute;top:100%;left:0;background:var(--panel2);
+  border:1px solid var(--line);border-radius:0 0 6px 6px;min-width:220px;z-index:20;
+  box-shadow:0 12px 28px rgba(0,0,0,.5)}
+.mi.open .dd{display:block}
+.dd button{display:block;width:100%;text-align:left;background:none;border:0;
+  color:var(--fg);padding:9px 12px;font-size:13px;border-radius:0;cursor:pointer}
+.dd button:hover{background:#4a4a4a}
+.dd .sep{border-top:1px solid var(--line);margin:4px 0}
 .topbar{display:flex;align-items:center;gap:10px;background:var(--panel);
-  border-bottom:1px solid var(--line);padding:8px 14px;font-size:14px;
-  position:sticky;top:0;z-index:5}
+  border-bottom:1px solid var(--line);padding:8px 14px;font-size:14px}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--mut);flex:none}
 .dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
 .topbar .title{font-weight:700}
 .topbar .pgm{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--mut)}
 .topbar .pgm b{color:var(--yel);font-weight:600}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 0}
+.stage.one{grid-template-columns:1fr}
+.view{background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.view .cap{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--mut);
+  padding:6px 10px;background:var(--panel)}
+.view img{display:block;width:100%;aspect-ratio:16/9;background:#000;object-fit:contain}
 .docks{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
   gap:10px;padding:12px}
 .dock{background:var(--panel);border:1px solid var(--line);border-radius:6px;
@@ -39,20 +54,39 @@
 button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
   border-radius:5px;padding:9px 12px;font-size:13px;cursor:pointer}
 button.onair{border-color:var(--yel);color:var(--yel)}
+button.live{border-color:var(--bad);color:var(--bad)}
 button:active{transform:scale(.97)}
 button.eye{font-family:var(--mono);font-size:12px;padding:8px 10px}
 button.eye.off{opacity:.45;text-decoration:line-through}
 .row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+select,input[type=number]{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
   border-radius:5px;padding:9px;max-width:100%}
-#status{font-family:var(--mono);font-size:12px;color:var(--mut);padding:0 14px}
-#status b.on{color:var(--ok)}#status b.off{color:var(--bad)}
-#err{color:var(--bad);font-family:var(--mono);font-size:12px;min-height:18px;padding:4px 14px}</style></head><body>
+input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
+.mixrow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:8px}
+.mixrow .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mixrow .meter{grid-column:1/-1;height:6px;background:#141414;border-radius:3px;overflow:hidden}
+.mixrow .meter i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--ok),var(--yel))}
+.statusbar{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;
+  color:var(--mut);background:var(--panel);border-top:1px solid var(--line);
+  padding:8px 14px;position:sticky;bottom:0}
+.statusbar b{color:var(--fg);font-weight:600}.statusbar b.bad{color:var(--bad)}
+#err{color:var(--bad);font-family:var(--mono);font-size:12px;min-height:18px;padding:4px 14px}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
+.dlg.open{display:grid}
+.dlg .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:16px;min-width:min(420px,92vw);font-size:13px;line-height:1.6}
+.dlg .box h3{margin:0 0 8px;font-size:14px}
+</style></head><body>
+<div class="menubar" id="menu"></div>
 <div class="topbar"><span class="dot" id="conn"></span>
   <span class="title">SMILE &middot; station console</span>
   <span class="pgm">PGM <b id="pgm">&hellip;</b></span>
 </div>
-<div id="status">connecting&hellip;</div>
+<div class="stage one" id="stage">
+  <div class="view" id="programView"><div class="cap">PROGRAM</div><img id="programImg" alt=""></div>
+  <div class="view" id="previewView" style="display:none"><div class="cap">PREVIEW</div><img id="previewImg" alt=""></div>
+</div>
+<div id="status" style="display:none"></div>
 <div class="docks">
 <div class="dock"><h2>Director intents</h2>
 <div class="grid">
@@ -63,6 +97,11 @@ select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
 </div></div>
 <div class="dock"><h2>Scenes</h2><div class="grid" id="scenes"></div></div>
 <div class="dock"><h2>Sources &middot; <span id="srcscene"></span></h2><div class="grid" id="items"></div></div>
+<div class="dock"><h2>Scene transitions</h2>
+<div class="row"><select id="trans"></select>
+<input type="number" id="transdur" min="50" max="5000" step="50" value="300" style="width:90px" title="ms"></div>
+<div class="grid"><button id="dotrans">Transition</button><button id="studio">Studio Mode: off</button></div></div>
+<div class="dock"><h2>Audio mixer</h2><div id="mixer"></div></div>
 <div class="dock"><h2>Media transport</h2>
 <div class="row"><select id="src"></select></div>
 <div class="grid">
@@ -72,31 +111,35 @@ select{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
   <button data-act="STOP">Stop</button>
   <button id="mute">Mute/Unmute source</button>
 </div></div>
-<div class="dock"><h2>Output</h2>
+<div class="dock"><h2>Controls</h2>
 <div class="grid">
-  <button id="rec">Start/Stop recording</button>
+  <button id="stream">Start Streaming</button>
+  <button id="rec">Start Recording</button>
+  <button id="vcam">Virtual Camera</button>
 </div></div>
 </div>
-<div id="err"></div><script>
+<div id="err"></div>
+<div class="statusbar" id="stats"></div>
+<div class="dlg" id="dlg"><div class="box"><h3 id="dlgtitle"></h3><div id="dlgbody"></div>
+<div class="grid" style="margin-top:12px"><button onclick="document.getElementById('dlg').classList.remove('open')">Close</button></div></div></div>
+<script>
 (function(){
 "use strict";
 var q = new URLSearchParams(location.search);
 var host = q.get('obs') || location.hostname;
 var pass = q.get('pass') || '';
 var err = function(m){ document.getElementById('err').textContent = m || ''; };
-var seq = 0, pending = {}, ws = null, statusTimer = null;
+var seq = 0, pending = {}, ws = null, statusTimer = null, previewTimer = null;
+var studioOn = false;
 
+/* SHA-256 over bytes, dependency-free: crypto.subtle does not exist on plain
+   http://LAN origins (non-secure contexts), which is exactly how this console
+   is served. Verified against NIST vectors in node before shipping. */
 function b64(bytes){
   var s = '';
   bytes.forEach(function(b){ s += String.fromCharCode(b); });
   return btoa(s);
 }
-function sha256(str){
-  return sha256ascii(str);
-}
-/* SHA-256 over bytes, dependency-free: crypto.subtle does not exist on plain
-   http://LAN origins (non-secure contexts), which is exactly how this console
-   is served. Verified against NIST vectors in node before shipping. */
 function sha256ascii(s) {
   s = unescape(encodeURIComponent(s));
   var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -136,32 +179,105 @@ function sha256ascii(s) {
   H.forEach(function(x, ix){ out[ix*4]=x>>>24; out[ix*4+1]=(x>>>16)&255; out[ix*4+2]=(x>>>8)&255; out[ix*4+3]=x&255; });
   return out;
 }
+function sha256(str){ return sha256ascii(str); }
 function call(type, data){
   return new Promise(function(res, rej){
     var id = 'c' + (++seq);
     pending[id] = {res: res, rej: rej};
     ws.send(JSON.stringify({op: 6, d: {requestType: type, requestId: id, requestData: data || {}}}));
-    setTimeout(function(){ if (pending[id]) { delete pending[id]; rej(new Error('timeout ' + type)); } }, 15000);
+    setTimeout(function(){ if (pending[id]) { delete pending[id]; rej(new Error('timeout ' + type)); } }, 20000);
   });
 }
+/* ---- menus: only working entries. File/Edit administer the local desktop
+   app and have no protocol surface, so they are absent, not disabled. ---- */
+var MENUS = [
+  {t: 'View', items: [
+    ['Fullscreen interface', function(){ if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); }]]},
+  {t: 'Profile', items: [], dyn: function(box, close){
+    call('GetProfileList').then(function(d){
+      (d.profiles || []).forEach(function(p){
+        var b = document.createElement('button'); b.textContent = p + (p === d.currentProfileName ? ' ✓' : '');
+        b.onclick = function(){ close(); err(''); call('SetCurrentProfile', {profileName: p}).catch(function(e){ err(String(e)); }); };
+        box.appendChild(b);
+      });
+    }).catch(function(e){ err(String(e)); }); }},
+  {t: 'Scene Collection', items: [], dyn: function(box, close){
+    call('GetSceneCollectionList').then(function(d){
+      (d.sceneCollections || []).forEach(function(c){
+        var b = document.createElement('button'); b.textContent = c + (c === d.currentSceneCollectionName ? ' ✓' : '');
+        b.onclick = function(){ close(); err(''); call('SetCurrentSceneCollection', {sceneCollectionName: c}).then(refresh).catch(function(e){ err(String(e)); }); };
+        box.appendChild(b);
+      });
+    }).catch(function(e){ err(String(e)); }); }},
+  {t: 'Tools', items: [
+    ['Reconnect socket', function(){ try { ws.close(); } catch (e) {} }],
+    ['Copy page URL', function(){ try { navigator.clipboard.writeText(location.href); } catch (e) { err(String(e)); } }]]},
+  {t: 'Help', items: [
+    ['About this console', function(){
+      call('GetVersion').then(function(d){
+        dlg('About', 'Station console (own code) talking to OBS ' + d.obsVersion + ' / websocket ' + d.obsWebSocketVersion + '. Password rides in the URL: tunnel on VPS, never raw.');
+      }).catch(function(e){ err(String(e)); }); }]]}
+];
+function dlg(t, b){
+  document.getElementById('dlgtitle').textContent = t;
+  document.getElementById('dlgbody').textContent = b;
+  document.getElementById('dlg').classList.add('open');
+}
+function buildMenu(){
+  var bar = document.getElementById('menu');
+  MENUS.forEach(function(m){
+    var mi = document.createElement('div');
+    mi.className = 'mi'; mi.textContent = m.t;
+    var dd = document.createElement('div'); dd.className = 'dd';
+    var close = function(){ mi.classList.remove('open'); };
+    mi.onclick = function(e){
+      e.stopPropagation();
+      var was = mi.classList.contains('open');
+      document.querySelectorAll('.mi.open').forEach(function(x){ x.classList.remove('open'); });
+      if (!was) { mi.classList.add('open'); dd.innerHTML = '';
+        m.items.forEach(function(it){
+          var b = document.createElement('button'); b.textContent = it[0];
+          b.onclick = function(){ close(); it[1](); }; dd.appendChild(b);
+        });
+        if (m.dyn) m.dyn(dd, close);
+      }
+    };
+    mi.appendChild(dd); bar.appendChild(mi);
+  });
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.mi.open').forEach(function(x){ x.classList.remove('open'); });
+  });
+}
+var lastItemsScene = null;
 function setStatus(){
   Promise.all([call('GetStreamStatus'), call('GetRecordStatus'), call('GetCurrentProgramScene')])
     .then(function(r){
       var s = r[0], rec = r[1], pgm = r[2].currentProgramSceneName;
       document.getElementById('pgm').textContent = pgm;
       document.getElementById('conn').className = 'dot ok';
-      document.getElementById('status').innerHTML =
-        'stream ' + (s.outputActive ? '<b class="on">LIVE</b>' : '<b class="off">off</b>') +
-        ' · rec ' + (rec.outputActive ? '<b class="on">on</b>' : 'off');
+      call('GetStats').then(function(st){
+        var el = document.getElementById('stats');
+        el.innerHTML = 'CPU <b>' + st.cpuUsage.toFixed(1) + '%</b> · ' +
+          st.activeFps.toFixed(0) + ' fps · dropped <b class="' +
+          (st.outputSkippedFrames > 0 ? 'bad">' : '">') + st.outputSkippedFrames + '</b> · stream ' +
+          (s.outputActive ? '<b class="on">LIVE</b>' : '<b class="off">off</b>') +
+          ' · rec ' + (rec.outputActive ? '<b class="on">on</b>' : 'off') +
+          ' · disk ' + (st.availableDiskSpace / 1024).toFixed(1) + ' GB';
+      }).catch(function(){});
       document.querySelectorAll('#scenes button').forEach(function(b){
         b.classList.toggle('onair', b.textContent === pgm);
       });
+      refreshStreamBtn(s.outputActive); refreshRecBtn(rec.outputActive);
       loadItems(pgm);
     }).catch(function(){});
 }
-var lastItemsScene = null;
+function refreshStreamBtn(on){
+  var b = document.getElementById('stream');
+  b.textContent = on ? 'Stop Streaming' : 'Start Streaming';
+  b.classList.toggle('live', !!on);
+}
+function refreshRecBtn(on){ document.getElementById('rec').textContent = on ? 'Stop Recording' : 'Start Recording'; }
 function loadItems(pgm){
-  // Rebuild only on scene change (polling rebuilds would steal taps/focus).
   if (pgm === lastItemsScene) return;
   lastItemsScene = pgm;
   document.getElementById('srcscene').textContent = pgm;
@@ -171,7 +287,7 @@ function loadItems(pgm){
       var b = document.createElement('button');
       b.className = 'eye' + (it.sceneItemEnabled === false ? ' off' : '');
       b.textContent = (it.sceneItemEnabled === false ? 'show ' : 'hide ') + it.sourceName;
-      b.onclick = (function(id, name){
+      b.onclick = (function(id){
         return function(){
           err('');
           call('GetSceneItemList', {sceneName: pgm}).then(function(dd){
@@ -180,7 +296,7 @@ function loadItems(pgm){
             return call('SetSceneItemEnabled', {sceneName: pgm, sceneItemId: id, sceneItemEnabled: want});
           }).then(function(){ lastItemsScene = null; loadItems(pgm); }).catch(function(e){ err(String(e)); });
         };
-      })(it.sceneItemId, it.sourceName);
+      })(it.sceneItemId);
       box.appendChild(b);
     });
   }).catch(function(e){ err(String(e)); });
@@ -191,15 +307,28 @@ function refresh(){
     d.scenes.forEach(function(s){
       var b = document.createElement('button');
       b.textContent = s.sceneName;
-      b.onclick = function(){ err(''); call('SetCurrentProgramScene', {sceneName: s.sceneName}).then(setStatus).catch(function(e){ err(String(e)); }); };
+      b.onclick = function(){
+        err('');
+        if (studioOn) call('SetCurrentPreviewScene', {sceneName: s.sceneName}).then(setStatus).catch(function(e){ err(String(e)); });
+        else call('SetCurrentProgramScene', {sceneName: s.sceneName}).then(setStatus).catch(function(e){ err(String(e)); });
+      };
       box.appendChild(b);
     });
     setStatus();
   }).catch(function(e){ err(String(e)); });
+  call('GetSceneTransitionList').then(function(d){
+    var sel = document.getElementById('trans'); sel.innerHTML = '';
+    (d.transitions || []).forEach(function(t){
+      var o = document.createElement('option');
+      o.value = t.transitionName; o.textContent = t.transitionName;
+      if (t.transitionName === d.currentSceneTransitionName) o.selected = true;
+      sel.appendChild(o);
+    });
+  }).catch(function(){});
   call('GetInputList').then(function(d){
     var sel = document.getElementById('src'); sel.innerHTML = '';
     (d.inputs || []).forEach(function(i){
-      if (String(i.inputKind) !== 'ffmpeg_source') return;  // transport = media only
+      if (String(i.inputKind) !== 'ffmpeg_source') return;
       var o = document.createElement('option');
       o.value = i.inputName; o.textContent = i.inputName;
       sel.appendChild(o);
@@ -208,7 +337,63 @@ function refresh(){
       if (/PLAYOUT|SRT|IDENT/.test(o.value)) sel.selectedIndex = ix;
     });
   }).catch(function(){});
+  loadMixer();
 }
+function loadMixer(){
+  // Audio rows come from the special-inputs registry (desktop/mic slots),
+  // not from guessing names. Meters arrive as InputVolumeMeters events.
+  call('GetSpecialInputs').then(function(d){
+    var box = document.getElementById('mixer'); box.innerHTML = '';
+    ['desktop1', 'desktop2', 'mic1', 'mic2', 'mic3', 'mic4'].forEach(function(k){
+      var name = d[k];
+      if (!name) return;
+      var row = document.createElement('div'); row.className = 'mixrow';
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = name;
+      var mb = document.createElement('button'); mb.textContent = 'mute';
+      mb.onclick = function(){ err(''); call('ToggleInputMute', {inputName: name}).then(loadMixer).catch(function(e){ err(String(e)); }); };
+      var sl = document.createElement('input');
+      sl.type = 'range'; sl.min = '0'; sl.max = '100'; sl.value = '75'; sl.title = name;
+      sl.onchange = function(){
+        var v = +sl.value;
+        var db = v <= 0 ? -100 : +(20 * Math.log10(v / 100)).toFixed(1);
+        err(''); call('SetInputVolume', {inputName: name, inputVolumeDb: db}).catch(function(e){ err(String(e)); });
+      };
+      var mt = document.createElement('div'); mt.className = 'meter';
+      var fill = document.createElement('i'); fill.id = 'meter-' + name;
+      mt.appendChild(fill);
+      call('GetInputVolume', {inputName: name}).then(function(v){
+        try { sl.value = Math.round(100 * Math.pow(10, (v.inputVolumeDb || -20) / 20)); } catch (e) {}
+      }).catch(function(){});
+      call('GetInputMute', {inputName: name}).then(function(v){
+        mb.style.borderColor = v.inputMuted ? 'var(--bad)' : '';
+      }).catch(function(){});
+      row.appendChild(nm); row.appendChild(mb); row.appendChild(mt);
+      box.appendChild(row);
+    });
+  }).catch(function(e){ err(String(e)); });
+}
+function grabShot(which, img){
+  call('GetSourceScreenshot', {sourceName: which, imageFormat: 'jpg'})
+    .then(function(d){
+      img.src = 'data:image/jpeg;base64,' + d.imageData;
+    }).catch(function(){});
+}
+function previews(){
+  // 1fps program/preview stills. This is a slideshow by physics (full render
+  // + encode + base64 per frame), not video — enough to confirm framing.
+  call('GetStudioModeEnabled').then(function(d){
+    studioOn = !!d.studioModeEnabled;
+    document.getElementById('studio').textContent = 'Studio Mode: ' + (studioOn ? 'on' : 'off');
+    document.getElementById('previewView').style.display = studioOn ? '' : 'none';
+    document.getElementById('stage').className = 'stage' + (studioOn ? '' : ' one');
+    if (!studioOn) { grabShot(pgmName(), document.getElementById('programImg')); return; }
+    call('GetCurrentPreviewScene').then(function(p){
+      grabShot(p.currentPreviewSceneName, document.getElementById('previewImg'));
+      grabShot(pgmName(), document.getElementById('programImg'));
+    }).catch(function(){});
+  }).catch(function(){});
+}
+function pgmName(){ return document.getElementById('pgm').textContent || ''; }
 function transport(act){
   var name = document.getElementById('src').value;
   if (!name) return;
@@ -239,6 +424,33 @@ document.getElementById('rec').onclick = function(){
     return call(s.outputActive ? 'StopRecord' : 'StartRecord');
   }).catch(function(e){ err(String(e)); });
 };
+document.getElementById('stream').onclick = function(){
+  err('');
+  call('ToggleStream').catch(function(e){ err(String(e)); });
+};
+document.getElementById('vcam').onclick = function(){
+  err('');
+  call('GetVirtualCamStatus').then(function(s){
+    return call(s.outputActive ? 'StopVirtualCam' : 'StartVirtualCam');
+  }).catch(function(e){ err(String(e)); });
+};
+document.getElementById('dotrans').onclick = function(){
+  err('');
+  var t = document.getElementById('trans').value;
+  var dur = +document.getElementById('transdur').value || 300;
+  call('SetCurrentSceneTransition', {transitionName: t})
+    .then(function(){ return call('SetCurrentSceneTransitionDuration', {transitionDuration: dur}); })
+    .then(function(){ return call('TriggerStudioModeTransition'); })
+    .catch(function(e){ err(String(e)); });
+};
+document.getElementById('studio').onclick = function(){
+  err('');
+  call('SetStudioModeEnabled', {studioModeEnabled: !studioOn}).then(previews).catch(function(e){ err(String(e)); });
+};
+document.getElementById('trans').onchange = function(){
+  err('');
+  call('SetCurrentSceneTransition', {transitionName: document.getElementById('trans').value}).catch(function(e){ err(String(e)); });
+};
 function connect(){
   ws = new WebSocket('ws://' + host + ':4455');
   ws.onopen = function(){
@@ -247,7 +459,9 @@ function connect(){
       var m = JSON.parse(ev.data);
       if (m.op !== 0) return;
       ws.removeEventListener('message', hello);
-      var d = {rpcVersion: 1, eventSubscriptions: 2047};
+      // Meters are high-volume: the server only sends them on explicit
+      // subscription (All alone does not include them).
+      var d = {rpcVersion: 1, eventSubscriptions: 2047 | 65536};
       var auth = m.d && m.d.authentication;
       var done = function(){
         ws.send(JSON.stringify({op: 1, d: d}));
@@ -261,6 +475,7 @@ function connect(){
           // One poller ever: reconnects reuse it (ws is global). A new
           // interval per connect would stack N pollers hammering the socket.
           if (!statusTimer) statusTimer = setInterval(setStatus, 5000);
+          if (!previewTimer) previewTimer = setInterval(previews, 5000);
         };
         ws.addEventListener('message', identified);
       };
@@ -275,6 +490,7 @@ function connect(){
   ws.onerror = function(){ document.getElementById('conn').className = 'dot bad'; err('socket error — is obs-websocket up at ' + host + ':4455?'); };
   ws.onclose = function(){ document.getElementById('conn').className = 'dot bad'; err('socket closed — reconnecting…'); setTimeout(connect, 3000); };
 }
+var previewTimer = null;
 function route(ev){
   var m;
   try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -282,10 +498,21 @@ function route(ev){
     var p = pending[m.d.requestId]; delete pending[m.d.requestId];
     if (m.d.requestStatus && m.d.requestStatus.result) p.res(m.d.responseData || {});
     else p.rej(new Error((m.d.requestStatus || {}).comment || 'request failed'));
-  } else if (m.op === 5 && m.d && m.d.eventType === 'CurrentProgramSceneChanged') {
-    setStatus();
+  } else if (m.op === 5 && m.d) {
+    if (m.d.eventType === 'CurrentProgramSceneChanged') setStatus();
+    else if (m.d.eventType === 'CurrentPreviewSceneChanged') previews();
+    else if (m.d.eventType === 'StudioModeStateChanged') { previews(); refresh(); }
+    else if (m.d.eventType === 'InputVolumeMeters' && m.d.eventData) {
+      (m.d.eventData.inputs || []).forEach(function(i){
+        var el = document.getElementById('meter-' + i.inputName);
+        if (el && i.inputLevelsMul && i.inputLevelsMul[0]) {
+          el.style.width = Math.min(100, Math.round((i.inputLevelsMul[0][1] || 0) * 100)) + '%';
+        }
+      });
+    }
   }
 }
+buildMenu();
 connect();
 })();
 </script>
