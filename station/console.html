@@ -94,6 +94,7 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
 <div class="menubar" id="menu"></div>
 <div class="topbar"><span class="dot" id="conn"></span>
   <span class="title">SMILE &middot; station console</span>
+  <span class="pgm" style="font-family:var(--mono);font-size:11px;color:var(--mut)">build parity-2</span>
   <span class="pgm">PGM <b id="pgm">&hellip;</b></span>
 </div>
 <div class="stage one" id="stage">
@@ -143,7 +144,9 @@ input[type=range]{flex:1;min-width:90px;accent-color:var(--yel)}
 (function(){
 "use strict";
 var q = new URLSearchParams(location.search);
-var host = q.get('obs') || location.hostname;
+var host = (q.get('obs') || location.hostname).replace(/:\d+$/, '');
+// Tolerate ?obs=ip:4455 (the port is appended below; a doubled port fails
+// silent and looks exactly like "the console is broken").
 var pass = q.get('pass') || '';
 var err = function(m){ document.getElementById('err').textContent = m || ''; };
 var seq = 0, pending = {}, ws = null, statusTimer = null, previewTimer = null;
