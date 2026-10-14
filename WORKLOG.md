@@ -4,6 +4,19 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-14 — Console restyled OBS-dark; menus refused on principle
+
+- console.html rebuilt as OBS-dark docks (Scenes / Sources / Transport /
+  Intents / Output) under a slim topbar (conn dot + PGM readout). Our own
+  code throughout; OBS-Old contributed arrangement ideas only.
+- No File/Edit/View bar, deliberately: menus administer the local app
+  (profiles, remux, updates, hotkeys, about), none of which is a show
+  operation. Everything a TD does on air is a dock. Nothing hidden, nothing
+  to autohide.
+- New capability with the restyle: per-source eye toggles for the program
+  scene (rebuilds only on scene change so polling never steals taps).
+  Hard-reload the page on the MBA to pick this up (browser caches the old).
+
 ## 2026-10-14 — MBA sessions reconstructed; bus restarted on clean config
 
 - Bus log forensics closed the "streaming but nothing arrives" case: 01:30
