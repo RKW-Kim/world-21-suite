@@ -104,6 +104,19 @@ function buildMenubar(root) {
       dockItem('Scenes', 'scenes'), dockItem('Sources', 'sources'), dockItem('Audio Mixer', 'mixer'),
       dockItem('Scene Transitions', 'transitions'), dockItem('Controls', 'controls'), dockItem('Stats', 'stats'),
       { sep: 1 },
+      { label: 'Dock Layout', sub: [
+        { label: 'Default (sides)', action: () => {
+            const d = obs.settings.ui.dockLayout; d.order = null; d.preset = 'default';
+            obs.persist(); window.__dockLayout.apply(); toast('Dock layout: default');
+        } },
+        { label: 'All Docks Bottom', action: () => {
+            const d = obs.settings.ui.dockLayout;
+            d.order = { left: [], right: [], bottom: ['dock-scenes', 'dock-sources', 'dock-mixer', 'dock-transitions', 'dock-controls', 'dock-stats'] };
+            d.preset = 'bottom';
+            obs.persist(); window.__dockLayout.apply(); toast('Dock layout: bottom strip');
+        } },
+      ]},
+      { sep: 1 },
       { label: 'Custom Browser Docks…', action: () => tools.openCustomDocks() },
       { sep: 1 },
       { label: 'Lock UI', checked: !!app.lockUI, action: () => { app.lockUI = !app.lockUI; toast(app.lockUI ? 'UI locked' : 'UI unlocked'); } },
@@ -301,6 +314,150 @@ function buildWorkspace(root) {
   buildControlsDock(right);
   buildStatsDock(right);
 
+  // LOCAL-PATCH (station): dock layout system — splitters, bottom strip,
+  // presets, drag-reorder, all persisted. OBS lets operators put docks
+  // where they want; so does this.
+  const DOCK_IDS = ['dock-scenes', 'dock-sources', 'dock-mixer', 'dock-transitions', 'dock-controls', 'dock-stats'];
+  const FACTORY = { left: ['dock-scenes', 'dock-sources'], right: ['dock-mixer', 'dock-transitions', 'dock-controls', 'dock-stats'], bottom: [] };
+  const dockById = (id) => document.getElementById(id);
+  const dockLayout = () => {
+    const d = obs.settings.ui.dockLayout || {};
+    if (!d.order) return d.preset === 'bottom'
+      ? { left: [], right: [], bottom: [...DOCK_IDS] }
+      : { left: [...FACTORY.left], right: [...FACTORY.right], bottom: [] };
+    return d.order;
+  };
+  // top row wrapper: side columns share the row with preview, bottom strip
+  // always sits below. Empty side columns hide so preview takes the room.
+  const top = h('div', { class: 'ws-top' });
+  ws.append(top);
+  top.append(left);
+  const splitL = h('div', { class: 'ws-split' });
+  const splitR = h('div', { class: 'ws-split' });
+  top.append(splitL, center, splitR, right);
+  const bottom = h('div', { class: 'ws-bottom' });
+  ws.append(bottom);
+
+  function placeDocks(order) {
+    for (const col of ['left', 'right', 'bottom']) {
+      const box = col === 'left' ? left : col === 'right' ? right : bottom;
+      for (const id of order[col] || []) {
+        const d = dockById(id);
+        if (d) box.append(d);
+      }
+    }
+    // safety: any dock stranded outside the three boxes goes right.
+    for (const id of DOCK_IDS) {
+      const d = dockById(id);
+      if (d && d.parentElement !== left && d.parentElement !== right && d.parentElement !== bottom) right.append(d);
+    }
+    // bottom children stack full-height; side children keep their splits.
+    const qlist = dockById('dock-scenes')?.querySelector('.qlist');
+    if (qlist) qlist.style.maxHeight = dockById('dock-scenes').parentElement === bottom ? '' : '30vh';
+  }
+  function applyDockLayout() {
+    const d = obs.settings.ui.dockLayout;
+    const order = dockLayout();
+    placeDocks(order);
+    left.style.flex = `0 0 ${d.colL || 300}px`;
+    right.style.flex = `0 0 ${d.colR || 340}px`;
+    const vis = (box) => [...box.children].some(el => el.classList?.contains('dock') && !el.classList.contains('hidden'));
+    left.style.display = vis(left) ? '' : 'none';
+    right.style.display = vis(right) ? '' : 'none';
+    splitL.style.display = left.style.display === 'none' ? 'none' : '';
+    splitR.style.display = right.style.display === 'none' ? 'none' : '';
+  }
+  function saveOrder(preset) {
+    const d = obs.settings.ui.dockLayout;
+    const ids = (box) => [...box.children].filter(el => el.classList?.contains('dock')).map(el => el.id);
+    d.order = { left: ids(left), right: ids(right), bottom: ids(bottom) };
+    if (preset) d.preset = preset;
+    obs.persist();
+  }
+  window.__dockLayout = { apply: applyDockLayout, save: saveOrder }; // presets menu + debug
+
+  // splitters: drag side-column widths, persisted.
+  function wireSplit(split, side) {
+    split.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      split.classList.add('drag');
+      const box = side === 'left' ? left : right;
+      const mv = (ev) => {
+        const r = ws.getBoundingClientRect();
+        const w = side === 'left' ? ev.clientX - r.left : r.right - ev.clientX;
+        box.style.flex = `0 0 ${Math.round(Math.max(180, Math.min(640, w)))}px`;
+      };
+      const up = () => {
+        split.classList.remove('drag');
+        removeEventListener('mousemove', mv);
+        removeEventListener('mouseup', up);
+        const d = obs.settings.ui.dockLayout;
+        d.colL = parseInt(left.style.flex.split(' ')[2]) || 300;
+        d.colR = parseInt(right.style.flex.split(' ')[2]) || 340;
+        obs.persist();
+      };
+      addEventListener('mousemove', mv);
+      addEventListener('mouseup', up);
+    });
+  }
+  wireSplit(splitL, 'left');
+  wireSplit(splitR, 'right');
+
+  // drag-reorder: grab any dock header, drop before/after any dock or into
+  // the bottom strip. Center (preview) is not a drop target by design.
+  let dragDock = null, dragMoved = false, dropTarget = null, dropPos = null;
+  ws.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || app.lockUI) return;
+    const header = e.target.closest('.dock-header');
+    if (!header || e.target.closest('button,input,select,textarea,a')) return;
+    const dock = header.closest('.dock');
+    if (!dock) return;
+    e.preventDefault();
+    dragDock = dock; dragMoved = false;
+    const sx = e.clientX, sy = e.clientY;
+    const mv = (ev) => {
+      if (!dragMoved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
+      dragMoved = true;
+      header.classList.add('dock-drag');
+      clearDrop();
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const t = under?.closest?.('.dock');
+      if (t && t !== dragDock && (t.parentElement === left || t.parentElement === right || t.parentElement === bottom)) {
+        const r = t.getBoundingClientRect();
+        dropPos = (t.parentElement === bottom ? ev.clientX : ev.clientY) < (t.parentElement === bottom ? r.left + r.width / 2 : r.top + r.height / 2) ? 'before' : 'after';
+        dropTarget = t;
+        t.classList.add(dropPos === 'before' ? 'dock-drop-before' : 'dock-drop-after');
+      } else {
+        const strip = under?.closest?.('.ws-bottom');
+        if (strip && !strip.contains(dragDock)) { dropTarget = strip; dropPos = 'into'; strip.classList.add('dock-drop-into'); }
+      }
+    };
+    const up = () => {
+      removeEventListener('mousemove', mv);
+      removeEventListener('mouseup', up);
+      header.classList.remove('dock-drag');
+      if (dragMoved && dropTarget) {
+        if (dropPos === 'into') dropTarget.append(dragDock);
+        else dropTarget.parentElement.insertBefore(dragDock, dropPos === 'before' ? dropTarget : dropTarget.nextSibling);
+        const d = obs.settings.ui.dockLayout;
+        d.preset = 'custom';
+        saveOrder();
+        applyDockLayout();
+        toast('Dock layout saved');
+      }
+      clearDrop();
+      dragDock = null; dragMoved = false; dropTarget = null;
+    };
+    addEventListener('mousemove', mv);
+    addEventListener('mouseup', up);
+  });
+  function clearDrop() {
+    for (const el of document.querySelectorAll('.dock-drop-before,.dock-drop-after,.dock-drop-into'))
+      el.classList.remove('dock-drop-before', 'dock-drop-after', 'dock-drop-into');
+    dropTarget = null;
+  }
+
   const applyDockVis = () => {
     const d = obs.settings.ui.docks;
     $('#dock-scenes')?.classList.toggle('hidden', !d.scenes);
@@ -310,16 +467,16 @@ function buildWorkspace(root) {
     $('#dock-controls')?.classList.toggle('hidden', !d.controls);
     $('#dock-stats')?.classList.toggle('hidden', !d.stats);
   };
-  obs.on('dock-visibility', applyDockVis);
-  obs.on('ui-reset', applyDockVis);
+  obs.on('dock-visibility', () => { applyDockVis(); applyDockLayout(); });
+  obs.on('ui-reset', () => { applyDockVis(); applyDockLayout(); });
   applyDockVis();
+  applyDockLayout();
 
   // left column split: scenes auto, sources flex
   const sceneDock = $('#dock-scenes'), srcDock = $('#dock-sources');
   sceneDock.style.flex = '0 1 auto';
   sceneDock.querySelector('.qlist').style.maxHeight = '30vh';
   srcDock.style.flex = '1 1 0';
-  right.style.width = '340px';
   return ws;
 }
 

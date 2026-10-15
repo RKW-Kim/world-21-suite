@@ -43,7 +43,14 @@ export function buildPreviewArea(root) {
     });
     const liveBtn = h('button', {
       class: 'ptools-btn', text: 'LIVE', title: 'Live view: fast polling. Costs render-plane CPU per frame — use to check motion, then switch off.',
-      onclick: (e) => { e.stopPropagation(); setLiveUI(!liveOn); obs.emit('live-view', !liveOn); },
+      onclick: (e) => {
+        e.stopPropagation();
+        // LOCAL-PATCH (station): no local live boolean — ask ws truth and
+        // let the ack repaint. Offline clicks only explain themselves.
+        const api = window.__ws;
+        if (!api || api.status !== 'connected' || !api.toggleLive) { toast('Live view needs a connection to OBS'); return; }
+        api.toggleLive();
+      },
     });
     const tools = h('div', { class: 'preview-tools' }, refreshBtn, liveBtn);
     pane.append(tools);
@@ -51,17 +58,16 @@ export function buildPreviewArea(root) {
     return { pane, wrap, canvas, refreshBtn, liveBtn };
   }
 
-  // LOCAL-PATCH (station): live-view UI mirror. The ws layer owns the real
-  // state (it can force live off when the plane stops answering); every ack
-  // repaints all pane buttons so they never disagree.
-  let liveOn = false;
+  // LOCAL-PATCH (station): panes keep no live state of their own — the ws
+  // layer owns live truth (wsApi.isLive/toggleLive) and every ack repaints
+  // all pane buttons, so UI and reality cannot disagree.
+  const wsLive = () => (window.__ws && window.__ws.isLive) ? !!window.__ws.isLive() : false;
   function setLiveUI(on) {
-    liveOn = !!on;
-    for (const p of [paneP, paneProg]) p?.liveBtn?.classList.toggle('on', liveOn);
+    for (const p of [paneP, paneProg]) p?.liveBtn?.classList.toggle('on', !!on);
   }
   obs.on('live-view', setLiveUI);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && liveOn) { setLiveUI(false); obs.emit('live-view', false); }
+    if (document.hidden) obs.emit('live-view', false);
   });
 
   function layout() {
@@ -82,7 +88,7 @@ export function buildPreviewArea(root) {
     bindInteractions();
     resizeCanvases();
     updateLabels();
-    setLiveUI(liveOn);
+    setLiveUI(wsLive());
   }
 
   function buildStudioControls() {
@@ -358,7 +364,6 @@ export function buildPreviewArea(root) {
   function bindInteractions() {
     const c = (paneP || paneProg).canvas;
     interactiveCanvas = c;
-
     c.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const scene = obs.preview;
@@ -385,13 +390,18 @@ export function buildPreviewArea(root) {
       const scene = obs.preview; if (!scene) return;
       const handle = hitHandle(c, e);
       const it = hitItem(c, e);
+      // LOCAL-PATCH (station): layout is locked while attached to the render
+      // plane — scenes are committed JSON, not live-dragged. Selection and
+      // right-click (eye/lock/filters) still work; geometry edits don't.
+      // Offline (sim) keeps full canvas editing.
       if (handle) {
+        if (lockedLayout()) return;
         beginScale(handle.it, handle.dir, e, c);
         e.preventDefault();
       } else if (it) {
         if (!it.sel) obs.select(it.id, e.ctrlKey || e.shiftKey);
         else if (e.ctrlKey || e.shiftKey) { obs.select(it.id, true); }
-        if (it.locked) return;
+        if (it.locked || lockedLayout()) return;
         beginMove(e, c);
       } else {
         obs.clearSelection();
@@ -400,11 +410,25 @@ export function buildPreviewArea(root) {
     });
 
     c.addEventListener('mousemove', (e) => {
+      if (obs.wsMode) { c.style.cursor = 'default'; return; }
       const h = hitHandle(c, e);
       const it = hitItem(c, e);
       c.style.cursor = h ? ({ n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' })[h.dir]
         : (it ? 'move' : 'default');
     });
+  }
+
+  // LOCAL-PATCH (station): layout-lock notice, throttled so every click
+  // doesn't nag. Returns true when locked (caller bails on geometry edits).
+  let lastLockToast = 0;
+  function lockedLayout() {
+    if (!obs.wsMode) return false;
+    const now = Date.now();
+    if (now - lastLockToast > 5000) {
+      lastLockToast = now;
+      import('./ui.js').then(m => m.toast('Layout locked while attached — scenes come from committed JSON, not the canvas'));
+    }
+    return true;
   }
 
   let drag = null;

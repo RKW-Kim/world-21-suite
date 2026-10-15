@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** sixteen marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** eighteen marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -46,12 +46,16 @@
      `addRemoteItem` is idempotent per sceneItemId and swaps the local
      echo-ghost for the server row instead of doubling it.
   13. Preview left / Program right (was reversed), per-pane Refresh +
-     Live toggle. Live state is ws-owned, panes talk over the `live-view` /
-     `snap-request` engine events; ws acks repaint the buttons.
+     Live toggle. Live truth is single-sourced in ws (`view` + `setLive`
+     at module scope, `wsApi.isLive/toggleLive`); panes own no boolean
+     and only mirror acks — closing a real desync class where a
+     per-reconnect closure re-subscribed and button state drifted.
   14. Screenshot engine: JPEG ladder (640px q60) with PNG fallback, one
-     request in flight max, stills ~1fps, Live ~4fps, pause when the tab
-     hides, deaf-guard forces Live off after 5 straight failures. No 60fps
-     mode exists on purpose — see README "live view budget".
+     request in flight max, NOTHING polls by default (Refresh / connect
+     snap / Live only), Live ~150ms concurrent program+preview, pause
+     when the tab hides, deaf-guard forces Live off after 5 straight
+     failures, disconnect always stands live down. No 60fps mode exists
+     on purpose — see README "live view budget".
   15. Mixer LIVE/SIM badge (`engine.metersLive()`: attached + meter event
      within 3s). Green LIVE = real plane peaks; grey SIM = simulation.
   16. Audio-filter mirror for mic tuning: engine CRUD
@@ -59,6 +63,13 @@
      server chain sync in `initialSync`, re-sync on filter events,
      debounced settings pushes, dialog add/remove/audio-sliders wired
      through it. Effect filters stay local-only sim.
+  17. Layout lock while attached: canvas move/scale cursors and gestures
+     gated on `wsMode` (selection + right-click still work), Transform
+     dialog refuses with directions; offline sim keeps full editing.
+  18. Dock layout system: resizable side columns (drag splitters,
+     persisted), All-Docks-Bottom preset (Docks menu), free drag-reorder
+     of any dock header across left/right/bottom with drop indicators,
+     order + widths persisted, Reset UI restores factory.
 - **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
   browsers may cache; hard-reload after updates). OBS traffic goes through
   the overlay server's raw relay: the replica's gateway mode

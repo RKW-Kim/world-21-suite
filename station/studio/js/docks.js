@@ -482,11 +482,18 @@ export function buildControlsDock(root) {
     h('div', { class: 'dock-body' }, box));
   root.append(dock);
 
-  let btnStream, btnRecord, btnVcam, btnReplay, btnSettings, btnExit;
+  let btnStream, btnRecord, btnVcam, btnReplay, btnSettings, btnExit, btnStudio;
 
   function render() {
     const o = obs.S.outputs;
     box.innerHTML = '';
+    // LOCAL-PATCH (station): Studio Mode toggle lives in Controls (OBS
+    // parity — it was hotkey-only). Mirrors via the existing setStudioMode.
+    btnStudio = h('button', {
+      class: 'ctrl-btn' + (obs.S.studioMode ? ' checked' : ''),
+      text: obs.S.studioMode ? 'Exit Studio Mode' : 'Studio Mode',
+      onclick: () => obs.setStudioMode(!obs.S.studioMode),
+    });
     btnStream = h('button', { class: 'ctrl-btn' + (o.streaming ? ' live' : ''), text: o.streaming ? 'Stop Streaming' : 'Start Streaming', onclick: () => o.streaming ? obs.stopStream() : obs.startStream() });
     btnRecord = h('button', { class: 'ctrl-btn' + (o.recording ? ' live' : ''), text: o.recording ? 'Stop Recording' : 'Start Recording', onclick: () => o.recording ? obs.stopRecord() : obs.startRecord() });
     btnVcam = h('button', { class: 'ctrl-btn', text: o.vcam ? 'Stop Virtual Camera' : 'Start Virtual Camera', onclick: () => obs.toggleVCam() });
@@ -494,7 +501,7 @@ export function buildControlsDock(root) {
     btnSettings = h('button', { class: 'ctrl-btn', text: 'Settings', onclick: () => import('./settings.js').then(m => m.openSettings()) });
     btnExit = h('button', { class: 'ctrl-btn', text: 'Exit', onclick: exitApp });
     box.append(
-      btnStream, btnRecord, btnVcam, btnReplay,
+      btnStudio, btnStream, btnRecord, btnVcam, btnReplay,
       h('div', { class: 'controls-row' }, btnSettings, btnExit));
   }
   obs.on('outputs', render);

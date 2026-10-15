@@ -66,7 +66,15 @@ export const wsApi = {
   requestBatch,
   openConnect,
   openSettings: () => openWsSettings(wsApi),
+  // LOCAL-PATCH (station): live-view truth lives in the polling closure;
+  // viewApi is bound on first connect. Panes own no live boolean — buttons
+  // mirror acks only, so UI and reality cannot disagree. Null-safe offline.
+  isLive: () => !!viewApi?.isLive?.(),
+  toggleLive: () => viewApi?.toggleLive?.(),
 };
+
+// bound by startPolling on first Identified; null until then.
+let viewApi = null;
 
 obs.on('log', l => obs._logFeed?.(l));
 
@@ -199,6 +207,10 @@ function disconnect(silent) {
   unpatchEngine();
   obs.wsMode = false;
   obs.clearLiveLevels();  // LOCAL-PATCH (station): no frozen meters after a drop.
+  // LOCAL-PATCH (station): live polling dies with the socket (its timer
+  // was just cleared) — say so out loud instead of showing a lit button
+  // that does nothing. Re-enable after reconnect.
+  if (typeof setLive === 'function' && view.live) setLive(false);
   if (!silent) setStatus('offline');
 }
 
@@ -609,17 +621,31 @@ function startPolling() {
   }, 1000);
   state.timers.push(stats);
 
-  let progName = null, prevName = null;
+  // one snapshot on (re)connect so the panes aren't black; after that,
+  // manual Refresh / Live only.
+  view.prog = obs.program?.name || null; view.prev = obs.preview?.name || null;
+  snapOne(view.prog);
+  if (obs.S.studioMode && view.prev && view.prev !== view.prog) snapOne(view.prev);
+  // LOCAL-PATCH (station): publish live truth for the panes (single
+  // source; survives reconnects because startPolling re-runs).
+  viewApi = { isLive: () => view.live, toggleLive: () => setLive(!view.live) };
+}
   // LOCAL-PATCH (station): live-view + refresh engine. Stills are cheap;
   // live frames are not (each one is a main-thread render + encode on the
-  // plane), so: JPEG ladder with PNG fallback, one in flight at most,
-  // pause when the tab hides, and a deaf-guard that forces live off after
-  // 5 straight failures instead of piling requests onto a dying plane.
-  // 60fps screenshots are not offered: the math doesn't work on this
-  // pipeline (see README note). Live ~= 4fps @ 640px — motion-check grade.
-  const view = { live: false, jpeg: true, fails: 0, snapBusy: false };
+  // plane), so: JPEG ladder with PNG fallback, one in flight at most (a
+  // queued refresh re-runs once, never piles), pause when the tab hides,
+  // and a deaf-guard that forces live off after 5 straight failures
+  // instead of piling requests onto a dying plane.
+  // Stills policy: NOTHING polls by default — program/preview refresh only
+  // on Refresh, on (re)connect, or while Live is on. Live ticks at ~150ms
+  // with concurrent program+preview snaps and no per-tick scene-list
+  // roundtrip (names are cached from program/preview events). That is as
+  // close to realtime as screenshots get; true 60fps needs the WHEP
+  // program-return (VPS era), not RPCs — see README "live view budget".
+  const view = { live: false, jpeg: true, fails: 0, snapBusy: false, queued: null, prog: null, prev: null };
   async function snapOne(sceneName) {
-    if (!sceneName || state.status !== 'connected' || view.snapBusy) return false;
+    if (!sceneName || state.status !== 'connected') return false;
+    if (view.snapBusy) { view.queued = sceneName; return false; }
     view.snapBusy = true;
     try {
       const fmt = view.jpeg ? 'jpeg' : 'png';
@@ -637,7 +663,10 @@ function startPolling() {
         return true;
       }
     } catch {}
-    finally { view.snapBusy = false; }
+    finally {
+      view.snapBusy = false;
+      if (view.queued) { const q = view.queued; view.queued = null; snapOne(q); }
+    }
     view.fails++;
     if (view.fails >= 5 && view.live) {
       view.live = false;
@@ -646,48 +675,42 @@ function startPolling() {
     }
     return false;
   }
-  const shot = setInterval(async () => {
-    if (state.status !== 'connected' || document.hidden) return;
-    try {
-      const scenes = await request('GetSceneList');
-      progName = scenes.currentProgramSceneName; prevName = scenes.currentPreviewSceneName;
-      await snapOne(progName);
-      if (obs.S.studioMode && prevName && prevName !== progName) await snapOne(prevName);
-    } catch {}
-  }, 1000);
-  state.timers.push(shot);
-  // live ticker: same snapOne, tighter loop. Started/stopped via live-view.
+  // live ticker. Started/stopped via live-view.
   let liveTimer = null;
+  const liveTick = async () => {
+    if (state.status !== 'connected' || document.hidden || !view.live) return;
+    if (!view.prog) {
+      try {
+        const scenes = await request('GetSceneList');
+        view.prog = scenes.currentProgramSceneName; view.prev = scenes.currentPreviewSceneName;
+      } catch { return; }
+    }
+    await Promise.all([snapOne(view.prog), (obs.S.studioMode && view.prev && view.prev !== view.prog) ? snapOne(view.prev) : null]);
+  };
   const setLive = (on) => {
     view.live = !!on;
     if (on) view.fails = 0;
     if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
-    if (on) {
-      liveTimer = setInterval(async () => {
-        if (state.status !== 'connected' || document.hidden || !view.live) return;
-        try {
-          const scenes = await request('GetSceneList');
-          await snapOne(scenes.currentProgramSceneName);
-          if (obs.S.studioMode && scenes.currentPreviewSceneName) await snapOne(scenes.currentPreviewSceneName);
-        } catch {}
-      }, 250);
-    }
+    if (on) liveTimer = setInterval(liveTick, 150);
     state.timers.push(liveTimer);
     // ack back to the panes, but only on change — setLive itself is
     // subscribed to live-view, so an unconditional emit would recurse.
     if (view.acked !== view.live) { view.acked = view.live; obs.emit('live-view', view.live); }
   };
-  // LOCAL-PATCH (station): subscribe once — startPolling re-runs on every
-  // reconnect and a second subscription would double-fire every intent.
-  if (!view.wired) {
-    view.wired = true;
-    obs.on('live-view', setLive);
-    obs.on('snap-request', (which) => {
-      const name = which === 'preview' ? prevName || obs.preview?.name : progName || obs.program?.name;
-      if (name) snapOne(name);
-    });
-  }
-}
+  // Module scope = subscribed exactly once, whatever reconnects do. (This
+  // block used to live inside startPolling behind a `wired` flag that could
+  // never work — `view` was re-created per reconnect, so every drop added
+  // another setLive/liveTick pair: phantom button states and N× screenshot
+  // load on the plane. Hoisted 2026-10-15.)
+  obs.on('live-view', setLive);
+  obs.on('snap-request', (which) => {
+    const name = which === 'preview'
+      ? view.prev || obs.preview?.name
+      : view.prog || obs.program?.name;
+    if (name) snapOne(name);
+  });
+  obs.on('program', (id) => { view.prog = obs.sceneById(id)?.name || view.prog; });
+  obs.on('preview', (id) => { view.prev = obs.sceneById(id)?.name || view.prev; });
 
 /* ---------------- events ---------------- */
 function handleEvent(d) {

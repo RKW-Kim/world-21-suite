@@ -431,6 +431,9 @@ export function openFiltersForScene(scene) {
 export function openTransform(itemId) {
   const it = obs.S.items[itemId];
   if (!it) return;
+  // LOCAL-PATCH (station): same lock as the canvas — transform edits are
+  // committed JSON while attached, not live dialog tweaks.
+  if (obs.wsMode) { toast('Layout locked while attached — scenes come from committed JSON, not the canvas'); return; }
   const grid = h('div', { class: 'form-grid', style: { padding: '14px 16px', gap: '8px 12px' } });
   const d = openDialog({
     title: 'Edit Transform', w: 480, resizable: false,

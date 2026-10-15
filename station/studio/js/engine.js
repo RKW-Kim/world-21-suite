@@ -162,6 +162,10 @@ const DEFAULTS = () => ({
     docks: { scenes: true, sources: true, mixer: true, transitions: true, controls: true, stats: false, replay: false },
     mixerLayout: 'horizontal',
     scaling: 'canvas',
+    // LOCAL-PATCH (station): dock layout system. order=null means factory
+    // placement; a drag or preset writes explicit per-column id lists.
+    // colL/colR are side-column widths in px.
+    dockLayout: { preset: 'default', order: null, colL: 300, colR: 340 },
   },
 });
 
