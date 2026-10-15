@@ -88,6 +88,23 @@ else
   echo "::warning::Flatpak OBS not found — install com.obsproject.Studio, then re-run to pin it."
 fi
 
+# Headless render-plane config (root-caused 2026-10-15, lab outage 05:52-09:20):
+# BrowserHWAccel MUST be false. With it true, CEF's GPU process dies under
+# Xvfb/software-GL ("FATAL: GPU process isn't usable. Goodbye.") and takes the
+# whole main OBS process down ~30s after boot, every boot. Software CEF
+# renders all 7 overlay pages fine and costs one sed.
+for g in "$HOME/.var/app/com.obsproject.Studio/config/obs-studio/global.ini" \
+         "$HOME/.config/obs-studio/global.ini"; do
+  if [ -f "$g" ]; then
+    if grep -q '^BrowserHWAccel=' "$g"; then
+      sed -i 's/^BrowserHWAccel=.*/BrowserHWAccel=false/' "$g"
+    else
+      printf '\nBrowserHWAccel=false\n' >> "$g"
+    fi
+    echo "BrowserHWAccel=false enforced in $g"
+  fi
+done
+
 echo "OK: broadcast root at $ROOT"
 ls -la "$ROOT"
 

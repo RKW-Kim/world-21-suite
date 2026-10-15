@@ -938,3 +938,40 @@ real debugging time and each fix is load-bearing. Newest first.
   (Node-RED only if something hurts), same-repo `station/` subfolder,
   local-proof-before-VPS-migration. Empirical list unchanged (soak, steal,
   RTT→SRT budget, overlay soak, captions, Flatpak parity, CPU flags).
+
+## 2026-10-15 — Render-plane outage 05:52–09:20 EAT (OBS boot wedge + CEF GPU crash)
+
+- Symptom: after host restart, OBS never brought up `:4455`; daemon
+  `wait_ready` exhausted, loop dead ~3.5h. Two stacked causes, both
+  headless-only (never seen with a human at the screen).
+- Cause A — wrong display: unit set only `DISPLAY=:99`, but Qt prefers
+  Wayland when `WAYLAND_DISPLAY` leaks in from the user session, so every
+  boot opened on the real Hyprland desktop (safe-mode dialog sat VISIBLE on
+  tty2, `hyprctl clients` proved it) while Xvfb screenshots stayed black.
+  Fix: `QT_QPA_PLATFORM=xcb` + `UnsetEnvironment=WAYLAND_DISPLAY` +
+  `--nosocket=wayland --nosocket=fallback-x11` in `station-obs.service`.
+  Nothing of OBS's may ever touch the user's screen again.
+- Cause B — CEF GPU suicide: with `BrowserHWAccel=true`, Chromium's GPU
+  process dies under Xvfb/software-GL and logs
+  `FATAL: gpu_data_manager_impl_private.cc(454) GPU process isn't usable.
+  Goodbye.` — killing the whole main OBS ~30s after Normal-mode dismissal,
+  every boot (coredump SIGTRAP + `obs-browser-page` SIGTRAP/SIGSEGV cluster).
+  Bisect: Untitled stable 200s+, SMILE-Station dead ~30s, no-browser copy
+  also dead (plugin init alone is enough). Fix: `BrowserHWAccel=false` in
+  `global.ini [General]` (known upstream issue obsproject/obs-studio#12679);
+  all 7 overlay pages render in software. `setup.sh` now enforces it.
+- Bonus fix — safe-mode trigger identified: leftover
+  `obs-studio/.sentinel/run_*` files ARE the "did not properly shut down"
+  signal. `ExecStartPre` now clears them (+ CEF Singleton*) so every
+  (re)boot is dialog-free; verified: 2 stale files → dialog, cleared → straight
+  to main window. Self-heal (`restart_plane` → unit start) works unsupervised.
+- Tools: `station/obs_click.py` (warp-pointer + XTest click on :99;
+  root-routed send_event is ignored by Qt — learned the hard way),
+  Normal button ~= 1060,532, singleton-cancel ~= 1135,532.
+- Collateral learned: daemon `restart_plane` correctly drives the unit
+  (`stop`/`start station-obs`); a second manual obs instance parks at "OBS is
+  already running" — converge on the unit, never hand-run beside it.
+- Log hygiene: OBS keeps last 10 logs; restart churn rotated out the healthy
+  03:11 boot log before it was copied. Copy logs out BEFORE churning.
+- State at close: all 5 units active, SMILE-Station stable, daemon looping
+  (`Now playing: Loop A`), `Stream output not active` CRIT is lab-normal.

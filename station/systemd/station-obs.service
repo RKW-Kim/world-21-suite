@@ -9,8 +9,22 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
+# DISPLAY PICKING (root-caused 2026-10-15): Qt prefers Wayland when
+# WAYLAND_DISPLAY leaks in from the user session, so OBS kept opening on the
+# real Hyprland desktop (incl. its safe-mode dialog) instead of Xvfb :99.
+# Pin Qt to xcb + hide Wayland entirely; never touch the user's screen again.
 Environment=DISPLAY=:99
-ExecStart=/usr/bin/flatpak run --socket=x11 --env=DISPLAY=:99 com.obsproject.Studio --verbose --minimize-to-tray
+Environment=QT_QPA_PLATFORM=xcb
+UnsetEnvironment=WAYLAND_DISPLAY
+# Headless hardening (learned 2026-10-15): software GL (no GPU lottery on a
+# shared box), no missing-files dialog (nothing may block for a click),
+# CEF singleton cleanup (stale locks wedge boots after hard kills), and
+# .sentinel/run_* cleanup (leftover run markers ARE the safe-mode trigger;
+# without this every unclean boot parks at "Run in Normal Mode?" forever).
+Environment=LIBGL_ALWAYS_SOFTWARE=1
+Environment=QT_DEBUG_PLUGINS=1
+ExecStartPre=/bin/rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie
+ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:99 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --minimize-to-tray --disable-missing-files-check
 Restart=always
 RestartSec=20
 
