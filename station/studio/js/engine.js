@@ -59,6 +59,30 @@ export const FILTER_TYPES = {
 
 export const TRANSITIONS = ['Cut', 'Fade', 'Fade to black', 'Stinger', 'Slide', 'Swipe', 'Zoom'];
 
+/* LOCAL-PATCH (station): audio-filter bridge to obs-websocket. Local dialog
+ * ids -> OBS filter kinds, and local setting keys -> obs_data keys. Only
+ * kinds listed here are mirrored (mic-tuning chain); effect filters stay
+ * local-only sim. Unknown keys are ignored by OBS, so a wrong rename
+ * degrades to "setting didn't stick", never to a failure. */
+export const OBS_FILTER_KIND = {
+  compressor: 'compressor_filter', expander: 'expander_filter',
+  gain: 'gain_filter', invert: 'invert_polarity_filter',
+  limiter: 'limiter_filter', noise_gate: 'noise_gate_filter',
+  noise_supp: 'noise_suppress_filter', upward_comp: 'upward_compressor_filter',
+  vst: 'vst_filter',
+};
+export const OBS_FILTER_REVKIND = Object.fromEntries(
+  Object.entries(OBS_FILTER_KIND).map(([l, o]) => [o, l]));
+export const FILTER_KEYMAP = {
+  gain: { gain: 'db' },
+  compressor: { attack: 'attack_time', release: 'release_time', outputGain: 'output_gain' },
+  limiter: { release: 'release_time' },
+  expander: { attack: 'attack_time', release: 'release_time', outputGain: 'output_gain' },
+  noise_gate: { close: 'close_threshold', open: 'open_threshold', attack: 'attack_time', hold: 'hold_time', release: 'release_time' },
+  noise_supp: { level: 'suppress_level' },
+  upward_comp: {},
+};
+
 const LS_KEY = 'obs-web-state-v1';
 const LS_COLLECTION = name => `obs-web-collection-${name}`;
 const LS_PROFILE = name => `obs-web-profile-${name}`;
@@ -151,8 +175,15 @@ class ObsEngine extends Emitter {
     this._load();
     this._sim = { levels: new Map(), peak: new Map(), phase: Math.random() * 100 };
     this._liveLevels = new Map();  // LOCAL-PATCH (station): real-name -> peak, fed by InputVolumeMeters.
+    this._meterAt = 0;             // LOCAL-PATCH (station): last live-meter timestamp (0 = never).
     this._startTimers();
   }
+
+  /* LOCAL-PATCH (station): metersLive() answers "is the mixer showing the
+   * plane or a simulation?" — true only when attached AND a meter event
+   * landed in the last 3s. Drives the mixer LIVE/SIM badge; nobody should
+   * ever have to guess again. */
+  metersLive() { return !!(this.wsMode && this._meterAt && Date.now() - this._meterAt < 3000); }
 
   /* ---------- persistence ---------- */
   _load() {
@@ -459,6 +490,31 @@ class ObsEngine extends Emitter {
     this.persist();
   }
 
+  /* LOCAL-PATCH (station): source-filter CRUD. Local truth first (dialog
+   * repaints instantly), ws.js wraps these to mirror audio filters to OBS.
+   * `remote` holds the OBS-side filter name once the server confirms. */
+  addSourceFilter(srcId, kindId, name) {
+    const s = this.sourceById(srcId); if (!s) return null;
+    s.filters = s.filters || [];
+    const base = name || (FILTER_TYPES.audio.find(t => t.id === kindId)?.name || kindId);
+    let fname = base, n = 2;
+    while (s.filters.some(f => f.name === fname)) fname = `${base} ${n++}`;
+    const f = { id: kindId, name: fname, audio: true, settings: {}, remote: null };
+    s.filters.unshift(f);
+    this.emitc('filters', { action: 'added', srcId, name: fname });
+    return f;
+  }
+  removeSourceFilter(srcId, f) {
+    const s = this.sourceById(srcId); if (!s || !f) return;
+    s.filters = (s.filters || []).filter(x => x !== f);
+    this.emitc('filters', { action: 'removed', srcId, name: f.remote || f.name });
+  }
+  setFilterProp(srcId, f, key, value) {
+    if (!f) return;
+    f.settings[key] = value;
+    this.emitc('filters', { action: 'settings', srcId, name: f.remote || f.name });
+  }
+
   /* simulated instantaneous level 0..1 (per source) */
   getLevel(id) {
     const s = this.sourceById(id);
@@ -481,9 +537,11 @@ class ObsEngine extends Emitter {
   /* LOCAL-PATCH (station): live peak sink for the websocket layer. */
   setLiveLevel(name, peak) {
     this._liveLevels.set(name, Math.max(0, Math.min(1, +peak || 0)));
+    this._meterAt = Date.now();
   }
   clearLiveLevels() {
     this._liveLevels.clear();
+    this._meterAt = 0;
   }
 
   /* ---------- outputs ---------- */

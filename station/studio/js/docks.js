@@ -321,8 +321,11 @@ export function addSourceMenu(x, y) {
 /* ============================ Audio Mixer dock ============================ */
 export function buildMixerDock(root) {
   const mixer = h('div', { class: 'mixer' });
+  // LOCAL-PATCH (station): LIVE/SIM badge — answers "is the mixer showing
+  // the plane or a simulation?" at a glance. Never guess again.
+  const liveBadge = h('span', { class: 'mx-live off', text: 'SIM', title: 'SIM: simulated levels (not connected, or no meter data yet). LIVE: real peaks from the render plane.' });
   const dock = h('div', { class: 'dock', id: 'dock-mixer' },
-    h('div', { class: 'dock-header', text: 'Audio Mixer' }),
+    h('div', { class: 'dock-header' }, h('span', { text: 'Audio Mixer' }), liveBadge),
     h('div', { class: 'dock-body' }, mixer));
   root.append(dock);
 
@@ -399,7 +402,16 @@ export function buildMixerDock(root) {
 
   /* meter animation */
   let raf;
+  let lastBadge = '';
   const tick = () => {
+    const live = obs.metersLive();
+    const badge = live ? 'LIVE' : 'SIM';
+    if (badge !== lastBadge) {
+      lastBadge = badge;
+      liveBadge.textContent = badge;
+      liveBadge.classList.toggle('on', live);
+      liveBadge.classList.toggle('off', !live);
+    }
     for (const [id, els] of channelEls) {
       const { level } = obs.getLevel(id);
       const pct = clamp(Math.pow(level, 0.6) * 100, 0, 100);

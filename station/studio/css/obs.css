@@ -577,3 +577,26 @@ input[type="number"].qinput::-webkit-inner-spin-button { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* LOCAL-PATCH (station): per-pane preview tools + mixer live badge */
+.preview-tools {
+  position: absolute; top: 2px; right: 6px; z-index: 5;
+  display: flex; gap: 4px;
+}
+.ptools-btn {
+  background: rgba(0,0,0,.55); color: var(--text-dim);
+  border: 1px solid transparent; border-radius: 3px;
+  font-size: 11px; line-height: 1; padding: 2px 6px; cursor: pointer;
+}
+.ptools-btn:hover { color: var(--text); border-color: var(--btn-border); }
+.ptools-btn.on {
+  color: #ff6b6b; border-color: #a33; background: rgba(90,20,20,.65);
+  animation: liveblink 1.2s infinite;
+}
+@keyframes liveblink { 50% { opacity: .55; } }
+.mx-live {
+  font-size: 10px; font-weight: 700; letter-spacing: .4px;
+  padding: 1px 7px; border-radius: 8px; margin-left: 8px;
+}
+.mx-live.on { color: #7dff9a; background: rgba(20,90,40,.5); }
+.mx-live.off { color: #888; background: rgba(60,60,60,.5); }

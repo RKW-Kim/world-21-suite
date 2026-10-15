@@ -9,7 +9,7 @@
    and renders the real program/preview via GetSourceScreenshot.
    ============================================================ */
 import { h, sha256B64, deepClone } from './util.js';
-import { obs, AUDIO_KINDS } from './engine.js';
+import { obs, AUDIO_KINDS, OBS_FILTER_KIND, OBS_FILTER_REVKIND, FILTER_KEYMAP } from './engine.js';
 import { openDialog, toast } from './ui.js';
 import { setRemoteFrame } from './preview.js';
 import { openWsSettings } from './tools.js';
@@ -395,6 +395,39 @@ function patchEngine() {
   wrap(E, 'saveReplay', () => request('SaveReplayBuffer').catch(() => {}));
   // LOCAL-PATCH (station): real v5 field is transitionName, not sceneTransitionName.
   wrap(E, 'setTransition', ([name]) => request('SetCurrentSceneTransition', { transitionName: name }).catch(() => {}));
+  // LOCAL-PATCH (station): audio-filter mirror (mic tuning). Local truth
+  // first via the engine, then RPC. Effect filters never reach here with a
+  // known kind and stay local-only. Settings pushes are debounced per
+  // filter so slider drags send one RPC, not fifty.
+  const filterPushTimers = new Map();
+  wrap(E, 'addSourceFilter', ([srcId, kindId], f) => {
+    const kind = OBS_FILTER_KIND[kindId];
+    if (!kind || !f) return; // effect filters / unknown: local sim only
+    const src = obs.sourceById(srcId);
+    request('CreateSourceFilter', { sourceName: src?.name, filterName: f.name, filterKind: kind, filterSettings: {} })
+      .then(() => { f.remote = f.name; })
+      .catch(e => obs.log('warn', `CreateSourceFilter ${f.name}: ${e.message}`));
+  });
+  wrap(E, 'removeSourceFilter', ([srcId, f]) => {
+    if (!f || !OBS_FILTER_KIND[f.id]) return;
+    const src = obs.sourceById(srcId);
+    request('RemoveSourceFilter', { sourceName: src?.name, filterName: f.remote || f.name }).catch(() => {});
+  });
+  wrap(E, 'setFilterProp', ([srcId, f, key, value]) => {
+    if (!f?.audio || !OBS_FILTER_KIND[f.id]) return;
+    const src = obs.sourceById(srcId);
+    const timerKey = `${srcId}::${f.remote || f.name}`;
+    clearTimeout(filterPushTimers.get(timerKey));
+    filterPushTimers.set(timerKey, setTimeout(() => {
+      filterPushTimers.delete(timerKey);
+      const obsKey = (FILTER_KEYMAP[f.id] || {})[key] || key;
+      let v = value;
+      if (f.id === 'noise_supp' && key === 'method') v = String(value).toLowerCase();
+      request('SetSourceFilterSettings', {
+        sourceName: src?.name, filterName: f.remote || f.name, filterSettings: { [obsKey]: v },
+      }).catch(() => {});
+    }, 350));
+  });
   wrap(E, 'setTransitionDur', ([ms]) => request('SetCurrentSceneTransitionDuration', { sceneTransitionDuration: ms }).catch(() => {}));
   wrap(E, 'triggerTransition', () => request('TriggerStudioModeTransition').catch(() => {}));
   wrap(E, 'setStudioMode', ([on]) => request('SetStudioModeEnabled', { studioModeEnabled: !!on }).catch(() => {}));
@@ -490,6 +523,9 @@ async function initialSync() {
           } catch {}
         }
       }
+      // LOCAL-PATCH (station): pull the server's filter chain so mic tuning
+      // starts from truth, not from an empty local guess.
+      try { await syncFiltersFor(inp.inputName); } catch {}
     }
 
     // scene items with transforms
@@ -574,26 +610,83 @@ function startPolling() {
   state.timers.push(stats);
 
   let progName = null, prevName = null;
+  // LOCAL-PATCH (station): live-view + refresh engine. Stills are cheap;
+  // live frames are not (each one is a main-thread render + encode on the
+  // plane), so: JPEG ladder with PNG fallback, one in flight at most,
+  // pause when the tab hides, and a deaf-guard that forces live off after
+  // 5 straight failures instead of piling requests onto a dying plane.
+  // 60fps screenshots are not offered: the math doesn't work on this
+  // pipeline (see README note). Live ~= 4fps @ 640px — motion-check grade.
+  const view = { live: false, jpeg: true, fails: 0, snapBusy: false };
+  async function snapOne(sceneName) {
+    if (!sceneName || state.status !== 'connected' || view.snapBusy) return false;
+    view.snapBusy = true;
+    try {
+      const fmt = view.jpeg ? 'jpeg' : 'png';
+      const args = { sourceName: sceneName, imageFormat: fmt, imageWidth: fmt === 'jpeg' ? 640 : 960 };
+      if (fmt === 'jpeg') args.imageCompressionQuality = 60;
+      let r = await request('GetSourceScreenshot', args).catch(() => null);
+      if (!r?.imageData && view.jpeg) {
+        view.jpeg = false; // plane speaks PNG only; remember, don't retry jpeg
+        r = await request('GetSourceScreenshot', { sourceName: sceneName, imageFormat: 'png', imageWidth: 960 }).catch(() => null);
+      }
+      if (r?.imageData) {
+        const sc = obs.sceneByName(sceneName);
+        if (sc) setRemoteFrame(sc.id, r.imageData);
+        view.fails = 0;
+        return true;
+      }
+    } catch {}
+    finally { view.snapBusy = false; }
+    view.fails++;
+    if (view.fails >= 5 && view.live) {
+      view.live = false;
+      obs.emit('live-view', false);
+      toast('Live view paused — the render plane stopped answering screenshots');
+    }
+    return false;
+  }
   const shot = setInterval(async () => {
-    if (state.status !== 'connected') return;
+    if (state.status !== 'connected' || document.hidden) return;
     try {
       const scenes = await request('GetSceneList');
       progName = scenes.currentProgramSceneName; prevName = scenes.currentPreviewSceneName;
-      const prog = obs.sceneByName(progName);
-      if (prog) {
-        const r = await request('GetSourceScreenshot', { sourceName: progName, imageFormat: 'png', imageWidth: 960 });
-        if (r.imageData) setRemoteFrame(prog.id, r.imageData);
-      }
-      if (obs.S.studioMode && prevName) {
-        const prev = obs.sceneByName(prevName);
-        if (prev) {
-          const r = await request('GetSourceScreenshot', { sourceName: prevName, imageFormat: 'png', imageWidth: 960 });
-          if (r.imageData) setRemoteFrame(prev.id, r.imageData);
-        }
-      }
+      await snapOne(progName);
+      if (obs.S.studioMode && prevName && prevName !== progName) await snapOne(prevName);
     } catch {}
-  }, Math.max(250, state.config.refresh || 1000));
+  }, 1000);
   state.timers.push(shot);
+  // live ticker: same snapOne, tighter loop. Started/stopped via live-view.
+  let liveTimer = null;
+  const setLive = (on) => {
+    view.live = !!on;
+    if (on) view.fails = 0;
+    if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+    if (on) {
+      liveTimer = setInterval(async () => {
+        if (state.status !== 'connected' || document.hidden || !view.live) return;
+        try {
+          const scenes = await request('GetSceneList');
+          await snapOne(scenes.currentProgramSceneName);
+          if (obs.S.studioMode && scenes.currentPreviewSceneName) await snapOne(scenes.currentPreviewSceneName);
+        } catch {}
+      }, 250);
+    }
+    state.timers.push(liveTimer);
+    // ack back to the panes, but only on change — setLive itself is
+    // subscribed to live-view, so an unconditional emit would recurse.
+    if (view.acked !== view.live) { view.acked = view.live; obs.emit('live-view', view.live); }
+  };
+  // LOCAL-PATCH (station): subscribe once — startPolling re-runs on every
+  // reconnect and a second subscription would double-fire every intent.
+  if (!view.wired) {
+    view.wired = true;
+    obs.on('live-view', setLive);
+    obs.on('snap-request', (which) => {
+      const name = which === 'preview' ? prevName || obs.preview?.name : progName || obs.program?.name;
+      if (name) snapOne(name);
+    });
+  }
 }
 
 /* ---------------- events ---------------- */
@@ -693,6 +786,12 @@ function handleEvent(d) {
         if (src) { src.settings = { ...src.settings, ...d.eventData.inputSettings }; obs.emit('sources', { action: 'settings', id: src.id }); }
         break;
       }
+      // LOCAL-PATCH (station): filter chain follows the server. Re-fetch
+      // the one chain (cheap, rare) instead of merging event fragments.
+      case 'SourceFilterCreated': case 'SourceFilterRemoved': case 'SourceFilterSettingsChanged': {
+        if (d.eventData?.sourceName) syncFiltersFor(d.eventData.sourceName).catch(() => {});
+        break;
+      }
       case 'StreamStateChanged': {
         obs.S.outputs.streaming = d.eventData.outputActive;
         if (d.eventData.outputActive) obs.S.outputs.streamStart = Date.now();
@@ -745,8 +844,35 @@ async function refreshSceneList(scenes) {
   obs.emit('scenes');
 }
 
-async function addRemoteItem(d) {
-  // LOCAL-PATCH (station): idempotent add. The same SceneItemCreated can
+/* LOCAL-PATCH (station): server filter chain -> local mirror. Unknown
+ * kinds are kept as view-only rows (removable, not editable). */
+function filterFromObs(ff) {
+  const lid = OBS_FILTER_REVKIND[ff.filterKind];
+  const settings = {};
+  if (lid) {
+    const rev = {};
+    for (const [l, o] of Object.entries(FILTER_KEYMAP[lid] || {})) rev[o] = l;
+    for (const [k, v] of Object.entries(ff.filterSettings || {})) {
+      let lk = rev[k] || k, lv = v;
+      if (lid === 'noise_supp' && lk === 'method' && typeof v === 'string')
+        lv = v === 'rnnoise' ? 'RNNoise' : v === 'speex' ? 'Speex' : v;
+      settings[lk] = lv;
+    }
+  }
+  return {
+    id: lid || `unknown:${ff.filterKind}`, name: ff.filterName,
+    audio: !!lid, settings, remote: ff.filterName,
+  };
+}
+async function syncFiltersFor(inputName) {
+  const src = obs.S.sources.find(s => s.name === inputName);
+  if (!src) return;
+  const fl = await request('GetSourceFilterList', { sourceName: inputName });
+  src.filters = (fl.filters || []).map(filterFromObs);
+  obs.emit('sources', { action: 'filters', id: src.id });
+}
+
+async function addRemoteItem(d) {  // LOCAL-PATCH (station): idempotent add. The same SceneItemCreated can
   // arrive twice (relay redelivery, reconnect bursts) — never double-list.
   if (obsIdMap.has(d.sceneItemId)) return;
   const scene = obs.sceneByName(d.sceneName);

@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** twelve marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** sixteen marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -45,6 +45,20 @@
      and S.items from zero (every reconnect duplicated each source row),
      `addRemoteItem` is idempotent per sceneItemId and swaps the local
      echo-ghost for the server row instead of doubling it.
+  13. Preview left / Program right (was reversed), per-pane Refresh +
+     Live toggle. Live state is ws-owned, panes talk over the `live-view` /
+     `snap-request` engine events; ws acks repaint the buttons.
+  14. Screenshot engine: JPEG ladder (640px q60) with PNG fallback, one
+     request in flight max, stills ~1fps, Live ~4fps, pause when the tab
+     hides, deaf-guard forces Live off after 5 straight failures. No 60fps
+     mode exists on purpose — see README "live view budget".
+  15. Mixer LIVE/SIM badge (`engine.metersLive()`: attached + meter event
+     within 3s). Green LIVE = real plane peaks; grey SIM = simulation.
+  16. Audio-filter mirror for mic tuning: engine CRUD
+     (`add/removeSourceFilter`, `setFilterProp`), OBS kind/key maps,
+     server chain sync in `initialSync`, re-sync on filter events,
+     debounced settings pushes, dialog add/remove/audio-sliders wired
+     through it. Effect filters stay local-only sim.
 - **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
   browsers may cache; hard-reload after updates). OBS traffic goes through
   the overlay server's raw relay: the replica's gateway mode

@@ -254,7 +254,8 @@ export function openFilters(src) {
         class: 'qlist-row' + (f === current ? ' selected' : ''),
         onclick: () => { current = f; render(); },
         oncontextmenu: (e) => { e.preventDefault(); openMenu([
-          { label: 'Remove', action: () => { src.filters = src.filters.filter(x => x !== f); current = null; render(); } },
+          // LOCAL-PATCH (station): audio removals mirror to OBS.
+          { label: 'Remove', action: () => { if (f.audio) obs.removeSourceFilter(src.id, f); else src.filters = src.filters.filter(x => x !== f); current = null; render(); } },
         ], e.clientX, e.clientY); },
       },
         h('span', { class: 'row-icon', html: I(f.audio ? 'audioLine' : 'filter') }),
@@ -279,7 +280,9 @@ export function openFilters(src) {
         ...FILTER_TYPES.audio.map(t => ({ label: t.name, action: () => addFilter(t, true) })),
       ], e.clientX + 4, e.clientY + 4);
     } else if (ic === 'minus' && current) {
-      src.filters = src.filters.filter(x => x !== current); current = null; render();
+      if (current.audio) obs.removeSourceFilter(src.id, current);
+      else src.filters = src.filters.filter(x => x !== current);
+      current = null; render();
     } else if (current) {
       const i = src.filters.indexOf(current);
       const to = ic === 'up' ? clamp(i + 1, 0, src.filters.length - 1) : clamp(i - 1, 0, src.filters.length - 1);
@@ -288,6 +291,9 @@ export function openFilters(src) {
     }
   }
   function addFilter(t, audio) {
+    // LOCAL-PATCH (station): audio filters are real (mirrored to OBS via
+    // the engine); effect filters stay local-only sim.
+    if (audio) { current = obs.addSourceFilter(src.id, t.id, t.name); render(); return; }
     const f = { id: t.id, name: t.name, audio, settings: {} };
     (src.filters = src.filters || []).unshift(f);
     current = f; render();
@@ -368,43 +374,43 @@ function buildFilterProps(root, f) {
       slider('Opacity', () => s.opacity ?? 100, v => s.opacity = v, 0, 100);
       break;
     case 'compressor':
-      slider('Ratio (X:1)', () => s.ratio ?? 10, v => s.ratio = v, 1, 20);
-      slider('Threshold', () => s.threshold ?? -18, v => s.threshold = v, -60, 0);
-      slider('Attack (ms)', () => s.attack ?? 6, v => s.attack = v, 0.1, 100);
-      slider('Release (ms)', () => s.release ?? 60, v => s.release = v, 1, 1000);
-      slider('Output Gain (dB)', () => s.outputGain ?? 0, v => s.outputGain = v, -32, 32);
+      slider('Ratio (X:1)', () => s.ratio ?? 10, v => obs.setFilterProp(src.id, f, 'ratio', v), 1, 20);
+      slider('Threshold', () => s.threshold ?? -18, v => obs.setFilterProp(src.id, f, 'threshold', v), -60, 0);
+      slider('Attack (ms)', () => s.attack ?? 6, v => obs.setFilterProp(src.id, f, 'attack', v), 0.1, 100);
+      slider('Release (ms)', () => s.release ?? 60, v => obs.setFilterProp(src.id, f, 'release', v), 1, 1000);
+      slider('Output Gain (dB)', () => s.outputGain ?? 0, v => obs.setFilterProp(src.id, f, 'outputGain', v), -32, 32);
       break;
     case 'limiter':
-      slider('Threshold', () => s.threshold ?? -6, v => s.threshold = v, -60, 0);
-      slider('Release (ms)', () => s.release ?? 60, v => s.release = v, 1, 1000);
+      slider('Threshold', () => s.threshold ?? -6, v => obs.setFilterProp(src.id, f, 'threshold', v), -60, 0);
+      slider('Release (ms)', () => s.release ?? 60, v => obs.setFilterProp(src.id, f, 'release', v), 1, 1000);
       break;
     case 'gain':
-      slider('Gain (dB)', () => s.gain ?? 0, v => s.gain = v, -30, 30);
+      slider('Gain (dB)', () => s.gain ?? 0, v => obs.setFilterProp(src.id, f, 'gain', v), -30, 30);
       break;
     case 'invert':
       row('', h('label', { class: 'qcheck' }, h('input', { type: 'checkbox', checked: '' }), h('span', { class: 'box' }), h('span', { text: 'Invert Polarity' })));
       break;
     case 'expander':
-      slider('Ratio (X:1)', () => s.ratio ?? 2, v => s.ratio = v, 1, 20);
-      slider('Threshold', () => s.threshold ?? -40, v => s.threshold = v, -60, 0);
-      slider('Attack (ms)', () => s.attack ?? 10, v => s.attack = v, 0.1, 100);
-      slider('Release (ms)', () => s.release ?? 100, v => s.release = v, 1, 1000);
-      slider('Output Gain (dB)', () => s.outputGain ?? 0, v => s.outputGain = v, -32, 32);
+      slider('Ratio (X:1)', () => s.ratio ?? 2, v => obs.setFilterProp(src.id, f, 'ratio', v), 1, 20);
+      slider('Threshold', () => s.threshold ?? -40, v => obs.setFilterProp(src.id, f, 'threshold', v), -60, 0);
+      slider('Attack (ms)', () => s.attack ?? 10, v => obs.setFilterProp(src.id, f, 'attack', v), 0.1, 100);
+      slider('Release (ms)', () => s.release ?? 100, v => obs.setFilterProp(src.id, f, 'release', v), 1, 1000);
+      slider('Output Gain (dB)', () => s.outputGain ?? 0, v => obs.setFilterProp(src.id, f, 'outputGain', v), -32, 32);
       break;
     case 'noise_gate':
-      slider('Close Threshold', () => s.close ?? -60, v => s.close = v, -60, 0);
-      slider('Open Threshold', () => s.open ?? -45, v => s.open = v, -60, 0);
-      slider('Attack Time (ms)', () => s.attack ?? 5, v => s.attack = v, 0, 500);
-      slider('Hold Time (ms)', () => s.hold ?? 200, v => s.hold = v, 0, 2000);
-      slider('Release Time (ms)', () => s.release ?? 150, v => s.release = v, 0, 2000);
+      slider('Close Threshold', () => s.close ?? -60, v => obs.setFilterProp(src.id, f, 'close', v), -60, 0);
+      slider('Open Threshold', () => s.open ?? -45, v => obs.setFilterProp(src.id, f, 'open', v), -60, 0);
+      slider('Attack Time (ms)', () => s.attack ?? 5, v => obs.setFilterProp(src.id, f, 'attack', v), 0, 500);
+      slider('Hold Time (ms)', () => s.hold ?? 200, v => obs.setFilterProp(src.id, f, 'hold', v), 0, 2000);
+      slider('Release Time (ms)', () => s.release ?? 150, v => obs.setFilterProp(src.id, f, 'release', v), 0, 2000);
       break;
     case 'noise_supp':
-      combo('Method', ['RNNoise', 'Speex'], () => s.method || 'RNNoise', v => s.method = v);
-      slider('Suppression Level', () => s.level ?? -30, v => s.level = v, -60, 0);
+      combo('Method', ['RNNoise', 'Speex'], () => s.method || 'RNNoise', v => obs.setFilterProp(src.id, f, 'method', v));
+      slider('Suppression Level', () => s.level ?? -30, v => obs.setFilterProp(src.id, f, 'level', v), -60, 0);
       break;
     case 'upward_comp':
-      slider('Ratio (X:1)', () => s.ratio ?? 2, v => s.ratio = v, 1, 20);
-      slider('Threshold', () => s.threshold ?? -40, v => s.threshold = v, -60, 0);
+      slider('Ratio (X:1)', () => s.ratio ?? 2, v => obs.setFilterProp(src.id, f, 'ratio', v), 1, 20);
+      slider('Threshold', () => s.threshold ?? -40, v => obs.setFilterProp(src.id, f, 'threshold', v), -60, 0);
       break;
     case 'vst':
       row('Plugin Path', h('input', { class: 'qinput', value: s.path || '', style: { width: '240px' } }), h('button', { class: 'qpush', text: 'Browse…', onclick: () => toast('VST plugins load in real OBS (web replica)') }));

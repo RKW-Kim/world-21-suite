@@ -30,31 +30,59 @@ export function buildPreviewArea(root) {
   let paneP = null, paneProg = null, labelP = null, labelProg = null;
 
   /* ---------- pane factory ---------- */
-  function makePane(withCanvas) {
+  function makePane(role) {
     const canvas = h('canvas', { class: 'obs-preview', tabindex: 0 });
     const wrap = h('div', { class: 'preview-canvas-wrap' }, canvas);
     const pane = h('div', { class: 'preview-pane' }, wrap);
+    // LOCAL-PATCH (station): per-pane Refresh (one snapshot on demand) +
+    // Live toggle (fast polling). Live state lives in the ws layer; this
+    // only emits intent + mirrors the acked state back onto the buttons.
+    const refreshBtn = h('button', {
+      class: 'ptools-btn', text: '⟳', title: 'Refresh now (one snapshot)',
+      onclick: (e) => { e.stopPropagation(); obs.emit('snap-request', role); },
+    });
+    const liveBtn = h('button', {
+      class: 'ptools-btn', text: 'LIVE', title: 'Live view: fast polling. Costs render-plane CPU per frame — use to check motion, then switch off.',
+      onclick: (e) => { e.stopPropagation(); setLiveUI(!liveOn); obs.emit('live-view', !liveOn); },
+    });
+    const tools = h('div', { class: 'preview-tools' }, refreshBtn, liveBtn);
+    pane.append(tools);
     area.append(pane);
-    return { pane, wrap, canvas };
+    return { pane, wrap, canvas, refreshBtn, liveBtn };
   }
+
+  // LOCAL-PATCH (station): live-view UI mirror. The ws layer owns the real
+  // state (it can force live off when the plane stops answering); every ack
+  // repaints all pane buttons so they never disagree.
+  let liveOn = false;
+  function setLiveUI(on) {
+    liveOn = !!on;
+    for (const p of [paneP, paneProg]) p?.liveBtn?.classList.toggle('on', liveOn);
+  }
+  obs.on('live-view', setLiveUI);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && liveOn) { setLiveUI(false); obs.emit('live-view', false); }
+  });
 
   function layout() {
     area.innerHTML = '';
     if (obs.S.studioMode) {
-      paneP = makePane(); paneProg = makePane();
+      paneP = makePane('preview'); paneProg = makePane('program');
       labelP = h('div', { class: 'preview-label', html: `<b>Preview</b> — <span></span>` });
       labelProg = h('div', { class: 'preview-label', html: `<b>Program</b> — <span></span>` });
       paneP.pane.append(labelP); paneProg.pane.append(labelProg);
       studioControls = buildStudioControls();
-      // OBS layout: Program on the LEFT, Preview on the RIGHT, transition controls between
-      area.append(paneProg.pane, studioControls, paneP.pane);
+      // OBS layout: Preview on the LEFT (next to scenes/sources), Program
+      // on the RIGHT, transition controls between. (Was reversed.)
+      area.append(paneP.pane, studioControls, paneProg.pane);
     } else {
-      paneProg = makePane();
+      paneProg = makePane('program');
       paneP = null; studioControls = null;
     }
     bindInteractions();
     resizeCanvases();
     updateLabels();
+    setLiveUI(liveOn);
   }
 
   function buildStudioControls() {
