@@ -23,7 +23,7 @@ UnsetEnvironment=WAYLAND_DISPLAY
 # without this every unclean boot parks at "Run in Normal Mode?" forever).
 Environment=LIBGL_ALWAYS_SOFTWARE=1
 Environment=QT_DEBUG_PLUGINS=1
-ExecStartPre=/bin/rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie
+ExecStartPre=/bin/sh -c 'rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
 ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:99 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --minimize-to-tray --disable-missing-files-check
 Restart=always
 RestartSec=20
