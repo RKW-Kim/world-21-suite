@@ -10,7 +10,7 @@
    ============================================================ */
 import { h, sha256B64, deepClone } from './util.js';
 import { obs, AUDIO_KINDS } from './engine.js';
-import { openDialog, msgBox, toast } from './ui.js';
+import { openDialog, toast } from './ui.js';
 import { setRemoteFrame } from './preview.js';
 import { openWsSettings } from './tools.js';
 
@@ -54,6 +54,7 @@ const state = {
   obsVersion: '',
   itemSourceSize: new Map(), // itemId -> {w,h} native source size
   timers: [],
+  echoGhosts: [], // local addItem rows awaiting their server echo (max 20, 15s)
 };
 
 export const wsApi = {
@@ -148,9 +149,47 @@ function connect() {
     if (state.status !== 'offline') {
       unpatchEngine();
       setStatus('offline');
-      msgBox({ title: 'WebSocket', text: 'Disconnected from OBS.', icon: 'info' });
+      // LOCAL-PATCH (station): no modal on drops — the watchdog redials
+      // every 5s, so one msgBox per drop stacked without bound (100+ OKs
+      // seen on a flaky link). One singleton banner instead; it updates in
+      // place and vanishes on (re)connect. The panel stays usable offline.
+      showOfflineBanner();
     }
   };
+}
+
+/* Singleton connection-loss banner (never modal, never stacked). */
+let offlineBanner = null;
+let offlineZ = 9000;
+function showOfflineBanner() {
+  if (offlineBanner) { offlineBanner.el.style.zIndex = ++offlineZ; return; }
+  const el = h('div', { id: 'ws-offline-banner', role: 'status' },
+    h('span', { class: 'dot' }),
+    h('span', { text: 'Connection to OBS lost — retrying every 5s. The panel keeps working locally; actions mirror on reconnect.' }),
+    h('button', {
+      class: 'qpush default', text: 'Retry now',
+      onclick: () => { try { connect(); } catch {} },
+    }));
+  Object.assign(el.style, {
+    position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: '14px',
+    zIndex: ++offlineZ, display: 'flex', gap: '10px', alignItems: 'center',
+    padding: '9px 14px', background: '#3a1f1f', border: '1px solid #a33',
+    borderRadius: '8px', color: '#ffd9d9', fontSize: '13px',
+    boxShadow: '0 4px 18px rgba(0,0,0,.5)', maxWidth: '90vw',
+  });
+  const dot = el.querySelector('.dot');
+  if (dot) Object.assign(dot.style, {
+    width: '9px', height: '9px', borderRadius: '50%', background: '#f55',
+    flex: '0 0 auto',
+  });
+  document.body.appendChild(el);
+  offlineBanner = { el };
+}
+function hideOfflineBanner() {
+  if (!offlineBanner) return false;
+  try { offlineBanner.el.remove(); } catch {}
+  offlineBanner = null;
+  return true;
 }
 
 function disconnect(silent) {
@@ -183,7 +222,10 @@ async function handle(msg) {
     patchEngine();
     await initialSync();
     startPolling();
-    toast(`Connected to OBS ${state.obsVersion || ''}`.trim());
+    // LOCAL-PATCH (station): only announce when it matters — first connect
+    // gets the hello, a drop gets "Reconnected", silent redials stay silent.
+    if (hideOfflineBanner()) toast(`Reconnected to OBS ${state.obsVersion || ''}`.trim());
+    else toast(`Connected to OBS ${state.obsVersion || ''}`.trim());
   } else if (op === 4) { // Event
     handleEvent(msg.d || {});
   } else if (op === 7) { // RequestResponse (LOCAL-PATCH: was 6, shifted table)
@@ -318,6 +360,14 @@ function patchEngine() {
   wrap(E, 'addItem', ([sceneId, sourceId], r) => {
     const src = obs.sourceById(sourceId);
     if (src && (src.kind === 'scene' || src.kind === 'group' || src.global)) return;
+    // LOCAL-PATCH (station): remember the ghost row so the server echo can
+    // swap it instead of doubling it (see addRemoteItem). Bounded + expiring.
+    try {
+      if (r?.id) {
+        state.echoGhosts.push({ sceneId, sourceId, localId: r.id, t: Date.now() });
+        if (state.echoGhosts.length > 20) state.echoGhosts.splice(0, state.echoGhosts.length - 20);
+      }
+    } catch {}
     request('CreateSceneItem', { sceneName: sceneName(sceneId), sourceName: src?.name }).catch(() => {});
   });
   wrap(E, 'removeItem', ([sceneId, itemId]) => {
@@ -394,10 +444,18 @@ async function initialSync() {
     const sceneList = await request('GetSceneList');
     const localScenes = [];
     itemIdMap.clear(); obsIdMap.clear();
+    // LOCAL-PATCH (station): rebuild-from-zero. Without this every reconnect
+    // re-pushed fresh items onto the surviving scene.items arrays (and left
+    // stale S.items keys), so each source row duplicated once per drop —
+    // the "sources keep duplicating" bug on flaky links.
+    obs.S.items = {};
+    state.itemSourceSize.clear();
+    state.echoGhosts = []; // ghosts belong to a dead connection; server wins
     const itemsToBuild = [];
     for (const sc of sceneList.scenes) {
       const local = obs.sceneByName(sc.sceneName) || { id: `scene-${sc.sceneIndex}-${sc.sceneName}`, name: sc.sceneName, items: [] };
       if (!obs.sceneByName(sc.sceneName)) obs.S.scenes.push(local);
+      local.items = [];
       localScenes.push(local);
       try {
         const sil = await request('GetSceneItemList', { sceneName: sc.sceneName });
@@ -688,9 +746,23 @@ async function refreshSceneList(scenes) {
 }
 
 async function addRemoteItem(d) {
+  // LOCAL-PATCH (station): idempotent add. The same SceneItemCreated can
+  // arrive twice (relay redelivery, reconnect bursts) — never double-list.
+  if (obsIdMap.has(d.sceneItemId)) return;
   const scene = obs.sceneByName(d.sceneName);
   const src = obs.S.sources.find(s => s.name === d.sourceName);
   if (!scene || !src) return;
+  // LOCAL-PATCH (station): mirror echo. A local addItem() paints a ghost row
+  // with a random id, then the server echo arrives with the numeric id. Swap
+  // the ghost for the real row instead of showing both (oldest matching
+  // ghost <15s old wins; same source may legitimately repeat in one scene).
+  const now = Date.now();
+  state.echoGhosts = state.echoGhosts.filter(g => now - g.t < 15000);
+  const gi = state.echoGhosts.findIndex(g => g.sceneId === scene.id && g.sourceId === src.id);
+  if (gi >= 0) {
+    const [ghost] = state.echoGhosts.splice(gi, 1);
+    try { obs.removeItem(ghost.sceneId, ghost.localId, true); } catch {}
+  }
   const localId = `item-${d.sceneItemId}`;
   const t = d.sceneItemTransform || {};
   obs.S.items[localId] = {
@@ -701,7 +773,7 @@ async function addRemoteItem(d) {
     visible: d.sceneItemEnabled !== false, locked: !!d.sceneItemLocked,
     boundsType: 'none', align: 5, filters: [], sel: false,
   };
-  scene.items.push(localId);
+  if (!scene.items.includes(localId)) scene.items.push(localId);
   itemIdMap.set(localId, d.sceneItemId);
   obsIdMap.set(d.sceneItemId, localId);
   obs.emit('items');

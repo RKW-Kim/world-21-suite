@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** six marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** twelve marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -38,6 +38,13 @@
   7. `js/main.js` boot: auto-connect after first paint (gateway defaults
      already target this server; the relay bridges authentication, so no
      password is needed anywhere on the operator side).
+  11. `js/ws.js` drops: singleton non-modal reconnect banner instead of one
+     msgBox per drop (the 5s watchdog redial stacked 100+ OKs on flaky
+     links); "Reconnected" toast only after a real drop, silent otherwise.
+  12. `js/ws.js` reconcile-don't-append: `initialSync` rebuilds scene.items
+     and S.items from zero (every reconnect duplicated each source row),
+     `addRemoteItem` is idempotent per sceneItemId and swaps the local
+     echo-ghost for the server row instead of doubling it.
 - **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
   browsers may cache; hard-reload after updates). OBS traffic goes through
   the overlay server's raw relay: the replica's gateway mode

@@ -273,9 +273,9 @@ class Handler(SimpleHTTPRequestHandler):
         if self.headers.get("Upgrade", "").lower() == "websocket":
             return self._ws_relay()
         if self.path == "/console" or self.path.startswith("/console?"):
-            self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html")
+            self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html", nocache=True)
         elif self.path == "/media" or self.path.startswith("/media?"):
-            self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html")
+            self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html", nocache=True)
         elif self.path == "/studio" or self.path.startswith("/studio/"):
             if self.path == "/studio":
                 # Bare path breaks relative assets (css/ resolves to /css/).
@@ -962,9 +962,11 @@ class Handler(SimpleHTTPRequestHandler):
         ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
         if path.endswith(".js"):
             ctype = "text/javascript"  # ES modules refuse octet-stream
-        self._serve_file(path, ctype)
+        # Control surfaces must never serve stale JS: a cached ws.js kept
+        # the 100-dialogs bug alive on operators' browsers after the fix.
+        self._serve_file(path, ctype, nocache=True)
 
-    def _serve_file(self, path, ctype):
+    def _serve_file(self, path, ctype, nocache=False):
         try:
             with open(path, "rb") as f:
                 body = f.read()
@@ -974,6 +976,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Access-Control-Allow-Origin", "*")
+        if nocache:
+            self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
