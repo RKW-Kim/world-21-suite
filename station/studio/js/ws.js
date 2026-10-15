@@ -1,9 +1,9 @@
 /* ============================================================
    OBS Studio — Web Replication · obs-websocket v5 Client
-   Implements the obs-websocket 5.x JSON protocol (official opcodes):
+    Implements the obs-websocket 5.x JSON protocol (official opcodes):
      Hello(0) → Identify(1) → Identified(2) → Reidentify(3)
-     Event(4) · Request(5) · RequestResponse(6)
-     RequestBatch(7) · RequestBatchResponse(8)
+     Event(4) · Request(6) · RequestResponse(7)
+     RequestBatch(8) · RequestBatchResponse(9)
    Attaches the web GUI to a REAL OBS Studio instance: mirrors
    UI actions as RPC requests, reconciles state from events,
    and renders the real program/preview via GetSourceScreenshot.
@@ -186,15 +186,19 @@ async function handle(msg) {
     toast(`Connected to OBS ${state.obsVersion || ''}`.trim());
   } else if (op === 4) { // Event
     handleEvent(msg.d || {});
-  } else if (op === 6) { // RequestResponse
+  } else if (op === 7) { // RequestResponse (LOCAL-PATCH: was 6, shifted table)
     const d = msg.d || {};
     const p = state.pending.get(d.requestId);
     if (p) {
       state.pending.delete(d.requestId);
       if (d.requestStatus?.result) p.resolve(d.responseData || {});
-      else p.reject(new Error(`${d.responseType || 'Request'} failed: ${codeName(d.requestStatus?.code)}`));
+      else {
+        const err = new Error(`${d.responseType || 'Request'} failed: ${codeName(d.requestStatus?.code)}`);
+        try { obs.log('warn', err.message); } catch {}
+        p.reject(err);
+      }
     }
-  } else if (op === 8) { // RequestBatchResponse
+  } else if (op === 9) { // RequestBatchResponse (LOCAL-PATCH: was 8, shifted table)
     const d = msg.d || {};
     const p = state.pendingBatch.get(d.requestId);
     if (p) {
@@ -220,13 +224,36 @@ export function buildWsUrl() {
 
 export function request(requestType, requestData = {}) {
   return new Promise((resolve, reject) => {
-    if (state.status !== 'connected') { reject(new Error('not connected')); return; }
-    const requestId = `r${state.reqId++}`;
-    state.pending.set(requestId, { resolve, reject });
-    send({ op: 5, d: { requestType, requestId, requestData } });
-    setTimeout(() => {
-      if (state.pending.has(requestId)) { state.pending.delete(requestId); reject(new Error(`${requestType} timed out`)); }
-    }, 5000);
+    // LOCAL-PATCH (station): wait out flap windows instead of failing
+    // instantly when a mirror fires mid-reconnect. 15s grace, then loud.
+    const t0 = Date.now();
+    const attempt = () => {
+      if (state.status !== 'connected') {
+        if (Date.now() - t0 > 15000) { reject(new Error('not connected')); return; }
+        setTimeout(attempt, 500);
+        return;
+      }
+      const requestId = `r${state.reqId++}`;
+      state.pending.set(requestId, { resolve, reject });
+      // LOCAL-PATCH (station): Request is op 6, not 5 (op 5 is Event,
+      // server→client only). Every RPC died with "Unknown OpCode: 5".
+      send({ op: 6, d: { requestType, requestId, requestData } });
+      // LOCAL-PATCH (station): deaf render plane eats single RPCs and the
+      // old 5s-then-silent failure confused everyone. 12s window, one retry,
+      // and failures are logged where the operator can see them.
+      let tries = 0;
+      const arm = () => setTimeout(() => {
+        if (!state.pending.has(requestId)) return;
+        tries++;
+        if (tries < 2) { send({ op: 6, d: { requestType, requestId, requestData } }); arm(); return; }
+        state.pending.delete(requestId);
+        const err = new Error(`${requestType} failed after retry`);
+        try { obs.log('warn', err.message); } catch {}
+        reject(err);
+      }, 12000);
+      arm();
+    };
+    attempt();
   });
 }
 
@@ -236,7 +263,7 @@ export function requestBatch(requests, { haltOnFailure = false } = {}) {
     if (state.status !== 'connected') { reject(new Error('not connected')); return; }
     const requestId = `b${state.reqId++}`;
     state.pendingBatch.set(requestId, { resolve, reject });
-    send({ op: 7, d: { requestId, haltOnFailure, requests: requests.map(r => ({ requestType: r.requestType || r[0], requestId: `r${state.reqId++}`, requestData: r.requestData || r[1] || {} })) } });
+    send({ op: 8, d: { requestId, haltOnFailure, requests: requests.map(r => ({ requestType: r.requestType || r[0], requestId: `r${state.reqId++}`, requestData: r.requestData || r[1] || {} })) } }); // LOCAL-PATCH: was op 7
     setTimeout(() => {
       if (state.pendingBatch.has(requestId)) { state.pendingBatch.delete(requestId); reject(new Error('RequestBatch timed out')); }
     }, 8000);
@@ -256,9 +283,14 @@ function patchEngine() {
   const wrap = (obj, method, rpc) => {
     const orig = obj[method].bind(obj);
     state.patches.push([obj, method, orig]);
+    // LOCAL-PATCH (station): mirrors fire on status alone, never on the
+    // busy flag. Busy is held by unrelated async event handling (e.g. the
+    // daemon's own deck advances), and gating on it silently dropped user
+    // actions whenever background traffic was in flight. Echo is harmless:
+    // every mirrored call sets absolute state, never toggles.
     obj[method] = (...args) => {
       const r = orig(...args);
-      if (!state.busy && state.status === 'connected') {
+      if (state.status === 'connected') {
         Promise.resolve().then(() => { try { rpc(args, r); } catch (e) { obs.log('warn', `WS mirror ${method}: ${e.message}`); } });
       }
       return r;

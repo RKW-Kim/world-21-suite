@@ -701,6 +701,35 @@ def prefetch_pass(data, state, in_flight, failed=None):
         return  # one new fetch per pass; the next pass takes the next item
 
 
+def restart_plane():
+    """Restart the render plane when the reachability gate declares it dead.
+
+    systemctl stop does not reliably reap the flatpak/bwrap tree (seen
+    live: unit inactive, obs still holding :4455), so belt and suspenders:
+    stop, kill exact-name leftovers, start. Exact comm names only — never
+    pattern-match, or the killer eats its own launcher.
+    """
+    def run(*args):
+        try:
+            subprocess.run(list(args), timeout=100,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return True
+        except Exception as e:
+            alert("Plane restart step %s failed: %s." % (args[-1], e), "WARN")
+            return False
+    run("systemctl", "--user", "stop", "station-obs")
+    time.sleep(3)
+    for comm in ("obs", "bwrap"):
+        try:
+            subprocess.run(["pkill", "-x", comm], timeout=10,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+    time.sleep(2)
+    if run("systemctl", "--user", "start", "station-obs"):
+        alert("Render plane restart issued; waiting for first Hello.", "INFO")
+
+
 def cmd_loop(renderer):
     import fcntl
     try:
@@ -782,8 +811,35 @@ def cmd_loop(renderer):
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
     idle_streak = 0  # polls in a row the on-air deck reported idle (see below)
+    plane_down_since = None  # first poll the render plane failed to answer
+    plane_restarted_at = 0.0  # last self-healing restart, epoch
     while True:
         try:
+            # Reachability gate: a dead plane must not spin the loop, and a
+            # plane that stays dead gets restarted (cooldown-capped).
+            # Full Hello handshake, not just TCP: a wedged plane can hold
+            # the listener open while answering nothing (seen live).
+            # 8s bounded, never stalls the poll.
+            # Thresholds are env-overridable so the self-healing path stays
+            # testable without waiting out production values.
+            DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
+            COOLDOWN_SECS = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
+            try:
+                probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
+                            int(os.environ.get("OBS_PORT", "4455")), timeout=8)
+                hello = probe.recv()
+                probe.close()
+                if hello.get("op") != 0:
+                    raise RuntimeError("not v5")
+                plane_down_since = None
+            except Exception:
+                now = time.time()
+                if plane_down_since is None:
+                    plane_down_since = now
+                elif now - plane_down_since > DOWN_SECS and now - plane_restarted_at > COOLDOWN_SECS:
+                    plane_restarted_at = now
+                    alert("Render plane unreachable; restarting it.", "CRIT")
+                    restart_plane()
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
                 mtime = os.path.getmtime(PLAYLIST)
                 try:

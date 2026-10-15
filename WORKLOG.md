@@ -4,6 +4,42 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-15 — Studio relay forensics + UI-drive harness (overnight)
+
+- Root-caused the flapping, in order: (1) socketserver's buffered rfile
+  readahead ate pipelined WS frames (reads now go through rfile/read1);
+  (2) handshake timeouts leaked into the splice (both legs blocking now);
+  (3) dead legs never released the other side (thread/handler leaks,
+  fixed with mutual shutdown); (4) THEIR opcode table was shifted by one
+  (requests op5, responses op6...) — real OBS closed every session with
+  "Unknown OpCode: 5"; fixed to 6/7/8/9 with proof. Relay now holds
+  minutes with megabytes flowing both ways.
+- Their mirror busy-gate dropped user actions whenever background event
+  traffic held it (e.g. our own deck advances) — removed, echo is harmless
+  (all mirrored calls set absolute state). Request path hardened: 12s +
+  retry + visible warnings + flap grace.
+- Daemon self-healing: reachability gate with full Hello handshake (a
+  wedged plane can hold :4455 open saying nothing), restart via stop +
+  exact-name kill + start (unit stop alone leaves flatpak zombies),
+  10min/30min production thresholds, env-overridable for tests. Also
+  caught systemd tracking the dead tree as "running" — the gate, not the
+  unit file, is now the source of truth for plane health.
+- station/test_studio_ui.py: full CDP-driven harness (own chromium per
+  run, fresh profile, OBS-state verification per action, residue cleanup).
+  Best honest score, healthy minutes: part1 15/20, part2 13/17.
+  Every core TD action proven live repeatedly: connect/sync/cuts/add/
+  mixer/studio/preview/transitions/outputs/menus/dialogs.
+- Open flaky set (engine takes, OBS intermittently doesn't; deaf minutes
+  implicate transport, code paths individually verified): scene rename,
+  duration set, eye-via-row, remove confirmations, sources-dock freshness
+  after cuts. Plus: record produces no file here (backend quirk, UI flips
+  correctly), vcam unavailable (no v4l2loopback), projectors/multiview
+  need human eyes, sources dock shows composite rows after churn (their
+  render + index-id merge fragility — reported upstream).
+- Environment note: this box saturates (agent harness itself ~60% at
+  peaks) and deaf minutes correlate with load. Verification runs need
+  quiet windows; the harness retries and reports honestly either way.
+
 ## 2026-10-14 — Relay timeout kill + machine-independent file standard
 
 - Operator's disconnect, root-caused: the upstream socket kept its 10s

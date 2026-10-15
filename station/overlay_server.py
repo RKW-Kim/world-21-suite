@@ -763,6 +763,7 @@ class Handler(SimpleHTTPRequestHandler):
                 up.close()
             except Exception:
                 pass
+            sys.stderr.write("overlay: ws relay upstream failed (%s)\n" % e)
             self.send_error(502, "render plane unreachable: %s" % e)
             return
         try:
@@ -794,7 +795,7 @@ class Handler(SimpleHTTPRequestHandler):
             # then keeps reading for the Identify.
             hdr = b""
             while len(hdr) < 2:
-                chunk = down.recv(2 - len(hdr))
+                chunk = self.rfile.read(2 - len(hdr))
                 if not chunk:
                     raise RuntimeError("browser EOF")
                 hdr += chunk
@@ -818,9 +819,12 @@ class Handler(SimpleHTTPRequestHandler):
             return json.loads(data.decode())
 
         def _read_exact(n):
+            # Reads via rfile, not the raw socket: the handler's buffered
+            # reader may already hold frame bytes (readahead past the HTTP
+            # headers). Raw recv would miss them and hang.
             buf = b""
             while len(buf) < n:
-                chunk = down.recv(n - len(buf))
+                chunk = self.rfile.read(n - len(buf))
                 if not chunk:
                     raise RuntimeError("browser EOF")
                 buf += chunk
@@ -864,18 +868,82 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
-        def pump(src, dst):
+        SNIFF = os.environ.get("OBS_RELAY_SNIFF", "")
+        FULLSNIFF = os.environ.get("OBS_RELAY_FULLSNIFF", "")
+        sniffs = {"n": 0}
+
+        def sniff(tag, chunk):
+            # Env-gated frame peek for post-mortems: direction, opcode, len.
+            # FULLSNIFF removes the cap for single-session captures.
+            # RPCLOG decodes small JSON frames to bare request/event names.
+            if not SNIFF or (not FULLSNIFF and sniffs["n"] >= 40):
+                return
+            sniffs["n"] += 1
+            try:
+                b1, b2 = chunk[0], chunk[1]
+                ln = b2 & 0x7F
+                sys.stderr.write("overlay: relay frame %s op=%d len~%d masked=%s\n"
+                                 % (tag, b1 & 0x0F, ln, bool(b2 & 0x80)))
+                if (b1 & 0x0F) == 0x8:
+                    sys.stderr.write("overlay: relay close payload: %r\n" % chunk[2:80])
+            except Exception:
+                pass
+
+        def rpc_log(tag, payload):
+            if not os.environ.get("OBS_RELAY_RPCLOG", ""):
+                return
+            try:
+                d = json.loads(payload.decode())
+                inner = d.get("d", {})
+                sys.stderr.write("overlay: relay rpc %s op=%s %s\n"
+                                 % (tag, d.get("op"),
+                                    inner.get("requestType") or inner.get("eventType") or "?"))
+            except Exception:
+                pass
+
+        def pump_down():
+            # Browser leg reads via rfile.read1: pipelined frames may sit in
+            # the buffered reader, and read() would block for a full chunk.
+            # Ending here must release the main pump too, or the handler
+            # thread leaks with the OBS socket held open.
+            nbytes = 0
+            try:
+                while True:
+                    chunk = self.rfile.read1(65536)
+                    if not chunk:
+                        break
+                    up.sendall(chunk)
+                    nbytes += len(chunk)
+                    if SNIFF and nbytes == len(chunk):
+                        sys.stderr.write("overlay: relay first browser bytes: %r\n" % chunk[:160])
+                    sniff("browser->obs", chunk)
+            except (OSError, ValueError) as e:
+                sys.stderr.write("overlay: relay browser->obs down (%s after %d bytes)\n" % (e, nbytes))
+            else:
+                sys.stderr.write("overlay: relay browser->obs EOF (%d bytes)\n" % nbytes)
+            try:
+                up.shutdown(_sock.SHUT_RDWR)
+            except OSError:
+                pass
+
+        def pump(src, dst, tag):
+            # Raw-socket leg (OBS side is never buffered): block for data.
+            nbytes = 0
             try:
                 while True:
                     chunk = src.recv(65536)
                     if not chunk:
                         break
+                    sniff(tag, chunk)
                     dst.sendall(chunk)
-            except OSError:
-                pass
+                    nbytes += len(chunk)
+            except OSError as e:
+                sys.stderr.write("overlay: relay %s down (%s after %d bytes)\n" % (tag, e, nbytes))
+                return
+            sys.stderr.write("overlay: relay %s EOF (%d bytes)\n" % (tag, nbytes))
 
-        threading.Thread(target=pump, args=(down, up), daemon=True).start()
-        pump(up, down)
+        threading.Thread(target=pump_down, daemon=True).start()
+        pump(up, down, "obs->browser")
         try:
             up.close()
         except OSError:

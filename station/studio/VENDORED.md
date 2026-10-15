@@ -23,6 +23,18 @@
      change).
   6. `js/ws.js` mirror `reorderScene`: no such protocol call exists —
      replaced with a spoken warning, local order only.
+  7. `js/ws.js` opcode table: Request is op 6 (was 5), responses op 7
+     (was 6), batch op 8 (was 7), batch-responses op 9 (was 8). The whole
+     client spoke a shifted dialect that only its own mock understood;
+     real OBS closed every session with "Unknown OpCode: 5".
+  8. `js/ws.js` request(): 12s window + one retry + visible warnings
+     (was 5s-then-silent), plus 15s flap grace before first send.
+  9. `js/ws.js` mirror wrap: no `busy` gate (it is held by unrelated async
+     event handling, e.g. the daemon's own deck advances, and silently
+     dropped user actions fired mid-flight; every mirrored call sets
+     absolute state so echo is harmless).
+  10. `js/main.js` boot: auto-connect after paint + 5s watchdog with
+     stuck-handshake redial (never stamps on a handshake younger than 15s).
   7. `js/main.js` boot: auto-connect after first paint (gateway defaults
      already target this server; the relay bridges authentication, so no
      password is needed anywhere on the operator side).

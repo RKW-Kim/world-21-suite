@@ -403,8 +403,23 @@ function boot() {
   window.__obs = obs;         // debugging handle
   window.__ws = wsApi;
   // LOCAL-PATCH (station): zero-config connect — gateway defaults already
-  // point at this server and the relay bridges authentication.
-  setTimeout(() => { try { wsApi.connect(); } catch {} }, 800);
+  // point at this server and the relay bridges authentication. One-shot
+  // plus watchdog: a missed first tick (slow parse, deaf render plane)
+  // heals itself, as does any later drop. Redials a stuck handshake too,
+  // but never stamps on one younger than 15s.
+  const autoConnect = () => {
+    try {
+      const st = wsApi.status;
+      if (st === 'connected') return;
+      const now = Date.now();
+      if (st !== 'connecting' || now - (window.__lastTry || 0) > 15000) {
+        window.__lastTry = now;
+        wsApi.connect();
+      }
+    } catch {}
+  };
+  setTimeout(autoConnect, 800);
+  setInterval(autoConnect, 5000);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
