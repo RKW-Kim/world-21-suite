@@ -589,10 +589,8 @@ input[type="number"].qinput::-webkit-inner-spin-button { opacity: 1; }
   font-size: 11px; line-height: 1; padding: 2px 6px; cursor: pointer;
 }
 .ptools-btn:hover { color: var(--text); border-color: var(--btn-border); }
-.ptools-btn.on {
-  color: #ff6b6b; border-color: #a33; background: rgba(90,20,20,.65);
-  animation: liveblink 1.2s infinite;
-}
+/* (.ptools-btn.on amber definition lives with the live-view rules below —
+ * one definition only; a stale red duplicate was removed 2026-10-15.) */
 @keyframes liveblink { 50% { opacity: .55; } }
 .mx-live {
   font-size: 10px; font-weight: 700; letter-spacing: .4px;
@@ -615,10 +613,6 @@ input[type="number"].qinput::-webkit-inner-spin-button { opacity: 1; }
 
 /* LOCAL-PATCH (station): dock layout system — splitters, bottom strip,
  * presets, drag-reorder drop indicator. */
-#workspace.bottom-docks { flex-direction: column; }
-#workspace.bottom-docks .ws-col.left,
-#workspace.bottom-docks .ws-col.right { display: none; }
-#workspace.bottom-docks .ws-col.center { flex: 1 1 auto; min-height: 0; }
 .ws-bottom {
   flex: 0 0 248px; display: flex; gap: 0; min-height: 0; overflow-x: auto;
   border-top: 1px solid var(--border);
@@ -639,3 +633,21 @@ input[type="number"].qinput::-webkit-inner-spin-button { opacity: 1; }
  * strip only appears when it holds docks. */
 #workspace { flex-direction: column; }
 .ws-top { flex: 1 1 auto; display: flex; min-height: 0; min-width: 0; }
+
+/* LOCAL-PATCH (station): left-column internal split (was inline styles that
+ * leaked into the bottom strip on drag) + empty-column drop gutter. */
+.ws-col.left #dock-scenes { flex: 0 1 auto; }
+.ws-col.left #dock-sources { flex: 1 1 0; }
+.ws-col.ws-empty { flex: 0 0 14px !important; border-right: 1px dashed var(--border); }
+.ws-col.ws-empty.dock-drop-into { border-color: var(--accent, #3f8cff); }
+
+/* LOCAL-PATCH (station): narrow windows — side columns yield before the
+ * preview crushes to zero; tools row never covers the pane label. */
+@media (max-width: 1100px) {
+  .ws-col.left { flex-basis: 220px !important; }
+  .ws-col.right { flex-basis: 260px !important; }
+}
+@media (max-width: 900px) {
+  .preview-tools { top: 20px; }
+  .ws-bottom .dock { min-width: 200px; }
+}

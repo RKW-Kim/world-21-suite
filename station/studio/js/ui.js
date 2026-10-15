@@ -14,6 +14,10 @@ export function openMenu(items, x, y, opts = {}) {
   closeMenus();
   const menu = buildMenu(items, opts);
   menu.classList.add('qmenu');
+  // LOCAL-PATCH (station): menus join the same z-ladder as dialogs
+  // (dialogs increment zTop on every open/focus, so a fixed menu z would
+  // eventually sink under them in long sessions).
+  menu.style.zIndex = ++zTop;
   document.body.appendChild(menu);
   positionMenu(menu, x, y);
   const closer = (e) => {

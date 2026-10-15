@@ -157,8 +157,11 @@ export function buildPreviewArea(root) {
     // remote frame (real OBS screenshot)
     const rf = remoteFrames.get(scene.id);
     if (rf && rf.img && rf.img.complete && rf.img.naturalWidth) {
+      // LOCAL-PATCH (station): destination in CSS px, not device px — under
+      // the dpr transform, c.width/c.height device units overdraw dpr×
+      // (invisible at dpr=1, quarter-view zoom on retina).
       g.globalAlpha = alphaOverride ?? 1;
-      g.drawImage(rf.img, 0, 0, c.width, c.height);
+      g.drawImage(rf.img, 0, 0, c.width / dpr, c.height / dpr);
       g.globalAlpha = 1;
       return;
     }
@@ -405,12 +408,21 @@ export function buildPreviewArea(root) {
         beginMove(e, c);
       } else {
         obs.clearSelection();
-        beginMarquee(e, c);
+        // LOCAL-PATCH (station): no marquee while attached — the rubber
+        // band implies dragging works, and selection-by-click suffices for
+        // eye/lock/filter ops. Offline sim keeps marquee.
+        if (!obs.wsMode) beginMarquee(e, c);
       }
     });
 
     c.addEventListener('mousemove', (e) => {
-      if (obs.wsMode) { c.style.cursor = 'default'; return; }
+      if (obs.wsMode) {
+        // locked: pointer over something selectable, default elsewhere —
+        // never a move/resize cursor for a gesture that won't happen.
+        const h = hitHandle(c, e);
+        c.style.cursor = (h || hitItem(c, e)) ? 'pointer' : 'default';
+        return;
+      }
       const h = hitHandle(c, e);
       const it = hitItem(c, e);
       c.style.cursor = h ? ({ n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' })[h.dir]
@@ -575,17 +587,20 @@ export function buildPreviewArea(root) {
         const t = clamp((performance.now() - transAnim.start) / transAnim.dur, 0, 1);
         drawScene(paneProg.canvas, sceneProg, 1);
         const g = paneProg.canvas.getContext('2d');
+        // LOCAL-PATCH (station): snap is device px; draw at CSS size under
+        // the dpr transform (same overdraw bug as the remote frame below).
+        const dw = paneProg.canvas.width / dpr, dh = paneProg.canvas.height / dpr;
         if (transAnim.type === 'Fade') {
           g.globalAlpha = 1 - t;
-          g.drawImage(transAnim.snap, 0, 0);
+          g.drawImage(transAnim.snap, 0, 0, dw, dh);
           g.globalAlpha = 1;
         } else if (transAnim.type === 'Fade to black') {
           g.fillStyle = `rgba(0,0,0,${Math.sin(t * Math.PI)})`;
-          g.fillRect(0, 0, paneProg.canvas.width, paneProg.canvas.height);
+          g.fillRect(0, 0, dw, dh);
         } else {
           // slide/zoom/swipe/stinger approximated by fade
           g.globalAlpha = 1 - t;
-          g.drawImage(transAnim.snap, 0, 0);
+          g.drawImage(transAnim.snap, 0, 0, dw, dh);
           g.globalAlpha = 1;
         }
         if (t >= 1) transAnim = null;

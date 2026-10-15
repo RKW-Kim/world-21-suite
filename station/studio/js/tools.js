@@ -200,7 +200,7 @@ export function openWsSettings(wsApi) {
       'In the desktop app this dialog configures OBS\'s <i>own</i> server. In the web replica, this same dialog drives the <b>client connector</b> below — letting this page attach to a real OBS running obs-websocket v5.' }),
     h('div', { class: 'row', style: { gap: '8px' } },
       h('button', { class: 'qpush default', text: 'Connect to OBS…', onclick: () => { d.close(); wsApi.openConnect(); } }),
-      wsApi && wsApi.status === 'connected' ? h('button', { class: 'qpush danger', text: 'Disconnect', onclick: () => { wsApi.disconnect(); d.close(); } }) : null,
+      wsApi && wsApi.status === 'connected' ? h('button', { class: 'qpush danger', text: 'Disconnect', onclick: () => { wsApi.disconnect(false, true); d.close(); } }) : null,
     ),
   );
 

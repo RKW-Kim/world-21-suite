@@ -212,6 +212,11 @@ function installUndo() {
   for (const m of structural) {
     const orig = obs[m].bind(obs);
     obs[m] = (...args) => {
+      // LOCAL-PATCH (station): remote-driven mutations (daemon advances,
+      // server echoes) must never land on the undo stack — Ctrl+Z would
+      // "undo" someone else's change locally with no server call.
+      // ws.js sets obs._remoteApply around event-applied engine calls.
+      if (obs._remoteApply) return orig(...args);
       const before = snap();
       const r = orig(...args);
       const after = snap();
@@ -222,7 +227,7 @@ function installUndo() {
       }
       return r;
     };
-  }
+  };
   const apply = (s) => {
     const d = JSON.parse(s);
     obs.state.scenes = d.scenes; obs.state.sources = d.sources; obs.state.items = d.items;
@@ -232,11 +237,16 @@ function installUndo() {
     obs.emit('mixer-structure'); obs.persist();
   };
   obs.undo = () => {
+    // LOCAL-PATCH (station): undo restores local snapshots with no server
+    // calls — while attached that silently diverges from the plane. Say so
+    // instead of corrupting quietly. (Full fix: inverse-RPC table.)
+    if (obs.wsMode) { toast('Undo is local-only while attached — it will not mirror to OBS'); return; }
     const u = obs.undoStack.pop();
     if (!u) { toast('Nothing to undo'); return; }
     obs.redoStack.push(u); apply(u.before);
   };
   obs.redo = () => {
+    if (obs.wsMode) { toast('Redo is local-only while attached — it will not mirror to OBS'); return; }
     const r = obs.redoStack.pop();
     if (!r) { toast('Nothing to redo'); return; }
     obs.undoStack.push(r); apply(r.after);
@@ -351,7 +361,16 @@ function buildWorkspace(root) {
       const d = dockById(id);
       if (d && d.parentElement !== left && d.parentElement !== right && d.parentElement !== bottom) right.append(d);
     }
-    // bottom children stack full-height; side children keep their splits.
+    // LOCAL-PATCH (station): sizing lives here, not in per-dock inline
+    // styles — inline flex/maxHeight travel with the element when dragged
+    // and collapse it in the strip. Bottom children stretch full-height.
+    for (const id of DOCK_IDS) {
+      const d = dockById(id);
+      if (!d) continue;
+      const inBottom = d.parentElement === bottom;
+      d.style.flex = inBottom ? '1 1 0' : '';
+      d.style.height = inBottom ? '100%' : '';
+    }
     const qlist = dockById('dock-scenes')?.querySelector('.qlist');
     if (qlist) qlist.style.maxHeight = dockById('dock-scenes').parentElement === bottom ? '' : '30vh';
   }
@@ -359,13 +378,25 @@ function buildWorkspace(root) {
     const d = obs.settings.ui.dockLayout;
     const order = dockLayout();
     placeDocks(order);
-    left.style.flex = `0 0 ${d.colL || 300}px`;
-    right.style.flex = `0 0 ${d.colR || 340}px`;
+    // LOCAL-PATCH (station): clamp persisted widths — a hand-edited or
+    // stale localStorage value must never crush preview to zero.
+    const clampW = (v, fb) => Math.max(180, Math.min(640, parseInt(v) || fb));
+    d.colL = clampW(d.colL, 300); d.colR = clampW(d.colR, 340);
+    left.style.flex = `0 0 ${d.colL}px`;
+    right.style.flex = `0 0 ${d.colR}px`;
+    const hasDocks = (box) => [...box.children].some(el => el.classList?.contains('dock'));
     const vis = (box) => [...box.children].some(el => el.classList?.contains('dock') && !el.classList.contains('hidden'));
-    left.style.display = vis(left) ? '' : 'none';
-    right.style.display = vis(right) ? '' : 'none';
-    splitL.style.display = left.style.display === 'none' ? 'none' : '';
-    splitR.style.display = right.style.display === 'none' ? 'none' : '';
+    // LOCAL-PATCH (station): a column with zero docks stays a thin gutter
+    // (a drop target — an emptied side must be able to receive docks back);
+    // a column whose docks are all hidden hides fully; same for bottom.
+    for (const [box, gutter] of [[left, 'left'], [right, 'right']]) {
+      if (!hasDocks(box)) { box.style.display = ''; box.classList.add('ws-empty'); }
+      else if (!vis(box)) { box.style.display = 'none'; box.classList.remove('ws-empty'); }
+      else { box.style.display = ''; box.classList.remove('ws-empty'); }
+    }
+    bottom.style.display = vis(bottom) ? '' : 'none';
+    splitL.style.display = (left.style.display === 'none' || left.classList.contains('ws-empty')) ? 'none' : '';
+    splitR.style.display = (right.style.display === 'none' || right.classList.contains('ws-empty')) ? 'none' : '';
   }
   function saveOrder(preset) {
     const d = obs.settings.ui.dockLayout;
@@ -431,6 +462,12 @@ function buildWorkspace(root) {
       } else {
         const strip = under?.closest?.('.ws-bottom');
         if (strip && !strip.contains(dragDock)) { dropTarget = strip; dropPos = 'into'; strip.classList.add('dock-drop-into'); }
+        else {
+          // empty side gutter (column with zero docks stays a thin drop
+          // target so an emptied side can receive docks back).
+          const col = under?.closest?.('.ws-col.left, .ws-col.right');
+          if (col && !col.contains(dragDock)) { dropTarget = col; dropPos = 'into'; col.classList.add('dock-drop-into'); }
+        }
       }
     };
     const up = () => {
@@ -472,11 +509,6 @@ function buildWorkspace(root) {
   applyDockVis();
   applyDockLayout();
 
-  // left column split: scenes auto, sources flex
-  const sceneDock = $('#dock-scenes'), srcDock = $('#dock-sources');
-  sceneDock.style.flex = '0 1 auto';
-  sceneDock.querySelector('.qlist').style.maxHeight = '30vh';
-  srcDock.style.flex = '1 1 0';
   return ws;
 }
 
@@ -486,6 +518,10 @@ function bindHotkeys() {
     const tag = document.activeElement?.tagName;
     const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable;
     if (typing) return;
+    // LOCAL-PATCH (station): Space/Enter on a focused BUTTON (or inside any
+    // dialog) natively activates it — firing the global transition too
+    // would double-trigger. Native behavior wins; other hotkeys still work.
+    if ((tag === 'BUTTON' || document.activeElement?.closest?.('.qwin')) && (e.code === 'Space' || e.code === 'Enter')) return;
 
     // built-in OBS-style behaviors
     if (/^F11$/.test(e.key)) { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); e.preventDefault(); return; }
@@ -566,6 +602,9 @@ function boot() {
   // but never stamps on one younger than 15s.
   const autoConnect = () => {
     try {
+      // LOCAL-PATCH (station): a manual Disconnect pins wantConnect=false —
+      // redialing it would make Disconnect a lie.
+      if (!wsApi.wantConnect) return;
       const st = wsApi.status;
       if (st === 'connected') return;
       const now = Date.now();

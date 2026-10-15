@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** eighteen marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** twenty-four marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -70,6 +70,40 @@
      persisted), All-Docks-Bottom preset (Docks menu), free drag-reorder
      of any dock header across left/right/bottom with drop indicators,
      order + widths persisted, Reset UI restores factory.
+  19. Connection generations + dead-man + shared teardown + manual
+     Disconnect that sticks (wantConnect): stale sockets/events/syncs
+     abort instead of killing the new connection; connected-but-deaf
+     forces a fresh generation after 20s of total silence; drops and
+     manual disconnects share one teardown (timers, pending, debounce
+     maps, queued mirrors); double pre-Identify close toasts the
+     password hint instead of redialing mute.
+  20. RPC discipline: reads retry once, writes fire once (a resent
+     Create* duplicated server state); queued absolute-state mirrors
+     coalesce latest-wins per target across flap windows; remove/rename
+     mirrors pre-capture identifiers before orig() deletes them (the old
+     microtask lookup always missed); volume/mute are trailing-debounced
+     and resolve names at fire time.
+  21. Reconcile layer: upsertScene/upsertSource (one stable
+     `scene-<name>` id scheme), forgetItem (rows + both id maps + sizes),
+     syncSceneItems (reindex repair), snapshot/restore around initialSync,
+     real InputCreated/Removed/NameChanged, SceneRemoved sweep with
+     program/preview repair, filter merge-by-name (pending rows kept),
+     new cases (reindex, filter enable/order, media playback, audio
+     monitor/offset/balance/tracks, collection/profile switches),
+     debounced persistSoon on remote branches, undo skips remote-applied
+     ops + warns while attached + stacks cleared per sync.
+  22. Meter peak across channels; `!!x ?? y` precedence fix; remote
+     selection applies to preview only; mirrorTransform bails loudly on
+     unknown ids; live-view names reseeded from engine truth on failure.
+  23. Attached-canvas honesty: remote frames drawn at CSS size (retina
+     overdraw), transition ghosts likewise; marquee off + pointer cursor
+     while attached; Space/Enter no longer double-fires from focused
+     buttons/dialogs; menus join the dialog z-ladder; bottom strip hides
+     with its docks; empty columns stay as drop gutters; splitter widths
+     clamped; scene-filter orphan fixed; effect adds persist + say
+     preview-only; Transform sync unsubscribed on close; eye/lock clicks
+     don't reselect; source row-drag locked while attached; narrow-
+     window media query; dead CSS rules removed.
 - **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
   browsers may cache; hard-reload after updates). OBS traffic goes through
   the overlay server's raw relay: the replica's gateway mode

@@ -285,7 +285,9 @@ export function openFilters(src) {
       current = null; render();
     } else if (current) {
       const i = src.filters.indexOf(current);
-      const to = ic === 'up' ? clamp(i + 1, 0, src.filters.length - 1) : clamp(i - 1, 0, src.filters.length - 1);
+      // LOCAL-PATCH (station): "up" used to move toward the END of the
+      // array (visually down). Index 0 renders first = visually on top.
+      const to = ic === 'up' ? clamp(i - 1, 0, src.filters.length - 1) : clamp(i + 1, 0, src.filters.length - 1);
       src.filters.splice(to, 0, src.filters.splice(i, 1)[0]);
       render();
     }
@@ -297,6 +299,8 @@ export function openFilters(src) {
     const f = { id: t.id, name: t.name, audio, settings: {} };
     (src.filters = src.filters || []).unshift(f);
     current = f; render();
+    try { obs.persist(); } catch {} // effect rows are local-only; at least keep them across reloads
+    toast('Effect filters are preview-only here — they do not mirror to OBS');
   }
 
   render();
@@ -422,7 +426,10 @@ function buildFilterProps(root, f) {
 }
 
 export function openFiltersForScene(scene) {
-  const pseudo = { name: scene.name, kind: 'scene', filters: scene.filters || [] };
+  // LOCAL-PATCH (station): write the chain back to the scene — a throwaway
+  // array used to silently eat added filters on close.
+  scene.filters = scene.filters || [];
+  const pseudo = { name: scene.name, kind: 'scene', filters: scene.filters };
   const d = openFilters(pseudo);
   return d;
 }
@@ -438,6 +445,9 @@ export function openTransform(itemId) {
   const d = openDialog({
     title: 'Edit Transform', w: 480, resizable: false,
     content: grid,
+    // LOCAL-PATCH (station): unsubscribe the live sync on close — every
+    // open used to leak a permanent listener touching closed DOM.
+    onclose: () => { try { offSync(); } catch {} },
     buttons: [
       { label: 'Reset Transform', action: () => { obs.resetItemTransform(itemId); sync(); } },
       { label: 'Close', def: true, action: () => d.close() },
@@ -497,7 +507,7 @@ export function openTransform(itemId) {
     for (const side of ['l', 'r', 't', 'b']) crop[side].value = it.crop[side] || 0;
     grid.querySelectorAll('.align-grid button').forEach((b, i) => b.classList.toggle('active', it.align === i));
   }
-  obs.on('item-transform', sync);
+  const offSync = obs.on('item-transform', sync);
   sync();
 }
 

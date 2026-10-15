@@ -20,6 +20,7 @@ import json
 import os
 import queue
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -48,6 +49,67 @@ OBS_REQ = None  # one held request connection (OBSRenderer._call is locked)
 OBS_LOCK = threading.Lock()
 METERS = {}  # inputName -> peak 0..1, fed by the event loop below
 METERS_LOCK = threading.Lock()
+RELAY_SLOTS = threading.Lock()
+RELAY_COUNT = [0]  # active _ws_relay splices; capped so N tabs can't
+RELAY_MAX = 4  # multiply deaf-plane load without bound (503 past it)
+MUSIC_LOCK = threading.Lock()
+MUSIC_BUSY = [False]  # one intake at a time (pins thread + yt-dlp + ffmpeg)
+TAP_LOCK = threading.Lock()
+TAP_CACHE = {"img": None, "n": 0, "at": 0.0, "pgm": None, "fails": 0}
+TAP_STARTED = [False]
+TAP_REQ = None  # own renderer (own conn+lock): a stuck tap fetch must
+                # never serialize control traffic behind OBS_REQ's lock
+
+
+def ensure_tap_running():
+    with TAP_LOCK:
+        if TAP_STARTED[0]:
+            return
+        TAP_STARTED[0] = True
+    threading.Thread(target=tap_poller, daemon=True).start()
+
+
+def tap_poller():
+    # Single-flight program snapshots: every /tap.mjpeg viewer shares one
+    # ~2fps fetch loop instead of each hammering GetSourceScreenshot.
+    # Backs off exponentially on failure (deaf plane) instead of spinning.
+    import base64 as _b64
+    global TAP_REQ
+    backoff = 0.45
+    while True:
+        try:
+            if TAP_REQ is None:
+                TAP_REQ = daemon.OBSRenderer(
+                    host=os.environ.get("OBS_HOST", "127.0.0.1"),
+                    port=int(os.environ.get("OBS_PORT", "4455")))
+            if not TAP_CACHE["pgm"] or TAP_CACHE["n"] % 10 == 0:
+                try:
+                    TAP_CACHE["pgm"] = TAP_REQ._call(
+                        "GetCurrentProgramScene")["currentProgramSceneName"]
+                except Exception:
+                    pass
+            if not TAP_CACHE["pgm"]:
+                raise RuntimeError("no program scene (plane down?)")
+            shot = TAP_REQ._call("GetSourceScreenshot",
+                                 {"sourceName": TAP_CACHE["pgm"], "imageFormat": "jpg"})
+            img = shot["imageData"]
+            if "," in img:  # 5.7.4 returns a data URI, not bare base64
+                img = img.split(",", 1)[1]
+            raw = _b64.b64decode(img)
+            with TAP_LOCK:
+                TAP_CACHE["img"] = raw
+                TAP_CACHE["n"] += 1
+                TAP_CACHE["at"] = time.time()
+                TAP_CACHE["fails"] = 0
+            backoff = 0.45
+        except Exception as e:
+            with TAP_LOCK:
+                TAP_CACHE["fails"] += 1
+                fails = TAP_CACHE["fails"]
+            backoff = min(5.0, backoff * 2 if backoff else 0.45)
+            if fails <= 2:
+                sys.stderr.write("overlay: tap poll failed (%s)\n" % e)
+        time.sleep(backoff)
 
 
 def obs_req():
@@ -131,14 +193,20 @@ def save_state(state):
 def broadcast(state):
     payload = ("data: %s\n\n" % json.dumps(state)).encode()
     with LOCK:
-        dead = []
-        for q in SUBS:
+        live = []
+        for entry in SUBS:
+            q, closer = entry
             try:
                 q.put_nowait(payload)
+                live.append(entry)
             except queue.Full:
-                dead.append(q)
-        for q in dead:
-            SUBS.remove(q)
+                # slow consumer: kill its connection so the handler thread
+                # exits instead of leaking on a wedged queue forever.
+                try:
+                    closer()
+                except Exception:
+                    pass
+        SUBS[:] = live
 
 
 def intake_history(limit=20):
@@ -315,20 +383,35 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")  # file:// pages
             self.end_headers()
             q = queue.Queue(maxsize=16)
+
+            def _close_sse():
+                try:
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                except Exception:
+                    pass
+            entry = (q, _close_sse)
             with LOCK:
-                SUBS.append(q)
+                SUBS.append(entry)
             try:
                 self.wfile.write(("data: %s\n\n" % json.dumps(load_state())).encode())
                 self.wfile.flush()
                 while True:
-                    self.wfile.write(q.get())
+                    try:
+                        self.wfile.write(q.get(timeout=25))
+                    except queue.Empty:
+                        # heartbeat comment: keeps intermediaries from
+                        # timing out idle SSE, and bounds the thread's
+                        # blocking window so eviction actually kills it.
+                        self.wfile.write(b":hb\n\n")
                     self.wfile.flush()
-            except (BrokenPipeError, ConnectionResetError):
+            except OSError:
                 pass
             finally:
                 with LOCK:
-                    if q in SUBS:
-                        SUBS.remove(q)
+                    try:
+                        SUBS.remove(entry)
+                    except ValueError:
+                        pass
         else:
             super().do_GET()
 
@@ -351,9 +434,12 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError:
             self.send_error(400, "bad JSON")
             return
-        state = load_state()
-        state.update(patch if isinstance(patch, dict) else {})
-        save_state(state)
+        with daemon.pl_lock():
+            # load inside the lock: the daemon's fault()/advance saves
+            # must not land between our read and write.
+            state = load_state()
+            state.update(patch if isinstance(patch, dict) else {})
+            save_state(state)
         broadcast(state)
         body = b'{"ok":true}'
         self.send_response(200)
@@ -399,6 +485,11 @@ class Handler(SimpleHTTPRequestHandler):
             data = daemon.load_playlist()
         except (OSError, ValueError):
             return self._json(502, {"ok": False, "error": "playlist unreadable"})
+        # NOTE: this read-modify-write holds no lock across its (sub-ms,
+        # pure-Python) span. That is safe now that the daemon side always
+        # re-loads fresh under pl_lock before saving: neither side can any
+        # longer clobber the other with a minutes-stale copy. Worst case is
+        # a lost shuffle ORDER (self-heals at loop end), never lost items.
         items = data.setdefault("items", [])
         op = body.get("op", "set")
         # Pending items (source, no file yet) share file:"" — address them
@@ -511,7 +602,16 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             return self._json(200, {"ok": True, "response": obs_req()._call(rtype, data)})
         except Exception as e:
-            return self._json(200, {"ok": False, "error": str(e)[:200]})
+            # Honest status: transport failures (plane down/deaf) are 502;
+            # application refusals (bad names) stay 200 ok:False.
+            msg = str(e)
+            transport = isinstance(e, OSError) or any(
+                k in msg for k in ("closed", "handshake", "unreachable",
+                                   "timed out", "reset", "refused", "EOF",
+                                   "not connected", "connection reset"))
+            if transport:
+                return self._json(502, {"ok": False, "error": msg[:200]})
+            return self._json(200, {"ok": False, "error": msg[:200]})
 
     def _music(self):
         # Music bed management. GET: tracks on disk + current bed file.
@@ -519,6 +619,7 @@ class Handler(SimpleHTTPRequestHandler):
         # POST {op:add, source, title}: intake to media/, then move to music/.
         if self.command == "GET":
             bed = None
+            plane = "up"
             try:
                 ins = {i.get("inputName") for i in
                        obs_req()._call("GetInputList").get("inputs", [])}
@@ -527,8 +628,9 @@ class Handler(SimpleHTTPRequestHandler):
                                            {"inputName": BED_INPUT})
                            .get("inputSettings", {}).get("local_file"))
             except Exception:
-                pass
-            return self._json(200, {"tracks": music_tracks(), "bed": bed})
+                # Deaf plane used to masquerade as "no bed". Say it.
+                plane = "down"
+            return self._json(200, {"tracks": music_tracks(), "bed": bed, "plane": plane})
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
@@ -540,22 +642,34 @@ class Handler(SimpleHTTPRequestHandler):
             title = (body.get("title") or "music").strip()[:40]
             if not source:
                 return self._json(400, {"ok": False, "error": "add needs {\"source\"}"})
-            safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in title).strip("_") or "music"
-            tmp = safe + "_m.mp4"
+            # One intake at a time: each pins a handler thread + yt-dlp +
+            # ffmpeg for up to 30 min on a loaded box. Second caller gets
+            # 429, not a pileup.
+            with MUSIC_LOCK:
+                if MUSIC_BUSY[0]:
+                    return self._json(429, {"ok": False, "error": "an intake is already running; try when it lands"})
+                MUSIC_BUSY[0] = True
             try:
-                p = subprocess.run(
-                    [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "intake.py"),
-                     source, "--as", tmp, "--title", title],
-                    capture_output=True, text=True, timeout=1800)
-            except Exception as e:
-                return self._json(502, {"ok": False, "error": "intake failed to start: %s" % e})
-            if p.returncode != 0:
-                return self._json(502, {"ok": False, "error": (p.stderr or p.stdout or "intake failed")[-300:]})
-            try:
-                os.rename(os.path.join(daemon.MEDIA, tmp), os.path.join(MUSIC_DIR, tmp))
-            except OSError as e:
-                return self._json(502, {"ok": False, "error": "move to music/ failed: %s" % e})
-            return self._json(200, {"ok": True, "file": tmp})
+                import uuid as _uuid
+                safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in title).strip("_") or "music"
+                tmp = "%s_%s_m.mp4" % (safe, _uuid.uuid4().hex[:8])
+                try:
+                    p = subprocess.run(
+                        [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "intake.py"),
+                         source, "--as", tmp, "--title", title],
+                        capture_output=True, text=True, timeout=1800)
+                except Exception as e:
+                    return self._json(502, {"ok": False, "error": "intake failed to start: %s" % e})
+                if p.returncode != 0:
+                    return self._json(502, {"ok": False, "error": (p.stderr or p.stdout or "intake failed")[-300:]})
+                try:
+                    os.rename(os.path.join(daemon.MEDIA, tmp), os.path.join(MUSIC_DIR, tmp))
+                except OSError as e:
+                    return self._json(502, {"ok": False, "error": "move to music/ failed: %s" % e})
+                return self._json(200, {"ok": True, "file": tmp})
+            finally:
+                with MUSIC_LOCK:
+                    MUSIC_BUSY[0] = False
         fname = (body.get("file") or "").strip()
         if not fname or "/" in fname or fname.startswith("."):
             return self._json(400, {"ok": False, "error": "set needs a plain filename"})
@@ -594,9 +708,20 @@ class Handler(SimpleHTTPRequestHandler):
         import urllib.parse as _up
         rel = _up.unquote(rel)
         path = os.path.normpath(os.path.join(daemon.MEDIA, rel))
-        if path != daemon.MEDIA and not path.startswith(daemon.MEDIA + os.sep):
+        # realpath: a symlink inside media/ must not escape to secrets.env
+        # (one level up) or anywhere else. Dotfiles never served either.
+        try:
+            real = os.path.realpath(path)
+        except OSError:
+            self.send_error(404)
+            return
+        if real != daemon.MEDIA and not real.startswith(daemon.MEDIA + os.sep):
             self.send_error(403)
             return
+        if os.path.basename(real).startswith(".") or os.path.islink(path):
+            self.send_error(403)
+            return
+        path = real
         if not os.path.isfile(path):
             self.send_error(404)
             return
@@ -610,7 +735,7 @@ class Handler(SimpleHTTPRequestHandler):
                 start = int(part[0]) if part[0] else 0
                 end = int(part[1]) if part[1] else size - 1
                 end = min(end, size - 1)
-                if start >= size:
+                if start > end or start >= size:
                     raise ValueError
                 code = 206
             except ValueError:
@@ -637,38 +762,39 @@ class Handler(SimpleHTTPRequestHandler):
                 remaining -= len(chunk)
 
     def _tap(self):
-        # Confidence monitor: program stills as MJPEG (~2fps). No OBS
-        # reconfiguration, no second encode, no new dependency — a plain
-        # <img> renders it. Browsers drop the connection on navigate;
-        # anything else breaks the loop below.
-        import base64 as _b64
-        try:
-            pgm = obs_req()._call("GetCurrentProgramScene")["currentProgramSceneName"]
-        except Exception:
-            self.send_error(503, "render plane unreachable")
+        # Confidence monitor: program stills as MJPEG (~2fps). One shared
+        # background poller feeds every viewer from a single frame cache —
+        # N viewers used to mean N screenshot RPCs each, hammering the deaf
+        # plane linearly. Viewers that arrive to a stale cache (>15s, plane
+        # down) get 503 instead of a frozen lie. No OBS reconfiguration, no
+        # second encode, no new dependency — a plain <img> renders it.
+        ensure_tap_running()
+        t0 = time.time()
+        while time.time() - t0 < 12:
+            with TAP_LOCK:
+                n, img, at = TAP_CACHE["n"], TAP_CACHE["img"], TAP_CACHE["at"]
+            if img is not None:
+                break
+            time.sleep(0.25)
+        else:
+            self.send_error(503, "render plane unreachable (no frame yet)")
             return
         self.send_response(200)
         self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=smileframe")
         self.send_header("Cache-Control", "no-cache")
         self.end_headers()
-        n = 0
+        last = -1
         try:
             while True:
-                if n % 10 == 0:
-                    try:
-                        pgm = obs_req()._call("GetCurrentProgramScene")["currentProgramSceneName"]
-                    except Exception:
-                        pass
-                shot = obs_req()._call("GetSourceScreenshot",
-                                       {"sourceName": pgm, "imageFormat": "jpg"})
-                img = shot["imageData"]
-                if "," in img:  # 5.7.4 returns a data URI, not bare base64
-                    img = img.split(",", 1)[1]
-                raw = _b64.b64decode(img)
-                self.wfile.write(b"--smileframe\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n" % len(raw))
-                self.wfile.write(raw + b"\r\n")
-                n += 1
-                time.sleep(0.45)
+                with TAP_LOCK:
+                    n, img, at = TAP_CACHE["n"], TAP_CACHE["img"], TAP_CACHE["at"]
+                if img is None or time.time() - at > 15:
+                    break  # stale cache: end the stream, don't serve a lie
+                if n != last:
+                    self.wfile.write(b"--smileframe\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n" % len(img))
+                    self.wfile.write(img + b"\r\n")
+                    last = n
+                time.sleep(0.2)
         except (BrokenPipeError, ConnectionResetError):
             pass
         except Exception as e:
@@ -701,6 +827,7 @@ class Handler(SimpleHTTPRequestHandler):
         def ws_read(sock):
             # One unmasked server-role text frame -> parsed JSON. Pings get
             # a masked pong (client role toward OBS) and we keep reading.
+            # Iterative, not recursive: a ping flood must not grow the stack.
             def rd(n):
                 buf = b""
                 while len(buf) < n:
@@ -709,24 +836,25 @@ class Handler(SimpleHTTPRequestHandler):
                         raise RuntimeError("OBS EOF")
                     buf += chunk
                 return buf
-            hdr = rd(2)
-            op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
-            if ln == 126:
-                ln = _st.unpack(">H", rd(2))[0]
-            elif ln == 127:
-                ln = _st.unpack(">Q", rd(8))[0]
-            if hdr[1] & 0x80:
-                raise RuntimeError("masked OBS frame")
-            payload = rd(ln)
-            if op == 0x8:
-                raise RuntimeError("OBS closed")
-            if op == 0x9:
-                mask = os.urandom(4)
-                sock.sendall(bytes([0x8A, 0x80 | 0]) + mask)
-                return ws_read(sock)
-            if op != 0x1:
-                raise RuntimeError("expected text frame")
-            return json.loads(payload.decode())
+            while True:
+                hdr = rd(2)
+                op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
+                if ln == 126:
+                    ln = _st.unpack(">H", rd(2))[0]
+                elif ln == 127:
+                    ln = _st.unpack(">Q", rd(8))[0]
+                if hdr[1] & 0x80:
+                    raise RuntimeError("masked OBS frame")
+                payload = rd(ln)
+                if op == 0x8:
+                    raise RuntimeError("OBS closed")
+                if op == 0x9:
+                    mask = os.urandom(4)
+                    sock.sendall(bytes([0x8A, 0x80 | 0]) + mask)
+                    continue
+                if op != 0x1:
+                    raise RuntimeError("expected text frame")
+                return json.loads(payload.decode())
 
         def ws_send_masked(obj):
             payload = json.dumps(obj).encode()
@@ -740,7 +868,23 @@ class Handler(SimpleHTTPRequestHandler):
                 hdr = bytes([0x81, 0x80 | 127]) + _st.pack(">Q", n)
             up.sendall(hdr + mask + bytes(b ^ mask[i % 4] for i, b in enumerate(payload)))
 
+        up = None
+        claimed = [False]
+
+        def done_relay():
+            # idempotent relay-slot release; every exit path must call it
+            # or the cap wedges at zero real sessions.
+            if claimed[0]:
+                claimed[0] = False
+                with RELAY_SLOTS:
+                    RELAY_COUNT[0] = max(0, RELAY_COUNT[0] - 1)
+
         try:
+            with RELAY_SLOTS:
+                if RELAY_COUNT[0] >= RELAY_MAX:
+                    raise RuntimeError("relay busy (%d sessions max) — close another /studio tab" % RELAY_MAX)
+                RELAY_COUNT[0] += 1
+                claimed[0] = True
             up = _sock.create_connection(
                 (os.environ.get("OBS_HOST", "127.0.0.1"), port), timeout=10)
             ukey = base64.b64encode(os.urandom(16)).decode()
@@ -753,14 +897,23 @@ class Handler(SimpleHTTPRequestHandler):
                 if not chunk:
                     raise RuntimeError("OBS-side handshake EOF")
                 uhead += chunk
+                if len(uhead) > 65536:
+                    raise RuntimeError("OBS-side handshake too large")
             if b" 101 " not in uhead.split(b"\r\n", 1)[0]:
                 raise RuntimeError("OBS-side handshake rejected")
+            # validate the upstream accept (wrong key = proxy/shadow, not OBS)
+            expect = base64.b64encode(hashlib.sha1(
+                (ukey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest()).decode()
+            if expect.encode() not in uhead:
+                raise RuntimeError("OBS-side accept mismatch")
             hello = ws_read(up)
             if hello.get("op") != 0:
                 raise RuntimeError("not v5")
         except (OSError, RuntimeError) as e:
+            done_relay()
             try:
-                up.close()
+                if up is not None:
+                    up.close()
             except Exception:
                 pass
             sys.stderr.write("overlay: ws relay upstream failed (%s)\n" % e)
@@ -771,7 +924,12 @@ class Handler(SimpleHTTPRequestHandler):
                 ("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n"
                  "Connection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n" % accept).encode())
         except OSError:
-            up.close()
+            done_relay()
+            try:
+                if up is not None:
+                    up.close()
+            except Exception:
+                pass
             return
         sys.stderr.write("overlay: ws relay open (browser -> OBS :%d)\n" % port)
         self.close_connection = True
@@ -855,18 +1013,57 @@ class Handler(SimpleHTTPRequestHandler):
             sys.stderr.write("overlay: relay auth failed (%s)\n" % e)
             self.close_connection = True
             try:
+                # the 101 already went out: speak a close frame so the
+                # browser lands in onclose instead of hanging open.
+                body = _st.pack(">H", 4400) + b"obs auth failed"
+                down.sendall(bytes([0x88, len(body)]) + body)
+            except Exception:
+                pass
+            try:
                 up.close()
             except Exception:
                 pass
+            done_relay()
             return
         finally:
-            # Handshake timeouts must not leak into the splice: either leg
-            # going quiet (no events, muted scene) is normal and must hold.
+            # Splice phase: quiet is normal (muted scene, no events), so no
+            # read timeouts — but dead legs must still be reaped. Kernel
+            # keepalives catch vanished peers; an idle watchdog catches the
+            # deaf-but-open plane (accepts, never speaks, never FINs). A
+            # relay silent for 120s is abandoned by design: the client's
+            # dead-man redials at 20s of silence, and a healthy plane moves
+            # stats bytes ~1/s. Only dead legs go quiet.
+            for s in (down, up):
+                try:
+                    s.setsockopt(_sock.SOL_SOCKET, _sock.SO_KEEPALIVE, 1)
+                    s.setsockopt(_sock.IPPROTO_TCP, _sock.TCP_KEEPIDLE, 60)
+                    s.setsockopt(_sock.IPPROTO_TCP, _sock.TCP_KEEPINTVL, 15)
+                    s.setsockopt(_sock.IPPROTO_TCP, _sock.TCP_KEEPCNT, 4)
+                except Exception:
+                    pass
             down.settimeout(None)
             try:
                 up.settimeout(None)
             except Exception:
                 pass
+            last = [time.time()]
+
+            def watchdog():
+                while True:
+                    time.sleep(30)
+                    if time.time() - last[0] > 120:
+                        sys.stderr.write("overlay: relay idle 120s — tearing down\n")
+                        try:
+                            down.shutdown(_sock.SHUT_RDWR)
+                        except Exception:
+                            pass
+                        try:
+                            up.shutdown(_sock.SHUT_RDWR)
+                        except Exception:
+                            pass
+                        return
+
+            threading.Thread(target=watchdog, daemon=True).start()
 
         SNIFF = os.environ.get("OBS_RELAY_SNIFF", "")
         FULLSNIFF = os.environ.get("OBS_RELAY_FULLSNIFF", "")
@@ -876,6 +1073,8 @@ class Handler(SimpleHTTPRequestHandler):
             # Env-gated frame peek for post-mortems: direction, opcode, len.
             # FULLSNIFF removes the cap for single-session captures.
             # RPCLOG decodes small JSON frames to bare request/event names.
+            # NOTE: post-bridge chunks are raw stream slices, not frame
+            # aligned — op/len here are best-effort, not gospel.
             if not SNIFF or (not FULLSNIFF and sniffs["n"] >= 40):
                 return
             sniffs["n"] += 1
@@ -914,6 +1113,7 @@ class Handler(SimpleHTTPRequestHandler):
                         break
                     up.sendall(chunk)
                     nbytes += len(chunk)
+                    last[0] = time.time()
                     if SNIFF and nbytes == len(chunk):
                         sys.stderr.write("overlay: relay first browser bytes: %r\n" % chunk[:160])
                     sniff("browser->obs", chunk)
@@ -937,6 +1137,7 @@ class Handler(SimpleHTTPRequestHandler):
                     sniff(tag, chunk)
                     dst.sendall(chunk)
                     nbytes += len(chunk)
+                    last[0] = time.time()
             except OSError as e:
                 sys.stderr.write("overlay: relay %s down (%s after %d bytes)\n" % (tag, e, nbytes))
                 return
@@ -952,6 +1153,7 @@ class Handler(SimpleHTTPRequestHandler):
             down.shutdown(_sock.SHUT_RDWR)
         except OSError:
             pass
+        done_relay()
 
     def _serve_tree(self, base, rel):
         import mimetypes

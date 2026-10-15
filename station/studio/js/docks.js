@@ -150,7 +150,9 @@ export function buildSourcesDock(root) {
       const row = h('div', {
         class: 'qlist-row' + (it.sel ? ' selected' : ''),
         draggable: 'true',
-        onmousedown: (e) => { if (e.button === 0) obs.select(it.id, e.ctrlKey || e.shiftKey); list.focus(); },
+        // LOCAL-PATCH (station): eye/lock clicks must not reselect as a
+        // side effect (mousedown fires before click's stopPropagation).
+        onmousedown: (e) => { if (e.button === 0 && !e.target.closest('.row-vis,.row-lock')) obs.select(it.id, e.ctrlKey || e.shiftKey); list.focus(); },
         ondblclick: () => import('./dialogs.js').then(m => m.openProperties(src)),
         oncontextmenu: (e) => { e.preventDefault(); e.stopPropagation(); if (!it.sel) obs.select(it.id, e.ctrlKey); sourceItemMenu(it, src, e); },
       },
@@ -167,7 +169,12 @@ export function buildSourcesDock(root) {
           onclick: (e) => { e.stopPropagation(); obs.setItemLocked(it.id, !it.locked); },
         }),
       );
-      row.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/item-id', it.id); e.dataTransfer.effectAllowed = 'move'; });
+      row.addEventListener('dragstart', (e) => {
+        // LOCAL-PATCH (station): source reorder is layout — locked while
+        // attached, like canvas drags. Offline sim keeps it.
+        if (obs.wsMode) { e.preventDefault(); return; }
+        e.dataTransfer.setData('text/item-id', it.id); e.dataTransfer.effectAllowed = 'move';
+      });
       row.addEventListener('dragover', (e) => {
         e.preventDefault();
         const r = row.getBoundingClientRect();

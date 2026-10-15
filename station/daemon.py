@@ -24,6 +24,8 @@ Env:
 
 import argparse
 import base64
+import contextlib
+import fcntl
 import hashlib
 import json
 import os
@@ -37,6 +39,12 @@ import sys
 import threading
 import time
 import urllib.request
+
+
+class OBSAppError(RuntimeError):
+    """The plane answered but refused the call (bad name, bad args). The
+    connection itself is healthy and must STAND — only transport failures
+    (OSError, closed handshake, timeouts) justify dropping it."""
 
 ROOT = os.environ.get("BROADCAST_ROOT", os.path.join(os.getcwd(), "broadcast"))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +87,8 @@ class _WS:
             if not chunk:
                 raise RuntimeError("websocket handshake failed (EOF)")
             head += chunk
+            if len(head) > 65536:
+                raise RuntimeError("websocket handshake too large")
         accept = base64.b64encode(hashlib.sha1(
             (key + self.GUID).encode()).digest()).decode()
         status = head.split(b"\r\n", 1)[0]
@@ -125,6 +135,8 @@ class _WS:
             masked = b2 & 0x80
             if masked:
                 off += 4
+            if ln > 32 * 1024 * 1024:
+                raise RuntimeError("websocket frame too large (%d bytes)" % ln)
             self._fill(off + ln)
             payload = self.buf[off:off + ln]
             if masked:
@@ -211,7 +223,9 @@ class OBSRenderer(Renderer):
     def _call(self, req, data=None):
         # One shared connection, reused across polls: every handshake is a
         # chance to catch the server in a deaf window, so we pay it once and
-        # hold it. Any failure drops it; the next call reconnects.
+        # hold it. Transport failures drop it; the next call reconnects.
+        # Application refusals (bad names, bad args) raise OBSAppError and
+        # keep the healthy connection standing.
         with self._lock:
             if self._shared is None:
                 self._shared = self._connect()
@@ -227,7 +241,9 @@ class OBSRenderer(Renderer):
                         d = msg["d"]
                         if d["requestStatus"]["result"]:
                             return d.get("responseData", {})
-                        raise RuntimeError("%s: %s" % (req, d["requestStatus"].get("comment")))
+                        raise OBSAppError("%s: %s" % (req, d["requestStatus"].get("comment")))
+            except OBSAppError:
+                raise
             except Exception:
                 try:
                     ws.close()
@@ -289,7 +305,11 @@ class OBSRenderer(Renderer):
     def _events(self):
         while True:
             try:
-                ws = self._connect(timeout=None)
+                # Finite timeout, not None: a deaf plane must trip the
+                # reconnect path, not wedge this thread forever. 90s still
+                # rides out ordinary quiet (event gaps are minutes, the
+                # timeout only fires on zero bytes at all).
+                ws = self._connect(timeout=90)
                 try:
                     while True:
                         msg = ws.recv()
@@ -308,29 +328,41 @@ class OBSRenderer(Renderer):
 
 
 # ------------------------------------------------------------------ alerts ---
+def _post_webhook(hook, payload):
+    try:
+        urllib.request.urlopen(urllib.request.Request(
+            hook, data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"}), timeout=10)
+    except Exception as e:
+        print("[WARN] discord failed: %s" % e, flush=True)
+
+
 def alert(msg, level="WARN"):
     row = (time.strftime("%Y-%m-%d %H:%M:%S"), level, msg)
     try:
-        con = sqlite3.connect(DB)
+        # WAL + busy timeout: the overlay server imports alert() too, so two
+        # processes write this DB. Failures print; they never stall playout.
+        con = sqlite3.connect(DB, timeout=5)
+        try:
+            con.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
         con.execute("CREATE TABLE IF NOT EXISTS activity_log(ts TEXT, level TEXT, msg TEXT)")
         con.execute("INSERT INTO activity_log VALUES (?,?,?)", row)
         con.commit()
         con.close()
-    except Exception:
-        pass
+    except Exception as e:
+        print("[WARN] activity log write failed: %s" % e, flush=True)
     print("[%s] %s" % (level, msg), flush=True)
     hook = os.environ.get("DISCORD_WEBHOOK")
     if not hook:
         return
-    try:
-        emoji = {"CRIT": "\U0001f534", "WARN": "\U0001f7e1", "INFO": "\U0001f535"}[level]
-        urllib.request.urlopen(urllib.request.Request(
-            hook,
-            data=json.dumps({"username": "station",
-                             "content": "%s **[%s]** %s" % (emoji, level, msg)}).encode(),
-            headers={"Content-Type": "application/json"}), timeout=10)
-    except Exception as e:
-        print("[WARN] discord failed: %s" % e, flush=True)
+    emoji = {"CRIT": "\U0001f534", "WARN": "\U0001f7e1", "INFO": "\U0001f535"}[level]
+    # Fire-and-forget: a dead Discord must never stall the loop for 10s.
+    threading.Thread(target=_post_webhook, daemon=True, args=(hook, {
+        "username": "station",
+        "content": "%s **[%s]** %s" % (emoji, level, msg),
+    })).start()
 
 
 # ---------------------------------------------------------------- playlist ---
@@ -383,6 +415,28 @@ def save_state(state):
     os.replace(tmp, STATE)
 
 
+@contextlib.contextmanager
+def pl_lock():
+    """Cross-process mutex for playlist+state read-modify-write cycles.
+
+    The loop (daemon) and the operator (overlay /library, /state) share
+    these files. Atomic tmp+replace saves are NOT enough: a stale in-memory
+    copy saved over a fresh human edit silently eats it. Hold this around
+    every load→mutate→save sequence, and re-load fresh inside it.
+    Blocking is fine: holders always finish in milliseconds."""
+    path = os.path.join(ROOT, ".station.lock")
+    fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        os.close(fd)
+
+
 # ---------------------------------------------------------------- watchdog ---
 class Watchdog:
     """Measures progress, not liveness. A stalled fd looks 'connected'."""
@@ -428,14 +482,15 @@ class Watchdog:
             return True  # unknown: fail safe toward cutting, not toward silence
 
     def fault(self, source, reason, on_air):
-        state = load_state()
-        faults = state.setdefault("faults", {})
-        key = "%s:%s" % (source, reason.split(" at ")[0])
-        hist = [t for t in faults.get(key, []) if time.time() - t < 3600] + [time.time()]
-        faults[key] = hist
-        faults = {k: v for k, v in faults.items() if v}  # don't grow dead keys
-        state["faults"] = faults
-        save_state(state)
+        with pl_lock():
+            state = load_state()
+            faults = state.setdefault("faults", {})
+            key = "%s:%s" % (source, reason.split(" at ")[0])
+            hist = [t for t in faults.get(key, []) if time.time() - t < 3600] + [time.time()]
+            faults[key] = hist
+            faults = {k: v for k, v in faults.items() if v}  # don't grow dead keys
+            state["faults"] = faults
+            save_state(state)
         if len(hist) >= REPEAT_LIMIT:
             if len(hist) == REPEAT_LIMIT:
                 alert("REPEATED FAILURE %s (%s) x%d in 1h. OFF-AIR, waiting for human."
@@ -577,11 +632,20 @@ def advance(renderer, state, data, deck_sources):
     alert("Now playing: %s." % item.get("title", item["file"]), "INFO")
     state.update({"index": idx + 1, "deck": deck})
     if state["index"] >= len(items) and data.get("shuffle_on_complete"):
-        random.shuffle(data["items"])
-        save_playlist(data)
+        # Shuffle the FRESH list under lock, not our possibly-stale copy:
+        # a same-window /library edit rides along instead of being eaten.
+        with pl_lock():
+            try:
+                fresh = load_playlist()
+            except ValueError:
+                fresh = data
+            random.shuffle(fresh.get("items", []))
+            save_playlist(fresh)
+            data["items"] = fresh["items"]
         state["index"] = 0
         alert("Playlist exhausted; reshuffled.", "INFO")
-    save_state(state)
+    with pl_lock():
+        save_state(state)
 
 
 def on_ended(renderer, decks, source):
@@ -661,12 +725,24 @@ def prefetch_pass(data, state, in_flight, failed=None):
         del in_flight[source]
         if proc.returncode == 0:
             failed.pop(source, None)
+            renames = {}
             for item in data.get("items", []):
                 if item.get("source") == source:
                     name = prefetch_name(item)
                     if os.path.exists(os.path.join(MEDIA, name)):
                         item["file"] = name
-            save_playlist(data)
+                        renames[source] = name
+            # Apply to the FRESH list under lock (a same-window /library
+            # edit survives), then mirror into our in-memory copy.
+            with pl_lock():
+                try:
+                    fresh = load_playlist()
+                except ValueError:
+                    fresh = data
+                for item in fresh.get("items", []):
+                    if item.get("source") in renames:
+                        item["file"] = renames[item["source"]]
+                save_playlist(fresh)
             alert("Prefetched %s." % source[-60:], "INFO")
         else:
             failed[source] = now
@@ -687,7 +763,16 @@ def prefetch_pass(data, state, in_flight, failed=None):
         name = prefetch_name(item)
         if os.path.exists(os.path.join(MEDIA, name)):
             item["file"] = name  # fetched earlier, never linked into playlist
-            save_playlist(data)
+            with pl_lock():
+                try:
+                    fresh = load_playlist()
+                except ValueError:
+                    fresh = None
+                if fresh is not None:
+                    for it in fresh.get("items", []):
+                        if it.get("source") == source:
+                            it["file"] = name
+                    save_playlist(fresh)
             continue
         try:
             env = dict(os.environ, BROADCAST_ROOT=os.path.dirname(MEDIA))
@@ -725,6 +810,17 @@ def restart_plane():
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             pass
+    # Wait for the port to actually free: starting OBS while the old tree
+    # still holds :4455 fails the bind and burns the restart on nothing.
+    # (Single-purpose box: exact comm names only, never patterns.)
+    import socket as _s
+    for _ in range(15):
+        try:
+            probe = _s.create_connection(("127.0.0.1", 4455), timeout=1)
+            probe.close()
+        except OSError:
+            break
+        time.sleep(1)
     time.sleep(2)
     if run("systemctl", "--user", "start", "station-obs"):
         alert("Render plane restart issued; waiting for first Hello.", "INFO")

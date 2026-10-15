@@ -975,3 +975,41 @@ real debugging time and each fix is load-bearing. Newest first.
   03:11 boot log before it was copied. Copy logs out BEFORE churning.
 - State at close: all 5 units active, SMILE-Station stable, daemon looping
   (`Now playing: Loop A`), `Stream output not active` CRIT is lab-normal.
+
+## 2026-10-15 (night) — MBA "not connecting" + full studio/relay review blitz
+
+- MBA diagnosis from the lab side: the 502s the MBA hit (~21:34) were the
+  post-reboot window when OBS was genuinely still booting — the relay
+  correctly reported "render plane unreachable", not a relay bug. After
+  that: zero MBA requests in 15 min (page closed or network), while a local
+  handshake completed in 0.0s. Verdict: plane + relay healthy; ask the MBA
+  to reload and read the badge/banner. Also note 244% OBS CPU (software
+  rendering) — new handshakes still starve when saturated; that, not the
+  UI, is what "demos" usually means (never Identified => sim meters).
+- Four parallel review agents (connection lifecycle, sync/mirror, UI,
+  server) returned ~55 findings; triaged and implemented same night:
+  - ws.js: generation-scoped connections, dead-man switch (20s silence),
+    shared teardownConnection, wantConnect (manual Disconnect sticks),
+    auth-hint on double pre-Identify close, reads-retry/writes-fire-once,
+    queued-mirror coalescing, mirrorOnly pre-capture (remove/rename were
+    silently never reaching the server), volume/mute debounce.
+  - sync: upsertScene/Source, forgetItem, syncSceneItems (reindex),
+    snapshot/restore, real Input*/filter/media/audio events, SceneRemoved
+    sweep, filter merge-by-name, persistSoon, undo remote-tags + attached
+    warning + per-sync clear.
+  - UI: retina drawImage overdraw (remote + transition ghost), marquee off
+    + pointer cursor while attached, Space/Enter double-fire, menu z,
+    bottom-strip/gutter drops, width clamps, filter dialog fixes.
+  - server: relay cap (4) + keepalive + 120s idle watchdog + auth close
+    frame + accept check + iterative ws_read + slot release on all paths;
+    SSE evict-kill + heartbeats; tap single-flight poller (own renderer
+    conn); honest 502 vs 200; music busy/uuid; files realpath/range;
+    daemon OBSAppError (no conn drop on app errors), 90s event timeout,
+    threaded alerts + WAL, pl_lock + fresh-reload shuffle/prefetch,
+    restart port-wait, frame/header caps.
+- Deferred (judgment, not oversight): full OBS gateway/circuit-breaker,
+  fixed HTTP pool, inverse-RPC undo table, dock registry — proposed by
+  reviewers, too invasive to land blind on a live station. Queued.
+- Verified: py+js syntax, daemon selftest, playlist edges, engine node
+  asserts, headless-Chromium CDP suite incl. online live-toggle both
+  directions with button/backend agreement. Loop + all 5 units healthy.
