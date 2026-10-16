@@ -323,7 +323,9 @@ async function handle(msg, gen) {
     // gets the hello, a drop gets "Reconnected", silent redials stay silent.
     if (hideOfflineBanner()) toast(`Reconnected to OBS ${state.obsVersion || ''}`.trim());
     else toast(`Connected to OBS ${state.obsVersion || ''}`.trim());
-  } else if (op === 4) { // Event
+  } else if (op === 5) { // Event (LOCAL-PATCH: was 4 — the last remnant
+    // of the replica's shifted opcode dialect; every server event was
+    // silently dropped, so meters/scene/filter/output handlers never ran)
     handleEvent(msg.d || {});
   } else if (op === 7) { // RequestResponse (LOCAL-PATCH: was 6, shifted table)
     const d = msg.d || {};

@@ -1,6 +1,8 @@
 {
-  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Optional per item: source (URL/path for prefetch to resolve), show (series tag for similar-replacement), status (active|dormant; dormant is PARKED in the UI — keeps its link but never airs, one click returns it), pinned (true = never evicted, never auto-replaced). Parked + pinned items are the bench the operator curates; active unpinned items are the rotation the cache manages. Removing an aimed item promotes whatever slides into its place; edits never disturb the playing deck.",
+  "_comment": "Playlist schema. Daemon reloads on change; new order takes effect at the next transition, never mid-air. Files live in media/ next to this file. Optional per item: source (URL/path for prefetch to resolve), show (series tag for similar-replacement), status (active|dormant; dormant is PARKED in the UI — keeps its link but never airs, one click returns it), pinned (true = never evicted, never auto-replaced). Automated ad breaks: ad_every N + ad_files [...] cuts to the SMILE | Ad Break scene every N content items, rolls one ad file, mutes the decks, and returns where the index points. ad_every 0 (or missing/empty ad_files) disables. Parked + pinned items are the bench the operator curates; active unpinned items are the rotation the cache manages. Removing an aimed item promotes whatever slides into its place; edits never disturb the playing deck.",
   "shuffle_on_complete": true,
+  "ad_every": 0,
+  "ad_files": [],
   "idents": [
     "ident_evening.mp4"
   ],

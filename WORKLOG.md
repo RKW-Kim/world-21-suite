@@ -1097,3 +1097,43 @@ real debugging time and each fix is load-bearing. Newest first.
 - Niek/obs-web studied for the preview question: same 1fps screenshot
   technique + meter events; nothing simpler to integrate (already beyond
   it), and GPL-3.0 forbids copying into this MIT tree anyway. Ideas only.
+
+## 2026-10-16 — Studio Player evaluation (source read, no install)
+
+- Read Substazz/studio-player source (70KB StudioPlayerDock.cpp): playback
+  is a localhost HTTP page (127.0.0.1:<port>/player.html) inside a plain
+  browser_source, driven by JS-event proc calls; queue advance on "ended"
+  is INTERNAL (playNextQueuedVideo). No yt-dlp/mpv/ffmpeg backend, no
+  media-state broadcast for ASS to watch, no remote API — remote surface
+  is frontend hotkeys only (blind, no queue readback). License GPL.
+- Verdict: nothing to merge; render-plane install refused (headless dock
+  UI unusable, v1.0.0 in-process crash risk to the air chain, queue
+  invisible to config-as-code/alerts/prefetch). MBA-side evaluation is
+  the safe path (caveat: upstream issue #1 is macOS load failure).
+- ASS necessity rejected for our architecture: single program scene +
+  deck-swapped inputs means no scene-hopping for playout; daemon already
+  owns ended-events, watchdog, alerts. Only genuine gap is wall-clock
+  scheduling (belongs in cron/daemon, not a GUI plugin).
+
+## 2026-10-16 (evening) — E2E compressed-time proof + ad automation + event drought
+
+- User asked for practical proof, not code review: built it. 10s labeled
+  clips stand in for 2h videos, 6s ad, OBS+daemon+local files only
+  (station/generate_test_clips.sh; procedure + evidence in docs/e2e-test.md).
+- PROVEN live: back-to-back advance, ad cutaway (mute+cut+roll), ad return
+  (unmute+Meet+resume, no skip/replay), mid-run playlist append playing,
+  fault safety (stall -> CRIT + TECHDIFF hold + self-resume).
+- New product: daemon ad breaks (playlist ad_every/ad_files; AD scene;
+  deck mute; return routing with operator-moved-on guard; watchdog
+  watches AD input mid-break; boot clears stale break flags).
+- Three load-bearing discoveries, all fixed same night:
+  1. Daemon Identify sent NO eventSubscriptions: zero events ever; the
+     loop had been advancing via the ~60s re-kick all along. Fixed.
+  2. ffmpeg_source natural ends do NOT emit MediaInputPlaybackEnded here
+     (proven: restarted clip + 40s silence on the wire). Advance is now
+     poll-driven (2 straight ENDED polls enqueue like an event).
+  3. /studio listened for events on op 4; real servers send op 5. Every
+     event handler was dead code — the "demo meters" mystery, one line.
+- Inter-transition latency ~10-30s CONSTANT (poll cadence), negligible at
+  real durations. Live state fully restored after (playlist/state/
+  collection backups back, ad stage removed, loop on live items).

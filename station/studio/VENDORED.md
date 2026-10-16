@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** twenty-five marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** twenty-six marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -115,6 +115,10 @@
      layout rebuilds stop all sessions (no leaked peer connections);
      snapshot-live now drives preview-pane buttons only. Mixer meters
      cover audio visually where return audio is unavailable.
+  26. Event opcode 4->5: the last remnant of the replica's shifted
+     dialect. Every server event was silently dropped (meters, scene,
+     filter, output handlers never ran — the "demo meters" mystery).
+     Proven by sniffing live frames, not by reading docs.
 - **Integration:** served at `/studio` (MIME-correct, `no-store` on all
   control surfaces so fixes reach operators without hard-reloads). OBS
   traffic goes through the overlay server's raw relay: the replica's gateway mode

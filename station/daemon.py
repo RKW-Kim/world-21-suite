@@ -63,6 +63,8 @@ class Renderer:
     def set_scene(self, name): raise NotImplementedError
     def set_media_source(self, source, path): raise NotImplementedError
     def set_source_visible(self, scene, source, visible): raise NotImplementedError
+    def set_mute(self, source, muted): raise NotImplementedError
+    def restart_media(self, source): raise NotImplementedError
     def get_media_status(self, source): raise NotImplementedError  # {time_ms, duration_ms, state}
     def set_transition(self, style, duration_ms): raise NotImplementedError
     def get_stream_status(self): raise NotImplementedError  # {active, dropped_frames}
@@ -205,7 +207,7 @@ class OBSRenderer(Renderer):
         if hello.get("op") != 0:
             ws.close()
             raise RuntimeError("not an obs-websocket v5 server")
-        identify = {"op": 1, "d": {"rpcVersion": 1}}
+        identify = {"op": 1, "d": {"rpcVersion": 1, "eventSubscriptions": 256}}
         auth = hello["d"].get("authentication")
         if auth:
             secret = base64.b64encode(hashlib.sha256(
@@ -270,6 +272,14 @@ class OBSRenderer(Renderer):
                             "sceneItemEnabled": bool(visible)})
                 return
         raise RuntimeError("source %s not in scene %s" % (source, scene))
+
+    def set_mute(self, source, muted):
+        self._call("SetInputMute", {"inputName": source, "inputMuted": bool(muted)})
+
+    def restart_media(self, source):
+        self._call("TriggerMediaInputAction",
+                   {"inputName": source,
+                    "mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART"})
 
     def get_media_status(self, source):
         try:
@@ -548,6 +558,7 @@ SCENE_STARTING, SCENE_PROGRAM = "SMILE | Starting", "SMILE | Meet"
 SCENE_LIVE, SCENE_TECHDIFF = "SMILE | Q&A", "SMILE | Tech Diffs"
 SCENE_OFFAIR, SCENE_END = "SMILE | Off Air", "SMILE | End Credits"
 PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "IDENT"
+AD_SCENE, AD_INPUT = "SMILE | Ad Break", "AD Break"
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
 
@@ -586,6 +597,55 @@ def evict_cache(cap=None, pinned=frozenset()):
     return freed
 
 
+def play_ad(renderer, data, decks):
+    """Cut away to the ad scene and roll one ad file. Returns True when a
+    break actually started (caller returns without advancing the index);
+    False when ads are off/missing (caller plays content normally).
+    Deck inputs are muted (not paused) so their clocks keep running and no
+    watchdog fault fires mid-break; deck-ended events during the break are
+    ignored by on_ended, and the watchdog watches the AD input instead."""
+    try:
+        every = int(data.get("ad_every") or 0)
+    except (TypeError, ValueError):
+        every = 0
+    files = [f for f in (data.get("ad_files") or []) if isinstance(f, str)]
+    if every <= 0 or not files:
+        return False
+    ready = [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
+    if not ready:
+        alert("Ad break due but no ad file on disk; playing on.", "WARN")
+        with pl_lock():
+            try:
+                st = load_state()
+            except (OSError, ValueError):
+                st = {}
+            st["since_ad"] = 0
+            save_state(st)
+        return False
+    choice = random.choice(ready)
+    try:
+        renderer.set_media_source(AD_INPUT, os.path.join(MEDIA, choice))
+        renderer.set_mute(decks["A"], True)
+        renderer.set_mute(decks["B"], True)
+        renderer.set_scene(AD_SCENE)
+        renderer.restart_media(AD_INPUT)
+    except Exception as e:
+        alert("Ad break failed to start (%s); playing on." % e, "WARN")
+        try:
+            renderer.set_mute(decks["A"], False)
+            renderer.set_mute(decks["B"], False)
+        except Exception:
+            pass
+        return False
+    with pl_lock():
+        state = load_state()
+        state["in_ad_break"] = True
+        state["since_ad"] = 0
+        save_state(state)
+    alert("Ad break: %s." % choice, "INFO")
+    return True
+
+
 def advance(renderer, state, data, deck_sources):
     """Play next item on the idle deck, cut under a transition.
 
@@ -597,6 +657,17 @@ def advance(renderer, state, data, deck_sources):
         alert("Playlist empty; holding.", "WARN")
         return
     skipped = dormant = pending = 0
+    try:
+        every = int(data.get("ad_every") or 0)
+    except (TypeError, ValueError):
+        every = 0
+    if every > 0 and int(state.get("since_ad") or 0) >= every \
+            and not state.get("in_ad_break"):
+        # Ad slot due: cut away instead of advancing content. The index is
+        # untouched, so the return path resumes exactly where it left off.
+        # A declined break (no file) falls through to content normally.
+        if play_ad(renderer, data, deck_sources):
+            return
     while skipped + dormant + pending < len(items):
         sidx = state.get("index", 0)
         idx = (sidx if isinstance(sidx, int) else 0) % len(items)
@@ -637,6 +708,11 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_transition(TRANSITION, 750)
     alert("Now playing: %s." % item.get("title", item["file"]), "INFO")
     state.update({"index": idx + 1, "deck": deck})
+    try:
+        if int(data.get("ad_every") or 0) > 0:
+            state["since_ad"] = int(state.get("since_ad") or 0) + 1
+    except (TypeError, ValueError):
+        pass
     if state["index"] >= len(items) and data.get("shuffle_on_complete"):
         # Shuffle the FRESH list under lock, not our possibly-stale copy:
         # a same-window /library edit rides along instead of being eaten.
@@ -656,6 +732,34 @@ def advance(renderer, state, data, deck_sources):
 
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
+    if source == AD_INPUT:
+        # Ad played out: unmute the decks, cut back to program, resume
+        # exactly where the index points (it never moved during the break).
+        # If the operator moved program elsewhere mid-ad, leave their scene
+        # alone but still clear the flags so the loop stays coherent.
+        try:
+            pgm = renderer._call("GetCurrentProgramScene")["currentProgramSceneName"]
+        except Exception:
+            pgm = AD_SCENE
+        try:
+            renderer.set_mute(decks["A"], False)
+            renderer.set_mute(decks["B"], False)
+        except Exception:
+            pass
+        with pl_lock():
+            try:
+                state = load_state()
+            except (OSError, ValueError):
+                state = {}
+            state["in_ad_break"] = False
+            save_state(state)
+        if pgm != AD_SCENE:
+            alert("Ad ended but program is %s; leaving it." % pgm, "INFO")
+            return
+        renderer.set_scene(SCENE_PROGRAM)
+        alert("Ad done; back to program.", "INFO")
+        advance(renderer, load_state(), load_playlist(), decks)
+        return
     if source == IDENT_SRC:
         # ...unless the operator already moved on (RETURN mid-ident): cutting
         # LIVE over their program would hijack the show from under them.
@@ -669,6 +773,14 @@ def on_ended(renderer, decks, source):
         renderer.set_scene(SCENE_LIVE)  # ident played to completion; cut to live
         alert("Ident done; LIVE on air.", "INFO")
     elif source in decks.values():
+        try:
+            st = load_state()
+        except (OSError, ValueError):
+            st = {}
+        if st.get("in_ad_break"):
+            # Deck ended under cover of the ad break: ignore it. The
+            # return path advances; reacting here would skip an item.
+            return
         advance(renderer, load_state(), load_playlist(), decks)
     # anything else (sting, bed loop, preview) is not the daemon's business
 
@@ -902,6 +1014,25 @@ def cmd_loop(renderer):
         print("cannot start loop: %s. Is the render plane running?" % e)
         return 2
     try:
+        # A reboot mid-ad-break leaves a stale in_ad_break flag pointing at
+        # a dead ad input: clear it, unmute the decks, start clean. Loses at
+        # most one ad slot; a stuck flag suppressing advances would be worse.
+        with pl_lock():
+            _boot_state = load_state()
+            _broke_ad = bool(_boot_state.get("in_ad_break"))
+            if _broke_ad:
+                _boot_state["in_ad_break"] = False
+                save_state(_boot_state)
+    except (OSError, ValueError):
+        _broke_ad = False
+    if _broke_ad:
+        try:
+            renderer.set_mute(decks["A"], False)
+            renderer.set_mute(decks["B"], False)
+        except Exception:
+            pass
+        alert("Reboot interrupted an ad break; decks unmuted, starting clean.", "WARN")
+    try:
         # The deck plays wherever the files point, but nobody SEES it until
         # program is the Meet scene. Caught live: a full advance cycle ran
         # into the Off Air harbour because nothing cut program.
@@ -913,6 +1044,7 @@ def cmd_loop(renderer):
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
     idle_streak = 0  # polls in a row the on-air deck reported idle (see below)
+    ended_streaks = {}  # input -> consecutive ENDED polls (poll-driven advance)
     plane_down_since = None  # first poll the render plane failed to answer
     plane_restarted_at = 0.0  # last self-healing restart, epoch
     while True:
@@ -963,6 +1095,33 @@ def cmd_loop(renderer):
                     alert("advance deferred (%s); retrying next pass." % e, "WARN")
                     with end_lock:
                         ended.append(source)
+            # Poll-driven end detection backs up media-ended events, which
+            # do not reliably arrive. Two straight ENDED polls enqueue the
+            # source exactly like an event would.
+            try:
+                _est = load_state()
+                _watch = []
+                if _est.get("in_ad_break"):
+                    _watch.append(AD_INPUT)
+                else:
+                    _deck_now = decks.get(_est.get("deck", "A"), DECK_A)
+                    _watch.append(_deck_now)
+                for _src in _watch:
+                    try:
+                        _ms = renderer.get_media_status(_src)
+                    except Exception:
+                        continue
+                    if _ms.get("state") == "OBS_MEDIA_STATE_ENDED":
+                        ended_streaks[_src] = ended_streaks.get(_src, 0) + 1
+                    else:
+                        ended_streaks[_src] = 0
+                    if ended_streaks.get(_src, 0) >= 2:
+                        ended_streaks[_src] = 0
+                        with end_lock:
+                            if _src not in ended:
+                                ended.append(_src)
+            except Exception:
+                pass
             # Natural advances (shuffle especially) rewrite the file behind
             # our back; re-baseline the hash so the next poll doesn't announce
             # our own shuffle as a human edit. A same-window human edit rides
@@ -1007,7 +1166,11 @@ def cmd_loop(renderer):
                 alert("re-kick failed (%s)." % e, "WARN")
             dog.check_stream()
             dog.check_disk()
-            dog.check_source(decks[load_state().get("deck", "A")], on_air=True)
+            # While an ad break owns the program, the deck is muted/hidden
+            # and supposed to be still: watch the AD input instead, or the
+            # idle deck reads as a stall and faults mid-ad.
+            _wst = load_state()
+            dog.check_source(AD_INPUT if _wst.get("in_ad_break") else decks[_wst.get("deck", "A")], on_air=True)
         except Exception:
             import traceback
             # Full trace once per distinct error; deaf windows repeat the same
@@ -1037,6 +1200,12 @@ class FakeRenderer(Renderer):
 
     def set_source_visible(self, scene, source, visible):
         self.calls.append(("vis", scene, source, visible))
+
+    def set_mute(self, source, muted):
+        self.calls.append(("mute", source, bool(muted)))
+
+    def restart_media(self, source):
+        self.calls.append(("restart", source))
 
     def get_media_status(self, source):
         return {"time_ms": self.pos.get(source, 0), "duration_ms": 1000, "state": "playing"}
