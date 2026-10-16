@@ -38,7 +38,7 @@ export function buildPreviewArea(root) {
     // LOCAL-PATCH (station): the program pane carries a REAL-TIME video
     // return (WHEP from MediaMTX); the preview pane keeps snapshot stills.
     // One visible feed at a time — Refresh on program stops video first.
-    let video = null, session = null;
+    let video = null, session = null, hasAudio = false;
     const setVideo = (on) => {
       if (video) video.style.display = on ? 'block' : 'none';
       canvas.style.visibility = on ? 'hidden' : 'visible';
@@ -46,7 +46,9 @@ export function buildPreviewArea(root) {
     };
     const stopVideo = (quiet) => {
       if (session) { try { session.stop(); } catch {} session = null; }
+      hasAudio = false;
       setVideo(false);
+      if (spkBtn) { spkBtn.classList.remove('on'); spkBtn.textContent = '🔇'; }
       if (!quiet) toast('Program return stopped — snapshots underneath');
     };
     if (role === 'program') {
@@ -83,6 +85,20 @@ export function buildPreviewArea(root) {
         api.toggleLive();
       },
     });
+    // LOCAL-PATCH (station): program-return speaker. Starts muted
+    // (autoplay-safe); unmuting is a real click gesture, so sound is
+    // allowed. Only meaningful when the return carries an audio track.
+    const spkBtn = role === 'program' ? h('button', {
+      class: 'ptools-btn', text: '🔇',
+      title: 'Unmute the program return (needs the Opus monitor-av path)',
+      onclick: (e) => {
+        e.stopPropagation();
+        if (!session || !video) { toast(hasAudio ? 'Start the return first' : 'No audio track on this return'); return; }
+        video.muted = !video.muted;
+        spkBtn.textContent = video.muted ? '🔇' : '🔊';
+        spkBtn.classList.toggle('on', !video.muted);
+      },
+    }) : null;
     async function toggleReturn() {
       if (session) { stopVideo(); return; }
       let mon = null;
@@ -90,23 +106,33 @@ export function buildPreviewArea(root) {
         const r = await fetch('/monitor', { cache: 'no-store' });
         if (r.ok) mon = await r.json();
       } catch {}
-      if (!mon?.live) {
+      // LOCAL-PATCH (station): either monitor path counts — the player
+      // tries monitor-av (sound) first, plain monitor as fallback.
+      if (!mon?.live && !mon?.av?.live) {
         toast('Monitor offline — press Start Streaming (lab routes it to the local monitor), then LIVE again');
         return;
       }
+      if (video) video.muted = true;
+      if (spkBtn) { spkBtn.textContent = '🔇'; spkBtn.classList.remove('on'); }
       session = startReturn(video, {
-        onState: (on, why) => {
+        onState: (on, why, info) => {
           if (!on) {
             session = null;
+            hasAudio = false;
             setVideo(false);
             if (why) toast(`Program return ended (${why}) — snapshots underneath`);
+          } else if (info) {
+            hasAudio = !!info.hasAudio;
+            if (spkBtn) spkBtn.title = hasAudio
+              ? 'Unmute the program return (live mix, ~1s behind air)'
+              : 'Video-only return — no audio track (Opus repackager down?)';
           }
         },
       });
       // paint optimistically; first frame confirms, failure reverts loudly.
       setVideo(true);
     }
-    const tools = h('div', { class: 'preview-tools' }, refreshBtn, liveBtn);
+    const tools = h('div', { class: 'preview-tools' }, refreshBtn, liveBtn, ...(spkBtn ? [spkBtn] : []));
     pane.append(tools);
     area.append(pane);
     return { pane, wrap, canvas, refreshBtn, liveBtn, role, stopVideo };

@@ -106,12 +106,15 @@
      window media query; dead CSS rules removed.
   24. Program video return (new file `js/return.js` + thin preview wiring):
      OBS lab profile streams program A/V to the MediaMTX `monitor` path;
-     the program pane plays it over WHEP with vanilla RTCPeerConnection
-     (video-only — AAC is not WebRTC-playable, meters cover audio);
-     signaling proxied same-origin via overlay `/whep`; `/monitor` status
+     the program pane plays it over WHEP with vanilla RTCPeerConnection.
+     `monitor-av` (ffmpeg AAC->Opus repack, own unit) is tried first for
+     sound, plain `monitor` is the video-only fallback; the pane starts
+     muted with a speaker toggle (gesture-safe unmute); signaling proxied
+     same-origin via overlay `/whep?path=`; `/monitor` status (both paths)
      gates the button with a spoken hint; Refresh stops video first;
      layout rebuilds stop all sessions (no leaked peer connections);
-     snapshot-live now drives preview-pane buttons only.
+     snapshot-live now drives preview-pane buttons only. Mixer meters
+     cover audio visually where return audio is unavailable.
 - **Integration:** served at `/studio` (MIME-correct, `no-store` on all
   control surfaces so fixes reach operators without hard-reloads). OBS
   traffic goes through the overlay server's raw relay: the replica's gateway mode

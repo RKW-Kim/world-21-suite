@@ -299,14 +299,16 @@ os.makedirs(MUSIC_DIR, exist_ok=True)
 BED_INPUT = "Music Bed"
 BED_SCENES = ("Starting", "Off Air", "End Credits")
 MONITOR_PATH = "monitor"  # MediaMTX path the lab profile streams to
-MONITOR_WHEP = "http://127.0.0.1:8889/%s/whep" % MONITOR_PATH
+MONITOR_AV_PATH = "monitor-av"  # same return, Opus audio (ffmpeg repack)
+MONITOR_WHEP = "http://127.0.0.1:8889/%s/whep"
+WHEP_PATHS = {"monitor", "monitor-av"}
 
 
-def monitor_status():
-    """Is the program return actually publishing? Read-only; short fuse."""
+def monitor_path_status(name):
+    """Is a monitor path actually publishing? Read-only; short fuse."""
     import urllib.request as _url
     try:
-        with _url.urlopen("http://127.0.0.1:9997/v3/paths/get/%s" % MONITOR_PATH,
+        with _url.urlopen("http://127.0.0.1:9997/v3/paths/get/%s" % name,
                            timeout=3) as r:
             d = json.loads(r.read().decode())
         src = d.get("source") or {}
@@ -316,6 +318,12 @@ def monitor_status():
                 "tracks": [t.get("codec") for t in d.get("tracks2", [])]}
     except Exception as e:
         return {"live": False, "error": str(e)[:120]}
+
+
+def monitor_status():
+    out = monitor_path_status(MONITOR_PATH)
+    out["av"] = monitor_path_status(MONITOR_AV_PATH)
+    return out
 
 
 def music_tracks():
@@ -610,8 +618,15 @@ class Handler(SimpleHTTPRequestHandler):
         # Same-origin WHEP signaling proxy: the MBA posts its SDP offer
         # here, so only :7070 needs to be reachable from the operator side.
         # ICE media itself still flows direct MBA<->lab (same LAN).
+        # ?path= selects the monitor path (whitelisted): monitor-av first
+        # (video+Opus), plain monitor as video-only fallback.
         import urllib.request as _url
         import urllib.error as _ue
+        from urllib.parse import parse_qs as _pq, urlparse as _up
+        name = _pq(_up(self.path).query).get("path", ["monitor"])[0]
+        if name not in WHEP_PATHS:
+            self.send_error(400, "unknown monitor path")
+            return
         try:
             length = int(self.headers.get("Content-Length", 0))
         except (TypeError, ValueError):
@@ -625,7 +640,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(400, "offer unreadable")
             return
         try:
-            req = _url.Request(MONITOR_WHEP, data=offer,
+            req = _url.Request(MONITOR_WHEP % name, data=offer,
                                headers={"Content-Type": "application/sdp"},
                                method="POST")
             with _url.urlopen(req, timeout=10) as r:

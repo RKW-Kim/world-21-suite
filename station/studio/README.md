@@ -159,5 +159,8 @@ plane (new handshakes already time out under load). So:
 
 WebRTC H264 has no B-frames: the streaming encoder must run a preset
 without them (lab: ultrafast) or MediaMTX closes the session mid-handshake.
-Audio rides the stream but is not subscribed (AAC is not WebRTC-playable
-in Chrome) — mixer meters cover audio visually.
+Audio rides along via the `monitor-av` path (ffmpeg repackages AAC->Opus,
+since OBS ships no Opus encoder and Chrome won't play AAC over WebRTC);
+the pane starts muted with a speaker toggle. Short GOPs matter: with
+keyint 250 a late joiner waits ~25s for the first keyframe (lab runs
+keyint 60 via streamEncoder.json: ~4s joins).

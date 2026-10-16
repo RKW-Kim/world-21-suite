@@ -1070,3 +1070,30 @@ real debugging time and each fix is load-bearing. Newest first.
   lab-normal CRIT; check_stream stays silent while active.
 - WHEP audio deliberately video-only (AAC unplayable in Chrome WebRTC);
   meters cover audio. Preview pane keeps snapshot-live.
+
+## 2026-10-16 (early) — Config-as-code: capture/diff/apply + A/V return sound
+
+- station/sync.py: OBS<->repo 1:1 machine sync. capture (scenes/items/
+  inputs/volumes/filters/video/service/transition/encoder.json, secrets
+  redacted to $secret + leak-scanned, paths tokenized media:/overlay:/),
+  diff (volatile runtime excluded: program/preview cuts, A/B deck eyes),
+  apply (live RPCs + profile files + optional restart that parks/ resumes
+  the daemon and merges geometry while obs is dead). Round-trip PROVEN in
+  lab: planted +10px -> diff caught it (1 line) -> apply --restart ->
+  live 10.0 -> revert -> 0.0 -> diff clean.
+- Three traps found by doing it, not theorizing: (1) SetSceneItemTransform
+  rejects correct payloads server-side (matches upstream #1299) — geometry
+  goes by file, never RPC; (2) a running OBS autosaves over the collection
+  file and eats merges — merge only while dead (kill-verified); (3) OBS
+  trusts stale *_rel caches over fresh absolute pos (file said 10.0,
+  plane rendered 0.0) — merge deletes pos_rel/scale_rel/bounds_rel
+  (template ships without them; OBS regenerates).
+- A/V return: monitor-av path (ffmpeg AAC->Opus repack, own unit) +
+  return.js tries av-then-video + speaker toggle. Verified: live Opus
+  track, unmute works. /monitor reports both paths; /whep?path= proxied.
+- Docs: docs/machine-sync.md (new-device + daily flows, what syncs and
+  what deliberately doesn't, known edges). VPS.md re-apply list corrected
+  (advanced + streamEncoder.json verbatim).
+- Niek/obs-web studied for the preview question: same 1fps screenshot
+  technique + meter events; nothing simpler to integrate (already beyond
+  it), and GPL-3.0 forbids copying into this MIT tree anyway. Ideas only.

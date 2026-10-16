@@ -13,3 +13,7 @@ paths:
   # lab profile) publishes here; /studio watches via WHEP (:8889). Paths
   # must be listed — this build rejects undefined paths (seen live).
   monitor:
+  # Same return with WebRTC-playable audio: ffmpeg repackages monitor
+  # (video copy, AAC->Opus) because OBS ships no Opus encoder and Chrome
+  # won't play AAC over WebRTC. MBA listens here (see station-monitor-av).
+  monitor-av:

@@ -1,0 +1,15 @@
+[Unit]
+Description=Station monitor A/V repackager (monitor -> monitor-av, AAC->Opus)
+After=station-mediamtx.service
+Requires=station-mediamtx.service
+# No publisher, no work: ffmpeg exits and systemd retries on a timer
+# instead of hot-spinning (this build has no RTSP reconnect flags).
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ffmpeg -hide_banner -loglevel warning -rtsp_transport tcp -i rtsp://127.0.0.1:8554/monitor -map 0:v -map 0:a? -c:v copy -c:a libopus -b:a 96k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:8554/monitor-av
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

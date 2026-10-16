@@ -36,3 +36,6 @@ node_modules/
 # MediaMTX self-signed certs (regenerated on demand)
 auto.crt
 auto.key
+
+# Per-machine config overrides (sync.py apply merges these over repo config)
+station/config/local.json

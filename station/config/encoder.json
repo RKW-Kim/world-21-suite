@@ -1,0 +1,11 @@
+{
+  "streamEncoder.json": {
+    "bf": 0,
+    "bitrate": 2500,
+    "keyint_sec": 2,
+    "preset": "ultrafast",
+    "profile": "high",
+    "rate_control": "CBR",
+    "tune": ""
+  }
+}
