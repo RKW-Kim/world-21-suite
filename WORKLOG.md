@@ -1013,3 +1013,60 @@ real debugging time and each fix is load-bearing. Newest first.
 - Verified: py+js syntax, daemon selftest, playlist edges, engine node
   asserts, headless-Chromium CDP suite incl. online live-toggle both
   directions with button/backend agreement. Loop + all 5 units healthy.
+
+## 2026-10-16 — Program video return (LIVE finally means live) + unit hygiene
+
+- LIVE-as-screenshots was the wrong species: each frame is a main-thread
+  render+encode, so "10 refreshes/sec" would deafen the plane, not inform
+  the director. Built the real pipeline instead: lab profile streams
+  program A/V (rtmp_custom) to a new MediaMTX `monitor` path; /studio
+  program pane plays it over WHEP with vanilla RTCPeerConnection
+  (sub-second, independent of obs-websocket AND screenshots).
+- Two findings en route, both load-bearing: (1) this MediaMTX build
+  rejects undefined paths (`path 'monitor' is not configured` — added to
+  mediamtx.yml); (2) WebRTC H264 has no B-frames — MediaMTX closes the
+  session mid-handshake, x264 veryfast emits them, simple-mode OBS has no
+  custom-x264 knob, so the lab profile runs ultrafast (verified: 60s+
+  real-time playback, rs=4, clock advancing). Monitor output 960x540.
+- WHEP audio deliberately video-only (AAC not WebRTC-playable in Chrome;
+  meters cover audio visually). Signaling proxied same-origin (/whep),
+  ICE direct. Preview pane keeps snapshot-live; Refresh stops video first.
+- Lab profile was EMPTY (no service/output/video settings — the "host
+  standard" was aspirational). Now: service.json + basic.ini [Video] +
+  [SimpleOutput] ultrafast, all machine-local under ~/.var, re-apply list
+  in docs/VPS.md. Lab ws server is passwordless (loopback-only, harmless;
+  VPS must set OBS_PASS).
+- Unit hygiene: `systemctl stop station-obs` never reaped flatpak/bwrap
+  (old obs held :4455 while the new instance parked at "already running")
+  — ExecStop now pkill -x obs/bwrap; mirrored to station/systemd. Also:
+  station-daemon tracks obs restarts (a plain `stop station-obs` takes the
+  loop down too — document, don't fight).
+- Daemon/loop untouched by the monitor (check_stream stays silent while
+  active; stopping later fires the one lab-normal CRIT). CPU: box already
+  saturated by llvmpipe; the 540p ultrafast encode adds little on top.
+
+## 2026-10-16 (early) — Program video return goes live (WHEP, sub-second)
+
+- LIVE-as-screenshots retired for program: OBS lab profile now streams
+  program A/V (rtmp_custom) to new MediaMTX `monitor` path; program pane
+  plays it via vanilla WHEP (return.js). Verified: 90s+ playback,
+  readyState 4, clock real-time; new joins get video in ~4s.
+- Path demanded two fixes: (1) this MediaMTX needs paths listed
+  (`path 'monitor' is not configured`); (2) WebRTC H264 forbids B-frames
+  — session closed mid-handshake every time until x264 ran B-frame-free.
+- Encoder archaeology (for the record): simple mode ignores keyint_sec
+  AND the x264-custom string (absent from the plugin binary — the old
+  `x264Settings=bf=0` was a no-op); ultrafast implies bf=0 (proven: the
+  session held). Short GOP needs ADVANCED mode + streamEncoder.json
+  (`keyint_sec:2` → `keyint: 60` in the encoder log). Simple+ultrafast
+  was the working fallback throughout.
+- Gotcha drilled twice tonight: `systemctl stop station-obs` does not
+  reap flatpak/bwrap (ExecStop pkill added), and unit stop/restart takes
+  station-daemon with it (restart it after). Daemon loop otherwise rides
+  plane restarts via wait_ready.
+- Monitor stream is MANUAL (Start Streaming; lab routes locally). Nothing
+  auto-starts it — deliberate (VPS semantics differ). /studio says so on
+  the button when the path is dark. Stopping later fires the one
+  lab-normal CRIT; check_stream stays silent while active.
+- WHEP audio deliberately video-only (AAC unplayable in Chrome WebRTC);
+  meters cover audio. Preview pane keeps snapshot-live.

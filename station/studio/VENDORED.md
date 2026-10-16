@@ -7,7 +7,7 @@
   `demo-obs-server.mjs` (mock OBS on :4455 — NEVER run on the render-plane
   host, it would shadow the real socket), `start-*` launchers, `docs/`
   (kept in Downloads, not shipped).
-- **Pristine-tree policy:** twenty-four marked `LOCAL-PATCH` lines exist (see below);
+- **Pristine-tree policy:** twenty-five marked `LOCAL-PATCH` lines exist (see below);
   everything else byte-identical to the drop. Updates: re-copy the tree,
   re-apply the listed patches, commit.
 - **LOCAL-PATCH list (all verified live against OBS 32.2.2 / ws 5.7.4):**
@@ -104,9 +104,17 @@
      preview-only; Transform sync unsubscribed on close; eye/lock clicks
      don't reselect; source row-drag locked while attached; narrow-
      window media query; dead CSS rules removed.
-- **Integration:** served at `/studio` (MIME-correct, no-cache exempt —
-  browsers may cache; hard-reload after updates). OBS traffic goes through
-  the overlay server's raw relay: the replica's gateway mode
+  24. Program video return (new file `js/return.js` + thin preview wiring):
+     OBS lab profile streams program A/V to the MediaMTX `monitor` path;
+     the program pane plays it over WHEP with vanilla RTCPeerConnection
+     (video-only — AAC is not WebRTC-playable, meters cover audio);
+     signaling proxied same-origin via overlay `/whep`; `/monitor` status
+     gates the button with a spoken hint; Refresh stops video first;
+     layout rebuilds stop all sessions (no leaked peer connections);
+     snapshot-live now drives preview-pane buttons only.
+- **Integration:** served at `/studio` (MIME-correct, `no-store` on all
+  control surfaces so fixes reach operators without hard-reloads). OBS
+  traffic goes through the overlay server's raw relay: the replica's gateway mode
   (`?XTransformPort=<obs-port>`) is spliced TCP-to-TCP to the render plane,
   auth end-to-end via its own connect dialog. See `_ws_relay`.
 - **Known notes (theirs to fix upstream, not forked here):**

@@ -447,7 +447,10 @@ function coalesceKey(type, data) {
   }
 }
 
-/* obs-websocket v5 RequestBatch (op 7 → op 8) */
+/* obs-websocket v5 RequestBatch (op 7 → op 8).
+ * Deliberately NOT flap-graced like request(): a batch is all-or-nothing
+ * and replaying half of one after reconnect is worse than failing fast.
+ * Callers that need patience must retry explicitly. */
 export function requestBatch(requests, { haltOnFailure = false } = {}) {
   return new Promise((resolve, reject) => {
     if (state.status !== 'connected') { reject(new Error('not connected')); return; }

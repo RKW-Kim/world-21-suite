@@ -25,6 +25,10 @@ Environment=LIBGL_ALWAYS_SOFTWARE=1
 Environment=QT_DEBUG_PLUGINS=1
 ExecStartPre=/bin/sh -c 'rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
 ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:99 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --minimize-to-tray --disable-missing-files-check
+# systemctl stop does NOT reap the flatpak/bwrap tree (seen live: unit
+# inactive, old obs still holding :4455, new instance parking at "already
+# running"). Reap by exact comm names on every stop, not just restarts.
+ExecStop=/bin/sh -c 'pkill -x obs; pkill -x bwrap; exit 0'
 Restart=always
 RestartSec=20
 

@@ -9,3 +9,7 @@ apiAddress: 127.0.0.1:9997
 paths:
   slot-cam:
   slot-screen:
+  # Program return for the director panel: OBS (rtmp_custom service in the
+  # lab profile) publishes here; /studio watches via WHEP (:8889). Paths
+  # must be listed — this build rejects undefined paths (seen live).
+  monitor:

@@ -6,8 +6,9 @@
 import { h, $, $$, clamp } from './util.js';
 import { I } from './icons.js';
 import { obs } from './engine.js';
-import { openMenu } from './ui.js';
+import { openMenu, toast } from './ui.js';
 import { ctx as dockCtx } from './docks.js';
+import { startReturn, stopAllReturns } from './return.js';
 
 const KIND_COLORS = {
   display_capture: ['#274a68', '#3f8cff'], window_capture: ['#3d4450', '#9a9ca2'],
@@ -34,17 +35,47 @@ export function buildPreviewArea(root) {
     const canvas = h('canvas', { class: 'obs-preview', tabindex: 0 });
     const wrap = h('div', { class: 'preview-canvas-wrap' }, canvas);
     const pane = h('div', { class: 'preview-pane' }, wrap);
+    // LOCAL-PATCH (station): the program pane carries a REAL-TIME video
+    // return (WHEP from MediaMTX); the preview pane keeps snapshot stills.
+    // One visible feed at a time — Refresh on program stops video first.
+    let video = null, session = null;
+    const setVideo = (on) => {
+      if (video) video.style.display = on ? 'block' : 'none';
+      canvas.style.visibility = on ? 'hidden' : 'visible';
+      liveBtn.classList.toggle('on', !!on);
+    };
+    const stopVideo = (quiet) => {
+      if (session) { try { session.stop(); } catch {} session = null; }
+      setVideo(false);
+      if (!quiet) toast('Program return stopped — snapshots underneath');
+    };
+    if (role === 'program') {
+      video = h('video', {
+        class: 'obs-return', muted: true, playsinline: true,
+        style: { display: 'none' },
+      });
+      try { video.disablePictureInPicture = true; } catch {}
+      wrap.append(video);
+    }
     // LOCAL-PATCH (station): per-pane Refresh (one snapshot on demand) +
-    // Live toggle (fast polling). Live state lives in the ws layer; this
-    // only emits intent + mirrors the acked state back onto the buttons.
+    // Live toggle. Preview Live = fast snapshots (ws-owned truth, acked
+    // back); Program Live = the video return. Buttons mirror acked state.
     const refreshBtn = h('button', {
       class: 'ptools-btn', text: '⟳', title: 'Refresh now (one snapshot)',
-      onclick: (e) => { e.stopPropagation(); obs.emit('snap-request', role); },
-    });
-    const liveBtn = h('button', {
-      class: 'ptools-btn', text: 'LIVE', title: 'Live view: fast polling. Costs render-plane CPU per frame — use to check motion, then switch off.',
       onclick: (e) => {
         e.stopPropagation();
+        if (role === 'program' && session) stopVideo(true);
+        obs.emit('snap-request', role);
+      },
+    });
+    const liveBtn = h('button', {
+      class: 'ptools-btn', text: 'LIVE',
+      title: role === 'program'
+        ? 'Program return: REAL-TIME video from the render plane (sub-second). Needs the monitor stream — Start Streaming routes it locally in lab.'
+        : 'Live view: fast polling. Costs render-plane CPU per frame — use to check motion, then switch off.',
+      onclick: (e) => {
+        e.stopPropagation();
+        if (role === 'program') { toggleReturn(); return; }
         // LOCAL-PATCH (station): no local live boolean — ask ws truth and
         // let the ack repaint. Offline clicks only explain themselves.
         const api = window.__ws;
@@ -52,18 +83,45 @@ export function buildPreviewArea(root) {
         api.toggleLive();
       },
     });
+    async function toggleReturn() {
+      if (session) { stopVideo(); return; }
+      let mon = null;
+      try {
+        const r = await fetch('/monitor', { cache: 'no-store' });
+        if (r.ok) mon = await r.json();
+      } catch {}
+      if (!mon?.live) {
+        toast('Monitor offline — press Start Streaming (lab routes it to the local monitor), then LIVE again');
+        return;
+      }
+      session = startReturn(video, {
+        onState: (on, why) => {
+          if (!on) {
+            session = null;
+            setVideo(false);
+            if (why) toast(`Program return ended (${why}) — snapshots underneath`);
+          }
+        },
+      });
+      // paint optimistically; first frame confirms, failure reverts loudly.
+      setVideo(true);
+    }
     const tools = h('div', { class: 'preview-tools' }, refreshBtn, liveBtn);
     pane.append(tools);
     area.append(pane);
-    return { pane, wrap, canvas, refreshBtn, liveBtn };
+    return { pane, wrap, canvas, refreshBtn, liveBtn, role, stopVideo };
   }
 
   // LOCAL-PATCH (station): panes keep no live state of their own — the ws
-  // layer owns live truth (wsApi.isLive/toggleLive) and every ack repaints
-  // all pane buttons, so UI and reality cannot disagree.
+  // layer owns snapshot-live truth (wsApi.isLive/toggleLive) and every ack
+  // repaints preview-pane buttons. Program-pane buttons belong to the
+  // video return instead and are skipped here.
   const wsLive = () => (window.__ws && window.__ws.isLive) ? !!window.__ws.isLive() : false;
   function setLiveUI(on) {
-    for (const p of [paneP, paneProg]) p?.liveBtn?.classList.toggle('on', !!on);
+    for (const p of [paneP, paneProg]) {
+      if (!p || p.role === 'program') continue;
+      p.liveBtn?.classList.toggle('on', !!on);
+    }
   }
   obs.on('live-view', setLiveUI);
   document.addEventListener('visibilitychange', () => {
@@ -71,6 +129,9 @@ export function buildPreviewArea(root) {
   });
 
   function layout() {
+    // LOCAL-PATCH (station): rebuilding panes orphans <video> elements —
+    // stop every return session first or its peer connection leaks.
+    try { stopAllReturns(); } catch {}
     area.innerHTML = '';
     if (obs.S.studioMode) {
       paneP = makePane('preview'); paneProg = makePane('program');

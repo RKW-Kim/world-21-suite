@@ -374,6 +374,12 @@ def load_secrets():
     4009-auth failures from a server started bare; never again."""
     path = os.path.join(ROOT, "secrets.env")
     try:
+        if os.stat(path).st_mode & 0o077:
+            print("WARNING: %s is group/world-readable; chmod 600 it." % path,
+                  flush=True)
+    except OSError:
+        pass
+    try:
         with open(path) as f:
             for line in f:
                 line = line.strip()

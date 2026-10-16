@@ -139,15 +139,25 @@ The full interactive diagram is in `docs/architecture.html`.
 
 See the hosted/development report for the complete architecture decision record.
 
-## Station note — live view budget (why no 60fps)
+## Station note — live view budget (why program is video, preview is photos)
 
-`GetSourceScreenshot` is a main-thread render + readback + encode on the
-render plane, then base64 over the relay, then decode on the viewer. At
-1080p on software GL each frame costs tens of ms of plane CPU that the
-compositor and CEF pages also need — 60 such requests per second would
-deafen the plane (new handshakes already time out under load). So the
-replica offers stills (~1fps program+preview), Refresh-on-demand, and a
-Live mode (~4fps @ 640px JPEG with PNG fallback, auto-pause when the tab
-hides, auto-off after 5 straight failures). True 60fps monitoring is a
-video pipeline, not screenshots: the VPS-era path is a WHEP program-return
-via MediaMTX, off the control channel entirely.
+Screenshots are a main-thread render + readback + encode on the render
+plane, then base64 over the relay, then decode on the viewer. At 1080p on
+software GL each frame costs tens of ms of plane CPU that the compositor
+and CEF pages also need — 60 such requests per second would deafen the
+plane (new handshakes already time out under load). So:
+
+- Program pane LIVE = true real-time video: OBS streams program A/V to
+  MediaMTX (`monitor` path) and the pane plays it back over WHEP
+  (sub-second, independent of obs-websocket and of screenshots entirely).
+  Needs the monitor stream running — Start Streaming routes it locally
+  in lab; the pane says so out loud when it isn't.
+- Preview pane LIVE = fast snapshots (~150ms JPEG ladder): motion-check
+  grade only, with tab-hide pause and a deaf-guard that stands down
+  instead of piling requests onto a dying plane.
+- Refresh buttons and the one connect-time snapshot cover everything else.
+
+WebRTC H264 has no B-frames: the streaming encoder must run a preset
+without them (lab: ultrafast) or MediaMTX closes the session mid-handshake.
+Audio rides the stream but is not subscribed (AAC is not WebRTC-playable
+in Chrome) — mixer meters cover audio visually.

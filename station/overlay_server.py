@@ -298,6 +298,24 @@ MUSIC_DIR = os.path.join(daemon.MEDIA, "music")
 os.makedirs(MUSIC_DIR, exist_ok=True)
 BED_INPUT = "Music Bed"
 BED_SCENES = ("Starting", "Off Air", "End Credits")
+MONITOR_PATH = "monitor"  # MediaMTX path the lab profile streams to
+MONITOR_WHEP = "http://127.0.0.1:8889/%s/whep" % MONITOR_PATH
+
+
+def monitor_status():
+    """Is the program return actually publishing? Read-only; short fuse."""
+    import urllib.request as _url
+    try:
+        with _url.urlopen("http://127.0.0.1:9997/v3/paths/get/%s" % MONITOR_PATH,
+                           timeout=3) as r:
+            d = json.loads(r.read().decode())
+        src = d.get("source") or {}
+        return {"live": bool(d.get("ready") and d.get("source")),
+                "ready": bool(d.get("ready")),
+                "source": src.get("type"),
+                "tracks": [t.get("codec") for t in d.get("tracks2", [])]}
+    except Exception as e:
+        return {"live": False, "error": str(e)[:120]}
 
 
 def music_tracks():
@@ -376,6 +394,8 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {"history": intake_history()})
         elif self.path == "/music":
             return self._music()
+        elif self.path == "/monitor":
+            return self._json(200, monitor_status())
         elif self.path == "/events":
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -425,6 +445,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._obs_proxy()
         if path == "/music":
             return self._music()
+        if path == "/whep":
+            return self._whep()
         if path != "/state":
             self.send_error(404)
             return
@@ -583,6 +605,48 @@ class Handler(SimpleHTTPRequestHandler):
                     daemon.save_state(st8)
         daemon.save_playlist(data)
         return self._json(200, {"ok": True, "items": len(items)})
+
+    def _whep(self):
+        # Same-origin WHEP signaling proxy: the MBA posts its SDP offer
+        # here, so only :7070 needs to be reachable from the operator side.
+        # ICE media itself still flows direct MBA<->lab (same LAN).
+        import urllib.request as _url
+        import urllib.error as _ue
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            length = 0
+        if length <= 0 or length > 65536:
+            self.send_error(400, "SDP offer required")
+            return
+        try:
+            offer = self.rfile.read(length)
+        except Exception:
+            self.send_error(400, "offer unreadable")
+            return
+        try:
+            req = _url.Request(MONITOR_WHEP, data=offer,
+                               headers={"Content-Type": "application/sdp"},
+                               method="POST")
+            with _url.urlopen(req, timeout=10) as r:
+                answer = r.read()
+                code = r.status
+        except _ue.HTTPError as e:
+            try:
+                detail = e.read()[:200]
+            except Exception:
+                detail = b""
+            self.send_error(502, "whep refused: %s %s" % (e.code, detail.decode(errors="replace")))
+            return
+        except Exception as e:
+            self.send_error(502, "whep unreachable: %s" % str(e)[:120])
+            return
+        self.send_response(code)
+        self.send_header("Content-Type", "application/sdp")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(answer)))
+        self.end_headers()
+        self.wfile.write(answer)
 
     def _obs_proxy(self):
         # Generic OBS passthrough over the held connection. Same trust as

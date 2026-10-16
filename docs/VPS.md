@@ -53,15 +53,48 @@ after moving the checkout is safe and idempotent.)
    keyframe 2s, AAC 128k; websocket 127.0.0.1:4455 + OBS_PASS; load the
    SMILE-Station collection). Profiles can't be safely templated — GUI or
    `obs-websocket` once, then never again.
+   - Director monitor is NOT the stream: /studio's program LIVE plays the
+     MediaMTX `monitor` path over WHEP. That path needs a publisher: either
+     the main stream output routed to it (lab does this — profile service
+     `rtmp_custom` to local MediaMTX) or, on the VPS where the main output
+     goes to YouTube, a second output (multi-RTMP plugin or vcam+ffmpeg —
+     undecided, do NOT improvise on air day).
+   - WebRTC H264 has no B-frames: whatever encodes the monitor path must
+     run a B-frame-free preset (lab: ultrafast), or MediaMTX closes the
+     session mid-handshake with "doesn't support H264 streams with
+     B-frames". Verified live 2026-10-16.
+   - Lab discovery 2026-10-16: a fresh OBS profile ships EMPTY (no
+     service, no output/video settings). The lab profile now carries
+     service.json (rtmp_custom→local monitor) + basic.ini [Video]
+     (1920×1080 canvas, 960×540 output) + advanced output mode with
+     `streamEncoder.json` — NOT [SimpleOutput] keys. Why: simple mode
+     ignores keyint_sec (proven: keyint stays 250), and the x264 custom-
+     options string is never read (verified absent from the plugin
+     binary). The file that matters is
+     `profiles/CONFORM_Y/streamEncoder.json`:
+     `{"rate_control":"CBR","bitrate":2500,"keyint_sec":2,
+     "preset":"ultrafast","profile":"high","tune":"","bf":0}` with
+     basic.ini `[Output] Mode=Advanced` + minimal `[AdvOut]`
+     (`Track1Bitrate=160`). Verified in the encoder log
+     (`advanced_video_stream ... keyint: 60`) and by 4s WHEP joins.
+     These live in ~/.var (machine-local, NOT the repo) — re-apply by
+     hand from this list when re-provisioning.
 4. `systemctl start station-xvfb station-mediamtx station-overlay station-obs`,
    wait for boot (~90s), then `systemctl start station-daemon`.
 5. Verify: `daemon.py status` (stream active after key entry),
    program scene on Meet, deck progressing, one SSH-tunneled look at the
    console. Only then: announce air.
+6. Monitor-return check (director panel is blind without it): Start
+   Streaming (lab) → `curl :9997/v3/paths/get/monitor` shows
+   ready+source → /studio program LIVE plays sub-second video for 60s+
+   without dropping. If it drops at ~10s every time, suspect B-frames.
 
 ## 5. Remote access discipline (non-negotiable)
 
 - obs-websocket binds **127.0.0.1** and needs the password. No exceptions.
+- Lab runs passwordless today (fresh profile, never configured) — harmless
+  on loopback-only bind, but the VPS sets OBS_PASS and verifies with a
+  wrong-password probe (expect close 4009, not a silent hang).
 - Operators (and the phone console) reach it via `ssh -L 4455:localhost:4455
   <vps>` or Tailscale. There is published RCE research through malicious
   browser-source payloads — an exposed 4455 is a takeover waiting for a date.

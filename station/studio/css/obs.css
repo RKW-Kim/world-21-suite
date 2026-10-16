@@ -651,3 +651,11 @@ input[type="number"].qinput::-webkit-inner-spin-button { opacity: 1; }
   .preview-tools { top: 20px; }
   .ws-bottom .dock { min-width: 200px; }
 }
+
+/* LOCAL-PATCH (station): program video return overlays the snapshot canvas
+ * exactly (contain-fit, letterboxed like the canvas sizing). */
+.preview-canvas-wrap { position: relative; }
+.obs-return {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; background: #000;
+}
