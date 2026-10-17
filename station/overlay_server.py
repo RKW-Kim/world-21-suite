@@ -266,7 +266,7 @@ def library_view():
         if it.get("status") == "dormant":
             continue
         f = it.get("file") or ""
-        if f and os.path.isfile(os.path.join(daemon.MEDIA, f)):
+        if (f and os.path.isfile(os.path.join(daemon.MEDIA, f))) or it.get("youtube"):
             nxt = i
             break
     for i, it in enumerate(items):
@@ -276,11 +276,14 @@ def library_view():
         size = os.path.getsize(p) if present else None
         if present:
             media_bytes += size
+        mode = "youtube" if it.get("youtube") else ("source" if it.get("source") else "file")
         out.append({"file": f, "title": it.get("title") or f,
                     "show": it.get("show") or "",
                     "status": it.get("status") or "active",
                     "pinned": bool(it.get("pinned")),
                     "has_source": bool(it.get("source")),
+                    "youtube": it.get("youtube") or "",
+                    "mode": mode,
                     "present": present, "size": size,
                     "duration": it.get("duration"),
                     "up_next": nxt is not None and i == nxt})
@@ -370,6 +373,10 @@ class Handler(SimpleHTTPRequestHandler):
             self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html", nocache=True)
         elif self.path == "/media" or self.path.startswith("/media?"):
             self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html", nocache=True)
+        elif self.path == "/whip" or self.path.startswith("/whip?"):
+            # Contribution seats: publishes browser media into MediaMTX over
+            # WHIP (the OBS side needs nothing — seats fill themselves).
+            self._serve_file(os.path.join(STATION_DIR, "whip.html"), "text/html", nocache=True)
         elif self.path == "/studio" or self.path.startswith("/studio/"):
             if self.path == "/studio":
                 # Bare path breaks relative assets (css/ resolves to /css/).
@@ -534,16 +541,21 @@ class Handler(SimpleHTTPRequestHandler):
             title = (body.get("title") or "").strip()
             source = (body.get("source") or "").strip()
             fname = (body.get("file") or "").strip()
+            ylink = (body.get("youtube") or "").strip()
             if not title:
                 return self._json(400, {"ok": False, "error": "add needs {\"title\"}"})
-            if not source and not fname:
-                return self._json(400, {"ok": False, "error": "add needs a link (source) or a file already in media/"})
+            if not ylink and not source and not fname:
+                return self._json(400, {"ok": False, "error": "add needs a link (source/youtube) or a file already in media/"})
             if fname:
                 if "/" in fname or fname.startswith(".") or not os.path.isfile(os.path.join(daemon.MEDIA, fname)):
                     return self._json(400, {"ok": False, "error": "file not in media/"})
             item = {"title": title}
             if fname:
                 item["file"] = fname
+            elif ylink:
+                item["youtube"] = ylink
+                if isinstance(body.get("duration"), (int, float)) and body["duration"] > 0:
+                    item["duration"] = int(body["duration"])
             else:
                 item["file"] = ""
                 item["source"] = source  # prefetch resolves it, daemon links it

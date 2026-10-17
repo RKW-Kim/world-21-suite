@@ -14,6 +14,9 @@ paths:
   # connects once its pipeline is already publishing. Zero disk anywhere.
   slot-stream-a:
   slot-stream-b:
+  # Ad-break streams: same pipeline as the decks, but landed in the ad
+  # scene (STREAM AD input) so a break can roll a YouTube link too.
+  slot-ad:
   # Program return for the director panel: OBS (rtmp_custom service in the
   # lab profile) publishes here; /studio watches via WHEP (:8889). Paths
   # must be listed — this build rejects undefined paths (seen live).

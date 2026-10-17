@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>SMILE · contribution seats (WHIP)</title>
+<style>
+:root{--bg:#101014;--fg:#e8e8ec;--dim:#9a9aa4;--one:#b91c3c;--ok:#2f9e44;--bd:#2c2c34}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",Arial,sans-serif;font-size:14px;padding:0 0 40px}
+header{display:flex;align-items:center;gap:12px;background:#1c1c22;border-bottom:1px solid #111;padding:10px 16px;flex-wrap:wrap}
+h1{font-size:16px}
+.dim{color:var(--dim)}
+main{max-width:760px;margin:0 auto;padding:24px 16px}
+.seat{border:1px solid var(--bd);border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.seat h2{font-size:14px;margin-bottom:4px}
+.seat .hint{font-size:12px;color:var(--dim);margin-bottom:8px}
+button{background:#2a2a32;color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer}
+button.on{border-color:var(--one);}
+.state{font-size:12px;margin-left:10px;min-width:220px;display:inline-block}
+.state.live{color:var(--ok)}
+.state.fail{color:#e5484d}
+.note{font-size:12px;color:var(--dim);margin-top:18px;line-height:1.6}
+#cfg{margin-bottom:18px}
+label{display:inline-block;margin-right:14px}
+input{background:#23232a;border:1px solid var(--bd);color:var(--fg);border-radius:4px;padding:5px 8px;font-size:13px;width:210px}
+</style></head><body>
+<header><h1>SMILE · contribution seats</h1>
+<span class="dim">publish straight into MediaMTX over WHIP — the seats in OBS fill themselves</span>
+<span style="flex:1"></span><button id="stopall">Stop all</button></header>
+<main>
+<section id="cfg"><div class="seat">
+<label>Station host <input id="host" placeholder="starts as this box's own"></label>
+<label>Stream ID token <input id="tok" placeholder="only if required"></label>
+</div></section>
+<div class="seat"><h2>Screen (shares its own audio too)</h2>
+<p class="hint">Populates the <b>slot-screen</b> seat — the Scene source that carries your masks and frame. Screen audio, if allowed, rides this seat.</p>
+<button id="b_screen">Share screen</button><span class="state" id="s_screen"></span></div>
+<div class="seat"><h2>Camera</h2>
+<p class="hint">Populates the <b>slot-cam</b> seat — keyed, zoomed and masked on the studio side already.</p>
+<button id="b_cam">Share camera</button><span class="state" id="s_cam"></span></div>
+<div class="seat"><h2>Microphone</h2>
+<p class="hint">Populates the <b>slot-audio</b> seat — the dedicated audio-capture source in the Live scene.</p>
+<button id="b_mic">Share microphone</button><span class="state" id="s_mic"></span></div>
+<p class="note">Keep this tab open while you're on air — it is the publisher. Each seat publishes its own WHIP stream, so OBS picks the video up the moment the first frame lands, without anyone touching the render plane. Stop = the seat goes quiet (black), the studio side stays intact. Reach this page over your tunnel from the MBA the same way you open /studio.</p>
+</main>
+<script>
+(function(){
+"use strict";
+var HOST = document.getElementById('host'), TOK = document.getElementById('tok');
+var local = location.hostname;
+HOST.value = local;
+function base(path){
+  var h = (HOST.value || location.hostname).trim();
+  return 'http://' + h + ':8889/' + path + '/whip';
+}
+function setstate(id, msg, cls){
+  var e = document.getElementById(id);
+  e.textContent = msg; e.className = 'state' + (cls ? ' ' + cls : '');
+}
+var pubs = {};
+function publish(seat, path, stream){
+  setstate('s_'+seat, 'negotiating…');
+  var pc = new RTCPeerConnection();
+  stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+  pubs[seat] = {pc: pc, stream: stream};
+  pc.onconnectionstatechange = function(){
+    if (pc.connectionState === 'connected') setstate('s_'+seat, 'LIVE', 'live');
+    else if (pc.connectionState === 'failed') setstate('s_'+seat, 'failed — stop and retry', 'fail');
+    else if (pc.connectionState === 'disconnected') setstate('s_'+seat, 'reflect…', 'live');
+  };
+  pc.createOffer({offerToReceiveAudio: false, offerToReceiveVideo: false}).then(function(offer){
+    return pc.setLocalDescription(offer);
+  }).then(function(){
+    return new Promise(function(res){ // non-trickle: wait for full ICE
+      if (pc.iceGatheringState === 'complete') return res();
+      var t = setTimeout(res, 2000);
+      pc.onicegatheringstatechange = function(){
+        if (pc.iceGatheringState === 'complete'){ clearTimeout(t); res(); }
+      };
+    });
+  }).then(function(){
+    var hdr = {"Content-Type": "application/sdp"};
+    var tok = TOK.value.trim();
+    if (tok) hdr["Authorization"] = "Bearer " + tok;
+    return fetch(base(path), {method: 'POST', headers: hdr, body: pc.localDescription.sdp});
+  }).then(function(r){
+    if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+    return r.text();
+  }).then(function(sdp){
+    return pc.setRemoteDescription({type: 'answer', sdp: sdp});
+  }).then(function(){
+    setstate('s_'+seat, 'connected; live when frames flow', 'live');
+  }).catch(function(e){
+    setstate('s_'+seat, String(e), 'fail');
+    stop(seat);
+  });
+}
+function stop(seat){
+  var p = pubs[seat]; if (!p) return;
+  try { p.stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+  try { if (p.pc.signalingState !== 'closed') p.pc.close(); } catch(e){}
+  delete pubs[seat];
+}
+function screen(){
+  return navigator.mediaDevices.getDisplayMedia({video: {frameRate: 30}, audio: {echoCancellation: false}});
+}
+function cam(){
+  return navigator.mediaDevices.getUserMedia({video: {width: 1280, height: 720}, audio: false});
+}
+function mic(){
+  return navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}});
+}
+function toggles(btn, seat, path, getter){
+  var b = document.getElementById(btn);
+  b.setAttribute('data-what', b.textContent);
+  b.onclick = function(){
+    var on = pubs[seat];
+    if (on && (on.pc.connectionState === 'connected' || on.pc.connectionState === 'connecting')) {
+      stop(seat); b.textContent = b.getAttribute('data-what'); b.classList.remove('on');
+      setstate('s_'+seat, 'idle'); return;
+    }
+    getter().then(function(st){ publish(seat, path, st); }).catch(function(e){
+      setstate('s_'+seat, (e && e.message) || String(e), 'fail');
+    });
+  };
+}
+toggles('b_screen', 'screen', 'slot-screen', screen);
+toggles('b_cam', 'cam', 'slot-cam', cam);
+toggles('b_mic', 'mic', 'slot-audio', mic);
+document.getElementById('stopall').onclick = function(){
+  ['screen','cam','mic'].forEach(function(s){ stop(s); setstate('s_'+s, 'idle'); });
+  ['b_screen','b_cam','b_mic'].forEach(function(b){
+    var e = document.getElementById(b);
+    e.textContent = e.getAttribute('data-what'); e.classList.remove('on');
+  });
+};
+})();
+</script>
+</body></html>

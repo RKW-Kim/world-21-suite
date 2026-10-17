@@ -1168,3 +1168,33 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   cuts on the journal (03:22:40, 03:24:05, 03:25:23 + shuffle wrap
   03:26:37), Sintel and Big Buck Bunny visually on program, rotation
   wrapped cleanly, live state restored to Loop A after, feed procs 0.
+
+## 2026-10-17 (late night) — ad links + WHIP seats restored; ad links shape
+
+- play_ad pool is now ad_files OR ad_links (YouTube URLs streamed zero-disk
+  through slot-ad -> STREAM AD input in the ad scene). Stream ads spawn
+  BEFORE the cut (no black air), ride the same wall-clock EOF, and the
+  return path is unified (ad_return: unmute, stop AD feed, back to program,
+  advance). Watchdog: stream-ad breaks skip check_source (feed health owns
+  the slot, rtmp state is not worth watching).
+- Media manager learns a YouTube field: paste a link on /media and it airs
+  without ever touching disk; optional seconds compress the slot. The
+  rotation/pending split now knows the family.
+- Whip.html (/whip): browser publisher for the contribution seats —
+  screen -> slot-screen, camera(+mic, lip-sync rule) -> slot-cam. WHIP POST
+  + non-trickle answer; per-seat state line; Stop returns the seat to
+  black. Designed for MBA over the tunnel; token field for when MTX
+  publishes need auth.
+- Seats rebuilt live (they had quietly vanished from the running plane):
+  created via RPC with template URIs, PLUS the restart_on_activate=False
+  lesson baked into both the live plane and scenes.json.template.
+- proof: ffmpeg SRT publisher -> slot-screen: MTX reports readers=1 (the
+  OBS seat pulled it up by itself) and the seat screenshot shows the
+  testcard. ffmpeg 9's WHIP muxer is half-baked here (no video frames out);
+  browsers are the WHIP client that matters, endpoint OPTIONS=204.
+- Plane wedge bookkeeping: obs-websocket 5.7.4 accepted connections but
+  answered nothing for long stretches (correlates with CEF spin at 240%);
+  GetSceneList specifically wedged; a zombie OBS instance survived one
+  restart (killed from /proc; unit said active while its listener was
+  dead). Seat capture deferred until a calm window; on-disk template is
+  the source of truth meanwhile.

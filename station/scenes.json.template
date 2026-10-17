@@ -274,7 +274,9 @@
       "settings": {
         "input": "srt://127.0.0.1:9000?streamid=read:slot-cam&latency=800000",
         "is_local_file": false,
-        "looping": false
+        "looping": false,
+        "restart_on_activate": false,
+        "reconnect_delay_sec": 2
       }
     },
     {
@@ -283,7 +285,9 @@
       "settings": {
         "input": "srt://127.0.0.1:9000?streamid=read:slot-screen&latency=800000",
         "is_local_file": false,
-        "looping": false
+        "looping": false,
+        "restart_on_activate": false,
+        "reconnect_delay_sec": 2
       }
     },
     {

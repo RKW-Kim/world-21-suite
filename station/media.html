@@ -56,9 +56,11 @@ label.fl{display:block;margin:8px 0;font-size:12px;color:var(--mut)}
 <main>
 <section><h2>Add to playlist</h2><div class="bd"><div class="formgrid">
 <div><label class="fl">Title<input type="text" id="f_title"></label>
-<label class="fl">Link — YouTube / page URL, fetched by intake<input type="text" id="f_src" placeholder="https://…"></label></div>
-<div><label class="fl">…or file already in media/<input type="text" id="f_file" placeholder="clip.mp4"></label>
-<label class="fl">Show tag (e.g. music)<input type="text" id="f_show"></label></div>
+<label class="fl">…or stream a YouTube link live (no download)<input type="text" id="f_yt" placeholder="https://youtu.be/…"></label></div>
+<div><label class="fl">…or link — YouTube / page URL, fetched by intake<input type="text" id="f_src" placeholder="https://…"></label>
+<label class="fl">…or file already in media/<input type="text" id="f_file" placeholder="clip.mp4"></label></div>
+<div><label class="fl">Show tag (e.g. music)<input type="text" id="f_show"></label>
+<label class="fl">Stream slot (optional, seconds — overrides the video's real length)<input type="text" id="f_dur" placeholder="e.g. 45"></label></div>
 </div>
 <div><label class="fl">Status <select id="f_status" style="width:auto"><option value="active">active — airs in rotation</option><option value="dormant">parked — registered but held out of rotation</option></select></label></div>
 <button id="add" style="margin-top:6px">Add to playlist</button>
@@ -107,12 +109,14 @@ function itemRow(t, i, pending){
   if (t.up_next) tr.className = 'upnext';
   if (pending) tr.className = 'pending';
   var name = document.createElement('td');
-  name.innerHTML = '<b>' + esc(t.title || t.file || '(untitled)') + '</b><br><span class="dim mono">' + esc(t.file || t.source || '') + '</span>';
+  name.innerHTML = '<b>' + esc(t.title || t.file || '(untitled)') + '</b><br><span class="dim mono">' +
+    esc(t.youtube || t.file || t.source || '') + '</span>';
   tr.appendChild(name);
   var meta = document.createElement('td');
   var tags = (t.show ? '<span class="badge">' + esc(t.show) + '</span> ' : '')
     + (t.pinned ? '<span class="badge pin">pinned</span> ' : '')
-    + (pending ? '<span class="badge pend">pending</span>' : (t.present ? '' : ' <span class="badge">missing</span>'))
+    + (t.mode === 'youtube' ? '<span class="badge act">stream</span>' : '')
+    + (t.mode === 'source' && pending ? '<span class="badge pend">pending</span>' : (t.mode === 'source' && !t.present ? '' : (t.present ? '' : ' <span class="badge">missing</span>')))
     + (t.up_next ? ' <span class="badge act">up next</span>' : '');
   meta.innerHTML = (t.size != null ? MB(t.size) : (pending ? 'awaiting fetch' : '?'))
     + (t.duration != null ? ' · ' + fmtDur(t.duration) : '') + '<br>' + tags;
@@ -157,7 +161,7 @@ function load(){
     var arc = document.getElementById('archive'); arc.innerHTML = '';
     var rt = [], pp = [], ar = [];
     items.forEach(function(t, i){
-      if (!t.file && t.source) pp.push(itemRow(t, i, true));
+      if (!t.file && t.source && !t.youtube) pp.push(itemRow(t, i, true));
       else if ((t.status || 'active') === 'dormant') ar.push(itemRow(t, i, false));
       else rt.push(itemRow(t, i, false));
     });
@@ -245,15 +249,18 @@ document.getElementById('m_play').onclick = function(){ obsMedia('PLAY'); };
 document.getElementById('m_stop').onclick = function(){ obsMedia('STOP'); };
 document.getElementById('refresh').onclick = function(){ err(''); load(); };
 document.getElementById('add').onclick = function(){
-  op({op: 'add',
+  var b = {op: 'add',
     title: document.getElementById('f_title').value,
+    youtube: document.getElementById('f_yt').value,
     source: document.getElementById('f_src').value,
     file: document.getElementById('f_file').value,
     show: document.getElementById('f_show').value,
-    status: document.getElementById('f_status').value});
-  document.getElementById('f_title').value = '';
-  document.getElementById('f_src').value = '';
-  document.getElementById('f_file').value = '';
+    status: document.getElementById('f_status').value};
+  var d = parseInt(document.getElementById('f_dur').value, 10);
+  if (d > 0) b.duration = d;
+  op(b);
+  ['f_title','f_yt','f_src','f_file','f_show','f_dur'].forEach(function(id){
+    document.getElementById(id).value = ''; });
 };
 load();
 })();

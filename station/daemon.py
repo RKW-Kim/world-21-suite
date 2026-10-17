@@ -562,6 +562,7 @@ SCENE_LIVE, SCENE_TECHDIFF = "SMILE | Q&A", "SMILE | Tech Diffs"
 SCENE_OFFAIR, SCENE_END = "SMILE | Off Air", "SMILE | End Credits"
 PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "IDENT"
 AD_SCENE, AD_INPUT = "SMILE | Ad Break", "AD Break"
+AD_STREAM_SRC = "STREAM AD"  # ad_links play here (rtmp/slot-ad)
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
 
@@ -611,22 +612,29 @@ def mute_stream_decks(renderer, muted):
 
 
 def play_ad(renderer, data, decks):
-    """Cut away to the ad scene and roll one ad file. Returns True when a
-    break actually started (caller returns without advancing the index);
-    False when ads are off/missing (caller plays content normally).
-    Deck inputs are muted (not paused) so their clocks keep running and no
-    watchdog fault fires mid-break; deck-ended events during the break are
-    ignored by on_ended, and the watchdog watches the AD input instead."""
+    """Cut away to the ad scene and roll one ad. The pool is ad_files on
+    disk AND ad_links (YouTube URLs streamed live through the same deck
+    machinery — zero disk). Returns True when a break actually started
+    (caller returns without advancing the index); False when ads are
+    off/missing (caller plays content normally). Deck inputs are muted
+    (not paused) so their clocks keep running and no watchdog fault fires
+    mid-break; deck-ended events during the break are ignored by on_ended,
+    and the watchdog watches the ad input instead (feed pairs use the
+    stream poller, like content streams)."""
     try:
         every = int(data.get("ad_every") or 0)
     except (TypeError, ValueError):
         every = 0
     files = [f for f in (data.get("ad_files") or []) if isinstance(f, str)]
-    if every <= 0 or not files:
+    links = [u for u in (data.get("ad_links") or [])
+             if isinstance(u, str) and u]
+    if every <= 0 or (not files and not links):
         return False
     ready = [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
-    if not ready:
-        alert("Ad break due but no ad file on disk; playing on.", "WARN")
+    pool = [("file", f) for f in ready] + [("link", u) for u in links]
+    if not pool:
+        alert("Ad break due but no ad file on disk or link configured; "
+              "playing on.", "WARN")
         with pl_lock():
             try:
                 st = load_state()
@@ -635,28 +643,74 @@ def play_ad(renderer, data, decks):
             st["since_ad"] = 0
             save_state(st)
         return False
-    choice = random.choice(ready)
-    try:
-        renderer.set_media_source(AD_INPUT, os.path.join(MEDIA, choice))
-        renderer.set_mute(decks["A"], True)
-        renderer.set_mute(decks["B"], True)
-        mute_stream_decks(renderer, True)
-        renderer.set_scene(AD_SCENE)
-        renderer.restart_media(AD_INPUT)
-    except Exception as e:
-        alert("Ad break failed to start (%s); playing on." % e, "WARN")
+    kind, choice = random.choice(pool)
+    if kind == "link":
+        # Spawn FIRST: program keeps playing untouched until the feed is
+        # live, then the break cuts in one motion (no black air).
+        started = start_stream_feed(choice, "AD")
+        if not started:
+            alert("Ad stream failed to publish; playing on.", "WARN")
+            with pl_lock():
+                try:
+                    st = load_state()
+                except (OSError, ValueError):
+                    st = {}
+                st["since_ad"] = 0
+                save_state(st)
+            return False
+        feed, meta = started
         try:
-            renderer.set_mute(decks["A"], False)
-            renderer.set_mute(decks["B"], False)
-        except Exception:
-            pass
-        mute_stream_decks(renderer, False)
-        return False
-    with pl_lock():
-        state = load_state()
-        state["in_ad_break"] = True
-        state["since_ad"] = 0
-        save_state(state)
+            renderer.set_mute(decks["A"], True)
+            renderer.set_mute(decks["B"], True)
+            mute_stream_decks(renderer, True)
+            renderer.set_source_visible(AD_SCENE, AD_INPUT, False)
+            renderer.set_source_visible(AD_SCENE, AD_STREAM_SRC, True)
+            renderer.set_scene(AD_SCENE)
+        except Exception as e:
+            alert("Ad break failed to start (%s); playing on." % e, "WARN")
+            ytstream.stop(feed)
+            _STREAM_STATE["feeds"].pop("AD", None)
+            try:
+                renderer.set_mute(decks["A"], False)
+                renderer.set_mute(decks["B"], False)
+            except Exception:
+                pass
+            mute_stream_decks(renderer, False)
+            return False
+        with pl_lock():
+            state = load_state()
+            state["in_ad_break"] = True
+            state["since_ad"] = 0
+            state["stream"] = {"start": time.time(),
+                               "dur": meta.get("duration"),
+                               "url": choice, "respawns": 0, "slot": "AD"}
+            save_state(state)
+        choice = "ad link %s" % choice
+    else:
+        try:
+            renderer.set_media_source(AD_INPUT, os.path.join(MEDIA, choice))
+            renderer.set_mute(decks["A"], True)
+            renderer.set_mute(decks["B"], True)
+            mute_stream_decks(renderer, True)
+            renderer.set_source_visible(AD_SCENE, AD_STREAM_SRC, False)
+            renderer.set_source_visible(AD_SCENE, AD_INPUT, True)
+            renderer.set_scene(AD_SCENE)
+            renderer.restart_media(AD_INPUT)
+        except Exception as e:
+            alert("Ad break failed to start (%s); playing on." % e, "WARN")
+            try:
+                renderer.set_mute(decks["A"], False)
+                renderer.set_mute(decks["B"], False)
+            except Exception:
+                pass
+            mute_stream_decks(renderer, False)
+            return False
+        with pl_lock():
+            state = load_state()
+            state["in_ad_break"] = True
+            state["since_ad"] = 0
+            state["stream"] = None
+            save_state(state)
     alert("Ad break: %s." % choice, "INFO")
     return True
 
@@ -694,11 +748,13 @@ def stop_feed(deck):
 
 def start_stream_feed(url, deck, meta=None):
     """Spawn on the deck's MTX path and wait until MediaMTX publishes.
-    Returns (feed, meta) or None on spawn/ready failure."""
+    Returns (feed, meta) or None on spawn/ready failure. deck "AD" is the
+    ad-break slot (same pipeline, landed in the ad scene)."""
     meta = meta or cached_resolve(url)
     if not meta:
         return None
-    path = "slot-stream-%s" % deck.lower()
+    path = ("slot-ad" if deck == "AD"
+            else "slot-stream-%s" % deck.lower())
     feed = ytstream.spawn(url, path, meta=meta)
     if not feed:
         return None
@@ -832,7 +888,7 @@ def advance(renderer, state, data, deck_sources):
         src = STREAM_DECK[deck]
         onair = {"start": time.time(),
                  "dur": item.get("duration") or meta.get("duration"),
-                 "url": url, "respawns": 0}
+                 "url": url, "respawns": 0, "slot": deck}
     else:
         src = deck_sources[deck]
         onair = None
@@ -870,47 +926,58 @@ def advance(renderer, state, data, deck_sources):
         save_state(state)
 
 
+def ad_return(renderer, decks):
+    """Shared return from any ad (file or stream): unmute, clear flags,
+    cut back to program, advance. Diverges only in that stream ads stop
+    their own feed. Program-scene guard keeps an operator who moved away
+    mid-break in charge."""
+    try:
+        pgm = renderer._call("GetCurrentProgramScene")["currentProgramSceneName"]
+    except Exception:
+        pgm = AD_SCENE
+    try:
+        renderer.set_mute(decks["A"], False)
+        renderer.set_mute(decks["B"], False)
+    except Exception:
+        pass
+    mute_stream_decks(renderer, False)
+    stop_feed("AD")  # no-op for file ads
+    with pl_lock():
+        try:
+            state = load_state()
+        except (OSError, ValueError):
+            state = {}
+        state["in_ad_break"] = False
+        state["stream"] = None
+        save_state(state)
+    if pgm != AD_SCENE:
+        alert("Ad ended but program is %s; leaving it." % pgm, "INFO")
+        return
+    renderer.set_scene(SCENE_PROGRAM)
+    alert("Ad done; back to program.", "INFO")
+    advance(renderer, load_state(), load_playlist(), decks)
+
+
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
     if source == STREAM_EOF:
         # Wall-clock end of a youtube item (or feed death after respawn
-        # gave up): same routing semantics as a local deck ending.
+        # gave up): same routing semantics as a local deck ending. If the
+        # stream that ended was the AD slot, it's the break ending:
+        # route back to program exactly like a file ad ending.
         try:
             st = load_state()
         except (OSError, ValueError):
             st = {}
+        if st.get("in_ad_break") and (st.get("stream") or {}).get("slot") == "AD":
+            ad_return(renderer, decks)
+            return
         if st.get("in_ad_break"):
-            return  # the return path owns advance during a break
+            return  # content feed ended under cover of the break
         advance(renderer, st, load_playlist(), decks)
         return
     if source == AD_INPUT:
-        # Ad played out: unmute the decks, cut back to program, resume
-        # exactly where the index points (it never moved during the break).
-        # If the operator moved program elsewhere mid-ad, leave their scene
-        # alone but still clear the flags so the loop stays coherent.
-        try:
-            pgm = renderer._call("GetCurrentProgramScene")["currentProgramSceneName"]
-        except Exception:
-            pgm = AD_SCENE
-        try:
-            renderer.set_mute(decks["A"], False)
-            renderer.set_mute(decks["B"], False)
-        except Exception:
-            pass
-        mute_stream_decks(renderer, False)
-        with pl_lock():
-            try:
-                state = load_state()
-            except (OSError, ValueError):
-                state = {}
-            state["in_ad_break"] = False
-            save_state(state)
-        if pgm != AD_SCENE:
-            alert("Ad ended but program is %s; leaving it." % pgm, "INFO")
-            return
-        renderer.set_scene(SCENE_PROGRAM)
-        alert("Ad done; back to program.", "INFO")
-        advance(renderer, load_state(), load_playlist(), decks)
+        ad_return(renderer, decks)
         return
     if source == IDENT_SRC:
         # ...unless the operator already moved on (RETURN mid-ident): cutting
@@ -1184,6 +1251,7 @@ def cmd_loop(renderer):
         except Exception:
             pass
         mute_stream_decks(renderer, False)
+        stop_feed("AD")  # a stream ad may have been mid-publish
         alert("Reboot interrupted an ad break; decks unmuted, starting clean.", "WARN")
     try:
         # The deck plays wherever the files point, but nobody SEES it until
@@ -1281,12 +1349,14 @@ def cmd_loop(renderer):
                 pass
             # Stream-item lifecycle: wall-clock duration + feed health. The
             # feed lives in this process, so its death is observable locally
-            # after all: two respawns then route to the next item.
+            # after all: two respawns then route to the next item. Runs for
+            # ad-break streams too (state.stream.slot == "AD"); their EOF
+            # routes back to program instead of advancing content.
             try:
                 _sst = load_state()
                 _sm = _sst.get("stream")
-                if _sm and not _sst.get("in_ad_break"):
-                    _deck = _sst.get("deck", "A")
+                if _sm:
+                    _deck = _sm.get("slot") or _sst.get("deck", "A")
                     _feed = _STREAM_STATE["feeds"].get(_deck)
                     if not ytstream.alive(_feed):
                         _urls = _sm.get("url")
@@ -1369,7 +1439,13 @@ def cmd_loop(renderer):
             # replace the media watchdog with feed health (already polled
             # above): a live RTMP pipe reports no useful media state.
             _wst = load_state()
-            if not stream_item_on_air(data.get("items", []), _wst):
+            _ad_stream_break = bool(_wst.get("in_ad_break")) and \
+                (_wst.get("stream") or {}).get("slot") == "AD"
+            if not stream_item_on_air(data.get("items", []), _wst) \
+                    and not _ad_stream_break:
+                # Stream-ad breaks: the ad slot feed is watched by the poll
+                # block above (rtmp state is useless to watch the way files
+                # are). File-ad breaks watch the AD input as before.
                 dog.check_source(AD_INPUT if _wst.get("in_ad_break")
                                  else decks[_wst.get("deck", "A")], on_air=True)
         except Exception:
