@@ -9,6 +9,11 @@ apiAddress: 127.0.0.1:9997
 paths:
   slot-cam:
   slot-screen:
+  # Stream decks: yt-dlp -> ffmpeg publishes here (RTSP/TCP localhost);
+  # OBS STREAM_A/B inputs read with restart_on_activate, so a deck only
+  # connects once its pipeline is already publishing. Zero disk anywhere.
+  slot-stream-a:
+  slot-stream-b:
   # Program return for the director panel: OBS (rtmp_custom service in the
   # lab profile) publishes here; /studio watches via WHEP (:8889). Paths
   # must be listed — this build rejects undefined paths (seen live).

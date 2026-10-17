@@ -40,6 +40,9 @@ import threading
 import time
 import urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import stream as ytstream  # noqa: E402
+
 
 class OBSAppError(RuntimeError):
     """The plane answered but refused the call (bad name, bad args). The
@@ -597,6 +600,16 @@ def evict_cache(cap=None, pinned=frozenset()):
     return freed
 
 
+def mute_stream_decks(renderer, muted):
+    """Ad breaks hide streams too; failure-tolerant (legacy collections
+    predate the STREAM inputs)."""
+    for src in (STREAM_DECK["A"], STREAM_DECK["B"]):
+        try:
+            renderer.set_mute(src, muted)
+        except Exception:
+            pass
+
+
 def play_ad(renderer, data, decks):
     """Cut away to the ad scene and roll one ad file. Returns True when a
     break actually started (caller returns without advancing the index);
@@ -627,6 +640,7 @@ def play_ad(renderer, data, decks):
         renderer.set_media_source(AD_INPUT, os.path.join(MEDIA, choice))
         renderer.set_mute(decks["A"], True)
         renderer.set_mute(decks["B"], True)
+        mute_stream_decks(renderer, True)
         renderer.set_scene(AD_SCENE)
         renderer.restart_media(AD_INPUT)
     except Exception as e:
@@ -636,6 +650,7 @@ def play_ad(renderer, data, decks):
             renderer.set_mute(decks["B"], False)
         except Exception:
             pass
+        mute_stream_decks(renderer, False)
         return False
     with pl_lock():
         state = load_state()
@@ -644,6 +659,98 @@ def play_ad(renderer, data, decks):
         save_state(state)
     alert("Ad break: %s." % choice, "INFO")
     return True
+
+
+# ------------- YouTube-link stream decks (zero-disk playout) ---------------
+# A playlist item with a "youtube" key plays a LIVE pipe: yt-dlp resolves HLS,
+# ffmpeg copy-remuxes into MediaMTX, OBS STREAM_A/B read persistent-retry.
+# Advance is wall-clock (resolve() knows the duration); the poll loop also
+# enqueues a sentinel when the feed dies, so both paths land in on_ended.
+STREAM_DECK = {"A": "STREAM_A", "B": "STREAM_B"}
+STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
+STREAM_SPAWN_TRIES = 15  # 15 x 3s of path_ready polling
+STREAM_EOF = "__stream__"  # sentinel routed like a deck-ended event
+_STREAM_STATE = {"feeds": {}, "resolving": {}}   # live feed procs / in-flight resolves
+_RESOLVE_CACHE = {}  # url -> (epoch, meta)
+_RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
+
+
+def cached_resolve(url):
+    """resolve() with a half-hour TTL cache, so cuts never wait on a resolve."""
+    deadline, meta = _RESOLVE_CACHE.get(url, (0, None))
+    if meta and (meta.get("live") or deadline + _RESOLVE_TTL > time.time()):
+        return meta
+    meta = ytstream.resolve(url)
+    if meta and meta.get("hls_v") and meta.get("hls_a"):
+        _RESOLVE_CACHE[url] = (time.time(), meta)
+        return meta
+    return _RESOLVE_CACHE.get(url, (0, None))[1]
+
+
+def stop_feed(deck):
+    feed = _STREAM_STATE["feeds"].pop(deck, None)
+    ytstream.stop(feed)
+
+
+def start_stream_feed(url, deck, meta=None):
+    """Spawn on the deck's MTX path and wait until MediaMTX publishes.
+    Returns (feed, meta) or None on spawn/ready failure."""
+    meta = meta or cached_resolve(url)
+    if not meta:
+        return None
+    path = "slot-stream-%s" % deck.lower()
+    feed = ytstream.spawn(url, path, meta=meta)
+    if not feed:
+        return None
+    _STREAM_STATE["feeds"][deck] = feed
+    for _ in range(STREAM_SPAWN_TRIES):
+        if ytstream.path_ready(path):
+            return feed, meta
+        if feed.poll() is not None:
+            ytstream.stop(feed)
+            _STREAM_STATE["feeds"].pop(deck, None)
+            return None
+        time.sleep(3)
+    stop_feed(deck)  # spawned but never published: no black frames on air
+    return None
+
+
+def prefetch_stream_pass(data, state):
+    """Resolve upcoming youtube items in the background so advance never
+    blocks on a resolve. One dict of in-flight threads, best-effort: a
+    missed resolve is simply re-attempted inline at advance time."""
+    items = data.get("items", [])
+    n = len(items)
+    if not n:
+        return
+    sidx = state.get("index", 0)
+    for o in (0, 1):  # next up and the one after
+        item = items[(sidx + o) % n]
+        url = item.get("youtube")
+        if not url or url in _RESOLVE_CACHE:
+            continue
+        if _STREAM_STATE["resolving"].get(url):
+            continue
+
+        def _go(u=url):
+            try:
+                cached_resolve(u)
+            except Exception:
+                pass
+            _STREAM_STATE["resolving"].pop(u, None)
+
+        t = threading.Thread(target=_go, daemon=True)
+        _STREAM_STATE["resolving"][url] = t
+        t.start()
+
+
+def stream_item_on_air(items, state):
+    """True when the item playing (index-1) is a youtube stream item."""
+    n = len(items)
+    if not n:
+        return False
+    idx = ((state.get("index", 0) or 0) - 1) % n
+    return bool(items[idx].get("youtube"))
 
 
 def advance(renderer, state, data, deck_sources):
@@ -676,6 +783,18 @@ def advance(renderer, state, data, deck_sources):
             dormant += 1  # operator intent, not a fault: silent, no alert
             state["index"] = idx + 1
             continue
+        url = item.get("youtube")
+        if url:
+            # Link item: needs no disk (link outranks a stale file copy).
+            # Resolve is cached by prefetch; a miss resolves inline here,
+            # costing a few seconds on this transition only.
+            meta = cached_resolve(url)
+            if meta:
+                break
+            alert("Unplayable link: %s. Skipping." % (item.get("title") or url), "WARN")
+            state["index"] = idx + 1
+            skipped += 1
+            continue
         if not item.get("file"):
             if item.get("source"):
                 pending += 1  # link registered, file not here yet: silent
@@ -701,13 +820,34 @@ def advance(renderer, state, data, deck_sources):
             alert("Every playlist item missing; holding.", "CRIT")
         return
     deck = "B" if state.get("deck", "A") == "A" else "A"
-    src, other = deck_sources[deck], deck_sources["B" if deck == "A" else "A"]
-    renderer.set_media_source(src, path)
+    other = "B" if deck == "A" else "A"
+    if url:
+        started = start_stream_feed(url, deck, meta=meta)
+        if not started:
+            alert("Stream deck %s failed to publish %s. Skipping." % (deck, item.get("title") or url), "CRIT")
+            state["index"] = idx + 1
+            return  # skipped this round; the playlist loop comes back around
+        feed, meta = started
+        _STREAM_STATE["feeds"][deck] = feed
+        src = STREAM_DECK[deck]
+        onair = {"start": time.time(),
+                 "dur": item.get("duration") or meta.get("duration"),
+                 "url": url, "respawns": 0}
+    else:
+        src = deck_sources[deck]
+        onair = None
+        stop_feed(deck)
+        renderer.set_media_source(src, path)
+    # Every cut shows exactly one deck input. Hide BOTH other decks of BOTH
+    # kinds — a stream can follow a file and vice versa in one transition.
     renderer.set_source_visible(PROGRAM, src, True)
-    renderer.set_source_visible(PROGRAM, other, False)
+    renderer.set_source_visible(PROGRAM, deck_sources[other], False)
+    renderer.set_source_visible(PROGRAM, STREAM_DECK[other], False)
     renderer.set_transition(TRANSITION, 750)
-    alert("Now playing: %s." % item.get("title", item["file"]), "INFO")
+    stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
+    alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck})
+    state["stream"] = onair
     try:
         if int(data.get("ad_every") or 0) > 0:
             state["since_ad"] = int(state.get("since_ad") or 0) + 1
@@ -732,6 +872,17 @@ def advance(renderer, state, data, deck_sources):
 
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
+    if source == STREAM_EOF:
+        # Wall-clock end of a youtube item (or feed death after respawn
+        # gave up): same routing semantics as a local deck ending.
+        try:
+            st = load_state()
+        except (OSError, ValueError):
+            st = {}
+        if st.get("in_ad_break"):
+            return  # the return path owns advance during a break
+        advance(renderer, st, load_playlist(), decks)
+        return
     if source == AD_INPUT:
         # Ad played out: unmute the decks, cut back to program, resume
         # exactly where the index points (it never moved during the break).
@@ -746,6 +897,7 @@ def on_ended(renderer, decks, source):
             renderer.set_mute(decks["B"], False)
         except Exception:
             pass
+        mute_stream_decks(renderer, False)
         with pl_lock():
             try:
                 state = load_state()
@@ -992,7 +1144,7 @@ def cmd_loop(renderer):
         have_items = {i.get("sourceName") for i in
                       renderer._call("GetSceneItemList",
                                      {"sceneName": SCENE_PROGRAM}).get("sceneItems", [])}
-        for src in (DECK_A, DECK_B):
+        for src in (DECK_A, DECK_B, STREAM_DECK["A"], STREAM_DECK["B"]):
             assert src in have_items, "%s not in %s (collection skew?)" % (src, SCENE_PROGRAM)
     except AssertionError as e:
         print("cannot start loop: %s." % e)
@@ -1031,6 +1183,7 @@ def cmd_loop(renderer):
             renderer.set_mute(decks["B"], False)
         except Exception:
             pass
+        mute_stream_decks(renderer, False)
         alert("Reboot interrupted an ad break; decks unmuted, starting clean.", "WARN")
     try:
         # The deck plays wherever the files point, but nobody SEES it until
@@ -1105,7 +1258,11 @@ def cmd_loop(renderer):
                     _watch.append(AD_INPUT)
                 else:
                     _deck_now = decks.get(_est.get("deck", "A"), DECK_A)
-                    _watch.append(_deck_now)
+                    if not stream_item_on_air(data.get("items", []), _est):
+                        # Stream items advance by wall-clock, not media
+                        # status: their PLAYOUT ledger input is idle/stale
+                        # and would fire spurious advances.
+                        _watch.append(_deck_now)
                 for _src in _watch:
                     try:
                         _ms = renderer.get_media_status(_src)
@@ -1120,6 +1277,42 @@ def cmd_loop(renderer):
                         with end_lock:
                             if _src not in ended:
                                 ended.append(_src)
+            except Exception:
+                pass
+            # Stream-item lifecycle: wall-clock duration + feed health. The
+            # feed lives in this process, so its death is observable locally
+            # after all: two respawns then route to the next item.
+            try:
+                _sst = load_state()
+                _sm = _sst.get("stream")
+                if _sm and not _sst.get("in_ad_break"):
+                    _deck = _sst.get("deck", "A")
+                    _feed = _STREAM_STATE["feeds"].get(_deck)
+                    if not ytstream.alive(_feed):
+                        _urls = _sm.get("url")
+                        if int(_sm.get("respawns") or 0) < 2:
+                            _sm["respawns"] = int(_sm.get("respawns") or 0) + 1
+                            _again = start_stream_feed(_urls, _deck)
+                            if _again:
+                                _STREAM_STATE["feeds"][_deck] = _again[0]
+                                alert("Stream feed died; respawned (%d)."
+                                      % _sm["respawns"], "WARN")
+                            else:
+                                alert("Stream feed died and respawn failed.", "CRIT")
+                                with end_lock:
+                                    if STREAM_EOF not in ended:
+                                        ended.append(STREAM_EOF)
+                        else:
+                            with end_lock:
+                                if STREAM_EOF not in ended:
+                                    ended.append(STREAM_EOF)
+                    _dur = _sm.get("dur")
+                    if _dur:
+                        _elapsed = time.time() - _sm.get("start", 0)
+                        if _elapsed >= _dur + STREAM_GRACE:
+                            with end_lock:
+                                if STREAM_EOF not in ended:
+                                    ended.append(STREAM_EOF)
             except Exception:
                 pass
             # Natural advances (shuffle especially) rewrite the file behind
@@ -1147,30 +1340,38 @@ def cmd_loop(renderer):
             except Exception as e:
                 alert("evict failed: %s." % e, "WARN")
             prefetch_pass(data, state, in_flight, failed)
+            prefetch_stream_pass(data, load_state())
             try:
                 # Re-kick: after an OBS restart nothing is playing, so no
                 # ENDED event will ever arrive to advance us. Six idle polls
                 # (≈3 min) means stuck, not loading — replay current item.
                 # "missing" is excluded: that's fault()'s job (plane down).
-                mst = renderer.get_media_status(
-                    decks[load_state().get("deck", "A")])
-                if mst.get("state") in ("OBS_MEDIA_STATE_NONE", "unknown", None):
-                    idle_streak += 1
-                else:
-                    idle_streak = 0
-                if idle_streak >= 6:
-                    idle_streak = 0
-                    alert("Deck idle with nothing advancing; re-kicking.", "WARN")
-                    advance(renderer, load_state(), data, decks)
+                # Stream items are exempt: media status lies for them (the
+                # PLAYOUT ledger is idle), and feed health above answers.
+                if not stream_item_on_air(data.get("items", []), load_state()):
+                    mst = renderer.get_media_status(
+                        decks[load_state().get("deck", "A")])
+                    if mst.get("state") in ("OBS_MEDIA_STATE_NONE", "unknown", None):
+                        idle_streak += 1
+                    else:
+                        idle_streak = 0
+                    if idle_streak >= 6:
+                        idle_streak = 0
+                        alert("Deck idle with nothing advancing; re-kicking.", "WARN")
+                        advance(renderer, load_state(), data, decks)
             except Exception as e:
                 alert("re-kick failed (%s)." % e, "WARN")
             dog.check_stream()
             dog.check_disk()
             # While an ad break owns the program, the deck is muted/hidden
             # and supposed to be still: watch the AD input instead, or the
-            # idle deck reads as a stall and faults mid-ad.
+            # idle deck reads as a stall and faults mid-ad. Stream items
+            # replace the media watchdog with feed health (already polled
+            # above): a live RTMP pipe reports no useful media state.
             _wst = load_state()
-            dog.check_source(AD_INPUT if _wst.get("in_ad_break") else decks[_wst.get("deck", "A")], on_air=True)
+            if not stream_item_on_air(data.get("items", []), _wst):
+                dog.check_source(AD_INPUT if _wst.get("in_ad_break")
+                                 else decks[_wst.get("deck", "A")], on_air=True)
         except Exception:
             import traceback
             # Full trace once per distinct error; deaf windows repeat the same

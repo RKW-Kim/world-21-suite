@@ -1137,3 +1137,34 @@ real debugging time and each fix is load-bearing. Newest first.
 - Inter-transition latency ~10-30s CONSTANT (poll cadence), negligible at
   real durations. Live state fully restored after (playlist/state/
   collection backups back, ad stage removed, loop on live items).
+
+## 2026-10-17 (night) — zero-disk streaming decks: YouTube-link playout shipped
+
+User pinned the real-world constraint: approved content arrives as YouTube
+links; no storage budget. Decision: kill download-to-disk playout entirely;
+stream the links live (intake/cache/eviction archived). Studio Player and
+ASS evaluated AGAINST the constraint and refused: Player cannot fetch, ASS
+cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
+
+- stream.py: resolve (dump-json + two fresh HLS urls, cookie-aware) ->
+  one ffmpeg (-i hlsV -i hlsA -c copy -f flv rtmp://127.0.0.1:8554/..RTMP)
+  -> MediaMTX slot-stream-a/b -> OBS STREAM_A/B persistent-retry inputs.
+  (~15MB RAM + ~5% CPU per deck; feed dies with its slot.)
+- Quality ceiling: 720p (YouTube serves automation clients split HLS only,
+  that is the honest top). Pairing with copy remux keeps CPU at zero.
+- daemon: playlist items may carry `youtube` (+ optional compressed
+  `duration`), advance() spawns+waits the feed on the idle deck, cuts under
+  the transition (hides BOTH other decks of BOTH kinds), keeps wall-clock
+  state (stream.start/dur), stops old feed after cut, polls: EOF at dur+8,
+  feed-death respawn (<=2) else advance, ad breaks mute STREAM decks, boot
+  unwind, prefetch resolves next links in background threads with 30min
+  TTL cache.
+- Landed from live firefights: RTSP unsuitable for YT audio (headerless
+  AAC; FLV works), restart_on_activate WEDGES an rtmp ffmpeg_source
+  permanently (A died; replaced with persistent-retry), bot-wall on
+  anonymous resolve — cookies via YTDLP_COOKIES (secrets.env),
+  sync capture needs wide OBS_TIMEOUT under load storms.
+- E2E (compressed via duration slots, public videos, cookies on): three
+  cuts on the journal (03:22:40, 03:24:05, 03:25:23 + shuffle wrap
+  03:26:37), Sintel and Big Buck Bunny visually on program, rotation
+  wrapped cleanly, live state restored to Loop A after, feed procs 0.

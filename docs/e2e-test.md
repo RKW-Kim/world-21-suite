@@ -71,3 +71,56 @@ tone + burnt-in label) and one 6s ad (`e2e_ad1.mp4`, "AD BREAK").
 
 ~10 minutes, two restarts max, zero repo state touched (backups
 restored, ad stage removed, collection file diff-clean after).
+
+## Streaming variant (2026-10-17, run #2): links, no disk
+
+Same rig, new playlist family: items keyed by `youtube` (no file), three
+public Blender movies with compressed `duration` slots (15/16/12s).
+
+Evidence (journal timestamps):
+- 03:22:40 `Now playing: E2E YT One (Big Buck Bunny)` — first-uncached
+  resolve (~35s: dump-json + 2 URL fetches) + spawn + MTX publish + cut.
+- 03:24:05 `E2E YT Two (Sintel)` — wall-clock EOF (15s + 8 grace, fired
+  by the 30s poll). Sintel visually ON AIR (screenshot in evidence dir).
+- 03:25:23 `E2E YT Three (Elephants Dream)` + `Playlist exhausted;
+  reshuffled` — rotation wrapped.
+- 03:26:37 `Now playing: E2E YT Two (Sintel)` — post-shuffle pick.
+- Feeds die with their slots: after restore, `slot-stream-*` had zero
+  processes; the restored live playlist took over unchanged.
+
+Lessons that shaped stream.py (all hit live, all fixed same night):
+1. `yt-dlp -o -` while merging is download-then-emit, NOT a pipe; the
+   correct shape is two HLS urls into one ffmpeg (-i -i, both copy).
+2. RTSP output rejects YouTube's headerless AAC. FLV mints the missing
+   headers — RTSP dead, RTMP the localhost courier (OBS reads it fine).
+3. Anonymous resolve gets bot-walled after routine use ("Sign in to
+   confirm you're not a bot"). Remedy: cookies. `YTDLP_COOKIES` in
+   secrets.env accepts a cookies.txt path or `browser:/name/NAME`.
+4. Persistent-retry is load-bearing: the OBS input must keep retrying
+   forever (reconnect_delay_sec) and never use restart_on_activate —
+   the A variant wedged permanently under restart_on_activate flicker.
+
+## Streaming variant (2026-10-17, run #2): links, no disk
+
+Same rig, new playlist family: items keyed by `youtube` (no file), three
+public Blender movies with compressed `duration` slots (15/16/12).
+
+Evidence (journal):
+- 03:22:40 `Now playing: E2E YT One (Big Buck Bunny)` — resolve (~35s,
+  first uncached) + spawn + MTX publish + cut, all automatic.
+- 03:24:05 `E2E YT Two (Sintel)` — wall-clock EOF after 15s+8 grace
+ 准时'd by the 30s poll. Sintel ON AIR, screenshot captured.
+- 03:25:23 `E2E YT Three (Elephants Dream)` + `Playlist exhausted;
+  reshuffled` — rotation wrapped.
+- 03:26:37 `Now playing: E2E YT Two (Sintel)` — post-shuffle pick.
+- Feeds die with their slots; `slot-stream-*` went 0 processes after
+  restore; live playlist took over unchanged.
+
+Two lessons that shaped stream.py:
+1. `yt-dlp -o -` while merging is download-then-emit, NOT a pipe.
+   Correct shape: resolve two HLS urls, one ffmpeg with BOTH inputs.
+2. RTSP output rejects YouTube's headerless AAC. FLV muxer mints the
+   missing headers; RSTP is dead, RTMP is the localhost courier.
+3. YouTube bot-walls anonymous resolve on routine hammering ("Sign in
+   to confirm you're not a bot"): fix = cookies (chromium profile or
+   cookies.txt), configured via YTDLP_COOKIES.
