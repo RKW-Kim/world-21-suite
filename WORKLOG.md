@@ -1198,3 +1198,23 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   restart (killed from /proc; unit said active while its listener was
   dead). Seat capture deferred until a calm window; on-disk template is
   the source of truth meanwhile.
+
+## 2026-10-17 (dawn) — deck + seats get a face; mic seat; cookies courier
+
+- media.html rebuilt from OBS-bare to "SMILE Deck": paste-a-link hero
+  (stream family is the default), advanced drawer for intake/filters,
+  hover-reveal row actions, up-next highlight, live/fetch/pin/missing
+  pills, music bed card, collapsed waiting/parked/fetched sections, toast
+  errors. Same endpoints, no new server work.
+- whip.html rebuilt to match and FACT-CHECKED against reality: three seat
+  cards (slot-screen, slot-cam, slot-audio), per-seat toggle + Share all
+  three; host/token fields for the future Vercel front. slot-audio is NEW
+  (microphone seat): mediamtx path + OBS "Slot Audio" ffmpeg_source in
+  Q&A (rtmp read, persistent-retry flags).
+- cookies_push.sh: MBA-side courier — scp cookies.txt up, resolve-probe
+  THROUGH the uploader (yt-dlp rejects the bad session before it lands),
+  atomic swap with a one-deep .bak. Daemon reads the file per spawn, so
+  NO restart: refresh can run daily, takes seconds.
+- riding fix: overlay route additions only exist after restarting
+  station-overlay (it serves python handlers from its binary启动 memory).
+  /whip 404'd for the operator until the restart — lesson logged.

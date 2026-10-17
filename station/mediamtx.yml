@@ -9,6 +9,8 @@ apiAddress: 127.0.0.1:9997
 paths:
   slot-cam:
   slot-screen:
+  # Audio-only microphone seat (browser WHIP publish, OBS Slot Audio reads).
+  slot-audio:
   # Stream decks: yt-dlp -> ffmpeg publishes here (RTSP/TCP localhost);
   # OBS STREAM_A/B inputs read with restart_on_activate, so a deck only
   # connects once its pipeline is already publishing. Zero disk anywhere.
