@@ -1218,3 +1218,34 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 - riding fix: overlay route additions only exist after restarting
   station-overlay (it serves python handlers from its binary启动 memory).
   /whip 404'd for the operator until the restart — lesson logged.
+
+## 2026-10-17 (morning) — the Library: segmented media manager + mid-roll engine
+
+- /music GET used to hang the whole page when the render plane wedged
+  (RPC with no bound). It now probes through a 4s thread cap and answers
+  "plane: slow/down" instead. THE page hangs are why the deck looked dead.
+- daemon: mid-roll ad engine — ad_plan (threshold_min / mid_rolls /
+  min_gap_min) with a seeded planner (plan_rolls) shared by /media and
+  the runtime: what the UI previews is what fires, ±10s. Streams plan at
+  cut, files learn their clock lazily. Break start parks the content
+  stream record in stream_pre (file ads used to WIPE it), break end
+  restores it. Mid-rolls resume the SAME item: return advances only when
+  the item finished under cover.
+- overlay_server: GET/POST /ads (config + per-item planned marks via the
+  same daemon planner), FALL-GENERATIC /thumbs/<file> poster frames
+  (ffmpeg 25% in, cached in media/.thumbs).
+- media.html REBUILT as the SMILE Library: right-hand segment rail
+  (Rotation / Available / Ads / Music bed / Automations), grid+rows
+  toggle, ffmpeg/ytimg thumbnails, hover actions, edit dialog, fetch
+  queue + intake history inside Available. Automations view = rule cards
+  (cycle cadence, long-form mid-rolls) + per-item TIMELINES with exact
+  break markers, Brightcove-style.
+- whip.html: Share→Connect everywhere + insecure-context banner (the
+  operator's 404-equivalent: http://LANTORD-blocked mediaDevices → dead
+  page). SSH-forward recipe printed in-place.
+- browser-proven: seats page publishes a real camera (slot-cam READY,
+  webrtc source); library page renders thumbs/segments; plan pipeline
+  (POST /ads → planner → UI markers) shown end to end.
+
+! mid-rolls have NOT yet fired against a live plane (engine + planner
+! selftested only). Real proof: long item on air, watch break/return.

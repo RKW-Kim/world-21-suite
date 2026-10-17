@@ -611,7 +611,71 @@ def mute_stream_decks(renderer, muted):
             pass
 
 
-def play_ad(renderer, data, decks):
+def plan_rolls(duration_s, data, seed=""):
+    """Mid-roll schedule for one long item: seconds where an ad should cut
+    in WHILE the item keeps playing (muted under cover), then return.
+
+    Rules (ad_plan, all optional):
+      threshold_min : shorter items never get mid-rolls (flat 30 min)
+      mid_rolls     : how many breaks a long item may take (flat 2)
+      min_gap_min   : floor between breaks AND from item start/end (flat 15)
+    Placement seeded on the item identity so the /media AUTOMATION view
+    shows the exact schedule the daemon will run — one planner, two users.
+    """
+    dur = None
+    try:
+        dur = float(duration_s) if duration_s else None
+    except (TypeError, ValueError):
+        dur = None
+    if not dur or dur <= 0:
+        return []
+    plan = data.get("ad_plan") if isinstance(data.get("ad_plan"), dict) else {}
+    if plan.get("enabled") is False:
+        return []
+    every = 0
+    try:
+        every = int(data.get("ad_every") or 0)
+    except (TypeError, ValueError):
+        every = 0
+    if every <= 0:
+        return []
+    thr = _mins(plan.get("threshold_min"), 30)      # long-form threshold
+    n = int(_mins(plan.get("mid_rolls"), 2))
+    gap = _mins(plan.get("min_gap_min"), 15) * 60.0
+    if dur < thr * 60.0 or n <= 0:
+        return []
+    margin = min(gap, dur / 4.0)  # never schedule past the guard rails
+    lo, hi = margin, max(margin, dur - margin)
+    if hi - lo < gap:
+        return []  # even one break cannot fit the gap: skip weekdays of math
+    rng = random.Random(hashlib.sha1(str(seed).encode()).hexdigest())
+    marks = []
+    for _ in range(n * 12):  # rejection sampling, bounded so no loop hangs
+        t = rng.uniform(lo, hi)
+        if all(abs(t - m) >= gap for m in marks):
+            marks.append(t)
+            if len(marks) >= n:
+                break
+    return sorted(marks)
+
+
+def _mins(v, flat):
+    """Plan-number reader: accepts numbers, falls back to the flat value."""
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        x = None
+    return x if x is not None and x > 0 else flat
+
+
+def roll_marks_onair(item, data):
+    """Seed source for plan_rolls: stable per item, long enough to make
+    identical items differ (title + url + file name)."""
+    return ("%s|%s|%s" % (item.get("title"), item.get("youtube"),
+                          item.get("file"),))
+
+
+def play_ad(renderer, data, decks, mid=False):
     """Cut away to the ad scene and roll one ad. The pool is ad_files on
     disk AND ad_links (YouTube URLs streamed live through the same deck
     machinery — zero disk). Returns True when a break actually started
@@ -620,7 +684,14 @@ def play_ad(renderer, data, decks):
     (not paused) so their clocks keep running and no watchdog fault fires
     mid-break; deck-ended events during the break are ignored by on_ended,
     and the watchdog watches the ad input instead (feed pairs use the
-    stream poller, like content streams)."""
+    stream poller, like content streams).
+
+    mid=True marks a MID-ROLL: the break was scheduled from ad_plan at a
+    percentage of the current item, not the every-N-items cycle. The
+    return then resumes the SAME item instead of advancing (ad_mid flag).
+    Either way the content stream record (if any) survives: it parks in
+    stream_pre and comes back when the break ends — mid-break file ads
+    used to wipe it, silently unlatching the feed watchdog."""
     try:
         every = int(data.get("ad_every") or 0)
     except (TypeError, ValueError):
@@ -628,7 +699,8 @@ def play_ad(renderer, data, decks):
     files = [f for f in (data.get("ad_files") or []) if isinstance(f, str)]
     links = [u for u in (data.get("ad_links") or [])
              if isinstance(u, str) and u]
-    if every <= 0 or (not files and not links):
+    if (not mid and every <= 0) or (mid and every <= 0) \
+            or (not files and not links):
         return False
     ready = [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
     pool = [("file", f) for f in ready] + [("link", u) for u in links]
@@ -636,14 +708,12 @@ def play_ad(renderer, data, decks):
         alert("Ad break due but no ad file on disk or link configured; "
               "playing on.", "WARN")
         with pl_lock():
-            try:
-                st = load_state()
-            except (OSError, ValueError):
-                st = {}
-            st["since_ad"] = 0
-            save_state(st)
+            load_state()["since_ad"] = 0
+            save_state(load_state())
         return False
     kind, choice = random.choice(pool)
+    with pl_lock():
+        pre = load_state().get("stream")  # content record, parked for return
     if kind == "link":
         # Spawn FIRST: program keeps playing untouched until the feed is
         # live, then the break cuts in one motion (no black air).
@@ -651,12 +721,7 @@ def play_ad(renderer, data, decks):
         if not started:
             alert("Ad stream failed to publish; playing on.", "WARN")
             with pl_lock():
-                try:
-                    st = load_state()
-                except (OSError, ValueError):
-                    st = {}
-                st["since_ad"] = 0
-                save_state(st)
+                save_state(dict(load_state(), since_ad=0))
             return False
         feed, meta = started
         try:
@@ -680,7 +745,10 @@ def play_ad(renderer, data, decks):
         with pl_lock():
             state = load_state()
             state["in_ad_break"] = True
-            state["since_ad"] = 0
+            state["stream_pre"] = pre
+            if not mid:
+                state["since_ad"] = 0
+            state["ad_mid"] = bool(mid)
             state["stream"] = {"start": time.time(),
                                "dur": meta.get("duration"),
                                "url": choice, "respawns": 0, "slot": "AD"}
@@ -708,10 +776,14 @@ def play_ad(renderer, data, decks):
         with pl_lock():
             state = load_state()
             state["in_ad_break"] = True
-            state["since_ad"] = 0
+            state["stream_pre"] = pre
+            if not mid:
+                state["since_ad"] = 0
             state["stream"] = None
+            if mid:
+                state["ad_mid"] = True
             save_state(state)
-    alert("Ad break: %s." % choice, "INFO")
+    alert("Ad break: %s.%s" % (choice, " (mid-roll)" if mid else ""), "INFO")
     return True
 
 
@@ -904,6 +976,18 @@ def advance(renderer, state, data, deck_sources):
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck})
     state["stream"] = onair
+    # Mid-roll schedule for this item, if the plan asks for one. Streams
+    # know their duration here; file items set marks=None and the poll
+    # loop fills them in the first time the media clock reports a length.
+    state["roll_marks"] = None
+    state["next_roll"] = 0
+    if onair and onair.get("dur"):
+        marks = plan_rolls(onair["dur"], data, roll_marks_onair(item, data))
+        if marks:
+            state["roll_marks"] = marks
+            state["next_roll"] = 0
+            alert("Mid-rolls planned: %s" % ", ".join(
+                "%02d:%02d" % (int(m / 60), int(m % 60)) for m in marks))
     try:
         if int(data.get("ad_every") or 0) > 0:
             state["since_ad"] = int(state.get("since_ad") or 0) + 1
@@ -926,11 +1010,15 @@ def advance(renderer, state, data, deck_sources):
         save_state(state)
 
 
-def ad_return(renderer, decks):
+def ad_return(renderer, decks, mid=False):
     """Shared return from any ad (file or stream): unmute, clear flags,
     cut back to program, advance. Diverges only in that stream ads stop
     their own feed. Program-scene guard keeps an operator who moved away
-    mid-break in charge."""
+    mid-break in charge.
+    Mid-rolls (mid=True, or the ad_mid flag the poller set) resume the SAME
+    item: advance only if that item finished playing under the break's
+    cover — otherwise the schedule promise ("break here, then continue")
+    would eat 80% of a 2-hour stream."""
     try:
         pgm = renderer._call("GetCurrentProgramScene")["currentProgramSceneName"]
     except Exception:
@@ -942,19 +1030,60 @@ def ad_return(renderer, decks):
         pass
     mute_stream_decks(renderer, False)
     stop_feed("AD")  # no-op for file ads
+    ended_this_item = False
+    try:
+        st = load_state()
+    except (OSError, ValueError):
+        st = {}
+    mid = bool(mid) or bool(st.get("ad_mid"))
+    if mid and pgm == AD_SCENE:
+        # Did the current item end while the break covered it? Streams: wall
+        # clock past duration (grace folded in) or a dead feed; files: the
+        # media input reports ENDED (muted decks never pause their clocks).
+        item = None
+        try:
+            items = load_playlist().get("items", [])
+            i = st.get("index", 0)
+            i = i if isinstance(i, int) else 0
+            item = items[(i - 1) % len(items)] if items else None
+        except (OSError, ValueError):
+            item = None
+        if item is not None and (item.get("youtube") or item.get("file")):
+            if item.get("youtube"):
+                dur = st.get("stream_pre", {}).get("dur")
+                try:
+                    elapsed = time.time() - st.get("stream_pre", {}).get(
+                        "start", 0)
+                except TypeError:
+                    elapsed = 0
+                ended_this_item = not ytstream.alive(
+                    _STREAM_STATE["feeds"].get(st.get("deck", "A"))) or (
+                    dur and elapsed >= float(dur) + STREAM_GRACE)
+            else:
+                src = decks.get(st.get("deck", "A"), decks["A"])
+                try:
+                    ms = renderer.get_media_status(src)
+                    ended_this_item = \
+                        ms.get("state") == "OBS_MEDIA_STATE_ENDED"
+                except Exception:
+                    ended_this_item = False
     with pl_lock():
         try:
             state = load_state()
         except (OSError, ValueError):
             state = {}
         state["in_ad_break"] = False
-        state["stream"] = None
+        state["ad_mid"] = False
+        state["stream"] = state.get("stream_pre")  # content record restored
+        state["stream_pre"] = None
         save_state(state)
     if pgm != AD_SCENE:
         alert("Ad ended but program is %s; leaving it." % pgm, "INFO")
         return
     renderer.set_scene(SCENE_PROGRAM)
-    alert("Ad done; back to program.", "INFO")
+    alert("Ad done; back to program%s." % (" to finish the item" if mid and not ended_this_item else "."), "INFO")
+    if mid and not ended_this_item:
+        return
     advance(renderer, load_state(), load_playlist(), decks)
 
 
@@ -1241,6 +1370,12 @@ def cmd_loop(renderer):
             _broke_ad = bool(_boot_state.get("in_ad_break"))
             if _broke_ad:
                 _boot_state["in_ad_break"] = False
+                _boot_state["ad_mid"] = False
+                _boot_state["stream"] = _boot_state.get("stream_pre")
+                _boot_state["stream_pre"] = None
+                _boot_state["roll_marks"] = None
+                _boot_state["marks_for"] = None
+                _boot_state["next_roll"] = 0
                 save_state(_boot_state)
     except (OSError, ValueError):
         _broke_ad = False
@@ -1383,6 +1518,63 @@ def cmd_loop(renderer):
                             with end_lock:
                                 if STREAM_EOF not in ended:
                                     ended.append(STREAM_EOF)
+            except Exception:
+                pass
+            # Mid-roll scheduler (ad_plan): on this same cadence, fire a
+            # scheduled break once the playing item reaches its mark —
+            # streams by wall clock, files by their media clock (which
+            # never paused: muted, not paused). ±10s on the hit is fine;
+            # the promise the plan makes is "around here", not at the
+            # second. Skips any scene the operator drifted to: a mid-cut
+            # into their manual frame is theft, not automation.
+            try:
+                _mst = load_state()
+                _marks = _mst.get("roll_marks")
+                _next = int(_mst.get("next_roll") or 0)
+                if _marks and _next < len(_marks) and not _mst.get("in_ad_break"):
+                    _pgm = renderer._call("GetCurrentProgramScene") \
+                        .get("currentProgramSceneName", SCENE_PROGRAM)
+                    if _pgm == SCENE_PROGRAM:
+                        _items = data.get("items", [])
+                        _i = _mst.get("index", 0)
+                        _cur = _items[(int(_i) - 1) % len(_items)] if _items and isinstance(_i, int) and _i > 0 else None
+                        if _cur:
+                            _elapsed = 0.0
+                            if _cur.get("youtube"):
+                                _sm2 = _mst.get("stream") or {}
+                                if _sm2.get("slot") in ("A", "B"):
+                                    _elapsed = time.time() - _sm2.get("start", 0)
+                            else:
+                                try:
+                                    _msm = renderer.get_media_status(decks[_mst.get("deck", "A")])
+                                    if isinstance(_marks, list) and _mst.get("marks_for") != _cur.get("file"):
+                                        _dms = _msm.get("duration_ms") or 0
+                                        _pm = plan_rolls(_dms / 1000.0, data, roll_marks_onair(_cur, data))
+                                        if _pm:
+                                            with pl_lock():
+                                                _sv = load_state()
+                                                _sv["roll_marks"] = _pm
+                                                _sv["marks_for"] = _cur.get("file")
+                                                _sv["next_roll"] = 0
+                                                save_state(_sv)
+                                        else:
+                                            with pl_lock():
+                                                _sv = load_state()
+                                                _sv["roll_marks"] = _pm or []
+                                                _sv["marks_for"] = _cur.get("file")
+                                                save_state(_sv)
+                                        _mst = load_state()
+                                        _marks = _mst.get("roll_marks")
+                                        _next = int(_mst.get("next_roll") or 0)
+                                    _elapsed = (_msm.get("time_ms") or 0) / 1000.0
+                                except Exception:
+                                    _elapsed = 0.0
+                            if _elapsed >= (_marks[_next] if _marks and _next < len(_marks) else 1e30):
+                                if play_ad(renderer, data, decks, mid=True):
+                                    with pl_lock():
+                                        _sv = load_state()
+                                        _sv["next_roll"] = _next + 1
+                                        save_state(_sv)
             except Exception:
                 pass
             # Natural advances (shuffle especially) rewrite the file behind
@@ -1597,6 +1789,21 @@ def selftest():
         time.sleep(2)
     else:
         raise AssertionError("prefetch never delivered: %s" % flying)
+    # ad_plan math: threshold, gap floor, determinism, off-switch.
+    long_data = {"ad_every": 4,
+                 "ad_plan": {"mid_rolls": 2, "min_gap_min": 15}}
+    a = plan_rolls(7200, long_data, "Sintel | http://x/1 | ")
+    b = plan_rolls(7200, long_data, "Sintel | http://x/1 | ")
+    assert a == b and len(a) == 2, (a, b)  # seeded: UI preview == runtime
+    assert a[0] > 15 * 60 and a[1] < 7200 - 15 * 60, a  # gaps from both ends
+    assert a[1] - a[0] >= 15 * 60, a
+    assert plan_rolls(20 * 60, long_data, "short") == []  # below threshold
+    assert plan_rolls(7200, {"ad_every": 0}, "x") == []  # ads globally off
+    assert plan_rolls(7200, {"ad_every": 4, "ad_plan": {"enabled": False}}, "x") == []
+    assert plan_rolls(None, long_data, "x") == []  # unknown duration: no math
+    gaps = [900.0]  # one-mark case: any single mark lands in the window
+    m1 = plan_rolls(3600, {"ad_every": 4, "ad_plan": {"mid_rolls": 1}}, "y")
+    assert len(m1) == 1 and 900 <= m1[0] <= 2700, m1
     print("selftest: all checks passed.")
     return 0
 

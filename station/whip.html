@@ -57,7 +57,7 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
   <div class="mark"><i></i></div>
   <div class="mast">SMILE<span>SEATS</span></div>
   <span style="flex:1"></span>
-  <button class="primary" id="shareall">Share all three</button>
+  <button class="primary" id="shareall">Connect the seats</button>
   <button class="ghost" id="stopall">Stop everything</button>
 </header>
 <main>
@@ -69,7 +69,7 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
   <div class="seatdrag"><h3>Screen</h3>
     <p>The slot-screen seat — your masks and frame stay on the studio side. Its own audio rides along when the browser allows.</p></div>
   <span class="pill">idle</span>
-  <button data-seat="screen">Share</button>
+  <button data-seat="screen">Connect</button>
 </div>
 
 <div class="seat" id="seat_cam">
@@ -78,7 +78,7 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
   <div class="seatdrag"><h3>Camera</h3>
     <p>The slot-cam seat — keyed, framed and masked before you ever see it. Your mic travels with it (sync rule).</p></div>
   <span class="pill">idle</span>
-  <button data-seat="cam">Share</button>
+  <button data-seat="cam">Connect</button>
 </div>
 
 <div class="seat" id="seat_mic">
@@ -87,7 +87,7 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
   <div class="seatdrag"><h3>Microphone</h3>
     <p>The slot-audio seat — a capture-style source on the studio side, ready to ride the mixer. Uses echo guard.</p></div>
   <span class="pill">idle</span>
-  <button data-seat="mic">Share</button>
+  <button data-seat="mic">Connect</button>
 </div>
 
 <h2>Connect</h2>
@@ -97,11 +97,18 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
   <label class="hint" style="margin:0">Publish token
     <input id="tok" placeholder="only if the VPS asks" spellcheck="false"></label>
 </div>
-<p class="hint">One tab = your whole on-air presence. Each share publishes its own WHIP
+<p class="hint">One tab = your whole on-air presence. Each connect publishes its own WHIP
 stream, so the studio seats fill themselves the moment frames land — no OBSBrowser
 sources, no room codes, no repositioning. Keep the tab open while on air; Stop returns
-the seat to quiet without anyone touching the render plane. On the MBA, just open this
-page through the tunnel and press <b>Share all three</b>.</p>
+the seat to quiet without anyone touching the render plane.
+</p>
+<div id="insecure" class="note" style="display:none;color:#ffd9db;border-color:#e5484d">
+  <b>This tab cannot reach your camera or mic.</b> Browsers only allow that on a
+  <b>secure</b> page. Fastest fix on your Mac:
+  <code>ssh -L 7070:127.0.0.1:7070 user@station</code>, open
+  <b>http://localhost:7070/whip</b> — DONE. (Or make this box serve https.)
+</div>
+<canvas id="noise" width="60" height="34" style="display:none"></canvas>
 <p class="note">Heads-up: the browser asks separately for screen, camera and mic — accept each
 once. If a seat says failed, Stop it and retry; the studio side is never affected.</p>
 </main>
@@ -120,6 +127,10 @@ var GETTERS = {
 };
 var PATHS = {screen: 'slot-screen', cam: 'slot-cam', mic: 'slot-audio'};
 var pubs = {};
+if (!(window.isSecureContext &&
+      (navigator.mediaDevices && navigator.mediaDevices.getUserMedia))) {
+  document.getElementById('insecure').style.display = 'block';
+}
 function seatEl(seat){
   var d = document.getElementById('seat_' + seat);
   return {row: d, pill: d.querySelector('.pill'), but: d.querySelector('button[data-seat]')};
@@ -177,7 +188,7 @@ function stop(seat){
   delete pubs[seat];
   var s = seatEl(seat);
   s.pill.textContent = 'idle'; s.row.className = 'seat';
-  s.but.textContent = 'Share'; s.but.classList.remove('primary');
+  s.but.textContent = 'Connect'; s.but.classList.remove('primary');
 }
 function toggle(seat){
   if (pubs[seat]) { stop(seat); return; }
@@ -185,7 +196,7 @@ function toggle(seat){
     .catch(function(e){ setstate(seat, 'denied', false); });
 }
 Object.keys(GETTERS).forEach(function(seat){
-  seatEl(seat).but.setAttribute('data-plain', 'Share');
+  seatEl(seat).but.setAttribute('data-plain', 'Connect');
   seatEl(seat).but.onclick = function(){ toggle(seat); };
 });
 document.getElementById('shareall').onclick = function(){

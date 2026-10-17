@@ -297,6 +297,84 @@ def library_view():
                      "cap": daemon.CACHE_CAP}}
 
 
+def ads_view():
+    """Everything the Ads+AUTOMATION views need in one read: the cycle
+    config, the plan, the pool, and the exact roll marks each item will
+    run — computed by the SAME planner the daemon executes, so the
+    timeline the operator sees is the timeline that happens."""
+    try:
+        data = daemon.load_playlist()
+    except (OSError, ValueError):
+        data = {}
+    try:
+        st = daemon.load_state()
+    except (OSError, ValueError):
+        st = {}
+    plan = data.get("ad_plan") if isinstance(data.get("ad_plan"), dict) else {}
+    pool = []
+    for f in data.get("ad_files") or []:
+        if isinstance(f, str) and os.path.isfile(os.path.join(daemon.MEDIA, f)):
+            pool.append({"kind": "file", "name": f})
+    for u in data.get("ad_links") or []:
+        if isinstance(u, str) and u:
+            pool.append({"kind": "link", "name": u})
+    nxt, items = [], data.get("items", [])
+    dex = st.get("index", 0)
+    dex = dex if isinstance(dex, int) else 0
+    for window in range(min(len(items), 10)):  # next 10 items get a timeline
+        it = items[(dex + window) % len(items)] if items else None
+        if it is None:
+            break
+        dur = None
+        if it.get("youtube"):
+            meta = (daemon._RESOLVE_CACHE.get(it["youtube"]) or (0, {}))[1]
+            dur = it.get("duration") or meta.get("duration")
+        elif it.get("file"):
+            dur = it.get("duration")  # files learn marks from their clock
+        marks = daemon.plan_rolls(dur, data,
+                                  daemon.roll_marks_onair(it, data))
+        nxt.append({"title": it.get("title") or it.get("file") or
+                    it.get("youtube", "?"),
+                    "duration": dur, "marks": marks,
+                    "status": it.get("status") or "active"})
+    return {"ad_every": data.get("ad_every") or 0,
+            "ad_plan": {"threshold_min": plan.get("threshold_min") if
+                        plan.get("threshold_min") else 30,
+                        "mid_rolls": plan.get("mid_rolls") if
+                        plan.get("mid_rolls") is not None else 2,
+                        "min_gap_min": plan.get("min_gap_min") if
+                        plan.get("min_gap_min") else 15,
+                        "enabled": plan.get("enabled", True) is not False},
+            "ad_files": data.get("ad_files") or [],
+            "ad_links": data.get("ad_links") or [],
+            "pool": pool, "since_ad": st.get("since_ad", 0),
+            "queue": nxt, "index": dex,
+            "on_air": bool(st.get("in_ad_break"))}
+
+
+THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
+
+
+def thumb_path(fname):
+    """Serve (generating once, cached) a poster frame for a media/ file.
+    ffmpeg takes 25% in — front-loaded intros are covers, not content."""
+    fname = os.path.basename(fname)  # no traversal
+    src = os.path.join(daemon.MEDIA, fname)
+    if not os.path.isfile(src):
+        return None
+    os.makedirs(THUMB_DIR, exist_ok=True)
+    out = os.path.join(THUMB_DIR, fname + ".jpg")
+    if not os.path.exists(out):
+        try:
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
+                            "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
+                            "-vf", "scale=320:-1", "-q:v", "5", out],
+                           timeout=20, check=True)
+        except Exception:
+            return None
+    return out
+
+
 MUSIC_DIR = os.path.join(daemon.MEDIA, "music")
 os.makedirs(MUSIC_DIR, exist_ok=True)
 BED_INPUT = "Music Bed"
@@ -403,8 +481,23 @@ class Handler(SimpleHTTPRequestHandler):
             return self._tap()
         elif self.path.startswith("/files/"):
             return self._serve_media(urlparse(self.path).path[7:])
+        elif self.path.startswith("/thumbs/"):
+            from urllib.parse import unquote
+            tp = thumb_path(unquote(urlparse(self.path).path[len("/thumbs/"):]))
+            if not tp:
+                self.send_error(404)
+                return
+            with open(tp, "rb") as fh:
+                img = fh.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(img)))
+            self.end_headers()
+            self.wfile.write(img)
         elif self.path == "/library":
             self._json(200, library_view())
+        elif self.path == "/ads":
+            self._json(200, ads_view())
         elif self.path == "/intake":
             self._json(200, {"history": intake_history()})
         elif self.path == "/music":
@@ -456,6 +549,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._intent(path[len("/intent/"):])
         if path == "/library":
             return self._library_update()
+        if path == "/ads":
+            return self._ads_update()
         if path == "/obs":
             return self._obs_proxy()
         if path == "/music":
@@ -506,6 +601,51 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(404, {"ok": False, "error": "unknown intent"})
         except Exception as e:
             return self._json(502, {"ok": False, "error": str(e)[:200]})
+        return self._json(200, {"ok": True})
+
+    def _ads_update(self):
+        """Write the ad config: cycle count, plan keys, pool links. Takes
+        effect at the next transition (the daemon reloads on hash change)."""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            return self._json(400, {"ok": False, "error": "bad JSON"})
+        try:
+            data = daemon.load_playlist()
+        except (OSError, ValueError):
+            return self._json(502, {"ok": False, "error": "playlist unreadable"})
+        if "ad_every" in body:
+            try:
+                data["ad_every"] = max(0, int(body["ad_every"]))
+            except (TypeError, ValueError):
+                return self._json(400, {"ok": False, "error": "ad_every must be a number"})
+        if "ad_links" in body:
+            if not isinstance(body["ad_links"], list):
+                return self._json(400, {"ok": False, "error": "ad_links must be a list"})
+            data["ad_links"] = [u for u in body["ad_links"]
+                                if isinstance(u, str) and u.strip()]
+        if "ad_files" in body:
+            if not isinstance(body["ad_files"], list):
+                return self._json(400, {"ok": False, "error": "ad_files must be a list"})
+            data["ad_files"] = [f for f in body["ad_files"]
+                                if isinstance(f, str) and f]
+        if "ad_plan" in body:
+            pl = body["ad_plan"]
+            if not isinstance(pl, dict):
+                return self._json(400, {"ok": False, "error": "ad_plan must be an object"})
+            cur = data.get("ad_plan") if isinstance(data.get("ad_plan"), dict) else {}
+            cur = dict(cur)
+            for k in ("threshold_min", "mid_rolls", "min_gap_min"):
+                if k in pl:
+                    try:
+                        cur[k] = float(pl[k])
+                    except (TypeError, ValueError):
+                        return self._json(400, {"ok": False, "error": "%s must be a number" % k})
+            if "enabled" in pl:
+                cur["enabled"] = bool(pl["enabled"])
+            data["ad_plan"] = cur
+        daemon.save_playlist(data)
         return self._json(200, {"ok": True})
 
     def _library_update(self):
@@ -704,24 +844,36 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(502, {"ok": False, "error": msg[:200]})
             return self._json(200, {"ok": False, "error": msg[:200]})
 
+    def _bed_probe():
+        try:
+            ins = {i.get("inputName") for i in
+                   obs_req()._call("GetInputList").get("inputs", [])}
+            if BED_INPUT in ins:
+                return {"bed": (obs_req()._call("GetInputSettings",
+                                                {"inputName": BED_INPUT})
+                                .get("inputSettings", {}).get("local_file")),
+                        "plane": "up"}
+            return {"bed": None, "plane": "up"}
+        except Exception:
+            return {"bed": None, "plane": "down"}
+
+
     def _music(self):
         # Music bed management. GET: tracks on disk + current bed file.
         # POST {op:set, file}: validate, ensure the input, point + restart.
         # POST {op:add, source, title}: intake to media/, then move to music/.
         if self.command == "GET":
-            bed = None
-            plane = "up"
-            try:
-                ins = {i.get("inputName") for i in
-                       obs_req()._call("GetInputList").get("inputs", [])}
-                if BED_INPUT in ins:
-                    bed = (obs_req()._call("GetInputSettings",
-                                           {"inputName": BED_INPUT})
-                           .get("inputSettings", {}).get("local_file"))
-            except Exception:
-                # Deaf plane used to masquerade as "no bed". Say it.
-                plane = "down"
-            return self._json(200, {"tracks": music_tracks(), "bed": bed, "plane": plane})
+            # Bound the plane read: a wedged RPC (plane wedge is a known
+            # failure shape) must not hang the library page's Promise.all.
+            out = {"bed": None, "plane": "?"}
+            th = threading.Thread(target=lambda: out.update(_bed_probe()),
+                                  daemon=True)
+            th.start()
+            th.join(4)
+            if th.is_alive():
+                out["plane"] = "slow"
+            return self._json(200, dict(tracks=music_tracks(),
+                                        bed=out.get("bed"), plane=out.get("plane")))
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
