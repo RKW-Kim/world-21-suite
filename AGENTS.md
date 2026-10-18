@@ -19,6 +19,9 @@ to them rather than grinding on.
 
 - The render plane (headless OBS) occasionally wedges or goes deaf;
   a single restart usually heals it, but don't loop restarts silently.
+- OBS must NOT run with --minimize-to-tray on Xvfb (no tray exists):
+  some boots hide the main window entirely -> black VNC with a "running"
+  OBS. Window must plain open. Verified 2026-10-18.
 - systemd user units live in ~/.config/systemd/user/ (daemon unit is
   Wants= not Requires= so plane restarts don't kill the daemon).
 - Demo state after ad tests: restore sane ad config before leaving
