@@ -1249,3 +1249,27 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 
 ! mid-rolls have NOT yet fired against a live plane (engine + planner
 ! selftested only). Real proof: long item on air, watch break/return.
+
+## 2026-10-18 (03:xx) — audit round: leaks closed, mid-roll engine fixed, ad breaks proven live
+
+- SECURITY: any web page in any LAN/browser tab could POST to /state//obs/
+  /library anonymously (text/plain = no CORS preflight) and even read the
+  OBS stream key via GetStreamServiceSettings. Now: Origin/bearer guard on
+  every POST + the WS relay. Same-origin pages, curl, OBS panes (file://)
+  pass; other origins need the STATION_TOKEN env (set it for VPS era).
+- BUGS FIXED: file items were permanently ineligible for mid-rolls
+  (None-mark gate); advance saved stale state over watchdog faults; broken
+  since_ad reset alerted forever; intake temp-dir collisions between
+  parallel prefetch/music adds; playlist writes now flock cross-process;
+  OBS_PASS was journalled via ?pass= URLs (log strips query now).
+- BOOT REPAIR: the saved collection was missing "SMILE | Ad Break" (+AD
+  Break/STREAM AD inputs) — every OBS restart failed ALL file ads at
+  runtime ("No source `AD Break`"). ensure_ad_plane() now rebuilds them
+  at loop start; non-looping so the END event is the return lever.
+- LIVE PROOF: file-ad break -> return -> advance on air; YouTube link
+  stream-ad break -> MTX slot-ad publish -> 61s -> return -> advance.
+  Console + Library verified against the new guard.
+- mediamtx: RTSP/RTMP/HLS/API loopback-only; SRT + WHIP/WHEP stay public.
+
+! capture still wedges on a filter-list RPC (plane can go deaf mid-walk)
+! mid-rolls never live-fired (engine+planner selftested; same return path)
