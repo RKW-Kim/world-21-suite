@@ -20,6 +20,7 @@ import json
 import os
 import queue
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -327,8 +328,11 @@ def ads_view():
             break
         dur = None
         if it.get("youtube"):
-            meta = (daemon._RESOLVE_CACHE.get(it["youtube"]) or (0, {}))[1]
-            dur = it.get("duration") or meta.get("duration")
+            # Duration from the item's own field (the daemon's resolve
+            # cache lives in the daemon process — from here it is always
+            # empty; recent plans learned durations and wrote them into
+            # playlist entries, so this is the honest durable record).
+            dur = it.get("duration")
         elif it.get("file"):
             dur = it.get("duration")  # files learn marks from their clock
         marks = daemon.plan_rolls(dur, data,
@@ -355,6 +359,11 @@ def ads_view():
 THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
 
 
+THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
+THUMB_LOCKS = {}
+THUMB_LOCKS_GUARD = threading.Lock()
+
+
 def thumb_path(fname):
     """Serve (generating once, cached) a poster frame for a media/ file.
     ffmpeg takes 25% in — front-loaded intros are covers, not content."""
@@ -364,14 +373,23 @@ def thumb_path(fname):
         return None
     os.makedirs(THUMB_DIR, exist_ok=True)
     out = os.path.join(THUMB_DIR, fname + ".jpg")
-    if not os.path.exists(out):
+    lock = THUMB_LOCKS.get(fname)
+    if lock is None:
+        with THUMB_LOCKS_GUARD:
+            lock = THUMB_LOCKS.setdefault(fname, threading.Lock())
+    if lock.acquire(timeout=25):
         try:
-            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
-                            "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
-                            "-vf", "scale=320:-1", "-q:v", "5", out],
-                           timeout=20, check=True)
+            if not os.path.exists(out):
+                subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
+                                "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
+                                "-vf", "scale=320:-1", "-q:v", "5", out],
+                               timeout=20, check=True)
         except Exception:
-            return None
+            pass
+        finally:
+            lock.release()
+    if not os.path.exists(out):
+        return None
     return out
 
 
@@ -444,8 +462,35 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
 
+    def _guard(self):
+        # Control-plane guard. The threat: ANY web page open in ANY browser
+        # on this network can fire POSTs at this server (no preflight if the
+        # body is text/plain; the old Access-Control-* did not stop that).
+        # Allowed:
+        #   - non-browser clients (no Origin header): ssh, curl, systemd.
+        #   - same-origin pages we serve (console/media/studio/whip).
+        #   - file:// operator panes ("null" origin) — UNLESS a token is set.
+        #   - every origin, if the request carries the bearer token.
+        # Set STATION_TOKEN (secrets.env or systemd) once this box speaks to
+        # the WAN; Origins outside our Host are refused without it.
+        tok = os.environ.get("STATION_TOKEN", "")
+        if tok and self.headers.get("Authorization", "") == "Bearer " + tok:
+            return True
+        origin = self.headers.get("Origin", "")
+        if not origin:
+            return True
+        if origin == "null" and not tok:
+            return True
+        host = self.headers.get("Host", "")
+        return origin.rstrip("/") in ("http://" + host, "https://" + host)
+
+    def _refused(self):
+        self.send_error(403, "origin/referrer refused (set STATION_TOKEN to pin your client)")
+
     def do_GET(self):
         if self.headers.get("Upgrade", "").lower() == "websocket":
+            if not self._guard():
+                return self._refused()
             return self._ws_relay()
         if self.path == "/console" or self.path.startswith("/console?"):
             self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html", nocache=True)
@@ -544,6 +589,8 @@ class Handler(SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
+        if not self._guard():
+            return self._refused()
         path = urlparse(self.path).path
         if path.startswith("/intent/"):
             return self._intent(path[len("/intent/"):])
@@ -606,6 +653,16 @@ class Handler(SimpleHTTPRequestHandler):
     def _ads_update(self):
         """Write the ad config: cycle count, plan keys, pool links. Takes
         effect at the next transition (the daemon reloads on hash change)."""
+        return self._playlist_write(self._ads_write)
+
+    def _playlist_write(self, fn):
+        # pl_lock is a flock-based CROSS-PROCESS mutex (see daemon): the
+        # daemon's shuffle/advance and intake's append can't slide between
+        # our load and save. Whole RMW inside the lock, every time.
+        with daemon.pl_lock():
+            return fn()
+
+    def _ads_write(self):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
@@ -650,9 +707,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _library_update(self):
         # Library manager writes: pin/status toggles, metadata edits,
-        # add / remove / reorder. Atomic save; the daemon reloads the
-        # playlist on hash change, so edits take effect at the next
-        # transition, never mid-air. Same trust model as /state.
+        # add / remove / reorder. Same trust model as /state; serialization
+        # lives in _playlist_write (cross-process flock).
+        return self._playlist_write(self._library_write)
+
+    def _library_write(self):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
@@ -896,15 +955,34 @@ class Handler(SimpleHTTPRequestHandler):
                 import uuid as _uuid
                 safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in title).strip("_") or "music"
                 tmp = "%s_%s_m.mp4" % (safe, _uuid.uuid4().hex[:8])
+                proc = None
                 try:
-                    p = subprocess.run(
+                    proc = subprocess.Popen(
                         [sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "intake.py"),
                          source, "--as", tmp, "--title", title],
-                        capture_output=True, text=True, timeout=1800)
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        text=True, start_new_session=True)
+                    out, err = proc.communicate(timeout=1800)
+                    rc = proc.returncode
+                except subprocess.TimeoutExpired:
+                    # Whole process group: intake's ffmpeg grandchild dies
+                    # with it (plain kill on intake.py left orphans + a
+                    # partial file eating the quota).
+                    try:
+                        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                    except Exception:
+                        pass
+                    proc.communicate()
+                    return self._json(502, {"ok": False, "error": "intake timed out"})
                 except Exception as e:
+                    if proc is not None:
+                        try:
+                            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                        except Exception:
+                            pass
                     return self._json(502, {"ok": False, "error": "intake failed to start: %s" % e})
-                if p.returncode != 0:
-                    return self._json(502, {"ok": False, "error": (p.stderr or p.stdout or "intake failed")[-300:]})
+                if rc != 0:
+                    return self._json(502, {"ok": False, "error": (err or out or "intake failed")[-300:]})
                 try:
                     os.rename(os.path.join(daemon.MEDIA, tmp), os.path.join(MUSIC_DIR, tmp))
                 except OSError as e:
@@ -935,7 +1013,9 @@ class Handler(SimpleHTTPRequestHandler):
         body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # No wildcard CORS here: every page that reads these routes is
+        # same-origin (served by us) — an open mirror on other tabs would
+        # only widen the read surface (library/ads state leak) for nothing.
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -1428,8 +1508,11 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, fmt, *args):
-        if self.path not in ("/events",):
-            sys.stderr.write("overlay: %s\n" % (fmt % args))
+        # Strip the query: console URLs carry ?pass=<OBS_PASS> and the
+        # request line otherwise lands verbatim in the systemd journal.
+        if self.path.split("?")[0] not in ("/events",):
+            clean = self.path.split("?")[0]
+            sys.stderr.write("overlay: %s %s\n" % (self.command, clean))
 
 
 if __name__ == "__main__":

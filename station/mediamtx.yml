@@ -2,10 +2,21 @@
 # Owns the volatile WAN socket (reconnects silently); OBS/ffmpeg pull LOCAL
 # streams that either have frames or don't — a state the watchdog can act on.
 # One SRT port; streamid selects the path. Control API on loopback only.
+#
+# User-facing surfaces stay reachable beyond the box: SRT (:9000, seats) and
+# WHIP/WHEP (:8889 + the WebRTC UDP listeners, contribution seats and the
+# director monitor). Everything else binds LOOPBACK — with binds off, any
+# LAN/WAN peer could RTMP/RTSP-publish straight onto a path OBS reads
+# timestamped persistently (on-air injection; seen-audit fix 2026-10-17;
+# revisit with auth when cutover adds publish roles).
 logLevel: debug
 srtAddress: :9000
 api: yes
 apiAddress: 127.0.0.1:9997
+rtspAddress: 127.0.0.1:8554
+rtmpAddress: 127.0.0.1:1935
+hlsAddress: 127.0.0.1:8888
+
 paths:
   slot-cam:
   slot-screen:

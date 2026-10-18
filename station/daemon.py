@@ -566,6 +566,48 @@ AD_STREAM_SRC = "STREAM AD"  # ad_links play here (rtmp/slot-ad)
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 
 
+def ensure_ad_plane(renderer):
+    """Repair the ad surfaces the saved collection is missing.
+
+    The Ad-break scene was created by hand in the running plane long ago
+    and never captured back into the collection file (station/config debt);
+    every OBS restart therefore boots WITHOUT it and every file ad fails
+    with "No source `AD Break`". One idempotent repair at loop start beats
+    a per-cycle face plant. Sources land default-centered — the operator
+    can dress them once, then `sync.py capture` freezes them."""
+    try:
+        scenes = {s["sceneName"] for s in
+                  renderer._call("GetSceneList").get("scenes", [])}
+        ins = {i["inputName"] for i in
+               renderer._call("GetInputList").get("inputs", [])}
+        if AD_SCENE not in scenes:
+            renderer._call("CreateScene", {"sceneName": AD_SCENE})
+        if AD_INPUT not in ins:
+            renderer._call("CreateInput", {
+                "sceneName": AD_SCENE, "inputName": AD_INPUT,
+                "inputKind": "ffmpeg_source",
+                "inputSettings": {"looping": False}})  # the END event is the
+                # break's return lever; a looping ad input would air forever
+        if AD_STREAM_SRC not in ins:
+            renderer._call("CreateInput", {
+                "sceneName": AD_SCENE, "inputName": AD_STREAM_SRC,
+                "inputKind": "ffmpeg_source",
+                "inputSettings": {
+                    "input": "rtmp://127.0.0.1:1935/slot-ad",
+                    "is_local_file": False, "reconnect_delay_sec": 2}})
+        # A repaired scene starts empty of the sources; attach them (idempotent)
+        items = {i.get("sourceName") for i in
+                 renderer._call("GetSceneItemList",
+                                {"sceneName": AD_SCENE}).get("sceneItems", [])}
+        for src in (AD_INPUT, AD_STREAM_SRC):
+            if src not in items:
+                renderer._call("CreateSceneItem", {"sceneName": AD_SCENE, "sourceName": src})
+        return True
+    except Exception as e:
+        alert("ad surface repair failed (%s); file ads may 404." % e, "WARN")
+        return False
+
+
 def evict_cache(cap=None, pinned=frozenset()):
     """Enforce the byte cap: delete LRU .mp4 files, never pinned ones.
     Returns bytes freed. .intake-tmp, playlist.json and intake.db are exempt.
@@ -699,8 +741,7 @@ def play_ad(renderer, data, decks, mid=False):
     files = [f for f in (data.get("ad_files") or []) if isinstance(f, str)]
     links = [u for u in (data.get("ad_links") or [])
              if isinstance(u, str) and u]
-    if (not mid and every <= 0) or (mid and every <= 0) \
-            or (not files and not links):
+    if (every <= 0) or (not files and not links):
         return False
     ready = [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
     pool = [("file", f) for f in ready] + [("link", u) for u in links]
@@ -708,8 +749,10 @@ def play_ad(renderer, data, decks, mid=False):
         alert("Ad break due but no ad file on disk or link configured; "
               "playing on.", "WARN")
         with pl_lock():
-            load_state()["since_ad"] = 0
-            save_state(load_state())
+            # Fresh copy here: load_state() returns a throwaway dict built
+            # from the file; mutating it in place and re-loading would be a
+            # no-op and leave since_ad stuck (endless re-alert).
+            save_state(dict(load_state(), since_ad=0))
         return False
     kind, choice = random.choice(pool)
     with pl_lock():
@@ -956,7 +999,6 @@ def advance(renderer, state, data, deck_sources):
             state["index"] = idx + 1
             return  # skipped this round; the playlist loop comes back around
         feed, meta = started
-        _STREAM_STATE["feeds"][deck] = feed
         src = STREAM_DECK[deck]
         onair = {"start": time.time(),
                  "dur": item.get("duration") or meta.get("duration"),
@@ -977,15 +1019,19 @@ def advance(renderer, state, data, deck_sources):
     state.update({"index": idx + 1, "deck": deck})
     state["stream"] = onair
     # Mid-roll schedule for this item, if the plan asks for one. Streams
-    # know their duration here; file items set marks=None and the poll
-    # loop fills them in the first time the media clock reports a length.
-    state["roll_marks"] = None
+    # know their duration here and plan now; file items store an empty
+    # schedule and the poll loop fills it the first time the media clock
+    # reports a length. marks_for tags WHICH schedule is stored (the poll
+    # loop recomputes only for a new item), so the unified gate can't get
+    # stuck on a None that never fills — that exact shape left file items
+    # permanently ineligible for mid-rolls.
+    state["roll_marks"] = []
     state["next_roll"] = 0
+    state["marks_for"] = roll_marks_onair(item, data)
     if onair and onair.get("dur"):
-        marks = plan_rolls(onair["dur"], data, roll_marks_onair(item, data))
+        marks = plan_rolls(onair["dur"], data, state["marks_for"])
+        state["roll_marks"] = marks
         if marks:
-            state["roll_marks"] = marks
-            state["next_roll"] = 0
             alert("Mid-rolls planned: %s" % ", ".join(
                 "%02d:%02d" % (int(m / 60), int(m % 60)) for m in marks))
     try:
@@ -1007,7 +1053,15 @@ def advance(renderer, state, data, deck_sources):
         state["index"] = 0
         alert("Playlist exhausted; reshuffled.", "INFO")
     with pl_lock():
-        save_state(state)
+        # Re-load fresh under the lock and lay our touched keys on top:
+        # advance can run for ~45s (stream spawn) while watchdog faults or
+        # a /library edit may rewrite state.json in that window — saving
+        # our stale copy would eat those writes.
+        fresh = load_state()
+        fresh.update({k: state[k] for k in
+                      ("index", "deck", "stream", "roll_marks",
+                       "next_roll", "marks_for", "since_ad") if k in state})
+        save_state(fresh)
 
 
 def ad_return(renderer, decks, mid=False):
@@ -1186,6 +1240,15 @@ def prefetch_pass(data, state, in_flight, failed=None):
         failed = {}
     now = time.time()
     for source, proc in list(in_flight.items()):
+        started = getattr(proc, "started_at", 0)
+        if started and now - started > 2700:
+            # Backstop: a hung yt-dlp would otherwise live forever (the
+            # in-flight slot pin, never reaped, starves every later fetch).
+            proc.kill()
+            try:
+                proc.wait(10)
+            except Exception:
+                pass
         if proc.poll() is None:
             continue
         del in_flight[source]
@@ -1246,6 +1309,7 @@ def prefetch_pass(data, state, in_flight, failed=None):
                 [sys.executable, os.path.join(HERE, "intake.py"),
                  source, "--as", name, "--title", item.get("title", "")],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
+            in_flight[source].started_at = time.time()
             alert("Prefetching %s ..." % source[-60:], "INFO")
         except OSError as e:
             alert("Prefetch spawn failed: %s." % e, "WARN")
@@ -1356,6 +1420,7 @@ def cmd_loop(renderer):
         return 2
     except RuntimeError as e:
         print("cannot verify transitions (%s); starting anyway." % e)
+    ensure_ad_plane(renderer)
     try:
         advance(renderer, state, data, decks)
     except RuntimeError as e:
@@ -1528,17 +1593,50 @@ def cmd_loop(renderer):
             # second. Skips any scene the operator drifted to: a mid-cut
             # into their manual frame is theft, not automation.
             try:
+                # Mid-roll scheduler: SIX layers of "no theft" — program
+                # scene check, break flag, then the plan itself. Unified:
+                # both stream and file items go through the same gate.
                 _mst = load_state()
-                _marks = _mst.get("roll_marks")
-                _next = int(_mst.get("next_roll") or 0)
-                if _marks and _next < len(_marks) and not _mst.get("in_ad_break"):
+                _items = data.get("items", [])
+                _i = _mst.get("index", 0)
+                _cur = _items[(int(_i) - 1) % len(_items)] if _items and isinstance(_i, int) and _i > 0 else None
+                if _cur and not _mst.get("in_ad_break"):
                     _pgm = renderer._call("GetCurrentProgramScene") \
                         .get("currentProgramSceneName", SCENE_PROGRAM)
                     if _pgm == SCENE_PROGRAM:
-                        _items = data.get("items", [])
-                        _i = _mst.get("index", 0)
-                        _cur = _items[(int(_i) - 1) % len(_items)] if _items and isinstance(_i, int) and _i > 0 else None
-                        if _cur:
+                        # File items learn their clock lazily (media clock);
+                        # streams already planned at advance(). Recompute once
+                        # per item (marks_for = the planner seed).
+                        _seed = roll_marks_onair(_cur, data)
+                        if _mst.get("marks_for") != _seed:
+                            _dur_s = 0.0
+                            if _cur.get("youtube"):
+                                _sm2 = _mst.get("stream") or {}
+                                if _sm2.get("slot") in ("A", "B"):
+                                    _dur_s = _sm2.get("dur") or 0
+                            else:
+                                try:
+                                    _dur_s = (renderer.get_media_status(
+                                        decks[_mst.get("deck", "A")]
+                                    ).get("duration_ms") or 0) / 1000.0
+                                except Exception:
+                                    _dur_s = 0.0
+                            if _dur_s > 0:
+                                _pm = plan_rolls(_dur_s, data, _seed)
+                                with pl_lock():
+                                    _sv = load_state()
+                                    _sv["roll_marks"] = _pm
+                                    _sv["marks_for"] = _seed
+                                    _sv["next_roll"] = 0
+                                    save_state(_sv)
+                                if _pm:
+                                    alert("Mid-rolls planned: %s" % ", ".join(
+                                        "%02d:%02d" % (int(m / 60), int(m % 60))
+                                        for m in _pm))
+                                _mst = load_state()
+                        _marks = _mst.get("roll_marks") or []
+                        _next = int(_mst.get("next_roll") or 0)
+                        if _marks and _next < len(_marks):
                             _elapsed = 0.0
                             if _cur.get("youtube"):
                                 _sm2 = _mst.get("stream") or {}
@@ -1546,30 +1644,12 @@ def cmd_loop(renderer):
                                     _elapsed = time.time() - _sm2.get("start", 0)
                             else:
                                 try:
-                                    _msm = renderer.get_media_status(decks[_mst.get("deck", "A")])
-                                    if isinstance(_marks, list) and _mst.get("marks_for") != _cur.get("file"):
-                                        _dms = _msm.get("duration_ms") or 0
-                                        _pm = plan_rolls(_dms / 1000.0, data, roll_marks_onair(_cur, data))
-                                        if _pm:
-                                            with pl_lock():
-                                                _sv = load_state()
-                                                _sv["roll_marks"] = _pm
-                                                _sv["marks_for"] = _cur.get("file")
-                                                _sv["next_roll"] = 0
-                                                save_state(_sv)
-                                        else:
-                                            with pl_lock():
-                                                _sv = load_state()
-                                                _sv["roll_marks"] = _pm or []
-                                                _sv["marks_for"] = _cur.get("file")
-                                                save_state(_sv)
-                                        _mst = load_state()
-                                        _marks = _mst.get("roll_marks")
-                                        _next = int(_mst.get("next_roll") or 0)
+                                    _msm = renderer.get_media_status(
+                                        decks[_mst.get("deck", "A")])
                                     _elapsed = (_msm.get("time_ms") or 0) / 1000.0
                                 except Exception:
                                     _elapsed = 0.0
-                            if _elapsed >= (_marks[_next] if _marks and _next < len(_marks) else 1e30):
+                            if _elapsed >= _marks[_next]:
                                 if play_ad(renderer, data, decks, mid=True):
                                     with pl_lock():
                                         _sv = load_state()

@@ -272,12 +272,14 @@ def capture(out_dir):
     }
     if encoder:
         files["encoder.json"] = encoder
-    for fn, obj in files.items():
+    rendered = {fn: json.dumps(obj, indent=2, sort_keys=True) + "\n"
+                for fn, obj in files.items()}
+    # Leak check BEFORE any byte hits disk: a failed check must not leave
+    # secret-bearing files sitting in station/config ready to be committed.
+    check_no_leak("\n".join(rendered.values()), load_secrets())
+    for fn, text in rendered.items():
         with open(os.path.join(out_dir, fn), "w") as f:
-            json.dump(obj, f, indent=2, sort_keys=True)
-            f.write("\n")
-    blob = json.dumps(files, sort_keys=True)
-    check_no_leak(blob, load_secrets())
+            f.write(text)
     if secrets_map:
         print("capture: redacted secrets: %s (fill broadcast/secrets.env; never commit values)"
               % ", ".join(sorted(secrets_map)))
@@ -441,7 +443,6 @@ def apply_geometry_to_file(col_path, col, changed, skip_visible=()):
                 # fresh boots render correctly, so absence is safe.
                 for rk in ("pos_rel", "scale_rel", "bounds_rel"):
                     row.pop(rk, None)
-                changed.append("%s/%s" % (sc["name"], want["source"]))
                 changed.append("%s/%s" % (sc["name"], want["source"]))
     if not changed:
         return False

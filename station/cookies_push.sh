@@ -25,11 +25,16 @@ COOKIES="${2:-${COOKIES:-$HOME/Documents/yt-cookies.txt}}"
 head -2 "$COOKIES" | grep -q "# Netscape" || { echo "not a Netscape cookies export" >&2; exit 2; }
 
 REMOTE_DIR=~/broadcast   # matches the service deployment layout
+chmod 600 "$COOKIES" 2>/dev/null || true
 scp -q "$COOKIES" "$STATION:$REMOTE_DIR/.cookies.new"
+# .cookies.new defaults to scp's umask (world-readable until swapped);
+# protect it from the moment it lands — probe/swap/backup all below keep
+# 600, and a failed run never leaves an open copy of the auth export.
 ssh "$STATION" bash -s <<'EOF'
 set -e
 cd ~/broadcast
-test -s .cookies.new || { echo "upload empty" >&2; exit 1; }
+chmod 600 .cookies.new 2>/dev/null || true
+test -s .cookies.new || { chmod 600 .cookies.new; echo "upload empty" >&2; exit 1; }
 # probe: resolve a short public video using ONLY the new cookies
 env YTDLP_COOKIES="$PWD/.cookies.new" \
   yt-dlp --skip-download --print "%(title)s" --no-warnings \

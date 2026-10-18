@@ -325,9 +325,8 @@ function cardHTML(i){
     '<div class="thumb">'+
       (t ? '<img loading="lazy" src="'+esc(t)+'" onerror="this.style.display=\'none\'">' : "") +
       (t ? '' : '<div class="ph">'+(k==="fetch"?"FETCHING":k==="stream"?"NO PREVIEW":"NO THUMB")+'</div>') +
-      (badge.length ? '<span class="badge'+(badge==="MISSING"||k==="missing"?" missb":"")+'">'+
+      (badge.length ? '<span class="badge'+(badge[0]==="MISSING"?" missb":"")+'">'+
         esc(badge[badge.length-1])+'</span>' : '') +
-      (k==="missing" ? '<span class="missb" style="display:none"></span>' : '') +
       (k==="missing" ? '' :
         '<div class="scrim"><button class="mini primary" data-act="promote" data-idx="'+
         i.__i+'">Next up</button></div>') +

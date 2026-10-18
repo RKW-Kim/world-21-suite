@@ -172,7 +172,10 @@ def intake(source, title=None, queue=False, target=None):
                 "Unpin, raise the cap, or pick a smaller file. Nothing downloaded."
                 % (est, CACHE_CAP, sum(sizes.get(f, 0) for f in pinned)))
     evict_cache(pinned=pinned)  # make room before the burst, not after
-    workdir = os.path.join(MEDIA, ".intake-tmp")
+    # Unique workdir per invocation: daemon prefetch + overlay /music add
+    # + CLI intakes can run CONCURRENTLY; a shared .intake-tmp collided
+    # raw.* files across jobs (one job adopted the other's half-download).
+    workdir = os.path.join(MEDIA, ".intake-tmp-%s" % os.getpid())
     os.makedirs(workdir, exist_ok=True)
     raw = fetch_source(source, workdir)
     name = (title or os.path.splitext(os.path.basename(source))[0])[:80]
@@ -202,17 +205,28 @@ def intake(source, title=None, queue=False, target=None):
         # settle the cap now that the real bytes are known.
         evict_cache(pinned=pinned)
         if queue:
+            # Same flock the daemon/overlay use for playlist writes
+            # (daemon.pl_lock semantics): append must not clobber a
+            # concurrent shuffle or edit.
+            fd = os.open(os.path.join(ROOT, ".station.lock"),
+                         os.O_CREAT | os.O_RDWR, 0o600)
             try:
-                with open(PLAYLIST) as f:
-                    pl = json.load(f)
-            except (OSError, ValueError):
-                pl = {"shuffle_on_complete": True, "items": []}
-            pl["items"].append({"file": os.path.basename(dest),
-                                "title": title or safe, "duration": int(dur)})
-            tmp = PLAYLIST + ".new"
-            with open(tmp, "w") as f:
-                json.dump(pl, f, indent=2)
-            os.replace(tmp, PLAYLIST)  # atomic; loop picks it up at next cut
+                import fcntl as _fcntl
+                _fcntl.flock(fd, _fcntl.LOCK_EX)
+                try:
+                    with open(PLAYLIST) as f:
+                        pl = json.load(f)
+                except (OSError, ValueError):
+                    pl = {"shuffle_on_complete": True, "items": []}
+                pl["items"].append({"file": os.path.basename(dest),
+                                    "title": title or safe, "duration": int(dur)})
+                tmp = PLAYLIST + ".new"
+                with open(tmp, "w") as f:
+                    json.dump(pl, f, indent=2)
+                os.replace(tmp, PLAYLIST)  # atomic; loop picks it up at next cut
+            finally:
+                _fcntl.flock(fd, _fcntl.LOCK_UN)
+                os.close(fd)
         print("OK %s (%.0fs, sha256 %.12s)" % (os.path.basename(dest), dur, digest))
         return os.path.basename(dest)
     except Exception:
