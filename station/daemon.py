@@ -553,11 +553,11 @@ class Watchdog:
 
 # ------------------------------------------------------------------- loop ---
 # Scene model (OBS side; collection built by render_scenes.py from the deck's
-# six — Starting, Meet, Q&A, Tech Diffs, Off Air, End Credits).
+# six — Starting, Program, Q&A, Tech Diffs, Off Air, End Credits).
 # Role mapping: STARTING holds the IDENT clip; PROGRAM plays the PLAYOUT_A/B
 # deck under ticker+watermark; LIVE carries the SRT feeds under the speaking
 # overlay; TECHDIFF frames faults per SCENES.md; OFF-AIR is the harbour.
-SCENE_STARTING, SCENE_PROGRAM = "SMILE | Starting", "SMILE | Meet"
+SCENE_STARTING, SCENE_PROGRAM = "SMILE | Starting", "SMILE | Program"
 SCENE_LIVE, SCENE_TECHDIFF = "SMILE | Q&A", "SMILE | Tech Diffs"
 SCENE_OFFAIR, SCENE_END = "SMILE | Off Air", "SMILE | End Credits"
 PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "IDENT"
