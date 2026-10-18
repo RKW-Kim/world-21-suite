@@ -1308,3 +1308,22 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 - Removed --minimize-to-tray from station-obs ExecStart: on tray-less
   Xvfb some boots hid the main window entirely (WebSocketServer ran, black
   screen). Lesson lives in AGENTS.md too.
+
+## 2026-10-18 17:00 — 720p VNC desk + deterministic boot fullscreen
+
+- Xvfb :99 screen shrunk 1920x1080 -> 1280x720. Program output stays 1080p;
+  only the OBS control UI changes, so VNC/MBA traffic drops a lot. Window
+  fills the whole virtual screen (resized live; screenshot verified).
+- station-obs unit gained an ExecStartPost that polls for the main OBS
+  window and forces it to the full 1280x720 frame: OBS ignores its saved
+  geometry on some boots (opened 896x482 default this boot) and geometry
+  ini pinning alone is not deterministic.
+- station-obs ExecStartPre now also reaps stale obs/bwrap processes before
+  every boot (systemctl stop already didn't reap the flatpak tree), kill
+  source for the "OBS is already running" modal at boot.
+- obs_click.py: --resize X Y W H helper (idempotent XMoveResize on the
+  main window; exit 1 when no window matched so ExecStartPost can poll).
+- After the xvfb/obs bounce the daemon sat on a dead socket (recv timed
+  out, deduped WARN loop) and the watchdog was holding OFF-AIR over the
+  earlier PLAYOUT_B stall; /intent/resume cleared the hold and cycling
+  resumed (ad break + return verified on air again).
