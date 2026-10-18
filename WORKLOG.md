@@ -1290,3 +1290,21 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 - live demo cycle proven on air with real clips: playlist rolls all five,
   ad break fires at every transition (ad_every=1, pool [Menta, Almond]),
   returns, advances, reshuffles at the end. Console/Library healthy.
+
+## 2026-10-18 16:15 — TD desk over VNC (MBA) proven
+
+- Installed x11vnc + enabled sshd (user-ran sudo); station-vnc unit added:
+  x11vnc on :99, localhost-only, --rfbauth password, UnsetEnvironment=
+  WAYLAND_DISPLAY (else x11vnc exits "Wayland sessions unsupported").
+  MBA flow: ssh -L 5900:127.0.0.1:5900 -> Screen Sharing vnc://127.0.0.1:5900.
+  macOS Screen Sharing CANNOT cope with a passwordless VNC server (hangs),
+  hence the -rfbauth. UFW had to allow 22/tcp on the box.
+- obs_click.py gained --key <keysym> (XTest KeyPress/KeyRelease): used to
+  dismiss the "OBS is already running" singleton dialog (Return key) since
+  its Launch Anyway button ignored two pointer clicks.
+- OBS main window resizes via python-xlib XMoveResizeWindow (live, no WM);
+  geometry re-written into user.ini while running so the next boot stays
+  fullscreen 1920x1080.
+- Removed --minimize-to-tray from station-obs ExecStart: on tray-less
+  Xvfb some boots hid the main window entirely (WebSocketServer ran, black
+  screen). Lesson lives in AGENTS.md too.

@@ -61,6 +61,26 @@ def click(x, y, settle=0.5):
     print(f"clicked {x},{y} on {DISPLAY}")
 
 
+def key(keysym, settle=0.5):
+    from Xlib import XK
+    from Xlib.ext import xtest
+
+    d = _display()
+    try:
+        code = d.keysym_to_keycode(XK.string_to_keysym(keysym))
+        if not code:
+            raise SystemExit(f"unknown keysym {keysym}")
+        time.sleep(settle)
+        xtest.fake_input(d, 2, code)  # KeyPress
+        d.sync()
+        time.sleep(0.1)
+        xtest.fake_input(d, 3, code)  # KeyRelease
+        d.sync()
+    finally:
+        d.close()
+    print(f"key {keysym} on {DISPLAY}")
+
+
 def shot(path, size="1280x800"):
     subprocess.run(
         ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -77,6 +97,8 @@ if __name__ == "__main__":
         list_windows()
     elif args[:1] == ["--shot"] and 2 <= len(args) <= 3:
         shot(args[1], args[2] if len(args) > 2 else "1280x800")
+    elif args[:1] == ["--key"] and len(args) == 2:
+        key(args[1])
     elif len(args) == 2 and all(a.isdigit() for a in args):
         click(int(args[0]), int(args[1]))
     else:
