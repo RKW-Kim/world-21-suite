@@ -16,6 +16,11 @@ apiAddress: 127.0.0.1:9997
 rtspAddress: 127.0.0.1:8554
 rtmpAddress: 127.0.0.1:1935
 hlsAddress: 127.0.0.1:8888
+# WebRTC/WHIP/WHEP keeps mediamtx's default binds: v1.21 opens a second,
+# hard-coded wildcard UDP listener on the mux port that cannot coexist with
+# a specific-LAN-IP bind (bind: address already in use, seen 2026-10-18).
+# Exposure is therefore pinned at the firewall instead: UFW allows only
+# 22/tcp, and the TD desk adds 8889/tcp + 8892/udp from its own IP.
 
 paths:
   slot-cam:
@@ -30,11 +35,6 @@ paths:
   # Ad-break streams: same pipeline as the decks, but landed in the ad
   # scene (STREAM AD input) so a break can roll a YouTube link too.
   slot-ad:
-  # Program return for the director panel: OBS (rtmp_custom service in the
-  # lab profile) publishes here; /studio watches via WHEP (:8889). Paths
-  # must be listed — this build rejects undefined paths (seen live).
-  monitor:
-  # Same return with WebRTC-playable audio: ffmpeg repackages monitor
-  # (video copy, AAC->Opus) because OBS ships no Opus encoder and Chrome
-  # won't play AAC over WebRTC. MBA listens here (see station-monitor-av).
-  monitor-av:
+  # The lab-era "monitor"/"monitor-av" return paths are gone 2026-10-18:
+  # on the real station OBS publishes straight to YouTube and the
+  # monitor-av repackager sat restarting 11k+ times doing nothing.

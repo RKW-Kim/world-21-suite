@@ -8,7 +8,6 @@ Type=simple
 WorkingDirectory=%h/Documents/GitHub/world-21-suite
 # LAN-exposed so contributor/operator browsers can reach /console: home LAN
 # here; on the VPS this stays behind the SSH tunnel (never raw internet).
-Environment=BIND=0.0.0.0
 ExecStart=/usr/bin/python3 station/overlay_server.py 7070
 Restart=always
 RestartSec=5

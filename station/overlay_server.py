@@ -492,24 +492,13 @@ class Handler(SimpleHTTPRequestHandler):
             if not self._guard():
                 return self._refused()
             return self._ws_relay()
-        if self.path == "/console" or self.path.startswith("/console?"):
-            self._serve_file(os.path.join(STATION_DIR, "console.html"), "text/html", nocache=True)
-        elif self.path == "/media" or self.path.startswith("/media?"):
-            self._serve_file(os.path.join(STATION_DIR, "media.html"), "text/html", nocache=True)
+        # /console /media /studio: archived on branch archive/console-studio
+        # (2026-10-18). Control now lives on the OBS window over VNC; a single
+        # successor page will replace them later.
         elif self.path == "/whip" or self.path.startswith("/whip?"):
             # Contribution seats: publishes browser media into MediaMTX over
             # WHIP (the OBS side needs nothing — seats fill themselves).
             self._serve_file(os.path.join(STATION_DIR, "whip.html"), "text/html", nocache=True)
-        elif self.path == "/studio" or self.path.startswith("/studio/"):
-            if self.path == "/studio":
-                # Bare path breaks relative assets (css/ resolves to /css/).
-                # Redirect so the browser lands on /studio/ instead.
-                self.send_response(301)
-                self.send_header("Location", "/studio/")
-                self.end_headers()
-                return
-            rel = urlparse(self.path).path[8:] or "index.html"
-            return self._serve_tree(os.path.join(STATION_DIR, "studio"), rel)
         elif self.path == "/state":
             body = json.dumps(load_state()).encode()
             self.send_response(200)
@@ -1205,7 +1194,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             with RELAY_SLOTS:
                 if RELAY_COUNT[0] >= RELAY_MAX:
-                    raise RuntimeError("relay busy (%d sessions max) — close another /studio tab" % RELAY_MAX)
+                    raise RuntimeError("relay busy (%d sessions max) — close another obs-relay tab" % RELAY_MAX)
                 RELAY_COUNT[0] += 1
                 claimed[0] = True
             up = _sock.create_connection(
@@ -1477,19 +1466,6 @@ class Handler(SimpleHTTPRequestHandler):
         except OSError:
             pass
         done_relay()
-
-    def _serve_tree(self, base, rel):
-        import mimetypes
-        path = os.path.normpath(os.path.join(base, rel))
-        if path != base and not path.startswith(base + os.sep):
-            self.send_error(403)
-            return
-        ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
-        if path.endswith(".js"):
-            ctype = "text/javascript"  # ES modules refuse octet-stream
-        # Control surfaces must never serve stale JS: a cached ws.js kept
-        # the 100-dialogs bug alive on operators' browsers after the fix.
-        self._serve_file(path, ctype, nocache=True)
 
     def _serve_file(self, path, ctype, nocache=False):
         try:

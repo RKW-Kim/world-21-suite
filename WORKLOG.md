@@ -1327,3 +1327,24 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   out, deduped WARN loop) and the watchdog was holding OFF-AIR over the
   earlier PLAYOUT_B stall; /intent/resume cleared the hold and cycling
   resumed (ad break + return verified on air again).
+
+## 2026-10-18 17:50 — console/studio archived; port debris trimmed
+
+- Git branch `archive/console-studio` snapshots the old control surfaces.
+  On main: station/studio/, console.html, media.html, test_studio_ui.py
+  removed; overlay_server dropped the /console /media /studio routes
+  (+ now-unused _serve_tree; /whip, /files, overlays, /events, /state,
+  /intent, /thumbs, /music, /obs stay).
+- station-overlay now binds 127.0.0.1:7070 (was 0.0.0.0); the MBA reaches
+  every control surface through the SSH tunnel only. The future single
+  page (media + TD mgmt) will be served by this same server.
+- monitor chain deleted: station-monitor-av.service disabled + removed
+  (it sat restart-retrying 11,571 times toward a `monitor` path OBS never
+  publishes on the real station) and mediamtx paths monitor/monitor-av
+  dropped from the config.
+- mediamtx webrtc note: v1.21 has a hard-coded second wildcard UDP
+  listener on the ICE mux port; specific-LAN-IP binds cannot coexist with
+  it (bind: address already in use loops). Exposure of 8889/tcp+8892/udp
+  is handled at the firewall instead; 7070/8554/8888/1935/9997 all
+  loopback, VNC 5900 loopback, ssh 22 only socket.
+- test_playlist_edges.py: FAILURES none empty view.

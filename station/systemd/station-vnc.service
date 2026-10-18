@@ -1,0 +1,27 @@
+[Unit]
+Description=Station VNC bridge (look at the real OBS UI over the SSH tunnel)
+After=station-xvfb.service
+Wants=station-xvfb.service
+
+[Service]
+Type=simple
+# Same Qt/X-env trap as station-obs: the user session leaks WAYLAND_DISPLAY
+# into every unit, and x11vnc obeys it and exits ("Wayland sessions are as
+# of now only supported..."). Pin the target display and forget Wayland.
+Environment=DISPLAY=:99
+UnsetEnvironment=WAYLAND_DISPLAY
+# -localhost: only the SSH tunnel may attach (never the LAN/internet).
+# -forever -shared: survive the client leaving; allow the operator + a peek.
+# -rfbauth ~/.vnc/passwd: macOS Screen Sharing cannot cope with a
+# passwordless VNC server (it hangs asking for a password that doesn't
+# exist); a real VNC password keeps it happy. SSH key stays the real gate.
+# Speed set (2026-10-18): poll every 5ms (-wait 5, default 20), flush
+# updates immediately (-defer 10, default 30), and drop zlib compression
+# (-compresslevel 0) — on a LAN the bytes cost nothing and compression
+# only added latency. -noxdamage stays: DAMAGE delivery on Xvfb misfires.
+ExecStart=/usr/bin/x11vnc -display :99 -localhost -forever -shared -rfbauth %h/.vnc/passwd -noxdamage -wait 5 -defer 10 -compresslevel 0 -o %h/.vnc-station.log
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
