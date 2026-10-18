@@ -7,7 +7,7 @@ local files handed to it through the Renderer interface below.
 
 Usage (run from repo root, lab defaults to ./broadcast):
   python3 station/daemon.py loop            # run the 24/7 loop (blocks)
-  python3 station/daemon.py scene "SMILE | Meet"  # one-shot cut (exact OBS name)
+  python3 station/daemon.py scene "SMILE | Program"  # one-shot cut (exact OBS name)
   python3 station/daemon.py go-live         # ident, then cut to LIVE
   python3 station/daemon.py tech-diff       # hard cut to holding card
   python3 station/daemon.py resume          # short sting, back to LIVE
@@ -42,6 +42,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stream as ytstream  # noqa: E402
+import shuffler  # noqa: E402
 
 
 class OBSAppError(RuntimeError):
@@ -1016,7 +1017,8 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_transition(TRANSITION, 750)
     stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
-    state.update({"index": idx + 1, "deck": deck})
+    state.update({"index": idx + 1, "deck": deck,
+                  "just_played": shuffler.item_key(item)})
     state["stream"] = onair
     # Mid-roll schedule for this item, if the plan asks for one. Streams
     # know their duration here and plan now; file items store an empty
@@ -1042,12 +1044,16 @@ def advance(renderer, state, data, deck_sources):
     if state["index"] >= len(items) and data.get("shuffle_on_complete"):
         # Shuffle the FRESH list under lock, not our possibly-stale copy:
         # a same-window /library edit rides along instead of being eaten.
+        # Seam rule from VLC's randomizer (via media-playlist-source):
+        # the first item of the new cycle must not repeat the last item
+        # of the one that just ended.
         with pl_lock():
             try:
                 fresh = load_playlist()
             except ValueError:
                 fresh = data
-            random.shuffle(fresh.get("items", []))
+            shuffler.reshuffle(fresh.get("items", []),
+                               [state["just_played"]] if state.get("just_played") else [])
             save_playlist(fresh)
             data["items"] = fresh["items"]
         state["index"] = 0
@@ -1060,7 +1066,8 @@ def advance(renderer, state, data, deck_sources):
         fresh = load_state()
         fresh.update({k: state[k] for k in
                       ("index", "deck", "stream", "roll_marks",
-                       "next_roll", "marks_for", "since_ad") if k in state})
+                       "next_roll", "marks_for", "since_ad",
+                       "just_played") if k in state})
         save_state(fresh)
 
 
@@ -1376,6 +1383,9 @@ def cmd_loop(renderer):
         return 2
     state = load_state()
     decks = {"A": DECK_A, "B": DECK_B}
+    import preflight
+    if preflight.run(renderer):
+        alert("Preflight FAILURES at boot (see daemon journal for list).", "CRIT")
     dog = Watchdog(renderer)
     last_loop_err = None
     mtime = os.path.getmtime(PLAYLIST)
@@ -1795,7 +1805,7 @@ def selftest():
     assert ("vis", PROGRAM, DECK_A, False) in r.calls, r.calls
     on_ended(r, decks, IDENT_SRC)  # ident end cuts LIVE, never advances playlist
     assert ("scene", SCENE_LIVE) in r.calls, r.calls
-    r.program_scene = "SMILE | Meet"  # operator moved on mid-ident: no hijack
+    r.program_scene = "SMILE | Program"  # operator moved on mid-ident: no hijack
     live_calls = len(r.calls)
     on_ended(r, decks, IDENT_SRC)
     assert len(r.calls) == live_calls, r.calls
