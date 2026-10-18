@@ -16,10 +16,11 @@ UnsetEnvironment=WAYLAND_DISPLAY
 # passwordless VNC server (it hangs asking for a password that doesn't
 # exist); a real VNC password keeps it happy. SSH key stays the real gate.
 # Speed set (2026-10-18): poll every 5ms (-wait 5, default 20), flush
-# updates immediately (-defer 10, default 30), and drop zlib compression
-# (-compresslevel 0) — on a LAN the bytes cost nothing and compression
-# only added latency. -noxdamage stays: DAMAGE delivery on Xvfb misfires.
-ExecStart=/usr/bin/x11vnc -display :99 -localhost -forever -shared -rfbauth %h/.vnc/passwd -noxdamage -wait 5 -defer 10 -compresslevel 0 -o %h/.vnc-station.log
+# updates immediately (-defer 10, default 30). -noxdamage stays: DAMAGE
+# delivery on Xvfb misfires. NOTE: -compresslevel is NOT supported by this
+# build (exits "unrecognized option" every boot — the MBA-side outages on
+# 18th were this, not the firewall); do not re-add it.
+ExecStart=/usr/bin/x11vnc -display :99 -localhost -forever -shared -rfbauth %h/.vnc/passwd -noxdamage -wait 5 -defer 10 -o %h/.vnc-station.log
 Restart=always
 RestartSec=10
 

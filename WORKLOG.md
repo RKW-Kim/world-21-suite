@@ -1348,3 +1348,12 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   is handled at the firewall instead; 7070/8554/8888/1935/9997 all
   loopback, VNC 5900 loopback, ssh 22 only socket.
 - test_playlist_edges.py: FAILURES none empty view.
+
+## 2026-10-18 21:55 — VNC outage root-caused (not the firewall)
+
+- x11vnc crash-looped (restart counter 1387) since the 17:00 speed pass:
+  this build does not accept -compresslevel 0 ("unrecognized option",
+  exit 1). Remove it; -wait 5 -defer 10 stay. 5900 listening again.
+- Lesson for MBA debugging: when Screen Sharing "hangs" first ask
+  `systemctl --user is-active station-vnc` + `ss -tlnp | grep 5900`
+  BEFORE blaming UFW.
