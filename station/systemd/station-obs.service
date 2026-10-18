@@ -23,8 +23,21 @@ UnsetEnvironment=WAYLAND_DISPLAY
 # without this every unclean boot parks at "Run in Normal Mode?" forever).
 Environment=LIBGL_ALWAYS_SOFTWARE=1
 Environment=QT_DEBUG_PLUGINS=1
-ExecStartPre=/bin/sh -c 'rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
-ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:99 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --minimize-to-tray --disable-missing-files-check
+ExecStartPre=/bin/sh -c 'pkill -x obs; pkill -x bwrap; sleep 2; rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
+# --minimize-to-tray (removed 2026-10-18): Qt hid the main window on a
+# no-tray Xvfb display some boots (WebSocketServer ran, root screen empty —
+# black VNC). Xvfb has no tray; the window must plain OPEN instead.
+ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:99 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --disable-missing-files-check
+# Fullscreen boot (added 2026-10-18): OBS ignores the saved geometry some
+# boots and opens its default 896x482 window — for a VNC TD desk that reads
+# as half-visible UI. Poll and force the main window to the full Xvfb frame
+# (1280x720) whatever OBS remembers; operation = idempotent XMoveResize.
+# The poll runs DETACHED (nohup + &): a blocking ExecStartPost stays inside
+# systemd's 90s default start window, and a slow boot (extra plugins make
+# OBS slower to open its window) got OBS killed by its own start timeout
+# three times before this fix. TimeoutStartSec raised for extra margin.
+TimeoutStartSec=180
+ExecStartPost=/bin/sh -c 'nohup /bin/sh -c "i=0; while [ \$i -lt 120 ]; do sleep 2; i=\$((i+1)); if python3 /home/rkw/Documents/GitHub/world-21-suite/station/obs_click.py --resize 0 0 1280 720 >/dev/null 2>&1; then exit 0; fi; done" >/dev/null 2>&1 & exit 0'
 # systemctl stop does NOT reap the flatpak/bwrap tree (seen live: unit
 # inactive, old obs still holding :4455, new instance parking at "already
 # running"). Reap by exact comm names on every stop, not just restarts.
