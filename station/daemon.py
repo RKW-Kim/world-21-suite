@@ -565,6 +565,10 @@ PROGRAM, DECK_A, DECK_B, IDENT_SRC = SCENE_PROGRAM, "PLAYOUT_A", "PLAYOUT_B", "I
 AD_SCENE, AD_INPUT = "SMILE | Ad Break", "AD Break"
 AD_STREAM_SRC = "STREAM AD"  # ad_links play here (rtmp/slot-ad)
 TRANSITION = os.environ.get("TRANSITION", "Fade")
+PLAYOUT_C = "PLAYOUT_C"     # third input in PROGRAM: fail-safe, never in normal rotation
+FEED_WAIT = 12.0            # seconds a deck gets to load before failover
+# ponytail: FEED_WAIT hardcoded; env knob only if a weak box ever needs tuning
+FALLBACK_DEFAULT = ("loop_a.mp4", "loop_b.mp4")
 
 
 def ensure_ad_plane(renderer):
@@ -606,6 +610,32 @@ def ensure_ad_plane(renderer):
         return True
     except Exception as e:
         alert("ad surface repair failed (%s); file ads may 404." % e, "WARN")
+        return False
+
+
+def ensure_fallback_plane(renderer):
+    """PLAYOUT_C lives in PROGRAM but no normal cut ever shows it: its only
+    entry point is failover() inside advance(). Same repair pattern as
+    ensure_ad_plane (the collection file never had it). Looping OFF — its
+    ENDED event is the lever that tries the queue again."""
+    try:
+        ins = {i["inputName"] for i in
+               renderer._call("GetInputList").get("inputs", [])}
+        if PLAYOUT_C not in ins:
+            renderer._call("CreateInput", {
+                "sceneName": PROGRAM, "inputName": PLAYOUT_C,
+                "inputKind": "ffmpeg_source",
+                "inputSettings": {"looping": False}})
+        items = {i.get("sourceName") for i in
+                 renderer._call("GetSceneItemList",
+                                {"sceneName": PROGRAM}).get("sceneItems", [])}
+        if PLAYOUT_C not in items:
+            renderer._call("CreateSceneItem", {"sceneName": PROGRAM,
+                                               "sourceName": PLAYOUT_C})
+        renderer.set_source_visible(PROGRAM, PLAYOUT_C, False)
+        return True
+    except Exception as e:
+        alert("fallback plane repair failed (%s). Fail-safe disabled." % e, "WARN")
         return False
 
 
@@ -925,6 +955,67 @@ def stream_item_on_air(items, state):
     return bool(items[idx].get("youtube"))
 
 
+def media_ready(renderer, source, wait=FEED_WAIT, poll=0.5):
+    """True once `source`'s media state shows the file actually loaded.
+    The only state a broken/absent/unbufferable file never reaches is
+    open/playing — measured, not assumed. The poll exists because the
+    alternative was cutting blind and letting the watchdog burn 8 REPEAT
+    faults per stall on air (observed live 2026-10-18)."""
+    deadline = time.time() + wait
+    while True:
+        try:
+            st = str(renderer.get_media_status(source).get("state", ""))
+            st = st.lower().replace("obs_media_state_", "")
+            if st in ("open", "playing"):
+                return True
+        except Exception:
+            pass
+        if time.time() >= deadline:
+            return False
+        time.sleep(poll)
+
+
+def fallback_files():
+    """PLAYOUT_C pool: playlist.json `"fallback": [...]` overrides; default
+    is the evergreen loop cards."""
+    with pl_lock():
+        try:
+            files = load_playlist().get("fallback")
+        except ValueError:
+            files = None
+    files = files or FALLBACK_DEFAULT
+    return [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
+
+
+def failover(renderer, state, decks, skip_idx):
+    """PLAYOUT_C on air: the next deck didn't come up inside FEED_WAIT.
+
+    Recovery reuses advance() itself — when PLAYOUT_C's file ends,
+    on_ended calls advance() again, which either cuts a recovered deck
+    (and clears fallback_air mid-success) or drops straight into this
+    function again for the next fallback file. One loop, one code path."""
+    files = fallback_files()
+    start = int(state.get("fallback_idx") or 0)
+    for fi in range(len(files)):
+        name = files[(start + fi) % len(files)]
+        renderer.set_media_source(PLAYOUT_C, os.path.join(MEDIA, name))
+        if not media_ready(renderer, PLAYOUT_C):
+            continue
+        for slot in ("A", "B"):
+            renderer.set_source_visible(PROGRAM, decks[slot], False)
+            renderer.set_source_visible(PROGRAM, STREAM_DECK[slot], False)
+        renderer.set_source_visible(PROGRAM, PLAYOUT_C, True)
+        renderer.set_transition(TRANSITION, 750)
+        state.update({"index": skip_idx + 1, "deck": "C", "fallback_air": True,
+                      "stream": None, "fallback_idx": start + fi + 1})
+        merge_save_state(state)
+        alert("Fail-safe on air: %s (deck stalled on load)." % name, "CRIT")
+        return True
+    renderer.set_scene(SCENE_TECHDIFF)
+    alert("No fail-safe file plays either; holding TECHDIFF.", "CRIT")
+    return False
+
+
 def advance(renderer, state, data, deck_sources):
     """Play next item on the idle deck, cut under a transition.
 
@@ -1009,6 +1100,11 @@ def advance(renderer, state, data, deck_sources):
         onair = None
         stop_feed(deck)
         renderer.set_media_source(src, path)
+        # Measured readiness: no black frame waits on a broken deck while
+        # the watchdog counts REPEAT faults (the 12s+ gaps you saw).
+        if not media_ready(renderer, src):
+            failover(renderer, state, deck_sources, idx)
+            return
     # Every cut shows exactly one deck input. Hide BOTH other decks of BOTH
     # kinds — a stream can follow a file and vice versa in one transition.
     renderer.set_source_visible(PROGRAM, src, True)
@@ -1019,6 +1115,8 @@ def advance(renderer, state, data, deck_sources):
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck,
                   "just_played": shuffler.item_key(item)})
+    if state.pop("fallback_air", None):
+        alert("Fail-safe cleared: deck %s plays again." % deck, "INFO")
     state["stream"] = onair
     # Mid-roll schedule for this item, if the plan asks for one. Streams
     # know their duration here and plan now; file items store an empty
@@ -1058,16 +1156,22 @@ def advance(renderer, state, data, deck_sources):
             data["items"] = fresh["items"]
         state["index"] = 0
         alert("Playlist exhausted; reshuffled.", "INFO")
+    merge_save_state(state)
+
+
+STATE_KEYS = ("index", "deck", "stream", "roll_marks",
+              "next_roll", "marks_for", "since_ad",
+              "fallback_air", "fallback_idx", "just_played")
+
+
+def merge_save_state(state):
+    """Persist our touch keys over a FRESH disk read: advance can run for
+    ~45s (stream spawn) while watchdog faults or a /library edit may
+    rewrite state.json in that window — saving our stale copy would eat
+    those writes. Shared by advance's finale and failover's early return."""
     with pl_lock():
-        # Re-load fresh under the lock and lay our touched keys on top:
-        # advance can run for ~45s (stream spawn) while watchdog faults or
-        # a /library edit may rewrite state.json in that window — saving
-        # our stale copy would eat those writes.
         fresh = load_state()
-        fresh.update({k: state[k] for k in
-                      ("index", "deck", "stream", "roll_marks",
-                       "next_roll", "marks_for", "since_ad",
-                       "just_played") if k in state})
+        fresh.update({k: state[k] for k in STATE_KEYS if k in state})
         save_state(fresh)
 
 
@@ -1169,6 +1273,15 @@ def on_ended(renderer, decks, source):
     if source == AD_INPUT:
         ad_return(renderer, decks)
         return
+    if source == PLAYOUT_C:
+        # Fail-safe file ended: same drive loop, one hop up.
+        try:
+            st = load_state()
+        except (OSError, ValueError):
+            st = {}
+        if st.get("fallback_air") and not st.get("in_ad_break"):
+            advance(renderer, st, load_playlist(), decks)
+        return  # stray end while off-air (boot cleanup) is not our business
     if source == IDENT_SRC:
         # ...unless the operator already moved on (RETURN mid-ident): cutting
         # LIVE over their program would hijack the show from under them.
@@ -1411,10 +1524,12 @@ def cmd_loop(renderer):
                        SCENE_TECHDIFF, SCENE_OFFAIR, SCENE_END}
         missing = want_scenes - have_scenes
         assert not missing, "scenes missing in OBS: %s (collection skew?)" % sorted(missing)
+        ensure_ad_plane(renderer)
+        ensure_fallback_plane(renderer)
         have_items = {i.get("sourceName") for i in
                       renderer._call("GetSceneItemList",
                                      {"sceneName": SCENE_PROGRAM}).get("sceneItems", [])}
-        for src in (DECK_A, DECK_B, STREAM_DECK["A"], STREAM_DECK["B"]):
+        for src in (DECK_A, DECK_B, STREAM_DECK["A"], STREAM_DECK["B"], PLAYOUT_C):
             assert src in have_items, "%s not in %s (collection skew?)" % (src, SCENE_PROGRAM)
     except AssertionError as e:
         print("cannot start loop: %s." % e)
@@ -1430,7 +1545,6 @@ def cmd_loop(renderer):
         return 2
     except RuntimeError as e:
         print("cannot verify transitions (%s); starting anyway." % e)
-    ensure_ad_plane(renderer)
     try:
         advance(renderer, state, data, decks)
     except RuntimeError as e:
@@ -1728,8 +1842,13 @@ def cmd_loop(renderer):
                 # Stream-ad breaks: the ad slot feed is watched by the poll
                 # block above (rtmp state is useless to watch the way files
                 # are). File-ad breaks watch the AD input as before.
-                dog.check_source(AD_INPUT if _wst.get("in_ad_break")
-                                 else decks[_wst.get("deck", "A")], on_air=True)
+                if _wst.get("in_ad_break"):
+                    watched = AD_INPUT
+                elif _wst.get("deck") == "C":
+                    watched = PLAYOUT_C  # fail-safe owns the air
+                else:
+                    watched = decks[_wst.get("deck", "A")]
+                dog.check_source(watched, on_air=True)
         except Exception:
             import traceback
             # Full trace once per distinct error; deaf windows repeat the same
@@ -1749,6 +1868,7 @@ class FakeRenderer(Renderer):
     def __init__(self):
         self.calls = []
         self.pos = {}
+        self.forced = {}  # source -> media state, for stall tests
         self.program_scene = SCENE_STARTING
 
     def set_scene(self, name):
@@ -1767,7 +1887,8 @@ class FakeRenderer(Renderer):
         self.calls.append(("restart", source))
 
     def get_media_status(self, source):
-        return {"time_ms": self.pos.get(source, 0), "duration_ms": 1000, "state": "playing"}
+        return {"time_ms": self.pos.get(source, 0), "duration_ms": 1000,
+                "state": self.forced.get(source, "playing")}
 
     def set_transition(self, style, duration_ms):
         self.calls.append(("trans", style))
