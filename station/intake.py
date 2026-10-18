@@ -73,10 +73,23 @@ def fetch_source(source, workdir):
     if not ytdlp:
         raise RuntimeError("yt-dlp not installed and '%s' is not a local file." % source)
     out = os.path.join(workdir, "raw.%(ext)s")
-    run(ytdlp, "-f",
-        "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
-        "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
-        "-o", out, "--no-playlist", source)
+    cmd = [ytdlp, "-f",
+           "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
+           "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
+           "-o", out, "--no-playlist"]
+    # Match stream.py: YTDLP_COOKIES may be a cookies.txt path OR
+    # "browser:<profile>" for the live desktop profile (cookies.txt goes
+    # stale the moment Chrome rotates its v11 keys; the profile read
+    # doesn't). YTDLP_BROWSER wins over YTDLP_COOKIES if set.
+    cookies = os.environ.get("YTDLP_COOKIES", "")
+    browser = os.environ.get("YTDLP_BROWSER",
+                             cookies[8:] if cookies.startswith("browser:") else "")
+    if browser:
+        cmd += ["--cookies-from-browser", browser]
+    elif os.path.isfile(cookies):
+        cmd += ["--cookies", cookies]
+    cmd.append(source)
+    run(*cmd)
     cands = [os.path.join(workdir, f) for f in os.listdir(workdir)
              if f.startswith("raw.")]
     if not cands:

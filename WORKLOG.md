@@ -1273,3 +1273,20 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 
 ! capture still wedges on a filter-list RPC (plane can go deaf mid-walk)
 ! mid-rolls never live-fired (engine+planner selftested; same return path)
+
+## 2026-10-18 05:00 — real-content demo + plane/daemon bootstrap fix
+
+- intake.py now honours YTDLP_COOKIES=browser:<profile> (and YTDLP_BROWSER)
+  like stream.py already did: cookies.txt goes stale the moment Chrome
+  rotates v11 keys; reading the desktop profile live side-steps the 429
+  login-wall (cookies_push.sh file-flow stays the VPS route).
+- Fed the station five real clips (HDF Presidential/Wash/Collins, Menta
+  motivation, Almond) as 12s slices (yt-dlp --download-sections) plus two
+  full items; nothing more than needed was downloaded.
+- unit fix (root-caused): station-daemon REQUIRED station-obs, so the
+  watchdog's own "plane unreachable → stop station-obs" stopped the
+  daemon too and nothing came back (04:41 wedge). Now Wants=, daemon
+  survives a plane restart.
+- live demo cycle proven on air with real clips: playlist rolls all five,
+  ad break fires at every transition (ad_every=1, pool [Menta, Almond]),
+  returns, advances, reshuffles at the end. Console/Library healthy.
