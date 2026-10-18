@@ -23,7 +23,7 @@ UnsetEnvironment=WAYLAND_DISPLAY
 # without this every unclean boot parks at "Run in Normal Mode?" forever).
 Environment=LIBGL_ALWAYS_SOFTWARE=1
 Environment=QT_DEBUG_PLUGINS=1
-ExecStartPre=/bin/sh -c 'pkill -x obs; pkill -x bwrap; sleep 2; rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
+ExecStartPre=/bin/sh -c 'pkill -x bwrap; pkill -x obs; i=0; while pgrep -x obs >/dev/null 2>&1 && [ $i -lt 40 ]; do sleep 1; i=$((i+1)); done; sleep 2; rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
 # --minimize-to-tray (removed 2026-10-18): Qt hid the main window on a
 # no-tray Xvfb display some boots (WebSocketServer ran, root screen empty —
 # black VNC). Xvfb has no tray; the window must plain OPEN instead.
