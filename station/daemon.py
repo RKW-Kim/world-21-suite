@@ -566,7 +566,7 @@ AD_SCENE, AD_INPUT = "SMILE | Ad Break", "AD Break"
 AD_STREAM_SRC = "STREAM AD"  # ad_links play here (rtmp/slot-ad)
 TRANSITION = os.environ.get("TRANSITION", "Fade")
 PLAYOUT_C = "PLAYOUT_C"     # third input in PROGRAM: fail-safe, never in normal rotation
-FEED_WAIT = 12.0            # seconds a deck gets to load before failover
+FEED_WAIT = 4.0             # seconds AFTER the cut for OBS to reach OPEN/PLAYING
 # ponytail: FEED_WAIT hardcoded; env knob only if a weak box ever needs tuning
 FALLBACK_DEFAULT = ("loop_a.mp4", "loop_b.mp4")
 
@@ -999,12 +999,13 @@ def failover(renderer, state, decks, skip_idx):
     for fi in range(len(files)):
         name = files[(start + fi) % len(files)]
         renderer.set_media_source(PLAYOUT_C, os.path.join(MEDIA, name))
-        if not media_ready(renderer, PLAYOUT_C):
-            continue
         for slot in ("A", "B"):
             renderer.set_source_visible(PROGRAM, decks[slot], False)
             renderer.set_source_visible(PROGRAM, STREAM_DECK[slot], False)
         renderer.set_source_visible(PROGRAM, PLAYOUT_C, True)
+        # Activation opens the file; a broken one stays NONE forever.
+        if not media_ready(renderer, PLAYOUT_C):
+            continue
         renderer.set_transition(TRANSITION, 750)
         state.update({"index": skip_idx + 1, "deck": "C", "fallback_air": True,
                       "stream": None, "fallback_idx": start + fi + 1})
@@ -1100,16 +1101,28 @@ def advance(renderer, state, data, deck_sources):
         onair = None
         stop_feed(deck)
         renderer.set_media_source(src, path)
-        # Measured readiness: no black frame waits on a broken deck while
-        # the watchdog counts REPEAT faults (the 12s+ gaps you saw).
-        if not media_ready(renderer, src):
-            failover(renderer, state, deck_sources, idx)
-            return
     # Every cut shows exactly one deck input. Hide BOTH other decks of BOTH
     # kinds — a stream can follow a file and vice versa in one transition.
     renderer.set_source_visible(PROGRAM, src, True)
     renderer.set_source_visible(PROGRAM, deck_sources[other], False)
     renderer.set_source_visible(PROGRAM, STREAM_DECK[other], False)
+    if not onair:
+        # Measured readiness, POST-activation: OBS media sources sit at
+        # MEDIA_STATE_NONE until they become active (restart_on_activate),
+        # so a pre-cut check could never pass — the fail-safe would fire on
+        # a perfectly healthy lane (observed live after restart 2026-10-19).
+        # ACTIVATION starts the decode; ~1s to OPEN/PLAYING for locals.
+        # A second failure is usually the post-restart plugin soft-lock:
+        # input sits at NONE forever no matter the file; one explicit
+        # restart action unlocks it (proven live on PLAYOUT_A 2026-10-19).
+        if not media_ready(renderer, src):
+            try:
+                renderer.restart_media(src)
+            except Exception:
+                pass
+            if not media_ready(renderer, src, wait=2.0):
+                failover(renderer, state, deck_sources, idx)
+                return
     renderer.set_transition(TRANSITION, 750)
     stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
@@ -1585,6 +1598,16 @@ def cmd_loop(renderer):
     except RuntimeError as e:
         alert("Program is not on Meet (%s); cut manually." % e, "WARN")
     alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
+    # Post-restart plugin soft-lock: any file input that survived an OBS
+    # restart can sit at MEDIA_STATE_NONE forever, refusing to decode no
+    # matter the file or scene activation (observed live on PLAYOUT_A
+    # 2026-10-19, while boot-created PLAYOUT_C opened instantly). One
+    # restart action per input per boot; harmless on healthy inputs.
+    for src in [PLAYOUT_C, DECK_A, DECK_B]:
+        try:
+            renderer.restart_media(src)
+        except Exception as e:
+            alert("unlock %s failed: %s." % (src, e), "WARN")
     # In-flight fetches live across polls: a fresh dict per pass would make
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
