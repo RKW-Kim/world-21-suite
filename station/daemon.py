@@ -613,6 +613,27 @@ def ensure_ad_plane(renderer):
         return False
 
 
+SCENE_TICKER, SCENE_WATERMARK = "SMILE | Ticker", "SMILE | Watermark"
+
+
+def ensure_overlays(renderer):
+    """Ticker + watermark composited ON TOP of the program, as nested scene
+    items. The collection's overlays live as standalone scenes that used to
+    be shown through the exeldro downstream-keyer plugin, but its websocket
+    vendor channel accepts dsk_select_scene and never persists the scene
+    (silent no-op, observed live 2026-10-19) — so the air lost its tickers
+    after the last OBS restart. Nested items render identically, need no
+    plugin, and survive every restart by re-running here. Idempotent."""
+    items = {i.get("sourceName") for i in
+             renderer._call("GetSceneItemList",
+                            {"sceneName": PROGRAM}).get("sceneItems", [])}
+    for ov in (SCENE_TICKER, SCENE_WATERMARK):
+        if ov not in items:
+            renderer._call("CreateSceneItem", {"sceneName": PROGRAM,
+                                               "sourceName": ov})
+        renderer.set_source_visible(PROGRAM, ov, True)
+
+
 def ensure_fallback_plane(renderer):
     """PLAYOUT_C lives in PROGRAM but no normal cut ever shows it: its only
     entry point is failover() inside advance(). Same repair pattern as
@@ -1608,6 +1629,14 @@ def cmd_loop(renderer):
             renderer.restart_media(src)
         except Exception as e:
             alert("unlock %s failed: %s." % (src, e), "WARN")
+    # Ticker + watermark on air. The exeldro downstream-keyer vendor channel
+    # accepts dsk_select_scene but never persists it (silent no-op, seen
+    # live 2026-10-19), so the overlays are composited as nested scene items
+    # instead — same look, every scene regardless of keyer state. Idempotent.
+    try:
+        ensure_overlays(renderer)
+    except Exception as e:
+        alert("overlays failed: %s." % e, "WARN")
     # In-flight fetches live across polls: a fresh dict per pass would make
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
@@ -1893,6 +1922,8 @@ class FakeRenderer(Renderer):
         self.pos = {}
         self.forced = {}  # source -> media state, for stall tests
         self.program_scene = SCENE_STARTING
+        self.scene_items = [{"sourceName": DECK_A, "sceneItemEnabled": True},
+                            {"sourceName": DECK_B, "sceneItemEnabled": False}]
 
     def set_scene(self, name):
         self.calls.append(("scene", name))
@@ -1927,6 +1958,18 @@ class FakeRenderer(Renderer):
         # reader for the ident-hijack guard (returns self.program_scene).
         if req == "GetCurrentProgramScene":
             return {"currentProgramSceneName": self.program_scene}
+        if req == "GetSceneItemList":
+            return {"sceneItems": self.scene_items}
+        if req == "CreateSceneItem":
+            self.calls.append(("create_item", data["sceneName"],
+                               data["sourceName"]))
+            self.scene_items.append({"sourceName": data["sourceName"],
+                                     "sceneItemEnabled": False})
+            return {}
+        if req == "SetSceneItemEnabled":
+            self.calls.append(("enable", data["sceneName"],
+                               data["sceneItemId"], data["sceneItemEnabled"]))
+            return {}
         raise RuntimeError("nope")
 
 
@@ -1943,6 +1986,17 @@ def selftest():
                    "items": [{"file": "a.mp4", "title": "A", "duration": 1},
                              {"file": "gone.mp4", "title": "G", "duration": 1}]})
     r, decks = FakeRenderer(), {"A": DECK_A, "B": DECK_B}
+    ensure_overlays(r)  # boot repair: ticker+watermark nested into PROGRAM
+    assert ("create_item", PROGRAM, SCENE_TICKER) in r.calls, r.calls
+    assert ("create_item", PROGRAM, SCENE_WATERMARK) in r.calls, r.calls
+    assert r._call("GetSceneItemList")["sceneItems"] == [
+        {"sourceName": DECK_A, "sceneItemEnabled": True},
+        {"sourceName": DECK_B, "sceneItemEnabled": False},
+        {"sourceName": SCENE_TICKER, "sceneItemEnabled": False},
+        {"sourceName": SCENE_WATERMARK, "sceneItemEnabled": False}]
+    ensure_overlays(r)  # idempotent: neither created again
+    assert len(r.calls) >= 4  # both creates recorded exactly once
+    assert r.calls.count(("create_item", PROGRAM, SCENE_TICKER)) == 1, r.calls
     advance(r, load_state(), load_playlist(), decks)  # plays a.mp4 on B, visible
     assert ("file", DECK_B, os.path.join(MEDIA, "a.mp4")) in r.calls, r.calls
     assert ("vis", PROGRAM, DECK_B, True) in r.calls, r.calls
