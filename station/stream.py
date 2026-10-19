@@ -106,11 +106,12 @@ def spawn(url, path, meta=None):
         log.warning("spawn %s: unresolvable", url)
         return None
     try:
+        err = open(os.environ.get("FFERR_PATH", "/tmp/feed-%s.err" % path), "ab")
         ff = subprocess.Popen(
-            [FFMPEG, "-hide_banner", "-loglevel", "warning",
-             "-i", meta["hls_v"], "-i", meta["hls_a"],
+            [FFMPEG, "-hide_banner", "-loglevel", "info",
+             "-re", "-i", meta["hls_v"], "-re", "-i", meta["hls_a"],
              "-c", "copy", "-f", "flv", "%s/%s" % (MTX_RTMP, path)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            stdout=subprocess.DEVNULL, stderr=err)
     except OSError as e:
         log.warning("spawn %s: %s", path, e)
         return None

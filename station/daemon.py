@@ -1548,6 +1548,12 @@ def cmd_loop(renderer):
     end_lock = threading.Lock()  # ...so a deaf window delays advance, never drops it.
 
     def note_ended(source):
+        # Stream decks report MediaInputPlaybackEnded on every RTMP reader
+        # hiccup (not just real live-signals); they advance by wall clock
+        # and feed health instead (loop line ~1760). Observed live 2026-10-19:
+        # the event killed a healthy -re feed at 4:55 of a 10:34 VOD.
+        if source in (STREAM_DECK.get("A"), STREAM_DECK.get("B")):
+            return
         with end_lock:
             ended.append(source)
 
