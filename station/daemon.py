@@ -1202,10 +1202,17 @@ def merge_save_state(state):
     """Persist our touch keys over a FRESH disk read: advance can run for
     ~45s (stream spawn) while watchdog faults or a /library edit may
     rewrite state.json in that window — saving our stale copy would eat
-    those writes. Shared by advance's finale and failover's early return."""
+    those writes. Populated keys overwrite, ABSENT keys delete: advance
+    pop()s fallback_air to clear it, and a merge that only carried present
+    keys would resurrect the on-disk flag every save (observed live
+    2026-10-19: "Fail-safe cleared" on every rotation)."""
     with pl_lock():
         fresh = load_state()
-        fresh.update({k: state[k] for k in STATE_KEYS if k in state})
+        for k in STATE_KEYS:
+            if k in state:
+                fresh[k] = state[k]
+            else:
+                fresh.pop(k, None)
         save_state(fresh)
 
 
