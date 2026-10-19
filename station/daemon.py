@@ -42,6 +42,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stream as ytstream  # noqa: E402
+import spool  # noqa: E402
 import shuffler  # noqa: E402
 
 
@@ -888,10 +889,40 @@ def play_ad(renderer, data, decks, mid=False):
 # Advance is wall-clock (resolve() knows the duration); the poll loop also
 # enqueues a sentinel when the feed dies, so both paths land in on_ended.
 STREAM_DECK = {"A": "STREAM_A", "B": "STREAM_B"}
+WATCH_POLL = float(os.environ.get("WATCH_POLL", "10"))
+PLANE_DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
+PLANE_RESTART_COOLDOWN = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
 STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
 STREAM_SPAWN_TRIES = 15  # 15 x 3s of path_ready polling
 STREAM_EOF = "__stream__"  # sentinel routed like a deck-ended event
-_STREAM_STATE = {"feeds": {}, "resolving": {}}   # live feed procs / in-flight resolves
+
+KNOBS_PATH = os.path.join(ROOT, "broadcast", "knobs.json")
+KNOB_KEYS = ("FEED_WAIT", "STREAM_GRACE", "STREAM_SPAWN_TRIES",
+             "STREAM_PRIME_LEAD", "REPEAT_LIMIT", "WATCH_POLL",
+             "PLANE_DOWN_SECS", "PLANE_RESTART_COOLDOWN")
+
+
+def apply_knobs():
+    """Panel-authored live overrides (broadcast/knobs.json), applied each
+    loop pass. Unknown keys and junk values are ignored, never fatal."""
+    try:
+        with open(KNOBS_PATH) as f:
+            knobs = json.load(f)
+    except (OSError, ValueError):
+        return
+    if not isinstance(knobs, dict):
+        return
+    g = globals()
+    for k, v in knobs.items():
+        if k not in KNOB_KEYS or not isinstance(v, (int, float)) or v < 0:
+            continue
+        if k == "REPEAT_LIMIT":
+            g[k] = max(int(v), 1)
+        else:
+            g[k] = max(min(float(v), 3600), 0.5)
+_STREAM_STATE = {"feeds": {}, "resolving": {},
+                 "primed": None}   # {"deck","url","meta","feed"} ready-to-cut
+STREAM_PRIME_LEAD = float(os.environ.get("STREAM_PRIME_LEAD", "30"))
 _RESOLVE_CACHE = {}  # url -> (epoch, meta)
 _RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
 
@@ -965,6 +996,37 @@ def prefetch_stream_pass(data, state):
         t = threading.Thread(target=_go, daemon=True)
         _STREAM_STATE["resolving"][url] = t
         t.start()
+
+
+def prime_next_stream(payload, cur, deck):
+    """Feed the idle deck with the NEXT stream item so the transition is a
+    deck flip, not a resolve+spawn+reconnect gap (observed as black bars
+    when a single stream item looped on itself 2026-10-19).
+    Best-effort: a failed prime just leaves advance() to spawn live."""
+    items = payload.get("items", [])
+    if not items:
+        return
+    n = len(items)
+    st = load_state()
+    idx = int(st.get("index") or 0)
+    nxt = items[idx % n]
+    url = nxt.get("youtube")
+    if not url:
+        return
+    other = "A" if deck == "B" else "B"
+    stop_feed(other)
+    try:
+        started = start_stream_feed(url, other, meta=None)
+    except Exception as e:
+        alert("Prime failed (deck %s): %s" % (other, e), "WARN")
+        return
+    if started:
+        _STREAM_STATE["primed"] = {"deck": other, "url": url,
+                                   "meta": started[1], "feed": started[0]}
+        alert("Primed deck %s for next stream: %s."
+              % (other, nxt.get("title") or url), "INFO")
+    else:
+        alert("Prime failed (deck %s); advance will spawn live." % other, "WARN")
 
 
 def stream_item_on_air(items, state):
@@ -1070,6 +1132,14 @@ def advance(renderer, state, data, deck_sources):
             continue
         url = item.get("youtube")
         if url:
+            # Link item. A complete spool outranks the pipe: play the
+            # whole local copy instead (falls through to the file lane
+            # below); otherwise resolve and stream raw as before.
+            _sp = spool.ready(url)
+            if _sp and item.get("spool") is not False:
+                path = _sp["path"]
+                url = None
+                break
             # Link item: needs no disk (link outranks a stale file copy).
             # Resolve is cached by prefetch; a miss resolves inline here,
             # costing a few seconds on this transition only.
@@ -1104,17 +1174,41 @@ def advance(renderer, state, data, deck_sources):
         else:
             alert("Every playlist item missing; holding.", "CRIT")
         return
+    primed = _STREAM_STATE.pop("primed", None)
     deck = "B" if state.get("deck", "A") == "A" else "A"
     other = "B" if deck == "A" else "A"
+    started = None
+    if primed and (not url or primed["url"] != url):
+        # Stale prime (playlist edited or a file item now): drop its feed.
+        ytstream.stop(primed["feed"])
+        primed = None
+    if url and primed:
+        slot = "slot-stream-%s" % primed["deck"].lower()
+        for _ in range(6):  # ~18s grace for a knockout-ready prime
+            if ytstream.path_ready(slot):
+                started = (primed["feed"], primed["meta"])
+                break
+            time.sleep(3)
+        if started:
+            # Cut to the deck that was feeding while the previous item ran:
+            # publishing already live at native rate.
+            deck = primed["deck"]
+            other = "B" if deck == "A" else "A"
+        else:
+            alert("Primed deck never published; spawning live.", "WARN")
+            ytstream.stop(primed["feed"])
+            primed = None
     if url:
-        started = start_stream_feed(url, deck, meta=meta)
+        if not started:
+            # No usable prime: spawn synchronously on the idle deck.
+            started = start_stream_feed(url, deck, meta=meta)
         if not started:
             alert("Stream deck %s failed to publish %s. Skipping." % (deck, item.get("title") or url), "CRIT")
             state["index"] = idx + 1
             return  # skipped this round; the playlist loop comes back around
         feed, meta = started
         src = STREAM_DECK[deck]
-        onair = {"start": time.time(),
+        onair = {"start": primed["t"] if primed and primed.get("url") == url else time.time(),
                  "dur": item.get("duration") or meta.get("duration"),
                  "url": url, "respawns": 0, "slot": deck}
     else:
@@ -1191,6 +1285,11 @@ def advance(renderer, state, data, deck_sources):
         state["index"] = 0
         alert("Playlist exhausted; reshuffled.", "INFO")
     merge_save_state(state)
+    try:
+        if spool.kick(data.get("items") or [], state["index"], alert=alert):
+            alert("Spooling next in background.", "INFO")
+    except Exception as e:
+        alert("Spool error: %s" % e, "WARN")
 
 
 STATE_KEYS = ("index", "deck", "stream", "roll_marks",
@@ -1659,6 +1758,7 @@ def cmd_loop(renderer):
     plane_restarted_at = 0.0  # last self-healing restart, epoch
     while True:
         try:
+            apply_knobs()
             # Reachability gate: a dead plane must not spin the loop, and a
             # plane that stays dead gets restarted (cooldown-capped).
             # Full Hello handshake, not just TCP: a wedged plane can hold
@@ -1666,8 +1766,8 @@ def cmd_loop(renderer):
             # 8s bounded, never stalls the poll.
             # Thresholds are env-overridable so the self-healing path stays
             # testable without waiting out production values.
-            DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
-            COOLDOWN_SECS = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
+            DOWN_SECS = globals().get("PLANE_DOWN_SECS", 600.0)
+            COOLDOWN_SECS = globals().get("PLANE_RESTART_COOLDOWN", 1800.0)
             try:
                 probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
                             int(os.environ.get("OBS_PORT", "4455")), timeout=8)
@@ -1758,6 +1858,9 @@ def cmd_loop(renderer):
                                       % _sm["respawns"], "WARN")
                             else:
                                 alert("Stream feed died and respawn failed.", "CRIT")
+                                if STREAM_EOF not in ended:
+                                    alert("Stream feed exhausted (%s); ending item."
+                                          % _sm.get("slot", "?"), "WARN")
                                 with end_lock:
                                     if STREAM_EOF not in ended:
                                         ended.append(STREAM_EOF)
@@ -1772,6 +1875,21 @@ def cmd_loop(renderer):
                             with end_lock:
                                 if STREAM_EOF not in ended:
                                     ended.append(STREAM_EOF)
+                        elif (_STREAM_STATE["primed"] is None
+                              and _elapsed >= _dur - STREAM_PRIME_LEAD
+                              and not load_state().get("in_ad_break")):
+                            # Prime the idle deck while the stream plays:
+                            # the viewer fades to a feed that is ALREADY
+                            # publishing, not to a resolve+spawn gap.
+                            # Skipped when the next item's spool is at
+                            # work or done: a local copy outranks a live
+                            # deck and the prime would be thrown away.
+                            nxt = spool._urls_ahead(data.get("items") or [],
+                                                    idx)
+                            if not (nxt and (spool.ready(nxt[0])
+                                             or spool.state(nxt[0]) == "fetching")):
+                                prime_next_stream(data, _sm,
+                                                  deck=_sm.get("slot") or "A")
             except Exception:
                 pass
             # Mid-roll scheduler (ad_plan): on this same cadence, fire a
@@ -1923,7 +2041,7 @@ def cmd_loop(renderer):
                 last_loop_err = sig
                 traceback.print_exc()
                 alert("loop error (see log for traceback).", "WARN")
-        time.sleep(int(os.environ.get("WATCH_POLL", "10")))
+        time.sleep(int(globals().get("WATCH_POLL", 10)))
 
 
 # --------------------------------------------------------------- selftest ---
