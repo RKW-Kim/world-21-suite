@@ -38,6 +38,8 @@ JOB_TIMEOUT = 1800
 FFMPEG = ytstream.FFMPEG
 FFPROBE = "/usr/bin/ffprobe"
 NOAUDIO = ".noaudio"  # per-key marker: selector produced a silent file; skip
+LOUDNORM = os.environ.get("SPOOL_LOUDNORM", "1") != "0" and \
+    "I=-16:TP=-1.5:LRA=11"  # string test: env "0" opts down to plain copy
 
 _state_lock = threading.Lock()
 _current = None
@@ -227,10 +229,22 @@ def _faststart(k):
     raw = final(k + ".dl.mp4")
     tmp = final(k + ".fs.mp4")
     try:
-        p = subprocess.run(
-            [FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", raw,
-             "-c", "copy", "-movflags", "+faststart", "-f", "mp4", tmp],
-            capture_output=True, text=True, timeout=600)
+        # Loudness fix at intake: a music video spooled from YouTube plays
+        # on air at a different perceived loudness than the studio cards
+        # otherwise; the faststart pass already rewraps, so lift audio to a
+        # broadcast target (EBU R128-ish, YouTube loud). Video streams are
+        # only copied; a silent raw falls back to plain copy (loudnorm has
+        # no audio stream to bind to).
+        if LOUDNORM and _has_audio(raw):
+            cmd = [FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", raw,
+                   "-map", "0:v", "-c:v", "copy", "-map", "0:a",
+                   "-af", "loudnorm=" + LOUDNORM,
+                   "-c:a", "aac", "-b:a", "192k",
+                   "-movflags", "+faststart", "-f", "mp4", tmp]
+        else:
+            cmd = [FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", raw,
+                   "-c", "copy", "-movflags", "+faststart", "-f", "mp4", tmp]
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
         if p.returncode == 0 and os.path.getsize(tmp) > 0:
             os.replace(tmp, final(k + ".mp4"))
             if not _has_audio(final(k + ".mp4")):

@@ -34,16 +34,16 @@
     border: 1px solid var(--bar-border); border-radius: 3px;
     padding: 4px 9px; min-height: 26px;
   }
+  button { transition: background .12s, border-color .12s, transform .06s; }
   button:hover:not(:disabled) { background: var(--btn-hover); }
-  button:active:not(:disabled) { background: #222c35; }
+  button:active:not(:disabled) { background: #222c35; transform: scale(.96); }
   button.primary { background: var(--btn-active-bg); border-color: var(--btn-active-border); }
-  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
   input, select { background: #0d1014; }
 
   .row { display: flex; gap: 5px; padding: 6px; background: var(--bar);
          border-bottom: 1px solid var(--bar-border); flex: none; }
   .row input.wide { flex: 1; min-width: 0; }
-  .row select { flex: none; max-width: 150px; }
 
   #strip { display: flex; gap: 8px; align-items: baseline; padding: 5px 8px;
            background: var(--bar); border-bottom: 1px solid var(--bar-border); flex: none; }
@@ -55,9 +55,11 @@
   #airbad.crit { color: var(--danger-text); font-size: 10px;
                  letter-spacing: .06em; text-transform: uppercase; }
 
-  #queue { flex: 1; overflow-y: auto; padding: 4px 0; }
-  .item { display: flex; gap: 7px; align-items: center; padding: 4px 9px;
-          cursor: pointer; border-left: 3px solid transparent; user-select: none; }
+  #body { flex: 1; overflow-y: auto; overflow-x: hidden;
+          scrollbar-width: thin; scrollbar-color: #3a4048 transparent; }
+  .item { display: flex; gap: 7px; align-items: center; padding: 5px 9px;
+          min-height: 30px; cursor: pointer; border-left: 3px solid transparent;
+          user-select: none; }
   .item:hover { background: #15191e; }
   .item.sel { background: var(--btn-active-bg); border-left-color: var(--accent); }
   .item.onair { border-left-color: var(--ok); }
@@ -71,10 +73,30 @@
   .item .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .src { color: var(--muted); font-size: 9px; flex: none; letter-spacing: .05em; }
   .item .dur { color: var(--muted); font-size: 10px; flex: none; font-variant-numeric: tabular-nums; }
-  .item .dots { font-size: 12px; color: var(--muted); padding: 2px 5px; flex: none; }
+  .item .dots { font-size: 12px; color: var(--muted); padding: 4px 7px; flex: none; }
   .cue { font-size: 9px; letter-spacing: .06em; flex: none; color: var(--warn);
          text-transform: uppercase; }
   #empty { color: var(--muted); text-align: center; padding: 22px 12px; font-size: 11px; }
+
+  .section { min-height: 12px; }
+  .sechead { display: flex; gap: 8px; align-items: center; padding: 5px 9px;
+             background: #171b20; border-top: 1px solid var(--bar-border);
+             min-height: 30px; }
+  .sechead.clickable { cursor: pointer; user-select: none; }
+  .sechead.clickable:hover { background: #1b2026; }
+  .sechead .caret { display: inline-block; width: 10px; color: var(--muted);
+                    transition: transform .12s; font-size: 9px; }
+  .sechead.open .caret { transform: rotate(90deg); }
+  .sechead .name { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+                   color: var(--muted); flex: 1; min-width: 0; overflow: hidden;
+                   text-overflow: ellipsis; white-space: nowrap; }
+  .sechead .name.grab { cursor: grab; }
+  .sechead .count { color: var(--muted); font-size: 10px;
+                    font-variant-numeric: tabular-nums; }
+  .sechead button { font-size: 9px; min-height: 20px; padding: 2px 7px; }
+  .seclist.closed { display: none; }
+  .seclist { border-bottom: 1px solid #14171b; }
+  .dropzone { outline: 1px dashed var(--accent); outline-offset: -1px; }
 
   .trow { display: flex; gap: 5px; padding: 6px; background: var(--bar);
           border-top: 1px solid var(--bar-border); flex: none; align-items: center; }
@@ -85,26 +107,32 @@
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #status.err { color: var(--danger-text); }
 
-  #down { position: absolute; inset: 0; background: rgba(0,0,0,.78); display: none;
-          align-items: center; justify-content: center; font-size: 13px;
-          color: var(--danger-text); z-index: 5; text-align: center; padding: 20px; }
+  #down { position: absolute; inset: 0; background: rgba(0,0,0,.82); display: none;
+          align-items: center; justify-content: center; flex-direction: column;
+          gap: 10px; font-size: 13px; color: var(--danger-text); z-index: 5;
+          text-align: center; padding: 20px; }
   #down.on { display: flex; }
+  #downmsg { font-size: 11px; color: var(--muted); }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bar-border);
+          border-top-color: var(--accent); animation: rot .9s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
 
   #help { position: absolute; inset: 0; background: rgba(0,0,0,.85); display: none; z-index: 6;
           overflow-y: auto; padding: 16px; }
   #help.on { display: block; }
-  #help h3 { margin: 0 0 8px; font-size: 12px; }
-  #help dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 11px; }
+  #help h3 { margin: 0 0 8px; font-size: 12px; text-wrap: balance; }
+  #help dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+             font-size: 11px; }
   #help dt { color: var(--text); font-weight: 600; white-space: nowrap; }
-  #help dd { margin: 0; color: var(--muted); }
+  #help dd { margin: 0; color: var(--muted); text-wrap: pretty; }
   #help b { color: var(--text); }
 
   #menu { position: absolute; background: var(--bar); border: 1px solid var(--bar-border);
-          border-radius: 4px; z-index: 4; display: none; min-width: 160px;
+          border-radius: 4px; z-index: 4; display: none; min-width: 170px;
           box-shadow: 0 4px 14px rgba(0,0,0,.6); }
   #menu.on { display: block; }
   #menu button { display: block; width: 100%; text-align: left; border: 0; border-radius: 0;
-                 background: none; padding: 6px 12px; min-height: 24px; }
+                 background: none; padding: 7px 12px; min-height: 28px; }
   #menu button:hover:not(:disabled) { background: var(--btn-hover); }
   #menu hr { border: 0; border-top: 1px solid var(--bar-border); margin: 3px 0; }
 </style>
@@ -112,9 +140,11 @@
 <body>
 
 <div class="row">
-  <input id="url" class="wide mutate" placeholder="Paste a YouTube link, or pick a media file…">
+  <input id="url" class="wide mutate" list="medialist"
+         placeholder="Paste a YouTube link or playlist URL, or a media file…">
   <button id="add" class="primary mutate">Add</button>
-  <select id="media" class="mutate" title="Insert one of the uploaded files"><option value="">media…</option></select>
+  <button id="ytpl" class="mutate" title="Import a YouTube playlist link as a parked group">Import list</button>
+  <datalist id="medialist"></datalist>
   <button id="helpbtn" title="What each control does">?</button>
 </div>
 
@@ -123,7 +153,11 @@
   <span id="nextup"></span><span id="airbad"></span>
 </div>
 
-<div id="queue" aria-label="Queue"></div>
+<div id="body">
+  <div id="queue" aria-label="Queue"></div>
+  <div class="section" id="groups"></div>
+  <div class="section" id="dorm"></div>
+</div>
 
 <div class="trow">
   <select id="plist" class="mutate" title="Saved queue version to update or replace from"><option value="">(new playlist)</option></select>
@@ -156,26 +190,34 @@
 
 <div id="status" aria-live="polite">connecting…</div>
 
-<div id="down">DAEMON UNREACHABLE — retrying…<br>
-  <span style="font-size:10px; color:var(--muted)">queue edits are blocked until the daemon answers</span></div>
+<div id="down">
+  <span class="spin"></span>
+  <div id="downtext">DAEMON UNREACHABLE — retrying…</div>
+  <div id="downmsg">queue edits are blocked until it answers</div>
+  <div style="display:flex; gap:6px">
+    <button id="btn-retry" title="Poll again right now">Retry now</button>
+    <button id="btn-restart" title="Two presses within 3s restart the playout daemon unit (cuts mid-air briefly)">Restart daemon</button>
+  </div>
+</div>
 
 <div id="help">
   <h3>How this dock works</h3>
   <dl>
-    <dt>Add</dt><dd>Appends to the END of the queue and saves instantly. The on-air item is never affected; new things play once everything above them has finished. Duplicate links/files are rejected.</dd>
-    <dt>Order</dt><dd>Plays top to bottom. The <b>NEXT</b> marker shows what loads after the on-air item. Drag rows to reorder (saved instantly), or use the row menu.</dd>
-    <dt>Row menu …</dt><dd>Move, toggle dormant (dimmed = never plays), play next, or remove. The on-air row cannot be removed or double-clicked.</dd>
-    <dt>Double-click a row</dt><dd><b>Play now</b>: the row is moved to the head of the queue and the on-air item is ended. Use with care — it cuts what is playing.</dd>
-    <dt>Cache dot</dt><dd><b style="color:var(--ok)">filled</b> = full local copy downloaded; a cut here works with no internet. <b style="color:var(--accent)">pulsing</b> = downloading right now. hollow = streams live from YouTube (needs the internet; can still die mid-play).</dd>
-    <dt>Save</dt><dd>A selected box entry is <b>overwritten</b>; with nothing selected a new saved playlist is created. Either way your WORKING queue is already saved instantly on every edit — Save only versions it.</dd>
-    <dt>Load</dt><dd>Replaces the queue from a saved playlist. It swaps at the next cut: the on-air item keeps playing to its natural end.</dd>
-    <dt>Delete</dt><dd>Two presses within 3s confirm.</dd>
-    <dt>reshuffle checkbox</dt><dd>End-of-roll behavior: when the queue finishes, shuffle it and restart from the top automatically.</dd>
+    <dt>Add</dt><dd>Pastes become items at the END of the queue and save instantly. A YouTube <b>playlist</b> link must go through <b>Import list</b> instead.</dd>
+    <dt>Import list</dt><dd>Paste a playlist link (one with <b>list=</b> in it) first. The videos arrive as a <b>parked group</b> below the queue, in the playlist's own order — nothing airs until you move items in. Imports only read titles, nothing downloads.</dd>
+    <dt>Order</dt><dd>Plays top to bottom; the <b>NEXT</b> marker shows what really airs after the on-air item (parked rows are skipped). Drag rows to reorder, or use the row menu ⋯.</dd>
+    <dt>Row menu ⋯</dt><dd>Move, park/wake (dormant = never airs, dimmed), play next, <b>normalize audio</b> (file items: one EBU-R128 loudness pass on the file), or remove. On-air rows are protected.</dd>
+    <dt>Double-click a row</dt><dd><b>Play now</b>: the row moves under the cursor and the on-air item is ended. Use with care — it cuts what is playing.</dd>
+    <dt>Groups</dt><dd>Parked playlists live down here, folded by default. Click a header to fold/unfold. Drag the <b>header</b> straight into the queue to play the whole list there; drag single rows out one at a time. Header buttons: <b>Play</b> (queue at the cursor + cut now), <b>shuf</b> (randomize within the group), <b>orig</b> (restore the playlist's import order).</dd>
+    <dt>Dropping rules</dt><dd>Drop a row on the <b>queue</b> to air it there; on a <b>group</b> to park it inside that playlist; on the <b>Dormant</b> header to park it outside any list.</dd>
+    <dt>Cache dot</dt><dd><b style="color:var(--ok)">filled</b> = full local copy downloaded; cuts here work with no internet. <b style="color:var(--accent)">pulsing</b> = downloading now. Hollow = live from YouTube.</dd>
+    <dt>Save / Load / Delete</dt><dd>Save versions the working queue under the selected name (a new one when none). Load replaces the queue at the next cut. Delete needs two presses within 3s.</dd>
+    <dt>reshuffle checkbox</dt><dd>When the queue finishes, shuffle and restart from the top automatically.</dd>
     <dt>Shuffle rest</dt><dd>Shuffles everything except the on-air item and saves. NEXT recalculates.</dd>
-    <dt>Prev / Skip</dt><dd>Skip ends the on-air item now and starts NEXT (~5s deck swap). Prev queues the previous item and ends the current. Skip is debounced to once per 4s.</dd>
-    <dt>Replay / Pause</dt><dd>Replay restarts the on-air file from 0:00. Pause freezes it (Resume unfreezes). Both apply to the FILE decks only — a YouTube item streaming live can't be paused.</dd>
-    <dt>ON-AIR VOL</dt><dd>The deck's volume in dB, remembered across cuts and restarts. 0 dB = full. Only the on-air deck is affected; parked decks are muted by the ad-break logic regardless.</dd>
-    <dt>Dormant rows</dt><dd>Kept in the list but never air. Use for content you rotate in later.</dd>
+    <dt>Prev / Skip</dt><dd>Skip ends the on-air item now and starts NEXT (~5s deck swap, debounced 4s). Prev queues the item before the on-air one.</dd>
+    <dt>Replay / Pause</dt><dd>File decks only. Replay restarts from 0:00; Pause freezes (Resume unfreezes). A live YouTube stream can't be paused.</dd>
+    <dt>ON-AIR VOL</dt><dd>The deck's dB mix, remembered across cuts and restarts. 0 dB = full. Parked decks are muted and paused automatically after every cut.</dd>
+    <dt>If the dock says…</dt><dd><b>PANEL UNREACHABLE</b>: the dock lost the panel — press <b>Retry now</b>. <b>DAEMON STALLED</b>: the panel answers but the playout loop hasn't ticked in over 12s — <b>Restart daemon</b> (two presses).</dd>
   </dl>
   <div style="margin-top:12px"><button id="helpclose">Close</button></div>
 </div>
@@ -186,8 +228,11 @@
 "use strict";
 let S = null;          // latest /api/state
 let sel = -1;          // selected row
-let upDown = false;    // daemon reachable
+let upDown = false;    // panel reachable
 let busy = false;      // a save is in flight: edits blocked till settled
+let stale = false;     // panel answers, but the daemon loop stopped ticking
+let downTries = 0;     // consecutive failed polls (overlay counter)
+const grpOpen = new Set();  // folded/unfolded section names
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s)
@@ -197,6 +242,8 @@ const fmt = (s) => {
   return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 };
 const keyOf = (it) => (it.youtube || "") + "|" + (it.file || "");
+const ytId = (u) => String(u || "").match(
+  /(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/);
 
 function status(msg, cls) {
   const el = $("status");
@@ -214,10 +261,9 @@ async function api(path, body) {
 }
 
 /* ---------- persistence ---------------------------------------------- */
-/* onAirIdxOf: the "cursor" state.index is positional, so any edit that
-   changes item counts or order must re-pin it to the on-air item's
-   identity BEFORE saving; otherwise the daemon could advance to a
-   different item than the viewer expects. */
+/* state.index is positional, so any edit that changes counts or order must
+   re-pin it to the on-air item's identity BEFORE saving; otherwise the
+   daemon could advance into a different item than the viewer expects. */
 function onAirKey() {
   const idx = Math.max(0, ((S.state || {}).index || 1) - 1);
   const it = (S.playlist.items || [])[idx];
@@ -233,7 +279,7 @@ async function save(indexAfterEdit) {
     if (indexAfterEdit != null && indexAfterEdit !== S.state.index) {
       try {
         await api("/api/state", { state: { index: indexAfterEdit } });
-      } catch (e) { /* daemon may have cut already; poll will re-sync */ }
+      } catch (e) { /* daemon may have cut already; the poll re-syncs */ }
     }
     status("");
   } catch (e) {
@@ -244,7 +290,6 @@ async function save(indexAfterEdit) {
   }
 }
 
-/* ---------- state create --------------------------------------------- */
 function mutate(fn, label) {
   if (busy) { status("another edit is still saving — one moment", "err"); return; }
   const items = (S.playlist.items || []).slice();
@@ -269,15 +314,89 @@ function itTitle(it) {
   return it.title || "waiting for details";
 }
 
+function onAirIdx() {
+  return Math.max(0, ((S.state || {}).index || 1) - 1);
+}
+
+function effectiveNextIdx() {
+  /* The NEXT marker must show what actually airs: dormant and unnamed rows
+     are silently skipped by the daemon, so the marker skips them too. */
+  const items = S.playlist.items || [];
+  for (let j = onAirIdx() + 1; j < items.length; j++) {
+    const it = items[j];
+    if (it.status === "dormant") continue;
+    if (it.youtube != null || it.file != null || it.source) return j;
+  }
+  return -1;
+}
+
+function partition(items) {
+  /* Three surfaces from one items array: the queue airs; parked groups
+     hold imported playlists; the dormant section holds everything else
+     parked. Every row keeps its TRUE index in items. */
+  const queue = [], groups = {}, dormant = [];
+  items.forEach((it, i) => {
+    if (it.status === "dormant") {
+      if (it.group) (groups[it.group] = groups[it.group] || []).push(i);
+      else dormant.push(i);
+    } else queue.push(i);
+  });
+  return { queue, groups, dormant };
+}
+
+function rowEl(i, it, cacheState, parkedSurface) {
+  const r = document.createElement("div");
+  const onIdx = onAirIdx(), nxIdx = effectiveNextIdx();
+  const playable = it.youtube != null || it.file != null;
+  const parked = it.status === "dormant";
+  r.className = "item" + (i === sel ? " sel" : "") +
+    (parked ? "" : (i === onIdx ? " onair" : i === nxIdx ? " nextup" : ""));
+  r.draggable = true;
+  r.dataset.i = i;
+  r.innerHTML =
+    '<span class="num">' + (parked ? "" : "#" + (i + 1)) + "</span>" +
+    '<span class="dot ' + cacheState + '" title="cache: ' + cacheState + '"></span>' +
+    '<span class="t1" style="opacity:' +
+    (parked ? ".45" : playable ? "1" : ".3") + '">' +
+    esc(itTitle(it)) + "</span>" +
+    '<span class="src">' + (it.youtube != null ? "YT" : it.file != null ? "FILE" : "PENDING") + "</span>" +
+    '<span class="dur">' + (it.duration ? fmt(it.duration) : "") + "</span>" +
+    (!parked && i === nxIdx ? '<span class="cue">next</span>' :
+     !parked && i === onIdx ? '<span class="cue" style="color:var(--ok)">on air</span>' : "") +
+    '<span class="dots" role="button" title="row menu">⋯</span>';
+  r.querySelector(".dots").addEventListener("click", (e) => { e.stopPropagation(); rowMenu(e, i); });
+  r.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
+  r.addEventListener("dblclick", () => {
+    if (!parked && i !== onAirIdx()) playNext(i);
+  });
+  r.addEventListener("dragstart", (ev) => {
+    ev.dataTransfer.iRef = i;
+    ev.dataTransfer.effectAllowed = "move";
+    r.classList.add("drag");
+  });
+  r.addEventListener("dragend", () => r.classList.remove("drag"));
+  /* Queue rows also accept drops: dropping on a queue row reorders there,
+     and a parked row dropped on a queue row is unparked at that spot. */
+  if (!parkedSurface) {
+    r.addEventListener("dragover", (ev) => ev.preventDefault());
+    r.addEventListener("drop", (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const from = ev.dataTransfer.iRef;
+      if (from == null || from === i) return;
+      dropInto(null, i, from);
+    });
+  }
+  return r;
+}
+
 function render() {
   if (!S) return;
-  document.body.classList.toggle("locked", !upDown || busy);
-  $("down").classList.toggle("on", !upDown);
+  document.body.classList.toggle("locked", stale || busy);
   const items = S.playlist.items || [];
   const st = S.state || {};
-  const onIdx = Math.max(0, (st.index || 1) - 1);
+  const onIdx = onAirIdx();
   const onIt = items[onIdx] || {};
-  const nxIdx = (st.index || 0) < items.length ? st.index : -1;
+  const nxIdx = effectiveNextIdx();
 
   $("onair").textContent = "ON AIR · " + (st.in_ad_break ? "AD BREAK"
     : itTitle(onIt) || "nothing");
@@ -289,8 +408,8 @@ function render() {
 
   $("shuf").checked = !!S.playlist.shuffle_on_complete;
 
-  /* Transport + mixer state: light only for file-lane items; the pause
-     label mirrors the daemon's deck_paused state so the two windows agree. */
+  /* Transport + mixer light for file-lane items only; the pause label
+     mirrors the daemon's deck_paused so the two windows agree. */
   const onFileLane = !streamOnAir();
   $("t-pause").textContent = st.deck_paused ? "Resume" : "Pause";
   $("t-pause").disabled = !onFileLane;
@@ -302,92 +421,266 @@ function render() {
       $("volval").textContent = Number(vdb).toFixed(1) + " dB";
     }
   }
-  $("vol").disabled = !upDown || busy;
+  $("vol").disabled = stale || busy;
 
+  const part = partition(items);
   const q = $("queue");
   q.innerHTML = "";
-  if (!items.length) {
+  if (!part.queue.length) {
     const e = document.createElement("div");
     e.id = "empty";
-    e.textContent = "Queue is empty. Paste a YouTube link, or pick a media file above.";
+    e.textContent =
+      "Queue is empty. Paste a link above, Import a playlist, or drag rows out of the parked groups below.";
     q.appendChild(e);
-    return;
   }
-  items.forEach((it, i) => {
-    const r = document.createElement("div");
-    const cacheState = (S.spool || [])[i] || "miss";
-    r.className = "item" + (i === sel ? " sel" : "") +
-      (i === onIdx ? " onair" : i === nxIdx ? " nextup" : "");
-    r.draggable = true;
-    r.dataset.i = i;
-    const playable = it.youtube != null || it.file != null;
-    r.innerHTML =
-      '<span class="num">#' + (i + 1) + "</span>" +
-      '<span class="dot ' + cacheState +
-      '" title="cache: ' + cacheState + '"></span>' +
-      '<span class="t1" style="opacity:' +
-      (it.status === "dormant" ? ".45" : playable ? "1" : ".3") + '">' +
-      esc(itTitle(it)) + "</span>" +
-      '<span class="src">' + (it.youtube != null ? "YT" : it.file != null ? "FILE" : "PENDING") + "</span>" +
-      '<span class="dur">' + (it.duration ? fmt(it.duration) : "") + "</span>" +
-      (i === nxIdx ? '<span class="cue">next</span>' :
-       i === onIdx ? '<span class="cue" style="color:var(--ok)">on air</span>' : "") +
-      '<span class="dots" role="button" title="row menu">⋯</span>';
-    r.querySelector(".dots").addEventListener("click", (e) => { e.stopPropagation(); rowMenu(e, i); });
-    r.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
-    r.addEventListener("dblclick", () => { if (i !== onIdx) playNext(i, r); });
-    r.addEventListener("dragstart", (ev) => {
-      ev.dataTransfer.iRef = i;
-      ev.dataTransfer.effectAllowed = "move";
-      r.classList.add("drag");
-    });
-    r.addEventListener("dragend", () => r.classList.remove("drag"));
-    r.addEventListener("dragover", (ev) => ev.preventDefault());
-    r.addEventListener("drop", (ev) => {
-      ev.preventDefault();
-      const from = ev.dataTransfer.iRef;
-      if (from == null || from === i) return;
-      mutate((a) => {
-        const [m] = a.splice(from, 1);
-        a.splice(i, 0, m);
-      }, "reordered — takes effect at the next cut");
-    });
-    q.appendChild(r);
-  });
-  q.addEventListener("dragover", (ev) => ev.preventDefault());
+  const spill = (S.spool || []);
+  part.queue.forEach((i) => q.appendChild(rowEl(i, items[i], spill[i] || "miss", false)));
+
+  renderGroups(items, part.groups);
+  renderDorm(items, part.dormant);
+}
+
+/* Container drop-zones bind once — re-adding them inside render() would
+   stack a handler per render and land duplicate drops. */
+function bindDropZones() {
+  const q = $("queue");
+  q.addEventListener("dragover", (ev) => { ev.preventDefault(); q.classList.add("dropzone"); });
+  q.addEventListener("dragleave", () => q.classList.remove("dropzone"));
   q.addEventListener("drop", (ev) => {
     ev.preventDefault();
+    q.classList.remove("dropzone");
+    const gRef = ev.dataTransfer.gRef;
+    if (gRef) { queueGroup(gRef, false, false); return; }
     const from = ev.dataTransfer.iRef;
-    if (from == null || from === items.length - 1) return;
-    mutate((a) => {
-      const [m] = a.splice(from, 1);
-      a.push(m);
-    });
+    if (from == null) return;
+    dropInto(null, (S.playlist.items || []).length, from);
   });
+}
+
+function renderGroups(items, groups) {
+  const box = $("groups");
+  box.innerHTML = "";
+  const names = Object.keys(groups);
+  if (!names.length) return;
+  const spill = (S.spool || []);
+  for (const g of names.sort()) {
+    const idxs = groups[g];   // true indices, array order
+    const open = grpOpen.has(g);
+    const head = document.createElement("div");
+    head.className = "sechead" + (open ? " open" : "") + " clickable";
+    head.title = "Click to fold/unfold · Drag the playlist name into the queue to play the whole list there";
+    head.innerHTML =
+      '<span class="caret">▶</span><span class="name grab" title="Drag this whole playlist into the queue">' +
+      esc(g) + "</span>" + '<span class="count">' + idxs.length + "</span>";
+    const bPlay = document.createElement("button");
+    bPlay.className = "mutate"; bPlay.textContent = "Play";
+    bPlay.title = "Queue the whole list at the cursor and cut to it now";
+    bPlay.addEventListener("click", (e) => { e.stopPropagation(); queueGroup(g, true, null); });
+    const bSh = document.createElement("button");
+    bSh.className = "mutate"; bSh.textContent = "shuf";
+    bSh.title = "Randomize within the group (orig restores import order)";
+    bSh.addEventListener("click", (e) => { e.stopPropagation(); orderGroup(g, "shuffle"); });
+    const bOr = document.createElement("button");
+    bOr.className = "mutate"; bOr.textContent = "orig";
+    bOr.title = "Restore the playlist's original import order";
+    bOr.addEventListener("click", (e) => { e.stopPropagation(); orderGroup(g, "orig"); });
+    head.append(bPlay, bSh, bOr);
+    head.addEventListener("click", () => {
+      if (open) grpOpen.delete(g); else grpOpen.add(g);
+      render();
+    });
+    head.draggable = true;
+    head.addEventListener("dragstart", (ev) => {
+      ev.dataTransfer.gRef = g;
+      ev.dataTransfer.effectAllowed = "copyMove";
+    });
+    box.appendChild(head);
+    const list = document.createElement("div");
+    list.className = "seclist" + (open ? "" : " closed");
+  idxs.forEach((i) => {
+    const r = rowEl(i, items[i], spill[i] || "miss", true);
+      r.addEventListener("dragover", (ev) => ev.preventDefault());
+      r.addEventListener("drop", (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        const from = ev.dataTransfer.iRef;
+        if (from == null || from === i) return;
+        dropInto(g, null, from);  // parked target: the item joins this group
+      });
+      list.appendChild(r);
+    });
+    list.addEventListener("dragover", (ev) => {
+      ev.preventDefault(); ev.stopPropagation(); list.classList.add("dropzone");
+    });
+    list.addEventListener("dragleave", () => list.classList.remove("dropzone"));
+    list.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      list.classList.remove("dropzone");
+      const gRef = ev.dataTransfer.gRef;
+      const other = ev.dataTransfer.iRef;
+      if (gRef && gRef !== g && other == null) return; // header→group: no-op
+      if (other == null) return;
+      parkItem(other, g);
+    });
+    box.appendChild(list);
+  }
+}
+
+function renderDorm(items, dormant) {
+  const box = $("dorm");
+  box.innerHTML = "";
+  if (!dormant.length) return;
+  const open = grpOpen.has("__dorm");
+  const head = document.createElement("div");
+  head.className = "sechead" + (open ? " open" : "") + " clickable";
+  head.title = "Parked rows: nothing here airs until you drag it back into the queue";
+  head.innerHTML =
+    '<span class="caret">▶</span><span class="name">Dormant</span>' +
+    '<span class="count">' + dormant.length + "</span>";
+  head.addEventListener("click", () => {
+    if (open) grpOpen.delete("__dorm"); else grpOpen.add("__dorm");
+    render();
+  });
+  box.appendChild(head);
+  const list = document.createElement("div");
+  list.className = "seclist" + (open ? "" : " closed");
+  const spill = (S.spool || []);
+  list.addEventListener("dragover", (ev) => {
+    ev.preventDefault(); ev.stopPropagation(); list.classList.add("dropzone");
+  });
+  list.addEventListener("dragleave", () => list.classList.remove("dropzone"));
+  list.addEventListener("drop", (ev) => {
+    ev.preventDefault();
+    list.classList.remove("dropzone");
+    const from = ev.dataTransfer.iRef;
+    if (from == null) return;
+    parkItem(from, null);
+  });
+  dormant.forEach((i) => list.appendChild(rowEl(i, items[i], spill[i] || "miss", true)));
+  box.appendChild(list);
+}
+
+/* ---------- surfaces: park / unpark / move ----------------------------- */
+/* One predictable rule per target surface: the queue airs, a group parks
+   inside that playlist, the dormant section parks bare. */
+function dropInto(group, atIdx, from) {
+  mutate((a) => {
+    if (from >= a.length) return;
+    const [m] = a.splice(from, 1);
+    if (group) {
+      m.status = "dormant";
+      m.group = group;
+      const higher = a.filter((x) => x.group === group && x.status === "dormant" &&
+                                    typeof x.gorder === "number");
+      m.gorder = higher.length
+        ? Math.max.apply(null, higher.map((x) => x.gorder)) + 1 : 1;
+      a.push(m);
+    } else {
+      m.status = null; m.group = null; delete m.gorder;
+      if (atIdx == null) a.push(m);
+      else a.splice(Math.max(0, Math.min(atIdx, a.length)), 0, m);
+    }
+  }, group ? "parked in “" + group + "”" : "moved — takes effect at the next cut");
+}
+
+function parkItem(from, group) {
+  mutate((a) => {
+    if (from >= a.length) return;
+    const [m] = a.splice(from, 1);
+    m.status = "dormant";
+    m.group = group;
+    if (group) {
+      const higher = a.filter((x) => x.group === group && x.status === "dormant" &&
+                                    typeof x.gorder === "number");
+      m.gorder = higher.length
+        ? Math.max.apply(null, higher.map((x) => x.gorder)) + 1 : 1;
+    } else delete m.gorder;
+    a.push(m);
+  }, "parked — never airs until you move it back to the queue");
+}
+
+/* Whole-group queue: extract the group's parked rows in display order and
+   re-insert them at the cursor (or queue end). splice-at-fixed-index (not
+   push) keeps the items after the insertion point where they are. */
+function queueGroup(g, cutNow, atEnd) {
+  mutate((a) => {
+    let picked = [];
+    for (let n = a.length - 1; n >= 0; n--) {
+      if (a[n].group === g && a[n].status === "dormant") picked.push(a.splice(n, 1)[0]);
+    }
+    picked.reverse();  // splice removed them end-first
+    const where = atEnd ? a.length : Math.min(onAirIdx(), a.length);
+    picked.forEach((m) => {
+      m.status = null; m.group = null; delete m.gorder;
+      a.splice(where, 0, m);
+    });
+  }, "queued “" + g + "”" + (cutNow ? " — cutting to it now" : ""));
+  if (cutNow) {
+    api("/api/control", { skip: true })
+      .then(() => status("playing “" + g + "” — cut starts now"))
+      .catch((e) => status("cut failed: " + e.message, "err"));
+  }
+}
+
+function orderGroup(g, mode) {
+  mutate((a) => {
+    const idxs = [];
+    a.forEach((it, i) => {
+      if (it.group === g && it.status === "dormant") idxs.push(i);
+    });
+    if (idxs.length < 2) return;
+    const first = Math.min.apply(null, idxs);
+    let picked = idxs.map((i) => a[i]);
+    if (mode === "orig") {
+      picked.sort((x, y) => (x.gorder == null ? 1e9 : x.gorder) -
+                           (y.gorder == null ? 1e9 : y.gorder));
+    } else {
+      for (let n = picked.length - 1; n > 0; n--) {
+        const k = Math.floor(Math.random() * (n + 1));
+        [picked[n], picked[k]] = [picked[k], picked[n]];
+      }
+    }
+    for (let n = a.length - 1; n >= 0; n--) {
+      if (a[n].group === g && a[n].status === "dormant") a.splice(n, 1);
+    }
+    picked.forEach((m) => a.splice(Math.min(first, a.length), 0, m));
+  }, mode === "orig"
+    ? "“" + g + "” restored to import order" : "“" + g + "” shuffled");
 }
 
 /* ---------- row menu --------------------------------------------------- */
 function rowMenu(ev, i) {
   sel = i;
   const items = S.playlist.items || [];
-  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const onIdx = onAirIdx();
+  const it = items[i];
+  const parked = it.status === "dormant";
   const m = $("menu");
   const defs = [];
-  defs.push(["Move up", i > 0 ? () => mutate((a) => {
-    [a[i], a[i - 1]] = [a[i - 1], a[i]];
-  }, "") : null]);
-  defs.push(["Move down", i < items.length - 1 ? () => mutate((a) => {
-    [a[i], a[i + 1]] = [a[i + 1], a[i]];
-  }, "") : null]);
+  if (parked && it.group) {
+    defs.push(["Move into the queue (end)", () => dropInto(null, null, i)]);
+    defs.push(["Keep parked, leave the group", () => parkItem(i, null)]);
+  } else if (parked) {
+    defs.push(["Move into the queue (end)", () => dropInto(null, null, i)]);
+  } else {
+    defs.push(["Move up", i > 0 ? () => mutate((a) => {
+      [a[i], a[i - 1]] = [a[i - 1], a[i]];
+    }, "") : null]);
+    defs.push(["Move down", i < items.length - 1 ? () => mutate((a) => {
+      [a[i], a[i + 1]] = [a[i + 1], a[i]];
+    }, "") : null]);
+    defs.push(["Play next", i !== onIdx ? () => playNext(i) : null]);
+    defs.push(["Park dormant", () => parkItem(i, null)]);
+  }
+  if (it.file && !parked && i !== onIdx) {
+    defs.push(["sep"]);
+    defs.push(["Normalize audio", () => {
+      api("/api/control", { normalize: { file: it.file } })
+        .then(() => status("normalizing " + it.file + " — new loudness applies at its next cut"))
+        .catch((e) => status("normalize failed: " + e.message, "err"));
+    }]);
+  }
   defs.push(["sep"]);
-  const willWake = items[i].status === "dormant";
-  defs.push([willWake ? "Wake up" : "Set dormant",
-    () => mutate((a) => {
-      a[i].status = a[i].status === "dormant" ? null : "dormant";
-    }, willWake ? "awake — will play" : "dormant — never plays")]);
-  if (i !== onIdx) defs.push(["Play next", () => playNext(i)]);
-  defs.push(["sep"]);
-  defs.push(["Remove", i === onIdx ? null : () => mutate((a) => {
+  defs.push(["Remove", (i === onIdx && !parked) ? null : () => mutate((a) => {
     a.splice(i, 1);
     status("removed row #" + (i + 1));
   })]);
@@ -396,8 +689,8 @@ function rowMenu(ev, i) {
     if (d[0] === "sep") { m.appendChild(document.createElement("hr")); return; }
     const b = document.createElement("button");
     b.textContent = d[0];
-    if (!d[1]) { b.disabled = true; }
-    else { b.addEventListener("click", () => { m.classList.remove("on"); d[1](); }); }
+    if (!d[1]) b.disabled = true;
+    else b.addEventListener("click", () => { m.classList.remove("on"); d[1](); });
     m.appendChild(b);
   });
   m.classList.add("on");
@@ -410,15 +703,15 @@ document.addEventListener("click", (e) => {
 });
 
 /* ---------- play-now --------------------------------------------------- */
-function playNext(i, rowEl) {
+function playNext(i) {
   if (busy) { status("another edit is still saving — one moment", "err"); return; }
   const items = (S.playlist.items || []).slice();
-  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const onIdx = onAirIdx();
   if (i === onIdx) return;
   const [m] = items.splice(i, 1);
-  // The pointer state.index stays where it is: inserting at that exact
-  // position puts the picked item directly under the cursor, so the very
-  // next cut plays it. The old first-up item slots after it.
+  m.status = null; m.group = null; delete m.gorder;
+  // The cursor state.index stays put: inserting at that exact position
+  // puts the picked item directly under it, so the very next cut plays it.
   items.splice(onIdx, 0, m);
   S.playlist = { ...S.playlist, items };
   busy = true;
@@ -437,52 +730,101 @@ function playNext(i, rowEl) {
   })();
 }
 
-/* ---------- add --------------------------------------------------------- */
+/* ---------- add / import ------------------------------------------------ */
 function classify(input) {
   const v = String(input || "").trim();
   if (!v) return null;
-  const y = v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/);
+  if (/list=/.test(v) && /youtu/i.test(v)) {
+    return { ytpl: true };
+  }
+  const y = ytId(v);
   if (y && /youtu/i.test(v)) {
     return { youtube: "https://www.youtube.com/watch?v=" + y[1], title: null,
-             file: null, duration: 0, yt_id: y[1] };
+             file: null, duration: 0 };
   }
   const base = v.split(/[\\/]/).pop();
   if (((S || {}).media_files || []).includes(base)) {
     return { youtube: null, file: base, title: null, duration: 0 };
   }
+  if (/\.mp4$/i.test(base)) {
+    return { youtube: null, file: base, title: null, duration: 0 };
+  }
   return { err: "not a YouTube link or one of the uploaded media files" };
+}
+
+function findDup(items, parsed) {
+  const wantId = parsed.youtube ? ytId(parsed.youtube)[1] : null;
+  return items.findIndex((it) => {
+    if (parsed.file) return it.file === parsed.file;
+    const haveId = it.youtube ? ytId(it.youtube) : null;
+    return wantId != null && haveId != null && wantId === haveId[1];
+  });
 }
 
 async function addInput() {
   if (busy) { status("another edit is still saving — one moment", "err"); return; }
   const parsed = classify($("url").value);
+  if (parsed && parsed.ytpl) {
+    await ytplImport();
+    return;
+  }
   $("url").value = "";
   if (!parsed || parsed.err) {
     status(parsed ? parsed.err : "paste something first", "err");
     return;
   }
   const items = (S.playlist.items || []).slice();
-  const dup = items.findIndex((it) =>
-    parsed.file ? it.file === parsed.file
-      : it.youtube === parsed.youtube ||
-        (it.youtube || "").match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/)?.[1]
-          === parsed.yt_id);
+  const dup = findDup(items, parsed);
   if (dup >= 0) {
     sel = dup;
     status("already in the queue at #" + (dup + 1) + " — not added twice", "err");
     render();
     return;
   }
-  delete parsed.yt_id;
   const pos = items.length;
   mutate((a) => a.push(parsed), null);
   status("added as #" + (pos + 1) + " — plays after everything above it");
 }
 
+async function ytplImport() {
+  const v = String($("url").value || "").trim();
+  if (!/list=/.test(v) || !/youtu/i.test(v)) {
+    status("paste a YouTube playlist link (with list=) first", "err");
+    return;
+  }
+  status("importing playlist — reading titles only (no downloads)…");
+  try {
+    const r = await api("/api/ytpl", { url: v });
+    $("url").value = "";
+    const fresh = [];
+    const present = new Set(
+      ((S.playlist || {}).items || []).filter((it) => it.youtube)
+        .map((it) => ytId(it.youtube)[1]));
+    r.videos.forEach((vv, k) => {
+      const id = ytId(vv.url)[1];
+      if (id && !present.has(id)) {
+        fresh.push({ youtube: vv.url, title: vv.title || null, file: null,
+                     duration: 0, group: r.title, gorder: k,
+                     status: "dormant" });
+        present.add(id);
+      }
+    });
+    if (!fresh.length) { status("playlist already fully in the dock", "err"); return; }
+    grpOpen.add(r.title);
+    mutate((a) => { fresh.forEach((f) => a.push(f)); }, null);
+    status("imported %d of %d as group “%s” — parked below, drag out to play"
+      .replace("%d", String(fresh.length))
+      .replace("%d", String(r.videos.length))
+      .replace("%s", r.title));
+  } catch (e) {
+    status("import failed: " + e.message, "err");
+  }
+}
+
 $("add").addEventListener("click", addInput);
 $("url").addEventListener("keydown", (e) => { if (e.key === "Enter") addInput(); });
-$("media").addEventListener("change", () => {
-  if ($("media").value) { $("url").value = $("media").value; $("media").value = ""; }
+$("ytpl").addEventListener("click", () => {
+  if (!busy) ytplImport();
 });
 
 /* ---------- transport --------------------------------------------------- */
@@ -499,23 +841,23 @@ $("t-prev").addEventListener("click", async () => {
   const idx = (S.state || {}).index || 1;
   if (idx <= 1) { status("nothing before item #1", "err"); return; }
   try {
-    /* advance plays the item AT the cursor position: state.index - 2 is
-       the one before the on-air row. */
+    // advance plays the item AT the cursor position: state.index - 1 is
+    // the row before the on-air one.
     await api("/api/state", { state: { index: idx - 1 } });
     await api("/api/control", { skip: true });
     status("jumping back to #" + (idx - 1));
   } catch (e) { status("prev failed: " + e.message, "err"); }
 });
 
-/* Live streams cannot pause/replay (a paused feed is a half-swallowed ---
+/* Live streams cannot pause/replay (a paused feed is a half-swallowed
    RTMP source), so transport lights up only for file-lane items. */
 function streamOnAir() {
   const items = (S.playlist || {}).items || [];
   const i = Math.max(0, ((S.state || {}).index || 1) - 1);
   const it = items[i] || {};
   if (it.youtube == null) return false;
-  /* transport lights up only for the FILE lanes: no cache ready == the
-     deck is streaming live (spool:false never caches, so never lights) */
+  /* no cache ready == the deck is streaming live (spool:false never
+     caches, so never lights) */
   if (it.spool === false) return true;
   return ((S.spool || [])[i] || "miss") !== "ready";
 }
@@ -553,10 +895,10 @@ $("shuf").addEventListener("change", () => {
 $("shuf-now").addEventListener("click", () => {
   const items = (S.playlist.items || []).slice();
   if (items.length < 3) { status("too few rows to shuffle", "err"); return; }
-  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const onIdx = onAirIdx();
   mutate((a) => {
     const on = a[onIdx];
-    const rest = a.filter((_, i) => i !== onIdx);
+    const rest = a.filter((x, i) => i !== onIdx);
     for (let n = rest.length - 1; n > 0; n--) {
       const j = Math.floor(Math.random() * (n + 1));
       [rest[n], rest[j]] = [rest[j], rest[n]];
@@ -575,7 +917,7 @@ async function refreshPlaylists(pick) {
     box.innerHTML = '<option value="">(new playlist)</option>' +
       (p.playlists || []).map((n) => "<option>" + esc(n) + "</option>").join("");
     if (cur) box.value = cur;
-  } catch (e) { /* while down: keep old list */ }
+  } catch (e) { /* while down: keep the old list */ }
 }
 
 $("p-save").addEventListener("click", async () => {
@@ -623,32 +965,82 @@ $("p-del").addEventListener("click", async () => {
 $("helpbtn").addEventListener("click", () => $("help").classList.add("on"));
 $("helpclose").addEventListener("click", () => $("help").classList.remove("on"));
 
+/* ---------- down overlay --------------------------------------------------- */
+function showDown() {
+  $("down").classList.add("on");
+  if (!upDown) {
+    $("downtext").textContent =
+      "PANEL UNREACHABLE — retry #" + downTries + "…";
+    $("downmsg").textContent =
+      "queue edits are blocked until it answers";
+  } else if (stale) {
+    const age = (S.daemon || {}).stale;
+    $("downtext").textContent = "DAEMON STALLED";
+    $("downmsg").textContent =
+      "the panel answers, but the playout loop has not ticked" +
+      (age != null ? " in " + Math.round(age) + "s" : "") + " — a restart usually heals it";
+  }
+}
+function hideDown() {
+  $("down").classList.remove("on");
+}
+
+let restartArm = 0;
+$("btn-restart").addEventListener("click", async () => {
+  if (Date.now() - restartArm > 3000) {
+    restartArm = Date.now();
+    status("press Restart daemon again within 3s to restart the playout", "err");
+    return;
+  }
+  restartArm = 0;
+  try {
+    await api("/api/restart", { unit: "station-daemon.service" });
+    status("restart command sent — the loop is booting…");
+  } catch (e) { status("restart failed: " + e.message, "err"); }
+});
+
 /* ---------- poll loop ------------------------------------------------------ */
 function fillMedia() {
-  const box = $("media");
-  const cur = box.value;
-  box.innerHTML = '<option value="">media…</option>' +
-    ((S || {}).media_files || []).map((f) => "<option>" + esc(f) + "</option>").join("");
-  if (cur) box.value = cur;
+  const dl = $("medialist");
+  dl.innerHTML = ((S || {}).media_files || [])
+    .map((f) => '<option value="' + esc(f) + '">').join("");
 }
 
 async function load(silent) {
   try {
     const fresh = await (await fetch("/api/state")).json();
     fresh.playlist.items = fresh.playlist.items || [];
-    const wasDown = !upDown;
     S = fresh;
+    const wasStale = stale, wasDown = !upDown;
+    const age = ((S.daemon || {}).stale);
+    stale = age != null && age > 12;
     upDown = true;
-    if (wasDown) status("");
+    downTries = 0;
+    if (stale) showDown();
+    else if (wasStale || wasDown) { $("downtext").textContent = ""; hideDown(); }
+    if (wasDown) status("back online");
     fillMedia();
+    fillMediaList();
     render();
   } catch (e) {
-    if (!silent || upDown) status("daemon unreachable: " + e.message, "err");
+    downTries++;
     upDown = false;
+    if (!silent || downTries <= 1) status("panel unreachable: " + e.message, "err");
+    showDown();
     if (S) render();
   }
 }
 
+function fillMediaList() {
+  const box = $("plist");
+  if (!box.options.length) refreshPlaylists();
+}
+
+$("btn-retry").addEventListener("click", async () => {
+  try { await load(false); } catch (e) { status("retry failed: " + e.message, "err"); }
+});
+
+bindDropZones();
 refreshPlaylists();
 load();
 setInterval(load, 2000);

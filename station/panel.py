@@ -10,7 +10,9 @@ restarts a unit. Every exposed field carries a description of what it does.
 """
 import json
 import os
+import shutil
 import subprocess
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HEREDOC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -84,6 +86,10 @@ def api_state():
             r = spool.ready(url)
             if r and r.get("title"):
                 titles[url] = r["title"]
+    hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
+    daemon_age = None
+    if isinstance(hb, dict) and isinstance(hb.get("t"), (int, float)):
+        daemon_age = round(max(0.0, time.time() - hb["t"]), 1)
     return {
         "playlist": _read(PLAYLIST, {"items": []}),
         "state": _read(STATE, {}),
@@ -94,6 +100,7 @@ def api_state():
         "spool": [spool.state(i["youtube"]) if i.get("youtube") is not None else "file"
                   for i in items],
         "yt_titles": titles,
+        "daemon": {"stale": daemon_age},
     }
 
 
@@ -144,14 +151,46 @@ def api_playlists_get():
 def api_control(data):
     """Dock transport: control.json is read each daemon pass. skip ends the
     current item exactly like a natural media end; {"media": {...}} carries
-    the transport/mixer verbs the daemon consumes (pause/resume/restart/mix)."""
+    the transport/mixer verbs the daemon consumes (pause/resume/restart/mix);
+    {"normalize": {"file": name}} spawns a background loudness pass."""
     ctl = _read(CONTROL, {})
     if data.get("skip"):
         ctl["skip"] = True
     if isinstance(data.get("media"), dict):
         ctl["media"] = dict(data["media"])
+    if isinstance(data.get("normalize"), dict) and data["normalize"].get("file"):
+        ctl["normalize"] = {"file": str(data["normalize"]["file"])}
     _write(CONTROL, ctl)
     return {"ok": True}
+
+
+def api_ytpl(data):
+    """YouTube playlist import (dock): paste a /playlist?list=... link, get
+    the videos back as a flat ordered list. yt-dlp --flat-playlist resolves
+    titles WITHOUT touching the videos (seconds, no downloads)."""
+    url = str(data.get("url") or "").strip()
+    if "list=" not in url or not ("youtube.com" in url or "youtu.be" in url):
+        return {"ok": False, "err": "paste a YouTube playlist link (with list=) here"}
+    exe = shutil.which("yt-dlp") or "/usr/bin/yt-dlp"
+    if not os.path.exists(exe):
+        return {"ok": False, "err": "yt-dlp not found on this host"}
+    try:
+        p = subprocess.run(
+            [exe, "--flat-playlist", "--no-warnings", "-J", url],
+            capture_output=True, text=True, timeout=120)
+        if p.returncode != 0:
+            return {"ok": False, "err": (p.stderr or "yt-dlp failed")[-180:]}
+        j = json.loads(p.stdout or "{}")
+        vids = [{"url": "https://www.youtube.com/watch?v=" + e["id"],
+                 "title": e.get("title") or ""}
+                for e in (j.get("entries") or []) if e.get("id")]
+        if not vids:
+            return {"ok": False, "err": "playlist came back empty (private or empty list?)"}
+        return {"ok": True, "title": j.get("title") or "playlist", "videos": vids}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "err": "playlist fetch timed out"}
+    except (OSError, ValueError) as e:
+        return {"ok": False, "err": str(e)[-180:]}
 
 
 _PANEL_KEYS = {"items", "shuffle_on_complete", "ad_every", "ad_files", "fallback"}
@@ -490,6 +529,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, api_playlists_post(data), "application/json")
             elif self.path.startswith("/api/control"):
                 self._send(200, api_control(data), "application/json")
+            elif self.path.startswith("/api/ytpl"):
+                self._send(200, api_ytpl(data), "application/json")
             else:
                 self._send(404, {"ok": False, "err": "unknown endpoint"},
                            "application/json")

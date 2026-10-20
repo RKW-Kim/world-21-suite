@@ -1098,6 +1098,164 @@ def media_ready(renderer, source, wait=FEED_WAIT, poll=0.5):
         time.sleep(poll)
 
 
+def studio_mode_off(renderer):
+    """OBS Studio Mode splits preview/program; deck cuts then look like
+    'preview has content, program black' to the operator. Guard at boot."""
+    try:
+        if renderer._call("GetStudioModeEnabled").get("studioModeEnabled"):
+            renderer._call("SetStudioModeEnabled", {"studioModeEnabled": False})
+            alert("Studio mode was ON; turned it off — deck cuts don't do "
+                  "preview/program pairs.", "WARN")
+    except Exception:
+        pass
+
+
+def apply_mic_normalizer(renderer):
+    """Host microphones vary wildly and nobody is at the mixer: every local
+    audio-input source gets suppress + compressor + limiter, idempotently
+    (filters persist with the collection; existing ones are re-tuned)."""
+    chain = (
+        ("AStation NoiseSuppress", ("noise_suppress_v2", "noise_suppress"),
+         {"method": 0}),
+        ("AStation Compressor", ("compressor_v2", "compressor"),
+         {"threshold": -20.0, "ratio": 4.0, "attack_time": 10.0,
+          "release_time": 120.0, "output_gain": 0.0}),
+        ("AStation Limiter", ("limiter_v2", "limiter"),
+         {"threshold": -1.5, "release_time": 60.0}),
+    )
+    try:
+        inputs = renderer._call("GetInputList").get("inputs", [])
+    except Exception as e:
+        alert("mic normalizer skipped: %s." % e, "WARN")
+        return
+    hit = False
+    for inp in inputs:
+        kind = inp.get("inputKind", "")
+        name = inp.get("inputName", "")
+        if not kind.startswith(("wasapi_input", "alsa_input", "pulse_input")):
+            continue
+        hit = True
+        try:
+            have = {f.get("filterName") for f in renderer._call(
+                "GetSourceFilterList",
+                {"sourceName": name}).get("filters", [])}
+        except Exception:
+            continue
+        for fname, kinds, settings in chain:
+            try:
+                if fname not in have:
+                    for fkind in kinds:
+                        try:
+                            renderer._call("CreateSourceFilter", {
+                                "sourceName": name, "filterName": fname,
+                                "filterKind": fkind,
+                                "filterSettings": settings})
+                            have.add(fname)
+                            hit = True
+                            break
+                        except Exception:
+                            continue
+                if fname in have:  # re-tune even pre-existing filters
+                    renderer._call("SetSourceFilterSettings", {
+                        "sourceName": name, "filterName": fname,
+                        "filterSettings": settings, "overlay": False})
+            except Exception:
+                pass
+    if hit:
+        alert("Microphone normalizer armed (suppress→compress→limit).")
+
+
+HEARTBEAT = os.path.join(ROOT, "heartbeat.json")
+
+
+def touch_heartbeat():
+    """Poll-loop liveness marker: the panel/dock read its age to tell
+    'daemon wedged' apart from 'panel unreachable'."""
+    try:
+        with open(HEARTBEAT + ".tmp", "w") as f:
+            json.dump({"t": time.time()}, f)
+        os.replace(HEARTBEAT + ".tmp", HEARTBEAT)
+    except OSError:
+        pass
+
+
+def _normalize_media(name):
+    """Uploaded-file loudness pass (dock row-menu command): EBU R128-ish
+    video-copy/audio-reencode, atomic swap. Runs on a thread so the poll
+    loop never stalls; refuses the on-air file."""
+    import spool as _sp
+    base = os.path.basename(name)
+    if not base.endswith(".mp4") or "/" in base:
+        alert("Normalize refused: %s is not a media file." % name, "WARN")
+        return
+    src = os.path.join(MEDIA, base)
+    tmp = src + ".norm.mp4"
+    try:
+        _st = load_state()
+        with pl_lock():
+            _items = load_playlist().get("items") or []
+        _onfile = (_items[max(0, (int(_st.get("index") or 1)) - 1)] or {}).get("file")
+        onair = (_onfile == base)
+    except Exception:
+        onair = False
+    if onair:
+        alert("Normalize skipped: %s is on air right now." % base, "WARN")
+        return
+
+    def work():
+        try:
+            if not _sp._has_audio(src):
+                alert("Normalize skipped: %s has no audio stream." % base, "WARN")
+                return
+            alert("Normalizing loudness: %s (runs ~30s)." % base)
+            p = subprocess.run(
+                [_sp.FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", src,
+                 "-map", "0:v", "-c:v", "copy", "-map", "0:a",
+                 "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+                 "-c:a", "aac", "-b:a", "192k",
+                 "-movflags", "+faststart", "-f", "mp4", tmp],
+                capture_output=True, text=True, timeout=900)
+            if p.returncode == 0 and os.path.getsize(tmp) > 0:
+                os.replace(tmp, src)
+                alert("Normalized: %s — plays at the new target on its "
+                      "next cut." % base)
+            else:
+                alert("Normalize failed: %s: %s" % (
+                    base, (p.stderr or "")[-120:]), "WARN")
+        except subprocess.TimeoutExpired:
+            alert("Normalize timed out: %s." % base, "WARN")
+        except Exception as e:
+            alert("Normalize error on %s: %s" % (base, e), "WARN")
+        finally:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+    threading.Thread(target=work, daemon=True).start()
+
+
+def park_decks(renderer, deck, src, deck_sources):
+    """Parked slots stay PARKED: the hidden decks are muted (clocks keep
+    running) so exactly one thing on air is audible. Deliberately NOT
+    paused — the watchdog reads a frozen cursor as "stalled" and escalates
+    to OFF-AIR on a deck that is merely parked (the lab invariant:
+    "muted (not paused) so their clocks keep running and no watchdog fault
+    fires"). Runs at every cut in advance() — and once at boot."""
+    other = "B" if deck == "A" else "A"
+    parked = [deck_sources[other], STREAM_DECK[other]]
+    parked.append(STREAM_DECK[deck] if src is deck_sources[deck]
+                  else deck_sources[deck])
+    for s in {id(s): s for s in parked}.values():  # dedupe, keep order
+        try:
+            renderer.set_mute(s, True)
+        except Exception:
+            pass
+    try:
+        renderer.set_mute(src, False)
+    except Exception:
+        pass
+
+
 def fallback_files():
     """PLAYOUT_C pool: playlist.json `"fallback": [...]` overrides; default
     is the evergreen loop cards."""
@@ -1256,6 +1414,15 @@ def advance(renderer, state, data, deck_sources):
         onair = None
         stop_feed(deck)
         renderer.set_media_source(src, path)
+        # A paused input may exist from the transient pause experiment or a
+        # stray operator pause: the next file cut RESTARTs it, which is why
+        # the parked decks keep playing silently. This comment documents the
+        # deal. Remove together with park_decks — an input left PAUSED at
+        # boot would hand back "stalled at 0ms" to the watchdog.
+        try:
+            renderer.restart_media(src)
+        except Exception as e:
+            alert("restart after load failed (%s); hoping for implicit." % e, "WARN")
     # Every cut shows exactly one deck input. Hide BOTH other decks of BOTH
     # kinds — a stream can follow a file and vice versa in one transition.
     renderer.set_source_visible(PROGRAM, src, True)
@@ -1274,12 +1441,7 @@ def advance(renderer, state, data, deck_sources):
                 renderer.set_source_visible(PROGRAM, s, want)
     except Exception as e:
         alert("visibility reconcile skipped: %s." % e, "WARN")
-    # The outgoing file deck stops decoding/paused instead of idling at
-    # ENDED with both decks reading "active" in the media controls panel.
-    try:
-        renderer.pause_media(deck_sources[other])
-    except Exception:
-        pass
+    park_decks(renderer, deck, src, deck_sources)
     _vdb = state.get("deck_volume_db")
     if _vdb is not None:
         try:
@@ -1460,6 +1622,9 @@ def ad_return(renderer, decks, mid=False):
 
 def on_ended(renderer, decks, source):
     """Route a media-ended event by source name. Unknown sources are ignored."""
+    # Every route names its trigger: when cuts cascade the operator (and
+    # we) must see WHICH source drove it, not just the playlist churn.
+    alert("advance trigger: %s." % source, "INFO")
     if source == STREAM_EOF:
         # Wall-clock end of a youtube item (or feed death after respawn
         # gave up): same routing semantics as a local deck ending. If the
@@ -1815,6 +1980,31 @@ def cmd_loop(renderer):
         ensure_overlays(renderer)
     except Exception as e:
         alert("overlays failed: %s." % e, "WARN")
+    try:
+        studio_mode_off(renderer)
+    except Exception:
+        pass
+    try:
+        apply_mic_normalizer(renderer)
+    except Exception:
+        pass
+    # Park whatever is NOT on air, mirroring the last cut: a daemon restart
+    # mid-item left a hidden file deck playing silently on request otherwise.
+    try:
+        _boot_st = load_state()
+        _boot_idx = int(_boot_st.get("index") or 0)
+        _boot_deck = _boot_st.get("deck", "A")
+        _boot_item = None
+        if 1 <= _boot_idx <= len(data.get("items", [])):
+            _boot_item = data["items"][_boot_idx - 1]
+        if _boot_deck in ("A", "B") and _boot_item and not _boot_st.get("fallback_air"):
+            _bsrc = (STREAM_DECK[_boot_deck]
+                     if (_boot_item.get("youtube") or _boot_item.get("url"))
+                     else decks[_boot_deck])
+            park_decks(renderer, _boot_deck, _bsrc, decks)
+            alert("boot parked idle decks (%s on air)." % _bsrc, "INFO")
+    except Exception as e:
+        alert("boot park skipped: %s." % e, "WARN")
     # In-flight fetches live across polls: a fresh dict per pass would make
     # the spawn guard blind and duplicate every fetch.
     in_flight, failed = {}, {}
@@ -1822,8 +2012,10 @@ def cmd_loop(renderer):
     ended_streaks = {}  # input -> consecutive ENDED polls (poll-driven advance)
     plane_down_since = None  # first poll the render plane failed to answer
     plane_restarted_at = 0.0  # last self-healing restart, epoch
+    gate_pass = 0  # liveness-gate cadence: full probe every ~30 passes
     while True:
         try:
+            touch_heartbeat()
             apply_knobs()
             # Reachability gate: a dead plane must not spin the loop, and a
             # plane that stays dead gets restarted (cooldown-capped).
@@ -1834,13 +2026,36 @@ def cmd_loop(renderer):
             # testable without waiting out production values.
             DOWN_SECS = globals().get("PLANE_DOWN_SECS", 600.0)
             COOLDOWN_SECS = globals().get("PLANE_RESTART_COOLDOWN", 1800.0)
+            # Liveness check, two speeds. Between checks a masked ping on
+            # the standing connection is the canary (cheap, no handshake);
+            # every GATE_EVERY passes — and whenever the standing one is
+            # gone — the full Hello probe runs. The old all-passes probe
+            # opened ~30 fresh handshakes a minute, and with the plane busy
+            # those connects stretched into the very seconds the poll was
+            # supposed to save, dragging every skip ~8s late.
+            gate_pass = (gate_pass + 1) % 30
             try:
-                probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
-                            int(os.environ.get("OBS_PORT", "4455")), timeout=8)
-                hello = probe.recv()
-                probe.close()
-                if hello.get("op") != 0:
-                    raise RuntimeError("not v5")
+                if renderer._shared is not None and gate_pass != 1:
+                    with renderer._lock:
+                        ws = renderer._shared
+                        # Bound the send: a half-dead socket inherits the
+                        # call timeout; the ping must not stall the poll.
+                        old_to = ws.s.gettimeout()
+                        try:
+                            ws.s.settimeout(3.0)
+                            ws._frame(0x9)  # ping -> pong (skipped by recv)
+                        finally:
+                            try:
+                                ws.s.settimeout(old_to)
+                            except OSError:
+                                pass
+                else:
+                    probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
+                                int(os.environ.get("OBS_PORT", "4455")), timeout=8)
+                    hello = probe.recv()
+                    probe.close()
+                    if hello.get("op") != 0:
+                        raise RuntimeError("not v5")
                 plane_down_since = None
             except Exception:
                 now = time.time()
@@ -1959,6 +2174,11 @@ def cmd_loop(renderer):
                                                 _mst.get("deck_volume_db")})
                             except Exception as _me:
                                 alert("transport failed: %s." % _me, "WARN")
+                        # Dock loudness verb: {"normalize": {"file": name}}
+                        # spawns a background EBU R128 pass on that file.
+                        _norm = _ctl.pop("normalize", None)
+                        if isinstance(_norm, dict) and _norm.get("file"):
+                            _normalize_media(str(_norm["file"]))
                         with open(CONTROL + ".tmp", "w") as _f:
                             json.dump(_ctl, _f)
                         os.replace(CONTROL + ".tmp", CONTROL)

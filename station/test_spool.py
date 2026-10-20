@@ -228,10 +228,11 @@ check("urls_ahead dormant skipped",
 spool.subprocess.run = _ORIG_RUN
 ff = os.path.join(tmp, "fakeffmpeg.sh")
 with open(ff, "w") as f:
-    # argv: FFMPEG -hide_banner -v error -y -i RAW -c copy
-    #       -movflags +faststart -f mp4 TMP   => cp "${6}" "${13}"
-    # (dash/positional params ≥10 need braces)
-    f.write('#!/bin/sh\ncp "${6}" "${13}"\n')
+    # argv: FFMPEG -hide_banner -v error -y -i RAW <codec args…>
+    #       -movflags +faststart -f mp4 TMP   => cp "${6}" "$last"
+    # (loudnorm added codec args, so TMP is no longer fixed at $13 — the
+    # fake copies RAW ($6) to whatever the final argument is)
+    f.write('#!/bin/sh\neval "last=\\"\\${$#}\\""\ncp "${6}" "$last"\n')
 ff_ok = subprocess.run(["chmod", "+x", ff]).returncode == 0
 check("fake ffmpeg executable", ff_ok)
 RAW2 = fpath(K2, ".dl.mp4")
