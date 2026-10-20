@@ -1,26 +1,19 @@
 [Unit]
-Description=Station VNC bridge (look at the real OBS UI over the SSH tunnel)
-After=station-xvfb.service
-Wants=station-xvfb.service
+Description=Station VNC bridge (mirrors the Hyprland session, incl. the OBS window on :0)
 
 [Service]
 Type=simple
-# Same Qt/X-env trap as station-obs: the user session leaks WAYLAND_DISPLAY
-# into every unit, and x11vnc obeys it and exits ("Wayland sessions are as
-# of now only supported..."). Pin the target display and forget Wayland.
-Environment=DISPLAY=:99
-UnsetEnvironment=WAYLAND_DISPLAY
-# -localhost: only the SSH tunnel may attach (never the LAN/internet).
-# -forever -shared: survive the client leaving; allow the operator + a peek.
-# -rfbauth ~/.vnc/passwd: macOS Screen Sharing cannot cope with a
-# passwordless VNC server (it hangs asking for a password that doesn't
-# exist); a real VNC password keeps it happy. SSH key stays the real gate.
-# Speed set (2026-10-18): poll every 5ms (-wait 5, default 20), flush
-# updates immediately (-defer 10, default 30). -noxdamage stays: DAMAGE
-# delivery on Xvfb misfires. NOTE: -compresslevel is NOT supported by this
-# build (exits "unrecognized option" every boot — the MBA-side outages on
-# 18th were this, not the firewall); do not re-add it.
-ExecStart=/usr/bin/x11vnc -display :99 -localhost -forever -shared -rfbauth %h/.vnc/passwd -noxdamage -wait 5 -defer 10 -o %h/.vnc-station.log
+# 2026-10-20: x11vnc REPLACED by wayvnc. OBS now lives on XWayland :0
+# (it must, for iGPU hardware GL — Xvfb :99 cannot host GLX at all, which
+# was the llvmpipe 2x-CPU burn), and x11vnc 0.9.17 cannot scrape XWayland:
+# it aborts with "BadMatch (X_GetImage)" forever. wayvnc attaches to the
+# Hyprland session (wlr-screencopy) natively and mirrors the whole desktop.
+# It wants the user-session Wayland env — do NOT UnsetEnvironment here.
+# Config: %h/.config/wayvnc/wayvnc-station.ini — binds 127.0.0.1 only, so
+# the SSH tunnel stays the real gate; password auth because macOS Screen
+# Sharing cannot cope with a passwordless VNC server (it hangs asking for
+# a password that doesn't exist). Password is in the ini (mode 0600).
+ExecStart=/usr/bin/wayvnc --config=%h/.config/wayvnc/wayvnc-station.ini
 Restart=always
 RestartSec=10
 
