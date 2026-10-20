@@ -18,6 +18,7 @@
     --muted: #718090;
     --accent: #3d7bc8;
     --ok: #46b06e;
+    --warn: #d8a04a;
   }
   *, *::before, *::after { box-sizing: border-box; }
   html, body {
@@ -26,133 +27,169 @@
     font: 12px/1.4 "Segoe UI", "Noto Sans", system-ui, sans-serif;
     display: flex; flex-direction: column;
   }
+  body.locked .mutate { pointer-events: none; opacity: .45; }
+
   button, input, select {
     font: inherit; color: var(--text); background: var(--btn);
     border: 1px solid var(--bar-border); border-radius: 3px;
-    padding: 4px 9px;
+    padding: 4px 9px; min-height: 26px;
   }
-  button:hover { background: var(--btn-hover); }
-  button:active { background: #222c35; }
+  button:hover:not(:disabled) { background: var(--btn-hover); }
+  button:active:not(:disabled) { background: #222c35; }
   button.primary { background: var(--btn-active-bg); border-color: var(--btn-active-border); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
   input, select { background: #0d1014; }
+
   .row { display: flex; gap: 5px; padding: 6px; background: var(--bar);
          border-bottom: 1px solid var(--bar-border); flex: none; }
   .row input.wide { flex: 1; min-width: 0; }
-  .row select { flex: none; max-width: 130px; }
+  .row select { flex: none; max-width: 150px; }
 
-  #meta { padding: 5px 8px; background: var(--bar); border-bottom: 1px solid var(--bar-border);
-          flex: none; display: flex; gap: 8px; align-items: baseline; }
-  #onair { font-weight: 600; font-size: 11px; }
-  #decktag { color: var(--muted); font-size: 10px; }
-  #airbad { color: var(--danger-text); font-size: 10px; margin-left: auto; }
+  #strip { display: flex; gap: 8px; align-items: baseline; padding: 5px 8px;
+           background: var(--bar); border-bottom: 1px solid var(--bar-border); flex: none; }
+  #onair { font-weight: 600; font-size: 11px; white-space: nowrap;
+           overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+  #decktag { color: var(--muted); font-size: 10px; white-space: nowrap; }
+  #nextup { color: var(--warn); font-size: 10px; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right; }
+  #airbad.crit { color: var(--danger-text); font-size: 10px;
+                 letter-spacing: .06em; text-transform: uppercase; }
 
   #queue { flex: 1; overflow-y: auto; padding: 4px 0; }
-  .item { display: flex; gap: 7px; align-items: center; padding: 5px 9px;
-          cursor: pointer; border-left: 3px solid transparent; }
+  .item { display: flex; gap: 7px; align-items: center; padding: 4px 9px;
+          cursor: pointer; border-left: 3px solid transparent; user-select: none; }
   .item:hover { background: #15191e; }
   .item.sel { background: var(--btn-active-bg); border-left-color: var(--accent); }
   .item.onair { border-left-color: var(--ok); }
-  .item .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item .src { color: var(--muted); font-size: 10px; flex: none; }
-  .item .dur { color: var(--muted); font-size: 10px; flex: none; }
-  .item .cache { font-size: 10px; flex: none; width: 10px; text-align: center; }
-  .cache.ready { color: var(--ok); }
-  .cache.fetching { color: var(--accent); }
   .item.drag { opacity: .4; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #3d434d; }
+  .dot.ready { background: var(--ok); }
+  .dot.fetching { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .item .num { color: var(--muted); font-size: 10px; flex: none; width: 26px; text-align: right;
+               font-variant-numeric: tabular-nums; }
+  .item .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .src { color: var(--muted); font-size: 9px; flex: none; letter-spacing: .05em; }
+  .item .dur { color: var(--muted); font-size: 10px; flex: none; font-variant-numeric: tabular-nums; }
+  .item .dots { font-size: 12px; color: var(--muted); padding: 2px 5px; flex: none; }
+  .cue { font-size: 9px; letter-spacing: .06em; flex: none; color: var(--warn);
+         text-transform: uppercase; }
+  #empty { color: var(--muted); text-align: center; padding: 22px 12px; font-size: 11px; }
 
   .trow { display: flex; gap: 5px; padding: 6px; background: var(--bar);
-          border-top: 1px solid var(--bar-border); flex: none; }
+          border-top: 1px solid var(--bar-border); flex: none; align-items: center; }
   .trow .grow { flex: 1; }
-  #status { padding: 4px 8px; background: var(--bar); border-top: 1px solid var(--bar-border);
-            color: var(--muted); font-size: 10px; flex: none;
+
+  #status { padding: 5px 8px; background: var(--bar); border-top: 1px solid var(--bar-border);
+            color: var(--muted); font-size: 10px; flex: none; min-height: 22px;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #status.err { color: var(--danger-text); }
+
+  #down { position: absolute; inset: 0; background: rgba(0,0,0,.78); display: none;
+          align-items: center; justify-content: center; font-size: 13px;
+          color: var(--danger-text); z-index: 5; text-align: center; padding: 20px; }
+  #down.on { display: flex; }
+
+  #help { position: absolute; inset: 0; background: rgba(0,0,0,.85); display: none; z-index: 6;
+          overflow-y: auto; padding: 16px; }
+  #help.on { display: block; }
+  #help h3 { margin: 0 0 8px; font-size: 12px; }
+  #help dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 11px; }
+  #help dt { color: var(--text); font-weight: 600; white-space: nowrap; }
+  #help dd { margin: 0; color: var(--muted); }
+  #help b { color: var(--text); }
+
+  #menu { position: absolute; background: var(--bar); border: 1px solid var(--bar-border);
+          border-radius: 4px; z-index: 4; display: none; min-width: 160px;
+          box-shadow: 0 4px 14px rgba(0,0,0,.6); }
+  #menu.on { display: block; }
+  #menu button { display: block; width: 100%; text-align: left; border: 0; border-radius: 0;
+                 background: none; padding: 6px 12px; min-height: 24px; }
+  #menu button:hover:not(:disabled) { background: var(--btn-hover); }
+  #menu hr { border: 0; border-top: 1px solid var(--bar-border); margin: 3px 0; }
 </style>
 </head>
 <body>
 
 <div class="row">
-  <input id="url" class="wide" placeholder="YouTube link or local file name…">
-  <button id="add" class="primary">Add</button>
-  <select id="media"><option value="">media…</option></select>
+  <input id="url" class="wide mutate" placeholder="Paste a YouTube link, or pick a media file…">
+  <button id="add" class="primary mutate">Add</button>
+  <select id="media" class="mutate" title="Insert one of the uploaded files"><option value="">media…</option></select>
+  <button id="helpbtn" title="What each control does">?</button>
 </div>
 
-<div id="meta">
-  <span id="onair">—</span><span id="decktag"></span><span id="airbad"></span>
+<div id="strip">
+  <span id="onair">…</span><span id="decktag"></span>
+  <span id="nextup"></span><span id="airbad"></span>
 </div>
 
-<div id="queue"></div>
+<div id="queue" aria-label="Queue"></div>
 
 <div class="trow">
-  <select id="plist"><option value="">playlists…</option></select>
-  <button id="p-save" title="Save current queue as 'playlists/<name>'">Save</button>
-  <button id="p-load" title="Load selected playlist (takes effect at next cut)">Load</button>
-  <button id="p-del" title="Delete selected playlist">Del</button>
+  <select id="plist" class="mutate" title="Saved queue version to update or replace from"><option value="">(new playlist)</option></select>
+  <button id="p-save" class="mutate">Save</button>
+  <button id="p-load" class="mutate">Load</button>
+  <button id="p-del" class="mutate">Delete</button>
   <span class="grow"></span>
-  <button id="t-prev" title="Replay previous item at the next transition… or skip now">⏮</button>
-  <button id="t-skip" class="primary" title="End current item now; next plays">⏭ Skip</button>
+  <button id="t-prev" class="mutate" title="Queue the previous item and end the current one">Prev</button>
+  <button id="t-skip" class="primary mutate" title="End the on-air item now; NEXT starts (~5s)">Skip</button>
 </div>
 
-<div id="status">connecting…</div>
+<div class="trow" style="border-top:0">
+  <label class="mutate" style="display:flex; gap:5px; align-items:center" title="When the roll finishes, reshuffle automatically and start the new order at the top (no immediate repeat)">
+    <input type="checkbox" id="shuf" style="min-height:0">
+    <span style="font-size:10px; color:var(--muted)">reshuffle at end of roll</span>
+  </label>
+  <span class="grow"></span>
+  <button id="shuf-now" class="mutate" title="Randomize the waiting items now; the on-air item keeps its slot">Shuffle rest</button>
+</div>
+
+<div id="status" aria-live="polite">connecting…</div>
+
+<div id="down">DAEMON UNREACHABLE — retrying…<br>
+  <span style="font-size:10px; color:var(--muted)">queue edits are blocked until the daemon answers</span></div>
+
+<div id="help">
+  <h3>How this dock works</h3>
+  <dl>
+    <dt>Add</dt><dd>Appends to the END of the queue and saves instantly. The on-air item is never affected; new things play once everything above them has finished. Duplicate links/files are rejected.</dd>
+    <dt>Order</dt><dd>Plays top to bottom. The <b>NEXT</b> marker shows what loads after the on-air item. Drag rows to reorder (saved instantly), or use the row menu.</dd>
+    <dt>Row menu …</dt><dd>Move, toggle dormant (dimmed = never plays), play next, or remove. The on-air row cannot be removed or double-clicked.</dd>
+    <dt>Double-click a row</dt><dd><b>Play now</b>: the row is moved to the head of the queue and the on-air item is ended. Use with care — it cuts what is playing.</dd>
+    <dt>Cache dot</dt><dd><b style="color:var(--ok)">filled</b> = full local copy downloaded; a cut here works with no internet. <b style="color:var(--accent)">pulsing</b> = downloading right now. hollow = streams live from YouTube (needs the internet; can still die mid-play).</dd>
+    <dt>Save</dt><dd>A selected box entry is <b>overwritten</b>; with nothing selected a new saved playlist is created. Either way your WORKING queue is already saved instantly on every edit — Save only versions it.</dd>
+    <dt>Load</dt><dd>Replaces the queue from a saved playlist. It swaps at the next cut: the on-air item keeps playing to its natural end.</dd>
+    <dt>Delete</dt><dd>Two presses within 3s confirm.</dd>
+    <dt>reshuffle checkbox</dt><dd>End-of-roll behavior: when the queue finishes, shuffle it and restart from the top automatically.</dd>
+    <dt>Shuffle rest</dt><dd>Shuffles everything except the on-air item and saves. NEXT recalculates.</dd>
+    <dt>Prev / Skip</dt><dd>Skip ends the on-air item now and starts NEXT (~5s deck swap). Prev queues the previous item and ends the current. Skip is debounced to once per 4s.</dd>
+    <dt>Dormant rows</dt><dd>Kept in the list but never air. Use for content you rotate in later.</dd>
+  </dl>
+  <div style="margin-top:12px"><button id="helpclose">Close</button></div>
+</div>
+
+<div id="menu"></div>
 
 <script>
 "use strict";
-let S = null, sel = -1, toast = "";
+let S = null;          // latest /api/state
+let sel = -1;          // selected row
+let upDown = false;    // daemon reachable
+let busy = false;      // a save is in flight: edits blocked till settled
 
 const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = (s) => {
   s = Math.max(0, Math.round(s || 0));
-  const m = Math.floor(s / 60);
-  return m + ":" + String(s % 60).padStart(2, "0");
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 };
-const srcOf = (i) => (i.youtube ? "YT" : i.file ? "FILE" : "pending");
-const cacheGlyph = (c) => c === "ready" ? "✓" : c === "fetching" ? "⟳" : "·";
+const keyOf = (it) => (it.youtube || "") + "|" + (it.file || "");
 
-function itemDur(it, i) {
-  const d = it.duration;
-  if (!d) return "";
-  return fmt(d);
-}
-
-function render() {
-  if (!S) return;
-  const items = S.playlist.items || [];
-  const st = S.state || {};
-  const onIdx = Math.max(0, (st.index || 1) - 1);
-  const onIt = items[onIdx] || {};
-  $("onair").textContent = "ON AIR · " + (onIt.title || onIt.file || onIt.youtube || "?");
-  $("decktag").textContent = "deck " + (st.deck || "A") + " · next=" + S.state?.index;
-  $("airbad").textContent = st.fallback_air ? "FALLBACK ON AIR" : "";
-  if (toast) $("status").textContent = toast;
-
-  const q = $("queue");
-  q.innerHTML = "";
-  items.forEach((it, i) => {
-    const el = document.createElement("div");
-    el.className = "item" + (i === sel ? " sel" : "") + (i === onIdx ? " onair" : "");
-    el.draggable = true;
-    el.dataset.i = i;
-    const cache = S.spool ? cacheGlyph(S.spool[i]) : "";
-    el.innerHTML =
-      '<span class="cache ' + (S.spool ? S.spool[i] : "") + '">' + cache + "</span>" +
-      '<span class="t1">' + (it.title || it.file || it.youtube || "?") + "</span>" +
-      '<span class="src">' + srcOf(it) + "</span>" +
-      '<span class="dur">' + itemDur(it, i) + "</span>";
-    if (it.status === "dormant") el.querySelector(".t1").style.opacity = ".45";
-    el.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
-    el.addEventListener("dblclick", () => playAt(i));
-    el.addEventListener("dragstart", (e) => { e.dataTransfer.iRef = i; el.classList.add("drag"); });
-    el.addEventListener("dragend", () => el.classList.remove("drag"));
-    el.addEventListener("dragover", (e) => e.preventDefault());
-    el.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const from = e.dataTransfer.iRef, to = i;
-      if (from == null || from === to) return;
-      reorder(from, to);
-    });
-    q.appendChild(el);
-  });
-  if (toast) toast = "";
+function status(msg, cls) {
+  const el = $("status");
+  el.textContent = msg;
+  el.className = cls || "";
 }
 
 async function api(path, body) {
@@ -160,106 +197,390 @@ async function api(path, body) {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   } : undefined);
-  if (!r.ok) throw new Error(await r.text());
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).err || r.status);
   return r.json();
 }
 
-async function reorder(from, to) {
-  const items = S.playlist.items.slice();
-  const [m] = items.splice(from, 1);
-  items.splice(to, 0, m);
-  await save({ ...S.playlist, items });
+/* ---------- persistence ---------------------------------------------- */
+/* onAirIdxOf: the "cursor" state.index is positional, so any edit that
+   changes item counts or order must re-pin it to the on-air item's
+   identity BEFORE saving; otherwise the daemon could advance to a
+   different item than the viewer expects. */
+function onAirKey() {
+  const idx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const it = (S.playlist.items || [])[idx];
+  return it ? keyOf(it) : null;
 }
 
-async function save(pl) {
-  toast = "saving…"; render();
+async function save(indexAfterEdit) {
+  busy = true;
+  document.body.classList.add("locked");
+  status("saving…");
   try {
-    await api("/api/save", { playlist: pl, knobs: S.knobs });
-    toast = "saved"; load();
+    await api("/api/save", { playlist: S.playlist, knobs: S.knobs || {} });
+    if (indexAfterEdit != null && indexAfterEdit !== S.state.index) {
+      try {
+        await api("/api/state", { state: { index: indexAfterEdit } });
+      } catch (e) { /* daemon may have cut already; poll will re-sync */ }
+    }
+    status("");
   } catch (e) {
-    toast = ""; $("status").textContent = "save failed: " + e.message; render();
+    status("save failed: " + e.message, "err");
+  } finally {
+    busy = false;
+    load(true);
   }
 }
 
-async function playAt(i) {
-  await api("/api/state", { state: { index: i + 1 } });
-  await api("/api/control", { skip: true });
-}
-$("add").addEventListener("click", async () => {
-  const v = $("url").value.trim();
-  if (!v) return;
+/* ---------- state create --------------------------------------------- */
+function mutate(fn, label) {
+  if (busy) { status("another edit is still saving — one moment", "err"); return; }
   const items = (S.playlist.items || []).slice();
-  const it = v.includes("/") || v.endsWith(".mp4")
-    ? { file: v.split("/").pop(), title: v.split("/").pop(), youtube: null }
-    : { youtube: v, title: v, file: null, duration: 0 };
-  items.push(it);
-  $("url").value = "";
-  await save({ ...S.playlist, items });
-});
-$("media").addEventListener("change", () => {
-  const v = $("media").value;
-  if (!v) return;
-  $("url").value = v;
-});
-$("t-skip").addEventListener("click", async () => {
-  try { await api("/api/control", { skip: true }); toast = "skip queued"; render(); }
-  catch (e) { $("status").textContent = e.message; }
-});
-$("t-prev").addEventListener("click", async () => {
-  const idx = (S.state?.index || 1);
-  if (idx < 2) { toast = "nothing before item 1"; render(); return; }
-  await api("/api/state", { state: { index: idx - 1 } });
-  await api("/api/control", { skip: true });
+  const onKey = onAirKey();
+  fn(items);
+  S.playlist = { ...S.playlist, items };
+  let indexPatch = null;
+  if (onKey && onKey !== "|") {
+    const pos = S.playlist.items.findIndex((it) => keyOf(it) === onKey);
+    if (pos >= 0) indexPatch = pos + 1;
+  }
+  save(indexPatch).then(() => { if (label) status(label); });
+}
+
+/* ---------- rendering ------------------------------------------------- */
+function itTitle(it) {
+  if (it.file) return it.file.replace(/\.mp4$/i, "");
+  if (it.youtube) {
+    const t = it.title || (S.yt_titles || {})[it.youtube];
+    return t || "YT link — title arrives when streamed or cached";
+  }
+  return it.title || "waiting for details";
+}
+
+function render() {
+  if (!S) return;
+  document.body.classList.toggle("locked", !upDown || busy);
+  $("down").classList.toggle("on", !upDown);
+  const items = S.playlist.items || [];
+  const st = S.state || {};
+  const onIdx = Math.max(0, (st.index || 1) - 1);
+  const onIt = items[onIdx] || {};
+  const nxIdx = (st.index || 0) < items.length ? st.index : -1;
+
+  $("onair").textContent = "ON AIR · " + (st.in_ad_break ? "AD BREAK"
+    : itTitle(onIt) || "nothing");
+  $("decktag").textContent = "deck " + (st.deck || "A");
+  $("nextup").textContent = nxIdx < 0 ? "" :
+    "NEXT ·  #" + (nxIdx + 1) + " " + itTitle(items[nxIdx]);
+  $("airbad").className = st.fallback_air ? "crit" : "";
+  $("airbad").textContent = st.fallback_air ? "fallback on air" : "";
+
+  $("shuf").checked = !!S.playlist.shuffle_on_complete;
+
+  const q = $("queue");
+  q.innerHTML = "";
+  if (!items.length) {
+    const e = document.createElement("div");
+    e.id = "empty";
+    e.textContent = "Queue is empty. Paste a YouTube link, or pick a media file above.";
+    q.appendChild(e);
+    return;
+  }
+  items.forEach((it, i) => {
+    const r = document.createElement("div");
+    const cacheState = (S.spool || [])[i] || "miss";
+    r.className = "item" + (i === sel ? " sel" : "") +
+      (i === onIdx ? " onair" : i === nxIdx ? " nextup" : "");
+    r.draggable = true;
+    r.dataset.i = i;
+    const playable = it.youtube != null || it.file != null;
+    r.innerHTML =
+      '<span class="num">#' + (i + 1) + "</span>" +
+      '<span class="dot ' + cacheState +
+      '" title="cache: ' + cacheState + '"></span>' +
+      '<span class="t1" style="opacity:' +
+      (it.status === "dormant" ? ".45" : playable ? "1" : ".3") + '">' +
+      esc(itTitle(it)) + "</span>" +
+      '<span class="src">' + (it.youtube != null ? "YT" : it.file != null ? "FILE" : "PENDING") + "</span>" +
+      '<span class="dur">' + (it.duration ? fmt(it.duration) : "") + "</span>" +
+      (i === nxIdx ? '<span class="cue">next</span>' :
+       i === onIdx ? '<span class="cue" style="color:var(--ok)">on air</span>' : "") +
+      '<span class="dots" role="button" title="row menu">⋯</span>';
+    r.querySelector(".dots").addEventListener("click", (e) => { e.stopPropagation(); rowMenu(e, i); });
+    r.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
+    r.addEventListener("dblclick", () => { if (i !== onIdx) playNext(i, r); });
+    r.addEventListener("dragstart", (ev) => {
+      ev.dataTransfer.iRef = i;
+      ev.dataTransfer.effectAllowed = "move";
+      r.classList.add("drag");
+    });
+    r.addEventListener("dragend", () => r.classList.remove("drag"));
+    r.addEventListener("dragover", (ev) => ev.preventDefault());
+    r.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      const from = ev.dataTransfer.iRef;
+      if (from == null || from === i) return;
+      mutate((a) => {
+        const [m] = a.splice(from, 1);
+        a.splice(i, 0, m);
+      }, "reordered — takes effect at the next cut");
+    });
+    q.appendChild(r);
+  });
+  q.addEventListener("dragover", (ev) => ev.preventDefault());
+  q.addEventListener("drop", (ev) => {
+    ev.preventDefault();
+    const from = ev.dataTransfer.iRef;
+    if (from == null || from === items.length - 1) return;
+    mutate((a) => {
+      const [m] = a.splice(from, 1);
+      a.push(m);
+    });
+  });
+}
+
+/* ---------- row menu --------------------------------------------------- */
+function rowMenu(ev, i) {
+  sel = i;
+  const items = S.playlist.items || [];
+  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const m = $("menu");
+  const defs = [];
+  defs.push(["Move up", i > 0 ? () => mutate((a) => {
+    [a[i], a[i - 1]] = [a[i - 1], a[i]];
+  }, "") : null]);
+  defs.push(["Move down", i < items.length - 1 ? () => mutate((a) => {
+    [a[i], a[i + 1]] = [a[i + 1], a[i]];
+  }, "") : null]);
+  defs.push(["sep"]);
+  const willWake = items[i].status === "dormant";
+  defs.push([willWake ? "Wake up" : "Set dormant",
+    () => mutate((a) => {
+      a[i].status = a[i].status === "dormant" ? null : "dormant";
+    }, willWake ? "awake — will play" : "dormant — never plays")]);
+  if (i !== onIdx) defs.push(["Play next", () => playNext(i)]);
+  defs.push(["sep"]);
+  defs.push(["Remove", i === onIdx ? null : () => mutate((a) => {
+    a.splice(i, 1);
+    status("removed row #" + (i + 1));
+  })]);
+  m.innerHTML = "";
+  defs.forEach((d) => {
+    if (d[0] === "sep") { m.appendChild(document.createElement("hr")); return; }
+    const b = document.createElement("button");
+    b.textContent = d[0];
+    if (!d[1]) { b.disabled = true; }
+    else { b.addEventListener("click", () => { m.classList.remove("on"); d[1](); }); }
+    m.appendChild(b);
+  });
+  m.classList.add("on");
+  m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 6) + "px";
+  m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 6) + "px";
+}
+
+document.addEventListener("click", (e) => {
+  if (!$("menu").contains(e.target)) $("menu").classList.remove("on");
 });
 
+/* ---------- play-now --------------------------------------------------- */
+function playNext(i, rowEl) {
+  if (busy) { status("another edit is still saving — one moment", "err"); return; }
+  const items = (S.playlist.items || []).slice();
+  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  if (i === onIdx) return;
+  const [m] = items.splice(i, 1);
+  // The pointer state.index stays where it is: inserting at that exact
+  // position puts the picked item directly under the cursor, so the very
+  // next cut plays it. The old first-up item slots after it.
+  items.splice(onIdx, 0, m);
+  S.playlist = { ...S.playlist, items };
+  busy = true;
+  document.body.classList.add("locked");
+  (async () => {
+    try {
+      await api("/api/save", { playlist: S.playlist, knobs: S.knobs || {} });
+      await api("/api/control", { skip: true });
+      status("playing now — the on-air item is being cut");
+    } catch (e) {
+      status("play-now failed: " + e.message, "err");
+    } finally {
+      busy = false;
+      load(true);
+    }
+  })();
+}
+
+/* ---------- add --------------------------------------------------------- */
+function classify(input) {
+  const v = String(input || "").trim();
+  if (!v) return null;
+  const y = v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/);
+  if (y && /youtu/i.test(v)) {
+    return { youtube: "https://www.youtube.com/watch?v=" + y[1], title: null,
+             file: null, duration: 0, yt_id: y[1] };
+  }
+  const base = v.split(/[\\/]/).pop();
+  if (((S || {}).media_files || []).includes(base)) {
+    return { youtube: null, file: base, title: null, duration: 0 };
+  }
+  return { err: "not a YouTube link or one of the uploaded media files" };
+}
+
+async function addInput() {
+  if (busy) { status("another edit is still saving — one moment", "err"); return; }
+  const parsed = classify($("url").value);
+  $("url").value = "";
+  if (!parsed || parsed.err) {
+    status(parsed ? parsed.err : "paste something first", "err");
+    return;
+  }
+  const items = (S.playlist.items || []).slice();
+  const dup = items.findIndex((it) =>
+    parsed.file ? it.file === parsed.file
+      : it.youtube === parsed.youtube ||
+        (it.youtube || "").match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/)?.[1]
+          === parsed.yt_id);
+  if (dup >= 0) {
+    sel = dup;
+    status("already in the queue at #" + (dup + 1) + " — not added twice", "err");
+    render();
+    return;
+  }
+  delete parsed.yt_id;
+  const pos = items.length;
+  mutate((a) => a.push(parsed), null);
+  status("added as #" + (pos + 1) + " — plays after everything above it");
+}
+
+$("add").addEventListener("click", addInput);
+$("url").addEventListener("keydown", (e) => { if (e.key === "Enter") addInput(); });
+$("media").addEventListener("change", () => {
+  if ($("media").value) { $("url").value = $("media").value; $("media").value = ""; }
+});
+
+/* ---------- transport --------------------------------------------------- */
+let skipAt = 0;
+$("t-skip").addEventListener("click", async () => {
+  if (Date.now() - skipAt < 4000) return;
+  skipAt = Date.now();
+  try {
+    await api("/api/control", { skip: true });
+    status("skip: ending the on-air item…");
+  } catch (e) { status("skip failed: " + e.message, "err"); }
+});
+$("t-prev").addEventListener("click", async () => {
+  const idx = (S.state || {}).index || 1;
+  if (idx <= 1) { status("nothing before item #1", "err"); return; }
+  try {
+    /* advance plays the item AT the cursor position: state.index - 2 is
+       the one before the on-air row. */
+    await api("/api/state", { state: { index: idx - 1 } });
+    await api("/api/control", { skip: true });
+    status("jumping back to #" + (idx - 1));
+  } catch (e) { status("prev failed: " + e.message, "err"); }
+});
+
+/* ---------- shuffle ------------------------------------------------------ */
+$("shuf").addEventListener("change", () => {
+  S.playlist = { ...S.playlist, shuffle_on_complete: $("shuf").checked };
+  save();   // index untouched: no reorder happened
+});
+$("shuf-now").addEventListener("click", () => {
+  const items = (S.playlist.items || []).slice();
+  if (items.length < 3) { status("too few rows to shuffle", "err"); return; }
+  const onIdx = Math.max(0, ((S.state || {}).index || 1) - 1);
+  mutate((a) => {
+    const on = a[onIdx];
+    const rest = a.filter((_, i) => i !== onIdx);
+    for (let n = rest.length - 1; n > 0; n--) {
+      const j = Math.floor(Math.random() * (n + 1));
+      [rest[n], rest[j]] = [rest[j], rest[n]];
+    }
+    let r = 0;
+    for (let i = 0; i < a.length; i++) a[i] = (i === onIdx) ? on : rest[r++];
+  }, "shuffled — the on-air item kept its slot");
+});
+
+/* ---------- playlists ----------------------------------------------------- */
+async function refreshPlaylists(pick) {
+  try {
+    const p = await (await fetch("/api/playlists")).json();
+    const box = $("plist");
+    const cur = pick || box.value;
+    box.innerHTML = '<option value="">(new playlist)</option>' +
+      (p.playlists || []).map((n) => "<option>" + esc(n) + "</option>").join("");
+    if (cur) box.value = cur;
+  } catch (e) { /* while down: keep old list */ }
+}
+
 $("p-save").addEventListener("click", async () => {
-  let nm = $("plist").value;
-  if (!nm) nm = "dock-" + new Date().toISOString().slice(5, 16).replace("T", "-");
-  await api("/api/playlists", { action: "save", name: nm });
-  await refreshPlaylists(nm);
-  toast = "saved as " + nm; render();
+  const nm = $("plist").value || "dock-" +
+    new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+  try {
+    busy = true; document.body.classList.add("locked");
+    await api("/api/playlists", { action: "save", name: nm });
+    await refreshPlaylists(nm);
+    status($("plist").value ? "saved queue as “" + nm + "”" : "created “" + nm + "”");
+  } catch (e) {
+    status("save failed: " + e.message, "err");
+  } finally {
+    busy = false;
+    load(true);
+  }
 });
 $("p-load").addEventListener("click", async () => {
   const nm = $("plist").value;
-  if (!nm) { toast = "pick a playlist first"; render(); return; }
-  await api("/api/playlists", { action: "load", name: nm });
-  toast = "loaded " + nm + " (next cut)"; load();
+  if (!nm) { status("select a playlist in the box to load", "err"); return; }
+  try {
+    await api("/api/playlists", { action: "load", name: nm });
+    status("loaded “" + nm + "” — the queue swaps at the next cut");
+  } catch (e) { status("load failed: " + e.message, "err"); }
+  load(true);
 });
 let delArm = 0;
 $("p-del").addEventListener("click", async () => {
   const nm = $("plist").value;
-  if (!nm) { toast = "pick a playlist first"; render(); return; }
+  if (!nm) { status("select a playlist in the box to delete", "err"); return; }
   if (Date.now() - delArm > 3000) {
     delArm = Date.now();
-    toast = "press Del again to delete " + nm;
-    render();
+    status("press Delete again within 3s to delete “" + nm + "”", "err");
     return;
   }
   delArm = 0;
-  await api("/api/playlists", { action: "delete", name: nm });
-  await refreshPlaylists();
-  toast = "deleted " + nm; render();
+  try {
+    await api("/api/playlists", { action: "delete", name: nm });
+    await refreshPlaylists();
+    status("deleted “" + nm + "”");
+  } catch (e) { status("delete failed: " + e.message, "err"); }
 });
 
-async function refreshPlaylists(pick) {
-  const p = await (await fetch("/api/playlists")).json();
-  const sel = $("plist");
-  sel.innerHTML = '<option value="">playlists…</option>' +
-    (p.playlists || []).map(n => '<option>' + n + '</option>').join("");
-  if (pick) sel.value = pick;
+/* ---------- help ---------------------------------------------------------- */
+$("helpbtn").addEventListener("click", () => $("help").classList.add("on"));
+$("helpclose").addEventListener("click", () => $("help").classList.remove("on"));
+
+/* ---------- poll loop ------------------------------------------------------ */
+function fillMedia() {
+  const box = $("media");
+  const cur = box.value;
+  box.innerHTML = '<option value="">media…</option>' +
+    ((S || {}).media_files || []).map((f) => "<option>" + esc(f) + "</option>").join("");
+  if (cur) box.value = cur;
 }
 
-async function load() {
+async function load(silent) {
   try {
-    S = await (await fetch("/api/state")).json();
-    S.playlist.items = S.playlist.items || [];
-    if (!$("media").options.length || $("media").options.length < 2) {
-      $("media").innerHTML = '<option value="">media…</option>' +
-        (S.media_files || []).map(f => "<option>" + f + "</option>").join("");
-    }
+    const fresh = await (await fetch("/api/state")).json();
+    fresh.playlist.items = fresh.playlist.items || [];
+    const wasDown = !upDown;
+    S = fresh;
+    upDown = true;
+    if (wasDown) status("");
+    fillMedia();
     render();
   } catch (e) {
-    $("status").textContent = "daemon unreachable: " + e.message;
+    if (!silent || upDown) status("daemon unreachable: " + e.message, "err");
+    upDown = false;
+    if (S) render();
   }
 }
 

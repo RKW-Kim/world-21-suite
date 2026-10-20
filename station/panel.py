@@ -77,6 +77,13 @@ def _write(path, obj):
 def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
+    titles = {}
+    for i in items:
+        url = i.get("youtube")
+        if url is not None:
+            r = spool.ready(url)
+            if r and r.get("title"):
+                titles[url] = r["title"]
     return {
         "playlist": _read(PLAYLIST, {"items": []}),
         "state": _read(STATE, {}),
@@ -86,6 +93,7 @@ def api_state():
         "media_files": sorted(f for f in os.listdir(MEDIA) if f.endswith(".mp4")),
         "spool": [spool.state(i["youtube"]) if i.get("youtube") is not None else "file"
                   for i in items],
+        "yt_titles": titles,
     }
 
 
