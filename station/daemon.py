@@ -1111,59 +1111,67 @@ def studio_mode_off(renderer):
         pass
 
 
+def _ensure_filters(renderer, source, chain):
+    """chain: ((filterName, filterKind, settings), ...). Idempotent — create
+    what is missing, re-tune what is already there. Filter kinds are OBS's
+    real ids ('compressor_filter', 'limiter_filter', ...): anything else is
+    refused with "filter kind is not supported by OBS". Returns the number
+    of filters created here."""
+    try:
+        have = {f.get("filterName") for f in renderer._call(
+            "GetSourceFilterList", {"sourceName": source}).get("filters", [])}
+    except Exception as e:
+        alert("filters unreadable on %s: %s." % (source, e), "WARN")
+        return 0
+    made = 0
+    for fname, fkind, settings in chain:
+        if fname not in have:
+            try:
+                renderer._call("CreateSourceFilter", {
+                    "sourceName": source, "filterName": fname,
+                    "filterKind": fkind, "filterSettings": settings})
+                have.add(fname)
+                made += 1
+            except Exception as e:
+                alert("filter %s on %s failed: %s." % (fname, source, e), "WARN")
+                continue
+        try:
+            renderer._call("SetSourceFilterSettings", {
+                "sourceName": source, "filterName": fname,
+                "filterSettings": settings, "overlay": False})
+        except Exception as e:
+            alert("filter %s on %s could not be tuned: %s."
+                  % (fname, source, e), "WARN")
+    return made
+
+
 def apply_mic_normalizer(renderer):
     """Host microphones vary wildly and nobody is at the mixer: every local
     audio-input source gets suppress + compressor + limiter, idempotently
-    (filters persist with the collection; existing ones are re-tuned)."""
+    (filters persist with the collection; existing ones are re-tuned).
+    A plane with no mic input says so instead of staying silent."""
     chain = (
-        ("AStation NoiseSuppress", ("noise_suppress_v2", "noise_suppress"),
-         {"method": 0}),
-        ("AStation Compressor", ("compressor_v2", "compressor"),
-         {"threshold": -20.0, "ratio": 4.0, "attack_time": 10.0,
-          "release_time": 120.0, "output_gain": 0.0}),
-        ("AStation Limiter", ("limiter_v2", "limiter"),
-         {"threshold": -1.5, "release_time": 60.0}),
+        ("AStation NoiseSuppress", "noise_suppress_filter", {}),
+        ("AStation Mic Compressor", "compressor_filter",
+         {"threshold": -20.0, "ratio": 4.0, "attack": 10.0,
+          "release": 120.0, "output_gain": 0.0}),
+        ("AStation Mic Limiter", "limiter_filter",
+         {"threshold": -1.5, "release": 60.0}),
     )
     try:
         inputs = renderer._call("GetInputList").get("inputs", [])
     except Exception as e:
         alert("mic normalizer skipped: %s." % e, "WARN")
         return
-    hit = False
-    for inp in inputs:
-        kind = inp.get("inputKind", "")
-        name = inp.get("inputName", "")
-        if not kind.startswith(("wasapi_input", "alsa_input", "pulse_input")):
-            continue
-        hit = True
-        try:
-            have = {f.get("filterName") for f in renderer._call(
-                "GetSourceFilterList",
-                {"sourceName": name}).get("filters", [])}
-        except Exception:
-            continue
-        for fname, kinds, settings in chain:
-            try:
-                if fname not in have:
-                    for fkind in kinds:
-                        try:
-                            renderer._call("CreateSourceFilter", {
-                                "sourceName": name, "filterName": fname,
-                                "filterKind": fkind,
-                                "filterSettings": settings})
-                            have.add(fname)
-                            hit = True
-                            break
-                        except Exception:
-                            continue
-                if fname in have:  # re-tune even pre-existing filters
-                    renderer._call("SetSourceFilterSettings", {
-                        "sourceName": name, "filterName": fname,
-                        "filterSettings": settings, "overlay": False})
-            except Exception:
-                pass
-    if hit:
-        alert("Microphone normalizer armed (suppress→compress→limit).")
+    mics = [i.get("inputName") for i in inputs
+            if (i.get("inputKind") or "").startswith(
+                ("wasapi_input", "alsa_input", "pulse_input"))]
+    if not mics:
+        alert("No microphone input on this plane; mic normalizer skipped.", "INFO")
+        return
+    for name in mics:
+        _ensure_filters(renderer, name, chain)
+    alert("Microphone normalizer armed on %s." % ", ".join(mics), "INFO")
 
 
 HEARTBEAT = os.path.join(ROOT, "heartbeat.json")
@@ -1177,11 +1185,11 @@ def apply_deck_normalizer(renderer):
     to ride the fader. Compressor tames the jumps, limiter keeps peaks at
     -1.5 dBTP. Runs on the same boot pass as the mic normalizer."""
     chain = (
-        ("AStation Compressor", ("compressor_v2", "compressor"),
-         {"threshold": -16.0, "ratio": 3.0, "attack_time": 25.0,
-          "release_time": 250.0, "output_gain": 0.0}),
-        ("AStation Limiter", ("limiter_v2", "limiter"),
-         {"threshold": -1.5, "release_time": 60.0}),
+        ("AStation Compressor", "compressor_filter",
+         {"threshold": -16.0, "ratio": 3.0, "attack": 25.0,
+          "release": 250.0, "output_gain": 0.0}),
+        ("AStation Limiter", "limiter_filter",
+         {"threshold": -1.5, "release": 60.0}),
     )
     targets = [DECK_A, DECK_B, PLAYOUT_C,
                STREAM_DECK["A"], STREAM_DECK["B"]]
@@ -1191,37 +1199,60 @@ def apply_deck_normalizer(renderer):
     except Exception as e:
         alert("deck normalizer skipped: %s." % e, "WARN")
         return
-    hit = False
-    for src in targets:
-        if src not in names:
-            continue
+    here = [t for t in targets if t in names]
+    missing = [t for t in targets if t not in names]
+    made = 0
+    for src in here:
+        made += _ensure_filters(renderer, src, chain)
+    if here:
+        alert("Deck normalizer armed on %s (compress -16dB/3:1 -> limit -1.5dB)."
+              % ", ".join(here), "INFO")
+    if missing:
+        alert("deck normalizer: %s not on this plane." % ", ".join(missing), "WARN")
+
+
+def probe_plane(renderer):
+    """Dump what the plane actually looks like: input names, the filters
+    riding on them, and the filter kinds this OBS build offers. The ws
+    server greets new clients unreliably (it usually answers the one
+    long-lived connection and leaves the rest hanging), so the daemon —
+    which owns that connection — is the only one able to ask. Writes
+    broadcast/obs_probe.json; also answers the {"probe": true} control
+    verb so the dock/ops can re-read it on demand."""
+    rep = {"ts": time.strftime("%Y-%m-%d %H:%M:%S")}
+    inputs = []
+    try:
+        inputs = renderer._call("GetInputList").get("inputs", [])
+    except Exception as e:
+        rep["input_list_error"] = str(e)
+    rep["inputs"] = [{"name": i.get("inputName"), "kind": i.get("inputKind"),
+                      "type": i.get("inputType")} for i in inputs]
+    filt = {}
+    for i in inputs:
+        name = i.get("inputName")
         try:
-            have = {f.get("filterName") for f in renderer._call(
-                "GetSourceFilterList", {"sourceName": src}).get("filters", [])}
-        except Exception:
-            continue
-        for fname, kinds, settings in chain:
-            try:
-                if fname not in have:
-                    for fkind in kinds:
-                        try:
-                            renderer._call("CreateSourceFilter", {
-                                "sourceName": src, "filterName": fname,
-                                "filterKind": fkind,
-                                "filterSettings": settings})
-                            have.add(fname)
-                            hit = True
-                            break
-                        except Exception:
-                            continue
-                if fname in have:  # re-tune even pre-existing filters
-                    renderer._call("SetSourceFilterSettings", {
-                        "sourceName": src, "filterName": fname,
-                        "filterSettings": settings, "overlay": False})
-            except Exception:
-                pass
-    if hit:
-        alert("Deck normalizer armed (compress→limit on playback inputs).")
+            fl = renderer._call(
+                "GetSourceFilterList", {"sourceName": name}).get("filters", [])
+            filt[name] = [{"name": f.get("filterName"), "kind": f.get("filterKind"),
+                           "settings": f.get("filterSettings")} for f in fl]
+        except Exception as e:
+            filt[name] = "err: %s" % str(e)[:120]
+    rep["filters"] = filt
+    if inputs:
+        try:
+            rep["filter_kinds"] = renderer._call(
+                "GetSourceFilterKindList",
+                {"sourceName": inputs[0].get("inputName")}).get("sourceFilterKinds", [])
+        except Exception as e:
+            rep["filter_kinds_error"] = str(e)
+    path = os.path.join(ROOT, "obs_probe.json")
+    try:
+        with open(path + ".tmp", "w") as f:
+            json.dump(rep, f, indent=1, default=str)
+        os.replace(path + ".tmp", path)
+    except Exception as e:
+        alert("probe write failed: %s." % e, "WARN")
+    return rep
 
 
 def touch_heartbeat():
@@ -2176,6 +2207,10 @@ def cmd_loop(renderer):
         apply_deck_normalizer(renderer)
     except Exception:
         pass
+    try:
+        probe_plane(renderer)
+    except Exception:
+        pass
     # Park whatever is NOT on air, mirroring the last cut: a daemon restart
     # mid-item left a hidden file deck playing silently on request otherwise.
     try:
@@ -2386,6 +2421,14 @@ def cmd_loop(renderer):
                             _normalize_media(str(_norm["file"]))
                         elif isinstance(_norm, dict) and _norm.get("url"):
                             _normalize_media(str(_norm["url"]))
+                        # Read-only plane introspection: {"probe": true}
+                        # refreshes broadcast/obs_probe.json (inputs,
+                        # filters, available filter kinds).
+                        if _ctl.pop("probe", False):
+                            try:
+                                probe_plane(renderer)
+                            except Exception as _pe:
+                                alert("probe failed: %s." % _pe, "WARN")
                         with open(CONTROL + ".tmp", "w") as _f:
                             json.dump(_ctl, _f)
                         os.replace(CONTROL + ".tmp", CONTROL)
