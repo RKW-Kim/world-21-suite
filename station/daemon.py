@@ -1169,6 +1169,61 @@ def apply_mic_normalizer(renderer):
 HEARTBEAT = os.path.join(ROOT, "heartbeat.json")
 
 
+def apply_deck_normalizer(renderer):
+    """Link items and uploaded files arrive at wildly different loudness:
+    spooled ones are lifted at intake, but raw YouTube streams can't be
+    loudnorm'd live. Attach compress + limit (Spotify-style dynamics, no
+    intensity lift) to every playback input, idempotently, so nobody has
+    to ride the fader. Compressor tames the jumps, limiter keeps peaks at
+    -1.5 dBTP. Runs on the same boot pass as the mic normalizer."""
+    chain = (
+        ("AStation Compressor", ("compressor_v2", "compressor"),
+         {"threshold": -16.0, "ratio": 3.0, "attack_time": 25.0,
+          "release_time": 250.0, "output_gain": 0.0}),
+        ("AStation Limiter", ("limiter_v2", "limiter"),
+         {"threshold": -1.5, "release_time": 60.0}),
+    )
+    targets = [DECK_A, DECK_B, PLAYOUT_C,
+               STREAM_DECK["A"], STREAM_DECK["B"]]
+    try:
+        names = {inp.get("inputName") for inp
+                 in renderer._call("GetInputList").get("inputs", [])}
+    except Exception as e:
+        alert("deck normalizer skipped: %s." % e, "WARN")
+        return
+    hit = False
+    for src in targets:
+        if src not in names:
+            continue
+        try:
+            have = {f.get("filterName") for f in renderer._call(
+                "GetSourceFilterList", {"sourceName": src}).get("filters", [])}
+        except Exception:
+            continue
+        for fname, kinds, settings in chain:
+            try:
+                if fname not in have:
+                    for fkind in kinds:
+                        try:
+                            renderer._call("CreateSourceFilter", {
+                                "sourceName": src, "filterName": fname,
+                                "filterKind": fkind,
+                                "filterSettings": settings})
+                            have.add(fname)
+                            hit = True
+                            break
+                        except Exception:
+                            continue
+                if fname in have:  # re-tune even pre-existing filters
+                    renderer._call("SetSourceFilterSettings", {
+                        "sourceName": src, "filterName": fname,
+                        "filterSettings": settings, "overlay": False})
+            except Exception:
+                pass
+    if hit:
+        alert("Deck normalizer armed (compress→limit on playback inputs).")
+
+
 def touch_heartbeat():
     """Poll-loop liveness marker: the panel/dock read its age to tell
     'daemon wedged' apart from 'panel unreachable'."""
@@ -2115,6 +2170,10 @@ def cmd_loop(renderer):
         pass
     try:
         apply_mic_normalizer(renderer)
+    except Exception:
+        pass
+    try:
+        apply_deck_normalizer(renderer)
     except Exception:
         pass
     # Park whatever is NOT on air, mirroring the last cut: a daemon restart
