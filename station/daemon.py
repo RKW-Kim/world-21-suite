@@ -1886,8 +1886,8 @@ def cmd_loop(renderer):
                             # deck and the prime would be thrown away.
                             nxt = spool._urls_ahead(data.get("items") or [],
                                                     idx)
-                            if not (nxt and (spool.ready(nxt[0])
-                                             or spool.state(nxt[0]) == "fetching")):
+                            if not (nxt and (spool.ready(nxt[0][0])
+                                             or spool.state(nxt[0][0]) == "fetching")):
                                 prime_next_stream(data, _sm,
                                                   deck=_sm.get("slot") or "A")
             except Exception:
