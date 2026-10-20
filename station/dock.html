@@ -15,7 +15,7 @@
     --btn-active-border: #3d7bc8;
     --danger-text: #ffa0a8;
     --text: #e0e2e6;
-    --muted: #718090;
+    --muted: #7e8fa2;
     --accent: #3d7bc8;
     --ok: #46b06e;
     --warn: #d8a04a;
@@ -34,7 +34,13 @@
     border: 1px solid var(--bar-border); border-radius: 3px;
     padding: 4px 9px; min-height: 26px;
   }
-  button { transition: background .12s, border-color .12s, transform .06s; }
+  /* Keyboard visibility: this is an operator console, so every stop must
+     show where the focus is — the browser default is too faint on black. */
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+        white-space: nowrap; border: 0; }
   button:hover:not(:disabled) { background: var(--btn-hover); }
   button:active:not(:disabled) { background: #222c35; transform: scale(.96); }
   button.primary { background: var(--btn-active-bg); border-color: var(--btn-active-border); }
@@ -42,11 +48,12 @@
   input, select { background: #0d1014; }
 
   .row { display: flex; gap: 5px; padding: 6px; background: var(--bar);
-         border-bottom: 1px solid var(--bar-border); flex: none; }
+         border-bottom: 1px solid var(--bar-border); flex: none; flex-wrap: wrap; }
   .row input.wide { flex: 1; min-width: 0; }
 
   #strip { display: flex; gap: 8px; align-items: center; padding: 5px 8px;
-           background: var(--bar); border-bottom: 1px solid var(--bar-border); flex: none; }
+           background: var(--bar); border-bottom: 1px solid var(--bar-border);
+           flex: none; flex-wrap: wrap; }
   #onair { font-weight: 600; font-size: 11px; white-space: nowrap;
            overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
   #decktag { color: var(--muted); font-size: 10px; white-space: nowrap; }
@@ -62,19 +69,23 @@
           user-select: none; }
   .item:hover { background: #15191e; }
   .item.sel { background: var(--btn-active-bg); border-left-color: var(--accent); }
+  .item .mark { color: var(--accent); font-size: 10px; flex: none; width: 8px; }
   .item.onair { border-left-color: var(--ok); }
   .item.drag { opacity: .4; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #3d434d; }
-  .dot.ready { background: var(--ok); }
-  .dot.fetching { background: var(--accent); animation: pulse 1s infinite; }
-  @keyframes pulse { 50% { opacity: .25; } }
+  #status.warn { color: var(--warn); }
+  /* Cache state is a shape, not a hue: filled = local copy, half = fetching,
+     hollow = still live. The shapes survive colour-blindness and the
+     reduced-motion setting. */
+  .dot { flex: none; font-size: 11px; line-height: 1; color: #4a515a; }
+  .dot.ready { color: var(--ok); }
+  .dot.fetching { color: var(--accent); }
   .item .num { color: var(--muted); font-size: 10px; flex: none; width: 26px; text-align: right;
                font-variant-numeric: tabular-nums; }
   .item .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item .src { color: var(--muted); font-size: 9px; flex: none; letter-spacing: .05em; }
+  .item .src { color: var(--muted); font-size: 10px; flex: none; letter-spacing: .05em; }
   .item .dur { color: var(--muted); font-size: 10px; flex: none; font-variant-numeric: tabular-nums; }
   .item .dots { font-size: 12px; color: var(--muted); padding: 4px 7px; flex: none; }
-  .cue { font-size: 9px; letter-spacing: .06em; flex: none; color: var(--warn);
+  .cue { font-size: 10px; letter-spacing: .06em; flex: none; color: var(--warn);
          text-transform: uppercase; }
   #empty { color: var(--muted); text-align: center; padding: 22px 12px; font-size: 11px; }
 
@@ -85,7 +96,7 @@
   .sechead.clickable { cursor: pointer; user-select: none; }
   .sechead.clickable:hover { background: #1b2026; }
   .sechead .caret { display: inline-block; width: 10px; color: var(--muted);
-                    transition: transform .12s; font-size: 9px; }
+                    font-size: 9px; }
   .sechead.open .caret { transform: rotate(90deg); }
   .sechead .name { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
                    color: var(--muted); flex: 1; min-width: 0; overflow: hidden;
@@ -93,25 +104,42 @@
   .sechead .name.grab { cursor: grab; }
   .sechead .count { color: var(--muted); font-size: 10px;
                     font-variant-numeric: tabular-nums; }
-  .sechead button { font-size: 9px; min-height: 20px; padding: 2px 7px; }
+  .sechead button { font-size: 10px; min-height: 20px; padding: 2px 7px; }
+  .sechead .fold { display: flex; gap: 8px; align-items: center; flex: 1;
+                   min-width: 0; text-align: left; background: none; border: 0;
+                   color: inherit; padding: 0; min-height: 22px; }
+  .sechead .fold:hover { background: none; }
   .seclist.closed { display: none; }
   .seclist { border-bottom: 1px solid #14171b; }
   .dropzone { outline: 1px dashed var(--accent); outline-offset: -1px; }
   .item.rowhover { background: #1d242c; outline: 1px dashed var(--accent);
                    outline-offset: -1px; }
-  #libbar button.on { background: var(--btn-hover); color: var(--text); }
+  /* The active library tab is marked by a rule, not only by tint. */
+  #libbar button[aria-pressed="true"] { background: var(--btn-hover);
+                                       color: var(--text);
+                                       box-shadow: inset 0 -2px 0 var(--accent); }
+  #libhint { font-size: 10px; color: var(--muted); margin-left: auto;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .item.tripped { background: #241f12; border-left-color: var(--warn); }
-  .item .trip { font-size: 9px; flex: none; color: var(--warn);
+  .item .trip { font-size: 10px; flex: none; color: var(--warn);
                 letter-spacing: .05em; }
 
   .trow { display: flex; gap: 5px; padding: 6px; background: var(--bar);
-          border-top: 1px solid var(--bar-border); flex: none; align-items: center; }
+          border-top: 1px solid var(--bar-border); flex: none; align-items: center;
+          flex-wrap: wrap; }
   .trow .grow { flex: 1; }
 
   #status { padding: 5px 8px; background: var(--bar); border-top: 1px solid var(--bar-border);
             color: var(--muted); font-size: 10px; flex: none; min-height: 22px;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #status.err { color: var(--danger-text); }
+  /* Errors are urgent and untied to a control: they get their own
+     assertive region, so a screen reader speaks them over the noise. */
+  #statusErr { padding: 5px 8px; background: #2a1417; border-top: 1px solid #55262c;
+               color: var(--danger-text); font-size: 10px; flex: none;
+               min-height: 22px; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; }
+  #statusErr:empty { display: none; }
 
   #down { position: absolute; inset: 0; background: rgba(0,0,0,.82); display: none;
           align-items: center; justify-content: center; flex-direction: column;
@@ -120,8 +148,17 @@
   #down.on { display: flex; }
   #downmsg { font-size: 11px; color: var(--muted); }
   .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bar-border);
-          border-top-color: var(--accent); animation: rot .9s linear infinite; }
+          border-top-color: var(--accent); }
   @keyframes rot { to { transform: rotate(360deg); } }
+  /* Motion is opt-in: under prefers-reduced-motion the dock stays still.
+     The cache dot keeps its shape cue, so "downloading" is still legible. */
+  @media (prefers-reduced-motion: no-preference) {
+    button { transition: background .12s, border-color .12s, transform .06s; }
+    .dot.fetching { animation: pulse 1s infinite; }
+    .sechead .caret { transition: transform .12s; }
+    .spin { animation: rot .9s linear infinite; }
+  }
+  @keyframes pulse { 50% { opacity: .35; } }
 
   #help { position: absolute; inset: 0; background: rgba(0,0,0,.85); display: none; z-index: 6;
           overflow-y: auto; padding: 16px; }
@@ -134,23 +171,29 @@
   #help b { color: var(--text); }
 
   #menu { position: absolute; background: var(--bar); border: 1px solid var(--bar-border);
-          border-radius: 4px; z-index: 4; display: none; min-width: 170px;
+          border-radius: 4px; z-index: 4; display: none; min-width: 190px;
           box-shadow: 0 4px 14px rgba(0,0,0,.6); }
   #menu.on { display: block; }
   #menu button { display: block; width: 100%; text-align: left; border: 0; border-radius: 0;
                  background: none; padding: 7px 12px; min-height: 28px; }
   #menu button:hover:not(:disabled) { background: var(--btn-hover); }
   #menu hr { border: 0; border-top: 1px solid var(--bar-border); margin: 3px 0; }
+  /* The row-menu trigger is a real button: it must be a keyboard stop with
+     a name, not a glyph that only the mouse can find. */
+  .item .dots { font-size: 12px; color: var(--muted); padding: 4px 8px; flex: none;
+                background: none; border: 0; min-height: 24px; line-height: 1; }
+  .item .dots:hover { background: var(--btn-hover); color: var(--text); }
 </style>
 </head>
 <body>
 
 <div class="row">
+  <label class="vh" for="url">YouTube link, playlist link, or media file</label>
   <input id="url" class="wide mutate" list="medialist"
          placeholder="Paste a YouTube link or playlist URL, or a media file…">
   <button id="add" class="primary mutate">Add</button>
   <datalist id="medialist"></datalist>
-  <button id="helpbtn" title="What each control does">?</button>
+  <button id="helpbtn" aria-label="How this dock works" title="What each control does">?</button>
 </div>
 
 <div id="strip">
@@ -167,21 +210,25 @@
 
 <div id="libbar" class="trow" style="border-top:0">
   <span style="font-size:10px; color:var(--muted); letter-spacing:.05em">LIBRARY</span>
-  <button id="tab-v" class="mutate">Videos</button>
-  <button id="tab-m" class="mutate">Music</button>
+  <button id="tab-v" class="mutate" aria-pressed="true">Videos</button>
+  <button id="tab-m" class="mutate" aria-pressed="false">Music</button>
+  <span id="libhint"></span>
 </div>
 
-<div id="body">
-  <div id="queue" aria-label="Queue"></div>
+<main id="body">
+  <div id="empty">Queue is empty. Paste a link above, or drag rows out of the parked groups below.</div>
+  <div id="queue" role="listbox" aria-label="Queue — plays top to bottom"></div>
   <div class="section" id="groups"></div>
   <div class="section" id="dorm"></div>
-</div>
+</main>
 
 <div class="trow">
+  <label class="vh" for="plist">Saved queue versions</label>
   <select id="plist" class="mutate" title="Saved queue version to update or replace from"><option value="">(new playlist)</option></select>
   <button id="p-save" class="mutate" title="Snapshot the current queue under this name (edits already autosave — this is a restore point)">Save version</button>
   <button id="p-load" class="mutate">Load</button>
   <button id="p-del" class="mutate">Delete</button>
+  <button id="p-undo" class="mutate" title="Undo the last queue edit (Ctrl+Z)">Undo</button>
   <span class="grow"></span>
   <button id="t-replay" class="mutate" title="Replay the on-air item from the start">Replay</button>
   <button id="t-pause" class="mutate" title="Pause / resume the on-air item">Pause</button>
@@ -197,10 +244,12 @@
   </label>
 </div>
 
-<div id="status" aria-live="polite">connecting…</div>
+<div id="status" role="status" aria-live="polite">connecting…</div>
+<div id="statusErr" role="alert" aria-live="assertive"></div>
 
-<div id="down">
-  <span class="spin"></span>
+<div id="down" role="alertdialog" aria-modal="true" aria-labelledby="downtext"
+     aria-describedby="downmsg">
+  <span class="spin" aria-hidden="true"></span>
   <div id="downtext">DAEMON UNREACHABLE — retrying…</div>
   <div id="downmsg">queue edits are blocked until it answers</div>
   <div style="display:flex; gap:6px">
@@ -209,12 +258,13 @@
   </div>
 </div>
 
-<div id="help">
-  <h3>How this dock works</h3>
+<div id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <h3 id="helpTitle">How this dock works</h3>
   <dl>
     <dt>Add</dt><dd>Pastes become items at the END of the queue and save instantly. A YouTube <b>playlist</b> link (one with <b>list=</b> in it) is detected automatically: it imports as a <b>parked group</b> below the queue, in the playlist's own order — nothing airs until you move items in. Imports only read titles, nothing downloads.</dd>
     <dt>Order</dt><dd>Plays top to bottom; the <b>NEXT</b> marker shows what really airs after the on-air item (parked rows are skipped). Drag rows to reorder (drop ≤on≤ a row to insert there, drop on empty space to append; a 2s re-render pause no longer breaks drags), or use the row menu ⋯.</dd>
-    <dt>Row menu ⋯</dt><dd>Move, park/wake (Available = parked, never airs, dimmed), play next, <b>tag as Video/Music</b> (which library tab it lives in), <b>normalize audio</b> (file items: in-place EBU-R128 pass; YouTube items: a fresh spool through the loudness pass), or remove. Items that YouTube renamed carry a yellow <b>meta?</b> badge: approve (keep the new title) or discard (delete the row). On-air rows are protected.</dd>
+    <dt>Row menu ⋯</dt><dd>Move, park/wake (Available = parked, never airs, dimmed), play now, <b>tag as Video/Music</b> (which library tab it lives in), <b>normalize audio</b> (file items: in-place EBU-R128 pass; YouTube items: a fresh spool through the loudness pass), or remove. Items that YouTube renamed carry a yellow <b>meta?</b> badge: approve (keep the new title) or discard (delete the row). On-air rows are protected. <b>Remove</b> and <b>Discard</b> need a second press within 3s.</dd>
+    <dt>Keyboard</dt><dd><b>↑ / ↓</b> walk the rows, <b>Enter</b> opens the row menu on the highlighted row, <b>Esc</b> closes the menu or this help, <b>Tab</b> moves between the toolbar and the list. The queue keeps the cursor while the list refreshes every 2s.</dd>
     <dt>Double-click a row</dt><dd><b>Play now</b>: the row moves under the cursor and the on-air item is ended. Use with care — it cuts what is playing.</dd>
     <dt>Groups</dt><dd>Parked playlists live down here, folded by default, under the tab their rows are tagged for. Click a header to fold/unfold. Drag the <b>header</b> straight into the queue to play the whole list there; drag single rows out one at a time. Header buttons: <b>Play</b> (queue at the cursor + cut now), <b>shuf</b> (randomize within the group), <b>orig</b> (restore the playlist's import order).</dd>
     <dt>Dropping rules</dt><dd>Drop a row on the <b>queue</b> to air it there; on a <b>group</b> to park it inside that playlist; on the <b>Available</b> header to park it outside any list.</dd>
@@ -256,9 +306,20 @@ const ytId = (u) => String(u || "").match(
   /(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{10,15})/);
 
 function status(msg, cls) {
-  const el = $("status");
-  el.textContent = msg;
-  el.className = cls || "";
+  /* Two channels: #status is a polite status line for ordinary progress,
+     #statusErr is an assertive alert for things that went wrong. A
+     warning (amber, polite) sits in the status line; only real failures
+     interrupt a screen reader. */
+  const err = $("statusErr"), info = $("status");
+  if (cls === "err") {
+    err.textContent = msg || "";
+    info.textContent = "";
+    info.className = "";
+    return;
+  }
+  err.textContent = "";
+  info.textContent = msg;
+  info.className = cls || "";
 }
 
 async function api(path, body) {
@@ -301,8 +362,14 @@ async function save(indexAfterEdit) {
 }
 
 function mutate(fn, label) {
-  if (busy) { status("another edit is still saving — one moment", "err"); return; }
+  if (busy) { status("another edit is still saving — one moment", "warn"); return; }
   const items = (S.playlist.items || []).slice();
+  /* Keep a short undo trail: a live console is full of one-handed
+     mis-drags, and "put it back" beats "re-paste the link". */
+  if (!undoing) {
+    undoStack.push({ items: items.map((x) => Object.assign({}, x)) });
+    if (undoStack.length > 25) undoStack.shift();
+  }
   const onKey = onAirKey();
   fn(items);
   S.playlist = { ...S.playlist, items };
@@ -312,6 +379,23 @@ function mutate(fn, label) {
     if (pos >= 0) indexPatch = pos + 1;
   }
   save(indexPatch).then(() => { if (label) status(label); });
+}
+
+const undoStack = [];
+let undoing = false;
+
+function undo() {
+  if (!undoStack.length) { status("nothing to undo", "warn"); return; }
+  const snap = undoStack.pop();
+  undoing = true;
+  try {
+    mutate((a) => {
+      a.length = 0;
+      snap.items.forEach((x) => a.push(Object.assign({}, x)));
+    }, "undone — the queue is back to the previous state");
+  } finally {
+    undoing = false;
+  }
 }
 
 /* ---------- rendering ------------------------------------------------- */
@@ -354,6 +438,20 @@ function partition(items) {
   return { queue, groups, dormant };
 }
 
+/* Which rows are on screen right now (the library tab can hide groups). */
+function visibleRowIndices(items, part) {
+  const out = part.queue.slice();
+  Object.keys(part.groups).forEach((g) => {
+    const idxs = part.groups[g];
+    const t = groupTab(items, idxs);
+    if (t === "both" || t === libTab) out.push.apply(out, idxs);
+  });
+  part.dormant.forEach((i) => {
+    if (itemTab(items[i]) === libTab) out.push(i);
+  });
+  return out;
+}
+
 function rowEl(i, it, cacheState, parkedSurface) {
   const r = document.createElement("div");
   const onIdx = onAirIdx(), nxIdx = effectiveNextIdx();
@@ -364,9 +462,20 @@ function rowEl(i, it, cacheState, parkedSurface) {
     (parked ? "" : (i === onIdx ? " onair" : i === nxIdx ? " nextup" : ""));
   r.draggable = true;
   r.dataset.i = i;
+  /* One stop for the whole list: the cursor row is the tab stop, arrows
+     walk the rows, so the queue is operable without a mouse. */
+  r.setAttribute("role", "option");
+  r.setAttribute("aria-selected", i === sel ? "true" : "false");
+  r.tabIndex = i === sel ? 0 : -1;
+  const cacheGlyph = cacheState === "ready" ? "●" :
+                     cacheState === "fetching" ? "◐" : "○";
+  const cacheLabel = cacheState === "ready" ? "cached locally" :
+                     cacheState === "fetching" ? "downloading" : "live, not cached";
   r.innerHTML =
+    '<span class="mark" aria-hidden="true">' + (i === sel ? "▸" : "") + "</span>" +
     '<span class="num">' + (parked ? "" : "#" + (i + 1)) + "</span>" +
-    '<span class="dot ' + cacheState + '" title="cache: ' + cacheState + '"></span>' +
+    '<span class="dot ' + cacheState + '" role="img" aria-label="' +
+    esc(cacheLabel) + '">' + cacheGlyph + "</span>" +
     '<span class="t1" style="opacity:' +
     (parked ? ".45" : playable ? "1" : ".3") + '">' +
     esc(itTitle(it)) + "</span>" +
@@ -376,10 +485,15 @@ function rowEl(i, it, cacheState, parkedSurface) {
     '<span class="src">' + (it.youtube != null ? "YT" : it.file != null ? "FILE" : "PENDING") + "</span>" +
     '<span class="dur">' + (it.duration ? fmt(it.duration) : "") + "</span>" +
     (!parked && i === nxIdx ? '<span class="cue">next</span>' :
-     !parked && i === onIdx ? '<span class="cue" style="color:var(--ok)">on air</span>' : "") +
-    '<span class="dots" role="button" title="row menu">⋯</span>';
-  r.querySelector(".dots").addEventListener("click", (e) => { e.stopPropagation(); rowMenu(e, i); });
-  r.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
+     !parked && i === onIdx ? '<span class="cue" style="color:var(--ok)">on air</span>' : "");
+  const dots = document.createElement("button");
+  dots.className = "dots";
+  dots.textContent = "⋯";
+  dots.setAttribute("aria-label", "Row menu for " + itTitle(it));
+  dots.title = "Row menu";
+  dots.addEventListener("click", (e) => { e.stopPropagation(); rowMenu(e, i, dots); });
+  r.appendChild(dots);
+  r.addEventListener("click", () => { sel = i; render(); });
   r.addEventListener("dblclick", () => {
     if (!parked && i !== onAirIdx()) playNext(i);
   });
@@ -422,6 +536,11 @@ function render() {
   const onIdx = onAirIdx();
   const onIt = items[onIdx] || {};
   const nxIdx = effectiveNextIdx();
+  /* The 2s poll rebuilds the lists; without this the keyboard cursor would
+     be thrown to the top of the page every two seconds. */
+  const hadFocus = document.activeElement;
+  const focusI = hadFocus && hadFocus.classList &&
+    hadFocus.classList.contains("item") ? +hadFocus.dataset.i : null;
 
   $("onair").textContent = "ACTIVE · " + (st.in_ad_break ? "AD BREAK"
     : itTitle(onIt) || "nothing");
@@ -448,24 +567,51 @@ function render() {
   }
   $("vol").disabled = stale || busy;
 
-  $("libbar").querySelector("#tab-v").classList.toggle("on", libTab === "video");
-  $("libbar").querySelector("#tab-m").classList.toggle("on", libTab === "music");
+  $("tab-v").setAttribute("aria-pressed", libTab === "video" ? "true" : "false");
+  $("tab-m").setAttribute("aria-pressed", libTab === "music" ? "true" : "false");
 
   const part = partition(items);
+  /* An open menu points at a row index; if the list changed under it, the
+     index means something else now — close it rather than act on the
+     wrong row. */
+  if (menuItemCount >= 0 && menuItemCount !== items.length) closeMenu(false);
+  /* The cursor must sit on a row that is actually on screen: an edit can
+     remove the row it was on, and the tab filter can hide a group. */
+  const vis = visibleRowIndices(items, part);
+  if (!vis.includes(sel)) {
+    sel = vis.includes(onIdx) ? onIdx : (vis.length ? vis[0] : -1);
+  }
+  /* Say what the other tab holds, so a filtered-away playlist does not
+     look deleted. */
+  const other = libTab === "video" ? "music" : "video";
+  let hidden = 0;
+  items.forEach((it) => {
+    if (it.status === "dormant" && itemTab(it) === other) hidden++;
+  });
+  const hiddenGroups = Object.keys(part.groups).filter((g) => {
+    const t = groupTab(items, part.groups[g]);
+    return t !== "both" && t !== libTab;
+  }).length;
+  $("libhint").textContent = hidden || hiddenGroups
+    ? "the " + other + " tab holds " +
+      (hidden ? hidden + (hidden === 1 ? " row" : " rows") : "") +
+      (hidden && hiddenGroups ? " and " : "") +
+      (hiddenGroups ? hiddenGroups + (hiddenGroups === 1 ? " playlist" : " playlists") : "")
+    : "";
+
   const q = $("queue");
   q.innerHTML = "";
-  if (!part.queue.length) {
-    const e = document.createElement("div");
-    e.id = "empty";
-    e.textContent =
-      "Queue is empty. Paste a link above, or drag rows out of the parked groups below.";
-    q.appendChild(e);
-  }
+  $("empty").style.display = part.queue.length ? "none" : "";
   const spill = (S.spool || []);
   part.queue.forEach((i) => q.appendChild(rowEl(i, items[i], spill[i] || "miss", false)));
 
   renderGroups(items, part.groups);
   renderDorm(items, part.dormant);
+
+  if (focusI != null && !isNaN(focusI)) {
+    const back = document.querySelector('.item[data-i="' + focusI + '"]');
+    if (back) back.focus({ preventScroll: true });
+  }
 }
 
 /* Container drop-zones bind once — re-adding them inside render() would
@@ -512,11 +658,18 @@ function renderGroups(items, groups) {
     }
     const open = grpOpen.has(g);
     const head = document.createElement("div");
-    head.className = "sechead" + (open ? " open" : "") + " clickable";
-    head.title = "Click to fold/unfold · Drag the playlist name into the queue to play the whole list there";
-    head.innerHTML =
-      '<span class="caret">▶</span><span class="name grab" title="Drag this whole playlist into the queue">' +
-      esc(g) + "</span>" + '<span class="count">' + idxs.length + "</span>";
+    head.className = "sechead" + (open ? " open" : "");
+    const fold = document.createElement("button");
+    fold.className = "fold";
+    fold.setAttribute("aria-expanded", open ? "true" : "false");
+    fold.title = "Fold/unfold this playlist · drag the name into the queue to play the whole list";
+    fold.innerHTML =
+      '<span class="caret" aria-hidden="true">▶</span><span class="name grab">' +
+      esc(g) + "</span>";
+    const count = document.createElement("span");
+    count.className = "count";
+    count.textContent = idxs.length;
+    fold.appendChild(count);
     const bPlay = document.createElement("button");
     bPlay.className = "mutate"; bPlay.textContent = "Play";
     bPlay.title = "Queue the whole list at the cursor and cut to it now";
@@ -529,8 +682,8 @@ function renderGroups(items, groups) {
     bOr.className = "mutate"; bOr.textContent = "orig";
     bOr.title = "Restore the playlist's original import order";
     bOr.addEventListener("click", (e) => { e.stopPropagation(); orderGroup(g, "orig"); });
-    head.append(bPlay, bSh, bOr);
-    head.addEventListener("click", () => {
+    head.append(fold, bPlay, bSh, bOr);
+    fold.addEventListener("click", () => {
       if (open) grpOpen.delete(g); else grpOpen.add(g);
       render();
     });
@@ -544,6 +697,8 @@ function renderGroups(items, groups) {
     box.appendChild(head);
     const list = document.createElement("div");
     list.className = "seclist" + (open ? "" : " closed");
+    list.setAttribute("role", "listbox");
+    list.setAttribute("aria-label", "Playlist " + g);
   idxs.forEach((i) => {
     const r = rowEl(i, items[i], spill[i] || "miss", true);
       r.addEventListener("dragover", (ev) => ev.preventDefault());
@@ -579,18 +734,27 @@ function renderDorm(items, dormant) {
   if (!shown.length) return;
   const open = grpOpen.has("__dorm");
   const head = document.createElement("div");
-  head.className = "sechead" + (open ? " open" : "") + " clickable";
-  head.title = "Parked rows: nothing here airs until you drag it back into the queue";
-  head.innerHTML =
-    '<span class="caret">▶</span><span class="name">Available</span>' +
-    '<span class="count">' + shown.length + "</span>";
-  head.addEventListener("click", () => {
+  head.className = "sechead" + (open ? " open" : "");
+  const fold = document.createElement("button");
+  fold.className = "fold";
+  fold.setAttribute("aria-expanded", open ? "true" : "false");
+  fold.title = "Parked rows: nothing here airs until you drag it back into the queue";
+  fold.innerHTML = '<span class="caret" aria-hidden="true">▶</span>' +
+    '<span class="name">Available</span>';
+  const count = document.createElement("span");
+  count.className = "count";
+  count.textContent = shown.length;
+  fold.appendChild(count);
+  head.appendChild(fold);
+  fold.addEventListener("click", () => {
     if (open) grpOpen.delete("__dorm"); else grpOpen.add("__dorm");
     render();
   });
   box.appendChild(head);
   const list = document.createElement("div");
   list.className = "seclist" + (open ? "" : " closed");
+  list.setAttribute("role", "listbox");
+  list.setAttribute("aria-label", "Available — parked rows");
   const spill = (S.spool || []);
   list.addEventListener("dragover", (ev) => {
     ev.preventDefault(); ev.stopPropagation(); list.classList.add("dropzone");
@@ -698,7 +862,23 @@ function orderGroup(g, mode) {
 }
 
 /* ---------- row menu --------------------------------------------------- */
-function rowMenu(ev, i) {
+/* The menu is a real menu: it takes focus, arrows walk it, Escape closes
+   it and hands the focus back to the row it came from. */
+let menuReturnFocus = null;
+let menuItemCount = -1;
+
+function closeMenu(refocus) {
+  const m = $("menu");
+  if (!m.classList.contains("on")) return;
+  m.classList.remove("on");
+  if (refocus !== false && menuReturnFocus) {
+    const back = document.querySelector('.item[data-i="' + menuReturnFocus + '"]');
+    if (back) back.focus();
+  }
+  menuReturnFocus = null;
+}
+
+function rowMenu(ev, i, anchor) {
   sel = i;
   const items = S.playlist.items || [];
   const onIdx = onAirIdx();
@@ -718,7 +898,7 @@ function rowMenu(ev, i) {
     defs.push(["Move down", i < items.length - 1 ? () => mutate((a) => {
       [a[i], a[i + 1]] = [a[i + 1], a[i]];
     }, "") : null]);
-    defs.push(["Play next", i !== onIdx ? () => playNext(i) : null]);
+    defs.push(["Play now (cuts the on-air item)", i !== onIdx ? () => playNext(i) : null]);
     defs.push(["Park (Available)", () => parkItem(i, null)]);
   }
   if (it.file && !parked && i !== onIdx) {
@@ -750,39 +930,153 @@ function rowMenu(ev, i) {
         delete a[i].meta_trip;
       }, "title updated — the YouTube rename is now the stored name");
     }]);
-    defs.push(["Discard: delete this video", () => {
-      mutate((a) => a.splice(i, 1), "removed — YouTube's rename was not kept");
-    }]);
   }
-  defs.push(["sep"]);
-  defs.push(["Remove", (i === onIdx && !parked) ? null : () => mutate((a) => {
-    a.splice(i, 1);
-    status("removed row #" + (i + 1));
-  })]);
   m.innerHTML = "";
+  m.setAttribute("role", "menu");
+  m.setAttribute("aria-label", "Row actions");
   defs.forEach((d) => {
     if (d[0] === "sep") { m.appendChild(document.createElement("hr")); return; }
     const b = document.createElement("button");
     b.textContent = d[0];
+    b.setAttribute("role", "menuitem");
     if (!d[1]) b.disabled = true;
-    else b.addEventListener("click", () => { m.classList.remove("on"); d[1](); });
+    else b.addEventListener("click", () => { closeMenu(false); d[1](); });
     m.appendChild(b);
   });
+  /* The two destructive actions need a second press: a stray click must not
+     delete a row while a show is running. */
+  const destructive = (label, warnMsg, run) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.setAttribute("role", "menuitem");
+    let armed = 0;
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - armed > 3000) {
+        armed = now;
+        b.textContent = "Press again to confirm";
+        b.classList.add("primary");
+        status(warnMsg, "warn");
+        return;
+      }
+      closeMenu(false);
+      run();
+    });
+    return b;
+  };
+  if (it.meta_trip) {
+    m.appendChild(destructive("Discard: delete this video",
+      "press Discard again within 3s to delete “" + itTitle(it) + "”",
+      () => mutate((a) => a.splice(i, 1), "removed — YouTube's rename was not kept")));
+  }
+  if (i === onIdx && !parked) {
+    /* The on-air row is protected: removing it would strand the cut. */
+    const b = document.createElement("button");
+    b.textContent = "Remove (on air — protected)";
+    b.setAttribute("role", "menuitem");
+    b.disabled = true;
+    m.appendChild(b);
+  } else {
+    m.appendChild(destructive("Remove",
+      "press Remove again within 3s to delete row #" + (i + 1),
+      () => mutate((a) => a.splice(i, 1), "removed row #" + (i + 1))));
+  }
   m.classList.add("on");
-  m.style.left = Math.min(ev.clientX, window.innerWidth - m.offsetWidth - 6) + "px";
-  m.style.top = Math.min(ev.clientY, window.innerHeight - m.offsetHeight - 6) + "px";
+  menuReturnFocus = i;
+  menuItemCount = items.length;
+  const box = anchor && anchor.getBoundingClientRect
+    ? anchor.getBoundingClientRect() : { left: ev.clientX, top: ev.clientY };
+  const x = ev && ev.clientX != null ? ev.clientX : box.left;
+  const y = ev && ev.clientY != null ? ev.clientY : box.bottom;
+  m.style.left = Math.max(4, Math.min(x, window.innerWidth - m.offsetWidth - 6)) + "px";
+  m.style.top = Math.max(4, Math.min(y, window.innerHeight - m.offsetHeight - 6)) + "px";
+  const first = m.querySelector("button:not(:disabled)");
+  if (first) first.focus();
 }
 
 document.addEventListener("click", (e) => {
-  if (!$("menu").contains(e.target)) $("menu").classList.remove("on");
+  if (!$("menu").contains(e.target)) closeMenu(false);
+});
+
+/* ---------- keyboard ---------------------------------------------------- */
+/* The dock is an operator console: the whole queue has to be reachable
+   without a mouse. Arrows walk the rows, Enter opens the row menu, Escape
+   backs out of whatever is open. */
+function visibleRows() {
+  return Array.prototype.slice.call(document.querySelectorAll(".item"));
+}
+
+function moveCursor(delta) {
+  const rows = visibleRows();
+  if (!rows.length) return;
+  let at = rows.findIndex((r) => +r.dataset.i === sel);
+  if (at < 0) at = delta > 0 ? -1 : rows.length;
+  at = Math.max(0, Math.min(rows.length - 1, at + delta));
+  sel = +rows[at].dataset.i;
+  render();
+  const cur = document.querySelector('.item[data-i="' + sel + '"]');
+  if (cur) cur.focus();
+}
+
+document.addEventListener("keydown", (e) => {
+  const inField = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+  if (e.key === "Escape") {
+    if ($("menu").classList.contains("on")) { closeMenu(); e.preventDefault(); return; }
+    if ($("help").classList.contains("on")) { closeHelp(); e.preventDefault(); return; }
+    return;
+  }
+  if ($("menu").classList.contains("on")) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      const items = Array.prototype.slice.call(
+        $("menu").querySelectorAll("button:not(:disabled)"));
+      if (!items.length) return;
+      let at = items.indexOf(document.activeElement);
+      at = e.key === "ArrowDown"
+        ? (at + 1) % items.length
+        : (at - 1 + items.length) % items.length;
+      items[at].focus();
+      e.preventDefault();
+    }
+    return;
+  }
+  if ($("help").classList.contains("on")) {
+    if (e.key === "Tab") {                       // keep focus inside the dialog
+      const f = Array.prototype.slice.call(
+        $("help").querySelectorAll("button, [href], input, select"));
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+      else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+    }
+    return;
+  }
+  if (inField) return;
+  if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+    undo(); e.preventDefault(); return;
+  }
+  if (e.key === "ArrowDown") { moveCursor(1); e.preventDefault(); }
+  else if (e.key === "ArrowUp") { moveCursor(-1); e.preventDefault(); }
+  else if (e.key === "Home") { moveCursor(-9999); e.preventDefault(); }
+  else if (e.key === "End") { moveCursor(9999); e.preventDefault(); }
+  else if (e.key === "Enter" && sel >= 0) {
+    const row = document.querySelector('.item[data-i="' + sel + '"]');
+    if (row) {
+      const r = row.getBoundingClientRect();
+      rowMenu({ clientX: r.left + 40, clientY: r.bottom }, sel, row);
+      e.preventDefault();
+    }
+  }
 });
 
 /* ---------- play-now --------------------------------------------------- */
 function playNext(i) {
-  if (busy) { status("another edit is still saving — one moment", "err"); return; }
+  if (busy) { status("another edit is still saving — one moment", "warn"); return; }
   const items = (S.playlist.items || []).slice();
   const onIdx = onAirIdx();
   if (i === onIdx) return;
+  undoStack.push({ items: items.map((x) => Object.assign({}, x)) });
+  if (undoStack.length > 25) undoStack.shift();
   const [m] = items.splice(i, 1);
   m.status = null; m.group = null; delete m.gorder;
   // The cursor state.index stays put: inserting at that exact position
@@ -837,7 +1131,7 @@ function findDup(items, parsed) {
 }
 
 async function addInput() {
-  if (busy) { status("another edit is still saving — one moment", "err"); return; }
+  if (busy) { status("another edit is still saving — one moment", "warn"); return; }
   const parsed = classify($("url").value);
   if (parsed && parsed.ytpl) {
     await ytplImport();
@@ -852,7 +1146,7 @@ async function addInput() {
   const dup = findDup(items, parsed);
   if (dup >= 0) {
     sel = dup;
-    status("already in the queue at #" + (dup + 1) + " — not added twice", "err");
+    status("already in the queue at #" + (dup + 1) + " — not added twice", "warn");
     render();
     return;
   }
@@ -884,7 +1178,7 @@ async function ytplImport() {
         present.add(id);
       }
     });
-    if (!fresh.length) { status("playlist already fully in the dock", "err"); return; }
+    if (!fresh.length) { status("playlist already fully in the dock", "warn"); return; }
     grpOpen.add(r.title);
     mutate((a) => { fresh.forEach((f) => a.push(f)); }, null);
     status("imported %d of %d as group “%s” — parked below, drag out to play"
@@ -911,7 +1205,7 @@ $("t-skip").addEventListener("click", async () => {
 });
 $("t-prev").addEventListener("click", async () => {
   const idx = (S.state || {}).index || 1;
-  if (idx <= 1) { status("nothing before item #1", "err"); return; }
+  if (idx <= 1) { status("nothing before item #1", "warn"); return; }
   try {
     // advance plays the item AT the cursor position: state.index - 1 is
     // the row before the on-air one.
@@ -966,7 +1260,7 @@ $("shuf").addEventListener("change", () => {
 });
 $("shuf-now").addEventListener("click", () => {
   const items = (S.playlist.items || []).slice();
-  if (items.length < 3) { status("too few rows to shuffle", "err"); return; }
+  if (items.length < 3) { status("too few rows to shuffle", "warn"); return; }
   const onIdx = onAirIdx();
   mutate((a) => {
     const on = a[onIdx];
@@ -1018,7 +1312,7 @@ $("p-save").addEventListener("click", async () => {
 });
 $("p-load").addEventListener("click", async () => {
   const nm = $("plist").value;
-  if (!nm) { status("select a playlist in the box to load", "err"); return; }
+  if (!nm) { status("select a playlist in the box to load", "warn"); return; }
   try {
     await api("/api/playlists", { action: "load", name: nm });
     status("loaded “" + nm + "” — the queue swaps at the next cut");
@@ -1026,12 +1320,13 @@ $("p-load").addEventListener("click", async () => {
   load(true);
 });
 let delArm = 0;
+$("p-undo").addEventListener("click", undo);
 $("p-del").addEventListener("click", async () => {
   const nm = $("plist").value;
-  if (!nm) { status("select a playlist in the box to delete", "err"); return; }
+  if (!nm) { status("select a playlist in the box to delete", "warn"); return; }
   if (Date.now() - delArm > 3000) {
     delArm = Date.now();
-    status("press Delete again within 3s to delete “" + nm + "”", "err");
+    status("press Delete again within 3s to delete “" + nm + "”", "warn");
     return;
   }
   delArm = 0;
@@ -1043,12 +1338,29 @@ $("p-del").addEventListener("click", async () => {
 });
 
 /* ---------- help ---------------------------------------------------------- */
-$("helpbtn").addEventListener("click", () => $("help").classList.add("on"));
-$("helpclose").addEventListener("click", () => $("help").classList.remove("on"));
+let helpReturnFocus = null;
+function openHelp() {
+  helpReturnFocus = document.activeElement;
+  $("help").classList.add("on");
+  $("helpclose").focus();
+}
+function closeHelp() {
+  if (!$("help").classList.contains("on")) return;
+  $("help").classList.remove("on");
+  if (helpReturnFocus && helpReturnFocus.focus) helpReturnFocus.focus();
+  helpReturnFocus = null;
+}
+$("helpbtn").addEventListener("click", openHelp);
+$("helpclose").addEventListener("click", closeHelp);
+$("help").addEventListener("click", (e) => { if (e.target === $("help")) closeHelp(); });
 
 /* ---------- down overlay --------------------------------------------------- */
 function showDown() {
-  $("down").classList.add("on");
+  const d = $("down");
+  if (!d.classList.contains("on")) {
+    d.classList.add("on");
+    $("btn-retry").focus();
+  }
   if (!upDown) {
     $("downtext").textContent =
       "PANEL UNREACHABLE — retry #" + downTries + "…";
@@ -1070,7 +1382,7 @@ let restartArm = 0;
 $("btn-restart").addEventListener("click", async () => {
   if (Date.now() - restartArm > 3000) {
     restartArm = Date.now();
-    status("press Restart daemon again within 3s to restart the playout", "err");
+    status("press Restart daemon again within 3s to restart the playout", "warn");
     return;
   }
   restartArm = 0;
@@ -1100,6 +1412,9 @@ async function load(silent) {
     if (stale) showDown();
     else if (wasStale || wasDown) { $("downtext").textContent = ""; hideDown(); }
     if (wasDown) status("back online");
+    /* Start the keyboard cursor on what is playing, so Tab always lands
+       somewhere meaningful. */
+    if (sel < 0) sel = onAirIdx();
     fillMedia();
     fillMediaList();
     if (!dragging) render();  // re-rendering mid-drag kills the drop
