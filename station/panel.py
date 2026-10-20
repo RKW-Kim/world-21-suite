@@ -76,6 +76,16 @@ def _write(path, obj):
     os.replace(tmp, path)
 
 
+def _dock_version():
+    """Fingerprint of station/dock.html (mtime + size): the dock reloads
+    itself when this changes."""
+    try:
+        st = os.stat(os.path.join(HEREDOC_DIR, "dock.html"))
+        return "%d-%d" % (int(st.st_mtime), st.st_size)
+    except OSError:
+        return "0"
+
+
 def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
@@ -101,6 +111,10 @@ def api_state():
                   for i in items],
         "yt_titles": titles,
         "daemon": {"stale": daemon_age},
+        # The dock compares this with the version it loaded and reloads
+        # itself when the file changed — an OBS browser dock caches the
+        # page, so without this the operator keeps looking at stale UI.
+        "dock_version": _dock_version(),
     }
 
 
@@ -496,8 +510,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, api_playlists_get(), "application/json")
         elif self.path.startswith("/dock"):
             try:
+                # Stamp the served bytes with their own fingerprint, so the
+                # dock can tell "this is what I loaded" from "the file on
+                # disk is newer" and reload itself.
+                ver = _dock_version()
                 with open(os.path.join(HEREDOC_DIR, "dock.html")) as f:
-                    self._send(200, f.read(), "text/html")
+                    html = f.read()
+                html = html.replace(
+                    "<body>", '<body>\n<script>window.__DOCK_VERSION__=%s;</script>'
+                    % json.dumps(ver), 1)
+                self._send(200, html, "text/html")
             except OSError:
                 self._send(404, "dock.html missing", "text/plain")
         else:

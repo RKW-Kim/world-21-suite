@@ -293,6 +293,7 @@ const grpOpen = new Set();  // folded/unfolded section names
 let dragFrom = null;   // source row index; dataTransfer.iRef can be lost
 let dragging = false;  // a drag is in flight: the 2s poll must not re-render
 let libTab = "video";  // library tab filter: "video" | "music"
+let dockVersion = window.__DOCK_VERSION__ || null;  // the build this page was served from
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s)
@@ -1412,6 +1413,17 @@ async function load(silent) {
     if (stale) showDown();
     else if (wasStale || wasDown) { $("downtext").textContent = ""; hideDown(); }
     if (wasDown) status("back online");
+    /* The dock is an OBS browser dock: it caches the page, so an edited
+       dock.html would otherwise stay invisible until a manual refresh.
+       Reload ourselves when the served file changed — but never while an
+       edit is in flight or a menu is open. */
+    if (S.dock_version && dockVersion && S.dock_version !== dockVersion) {
+      if (!busy && !$("menu").classList.contains("on")) {
+        status("dock updated — reloading…");
+        setTimeout(() => location.reload(), 400);
+        return;
+      }
+    }
     /* Start the keyboard cursor on what is playing, so Tab always lands
        somewhere meaningful. */
     if (sel < 0) sel = onAirIdx();
@@ -1443,3 +1455,4 @@ setInterval(load, 2000);
 </script>
 </body>
 </html>
+
