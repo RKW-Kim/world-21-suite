@@ -57,6 +57,7 @@ MEDIA = os.path.join(ROOT, "media")
 PLAYLIST = os.path.join(MEDIA, "playlist.json")
 STATE = os.path.join(ROOT, "state.json")
 DB = os.path.join(ROOT, "activity.db")
+CONTROL = os.path.join(ROOT, "control.json")
 CACHE_CAP = int(os.environ.get("CACHE_CAP_BYTES", 50 * 1024**3))
 REPEAT_LIMIT = 3  # same fault 3x/hour -> OFF-AIR + escalate
 
@@ -1834,6 +1835,27 @@ def cmd_loop(renderer):
                         with end_lock:
                             if _src not in ended:
                                 ended.append(_src)
+            except Exception:
+                pass
+            # Operator commands from the dock/panel: broadcast/control.json,
+            # {"skip": true} ends the current item exactly like a natural
+            # media end; the file is rewritten without the flag so one
+            # POST fires exactly once.
+            try:
+                if os.path.isfile(CONTROL):
+                    with open(CONTROL) as _f:
+                        _ctl = json.load(_f)
+                    if isinstance(_ctl, dict):
+                        _ctl = dict(_ctl)
+                        if _ctl.pop("skip", False):
+                            with end_lock:
+                                _src = decks.get(load_state().get("deck", "A"),
+                                                 DECK_A)
+                                if _src not in ended:
+                                    ended.append(_src)
+                        with open(CONTROL + ".tmp", "w") as _f:
+                            json.dump(_ctl, _f)
+                        os.replace(CONTROL + ".tmp", CONTROL)
             except Exception:
                 pass
             # Stream-item lifecycle: wall-clock duration + feed health. The

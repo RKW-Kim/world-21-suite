@@ -19,6 +19,8 @@ MEDIA = os.path.join(ROOT, "broadcast", "media")
 PLAYLIST = os.path.join(MEDIA, "playlist.json")
 STATE = os.path.join(ROOT, "broadcast", "state.json")
 KNOBS = os.path.join(ROOT, "broadcast", "knobs.json")
+CONTROL = os.path.join(ROOT, "broadcast", "control.json")
+PLAYLISTS = os.path.join(MEDIA, "playlists")
 PORT = int(os.environ.get("PANEL_PORT", "8220"))
 
 KNOB_HELP = {
@@ -93,6 +95,52 @@ def api_restart(unit):
     p = subprocess.run(["systemctl", "--user", "restart", unit],
                        capture_output=True, text=True, timeout=60)
     return {"ok": p.returncode == 0, "err": p.stderr.strip()}
+
+
+def api_playlists_post(data):
+    """Saved-playlist library: broadcast/media/playlists/<name>.json.
+    load swaps playlist.json wholesale (daemon hot-reloads next cut)."""
+    name = str(data.get("name") or "").strip()
+    if not name or "/" in name or name.startswith("."):
+        return {"ok": False, "err": "bad name"}
+    path = os.path.join(PLAYLISTS, name + ".json")
+    action = data.get("action")
+    if action == "save":
+        os.makedirs(PLAYLISTS, exist_ok=True)
+        validate_playlist(_read(PLAYLIST, {}))
+        _write(path, _read(PLAYLIST, {}))
+        return {"ok": True}
+    if action == "load":
+        p = _read(path, None)
+        if p is None:
+            return {"ok": False, "err": "no such playlist"}
+        validate_playlist(p)
+        _write(PLAYLIST, p)
+        return {"ok": True}
+    if action == "delete":
+        try:
+            os.unlink(path)
+        except OSError:
+            return {"ok": False, "err": "no such playlist"}
+        return {"ok": True}
+    return {"ok": False, "err": "unknown action"}
+
+
+def api_playlists_get():
+    if not os.path.isdir(PLAYLISTS):
+        return {"playlists": []}
+    return {"playlists": sorted(
+        f[:-5] for f in os.listdir(PLAYLISTS) if f.endswith(".json"))}
+
+
+def api_control(data):
+    """Dock transport: control.json is read each daemon pass; skip ends the
+    current item exactly like a natural media end (same code path)."""
+    ctl = _read(CONTROL, {})
+    if data.get("skip"):
+        ctl["skip"] = True
+    _write(CONTROL, ctl)
+    return {"ok": True}
 
 
 _PANEL_KEYS = {"items", "shuffle_on_complete", "ad_every", "ad_files", "fallback"}
@@ -390,6 +438,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/api/state"):
             self._send(200, api_state(), "application/json")
+        elif self.path.startswith("/api/playlists"):
+            self._send(200, api_playlists_get(), "application/json")
+        elif self.path.startswith("/dock"):
+            try:
+                with open(os.path.join(HEREDOC_DIR, "dock.html")) as f:
+                    self._send(200, f.read(), "text/html")
+            except OSError:
+                self._send(404, "dock.html missing", "text/plain")
         else:
             self._send(200, PAGE)
 
@@ -419,6 +475,10 @@ class Handler(BaseHTTPRequestHandler):
                 _send_ok(self)
             elif self.path.startswith("/api/restart"):
                 self._send(200, api_restart(data.get("unit")), "application/json")
+            elif self.path.startswith("/api/playlists"):
+                self._send(200, api_playlists_post(data), "application/json")
+            elif self.path.startswith("/api/control"):
+                self._send(200, api_control(data), "application/json")
             else:
                 self._send(404, {"ok": False, "err": "unknown endpoint"},
                            "application/json")

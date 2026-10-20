@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Station Dock</title>
+<style>
+  :root {
+    --bg: #000;
+    --bar: #1e2228;
+    --bar-border: #33393f;
+    --btn: #2a3038;
+    --btn-hover: #37424e;
+    --btn-active-bg: #1a3f68;
+    --btn-active-border: #3d7bc8;
+    --danger-text: #ffa0a8;
+    --text: #e0e2e6;
+    --muted: #718090;
+    --accent: #3d7bc8;
+    --ok: #46b06e;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font: 12px/1.4 "Segoe UI", "Noto Sans", system-ui, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  button, input, select {
+    font: inherit; color: var(--text); background: var(--btn);
+    border: 1px solid var(--bar-border); border-radius: 3px;
+    padding: 4px 9px;
+  }
+  button:hover { background: var(--btn-hover); }
+  button:active { background: #222c35; }
+  button.primary { background: var(--btn-active-bg); border-color: var(--btn-active-border); }
+  input, select { background: #0d1014; }
+  .row { display: flex; gap: 5px; padding: 6px; background: var(--bar);
+         border-bottom: 1px solid var(--bar-border); flex: none; }
+  .row input.wide { flex: 1; min-width: 0; }
+  .row select { flex: none; max-width: 130px; }
+
+  #meta { padding: 5px 8px; background: var(--bar); border-bottom: 1px solid var(--bar-border);
+          flex: none; display: flex; gap: 8px; align-items: baseline; }
+  #onair { font-weight: 600; font-size: 11px; }
+  #decktag { color: var(--muted); font-size: 10px; }
+  #airbad { color: var(--danger-text); font-size: 10px; margin-left: auto; }
+
+  #queue { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .item { display: flex; gap: 7px; align-items: center; padding: 5px 9px;
+          cursor: pointer; border-left: 3px solid transparent; }
+  .item:hover { background: #15191e; }
+  .item.sel { background: var(--btn-active-bg); border-left-color: var(--accent); }
+  .item.onair { border-left-color: var(--ok); }
+  .item .t1 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .src { color: var(--muted); font-size: 10px; flex: none; }
+  .item .dur { color: var(--muted); font-size: 10px; flex: none; }
+  .item .cache { font-size: 10px; flex: none; width: 10px; text-align: center; }
+  .cache.ready { color: var(--ok); }
+  .cache.fetching { color: var(--accent); }
+  .item.drag { opacity: .4; }
+
+  .trow { display: flex; gap: 5px; padding: 6px; background: var(--bar);
+          border-top: 1px solid var(--bar-border); flex: none; }
+  .trow .grow { flex: 1; }
+  #status { padding: 4px 8px; background: var(--bar); border-top: 1px solid var(--bar-border);
+            color: var(--muted); font-size: 10px; flex: none;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #status.err { color: var(--danger-text); }
+</style>
+</head>
+<body>
+
+<div class="row">
+  <input id="url" class="wide" placeholder="YouTube link or local file name…">
+  <button id="add" class="primary">Add</button>
+  <select id="media"><option value="">media…</option></select>
+</div>
+
+<div id="meta">
+  <span id="onair">—</span><span id="decktag"></span><span id="airbad"></span>
+</div>
+
+<div id="queue"></div>
+
+<div class="trow">
+  <select id="plist"><option value="">playlists…</option></select>
+  <button id="p-save" title="Save current queue as 'playlists/<name>'">Save</button>
+  <button id="p-load" title="Load selected playlist (takes effect at next cut)">Load</button>
+  <button id="p-del" title="Delete selected playlist">Del</button>
+  <span class="grow"></span>
+  <button id="t-prev" title="Replay previous item at the next transition… or skip now">⏮</button>
+  <button id="t-skip" class="primary" title="End current item now; next plays">⏭ Skip</button>
+</div>
+
+<div id="status">connecting…</div>
+
+<script>
+"use strict";
+let S = null, sel = -1, toast = "";
+
+const $ = (id) => document.getElementById(id);
+const fmt = (s) => {
+  s = Math.max(0, Math.round(s || 0));
+  const m = Math.floor(s / 60);
+  return m + ":" + String(s % 60).padStart(2, "0");
+};
+const srcOf = (i) => (i.youtube ? "YT" : i.file ? "FILE" : "pending");
+const cacheGlyph = (c) => c === "ready" ? "✓" : c === "fetching" ? "⟳" : "·";
+
+function itemDur(it, i) {
+  const d = it.duration;
+  if (!d) return "";
+  return fmt(d);
+}
+
+function render() {
+  if (!S) return;
+  const items = S.playlist.items || [];
+  const st = S.state || {};
+  const onIdx = Math.max(0, (st.index || 1) - 1);
+  const onIt = items[onIdx] || {};
+  $("onair").textContent = "ON AIR · " + (onIt.title || onIt.file || onIt.youtube || "?");
+  $("decktag").textContent = "deck " + (st.deck || "A") + " · next=" + S.state?.index;
+  $("airbad").textContent = st.fallback_air ? "FALLBACK ON AIR" : "";
+  if (toast) $("status").textContent = toast;
+
+  const q = $("queue");
+  q.innerHTML = "";
+  items.forEach((it, i) => {
+    const el = document.createElement("div");
+    el.className = "item" + (i === sel ? " sel" : "") + (i === onIdx ? " onair" : "");
+    el.draggable = true;
+    el.dataset.i = i;
+    const cache = S.spool ? cacheGlyph(S.spool[i]) : "";
+    el.innerHTML =
+      '<span class="cache ' + (S.spool ? S.spool[i] : "") + '">' + cache + "</span>" +
+      '<span class="t1">' + (it.title || it.file || it.youtube || "?") + "</span>" +
+      '<span class="src">' + srcOf(it) + "</span>" +
+      '<span class="dur">' + itemDur(it, i) + "</span>";
+    if (it.status === "dormant") el.querySelector(".t1").style.opacity = ".45";
+    el.addEventListener("click", () => { sel = (sel === i ? -1 : i); render(); });
+    el.addEventListener("dblclick", () => playAt(i));
+    el.addEventListener("dragstart", (e) => { e.dataTransfer.iRef = i; el.classList.add("drag"); });
+    el.addEventListener("dragend", () => el.classList.remove("drag"));
+    el.addEventListener("dragover", (e) => e.preventDefault());
+    el.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const from = e.dataTransfer.iRef, to = i;
+      if (from == null || from === to) return;
+      reorder(from, to);
+    });
+    q.appendChild(el);
+  });
+  if (toast) toast = "";
+}
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  } : undefined);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function reorder(from, to) {
+  const items = S.playlist.items.slice();
+  const [m] = items.splice(from, 1);
+  items.splice(to, 0, m);
+  await save({ ...S.playlist, items });
+}
+
+async function save(pl) {
+  toast = "saving…"; render();
+  try {
+    await api("/api/save", { playlist: pl, knobs: S.knobs });
+    toast = "saved"; load();
+  } catch (e) {
+    toast = ""; $("status").textContent = "save failed: " + e.message; render();
+  }
+}
+
+async function playAt(i) {
+  await api("/api/state", { state: { index: i + 1 } });
+  await api("/api/control", { skip: true });
+}
+$("add").addEventListener("click", async () => {
+  const v = $("url").value.trim();
+  if (!v) return;
+  const items = (S.playlist.items || []).slice();
+  const it = v.includes("/") || v.endsWith(".mp4")
+    ? { file: v.split("/").pop(), title: v.split("/").pop(), youtube: null }
+    : { youtube: v, title: v, file: null, duration: 0 };
+  items.push(it);
+  $("url").value = "";
+  await save({ ...S.playlist, items });
+});
+$("media").addEventListener("change", () => {
+  const v = $("media").value;
+  if (!v) return;
+  $("url").value = v;
+});
+$("t-skip").addEventListener("click", async () => {
+  try { await api("/api/control", { skip: true }); toast = "skip queued"; render(); }
+  catch (e) { $("status").textContent = e.message; }
+});
+$("t-prev").addEventListener("click", async () => {
+  const idx = (S.state?.index || 1);
+  if (idx < 2) { toast = "nothing before item 1"; render(); return; }
+  await api("/api/state", { state: { index: idx - 1 } });
+  await api("/api/control", { skip: true });
+});
+
+$("p-save").addEventListener("click", async () => {
+  let nm = $("plist").value;
+  if (!nm) nm = "dock-" + new Date().toISOString().slice(5, 16).replace("T", "-");
+  await api("/api/playlists", { action: "save", name: nm });
+  await refreshPlaylists(nm);
+  toast = "saved as " + nm; render();
+});
+$("p-load").addEventListener("click", async () => {
+  const nm = $("plist").value;
+  if (!nm) { toast = "pick a playlist first"; render(); return; }
+  await api("/api/playlists", { action: "load", name: nm });
+  toast = "loaded " + nm + " (next cut)"; load();
+});
+let delArm = 0;
+$("p-del").addEventListener("click", async () => {
+  const nm = $("plist").value;
+  if (!nm) { toast = "pick a playlist first"; render(); return; }
+  if (Date.now() - delArm > 3000) {
+    delArm = Date.now();
+    toast = "press Del again to delete " + nm;
+    render();
+    return;
+  }
+  delArm = 0;
+  await api("/api/playlists", { action: "delete", name: nm });
+  await refreshPlaylists();
+  toast = "deleted " + nm; render();
+});
+
+async function refreshPlaylists(pick) {
+  const p = await (await fetch("/api/playlists")).json();
+  const sel = $("plist");
+  sel.innerHTML = '<option value="">playlists…</option>' +
+    (p.playlists || []).map(n => '<option>' + n + '</option>').join("");
+  if (pick) sel.value = pick;
+}
+
+async function load() {
+  try {
+    S = await (await fetch("/api/state")).json();
+    S.playlist.items = S.playlist.items || [];
+    if (!$("media").options.length || $("media").options.length < 2) {
+      $("media").innerHTML = '<option value="">media…</option>' +
+        (S.media_files || []).map(f => "<option>" + f + "</option>").join("");
+    }
+    render();
+  } catch (e) {
+    $("status").textContent = "daemon unreachable: " + e.message;
+  }
+}
+
+refreshPlaylists();
+load();
+setInterval(load, 2000);
+</script>
+</body>
+</html>
