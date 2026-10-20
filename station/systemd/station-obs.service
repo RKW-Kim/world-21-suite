@@ -17,18 +17,22 @@ Environment=DISPLAY=:0
 Environment=PLANE_DISPLAY=:0
 Environment=QT_QPA_PLATFORM=xcb
 UnsetEnvironment=WAYLAND_DISPLAY
-# Headless hardening (learned 2026-10-15): software GL (no GPU lottery on a
-# shared box), no missing-files dialog (nothing may block for a click),
-# CEF singleton cleanup (stale locks wedge boots after hard kills), and
-# .sentinel/run_* cleanup (leftover run markers ARE the safe-mode trigger;
-# without this every unclean boot parks at "Run in Normal Mode?" forever).
-Environment=LIBGL_ALWAYS_SOFTWARE=1
+# Headless hardening (learned 2026-10-15): no missing-files dialog (nothing
+# may block for a click), CEF singleton cleanup (stale locks wedge boots
+# after hard kills), and .sentinel/run_* cleanup (leftover run markers ARE
+# the safe-mode trigger; without this every unclean boot parks at "Run in
+# Normal Mode?" forever).
+# LIBGL_ALWAYS_SOFTWARE removed 2026-10-20: on the Intel HD 520 it chained
+# the plane to llvmpipe; at the real-window resolution the renderer burned
+# ~2x realtime CPU and the websocket starved (boot brownouts "not ready
+# n/60"). Hardware GL on the iGPU measured faster and cooler; revert this
+# line + the flatpak --env= flag below if a boot ever wedges on GL again.
 Environment=QT_DEBUG_PLUGINS=1
 ExecStartPre=/bin/sh -c 'pkill -x bwrap; pkill -x obs; i=0; while pgrep -x obs >/dev/null 2>&1 && [ $i -lt 40 ]; do sleep 1; i=$((i+1)); done; sleep 2; rm -f %h/.var/app/com.obsproject.Studio/config/obs-studio/.sentinel/run_* %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonLock %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonSocket %h/.var/app/com.obsproject.Studio/config/obs-studio/plugin_config/obs-browser/SingletonCookie'
 # --minimize-to-tray (removed 2026-10-18): Qt hid the main window on a
 # no-tray Xvfb display some boots (WebSocketServer ran, root screen empty —
 # black VNC). Xvfb has no tray; the window must plain OPEN instead.
-ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:0 --env=PLANE_DISPLAY=:0 --env=QT_QPA_PLATFORM=xcb --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose --disable-missing-files-check
+ExecStart=/usr/bin/flatpak run --socket=x11 --nosocket=wayland --nosocket=fallback-x11 --env=DISPLAY=:0 --env=PLANE_DISPLAY=:0 --env=QT_QPA_PLATFORM=xcb com.obsproject.Studio --verbose --disable-missing-files-check
 # Fullscreen boot (added 2026-10-18): OBS ignores the saved geometry some
 # boots and opens its default 896x482 window — for a VNC TD desk that reads
 # as half-visible UI. Poll and force the main window to the full Xvfb frame
