@@ -145,6 +145,23 @@ def _urls_ahead(items, start):
     return []
 
 
+def renormalize(url, title=None, alert=lambda m, lvl="INFO": None):
+    """One-off forced re-spool for the dock loudness verb on link items.
+    Refetches and refaststarts the url so it passes through `_faststart`
+    (which applies the loudnorm lift). Serialized with the background
+    spooler through `_current`; the caller checks on-air first."""
+    global _current
+    with _state_lock:
+        if _current is not None:
+            alert("Spooler busy — retry the loudness pass in a minute.",
+                  "WARN")
+            return False
+        _current = url
+    threading.Thread(target=_run, args=(url, title, alert),
+                     daemon=True).start()
+    return True
+
+
 def kick(items, start, alert=lambda m, lvl="INFO": None):
     global _current
     if not items:

@@ -213,7 +213,11 @@ def save_playlist(p):
         for old, new in zip(cur["items"], out["items"]):
             if isinstance(old, dict) and isinstance(new, dict):
                 for k in old:
-                    if k not in ("youtube", "file", "title", "status", "duration"):
+                    # the dock owns these too — if its copy dropped the key
+                    # (cleared meta_trip, unparked gorder), it meant it
+                    if k not in ("youtube", "file", "title", "status",
+                                 "duration", "meta_trip", "group",
+                                 "gorder", "tab"):
                         new.setdefault(k, old[k])
     validate_playlist(out)
     _write(PLAYLIST, out)

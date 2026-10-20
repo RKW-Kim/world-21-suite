@@ -1180,23 +1180,37 @@ def touch_heartbeat():
         pass
 
 
-def _normalize_media(name):
-    """Uploaded-file loudness pass (dock row-menu command): EBU R128-ish
-    video-copy/audio-reencode, atomic swap. Runs on a thread so the poll
-    loop never stalls; refuses the on-air file."""
+def _normalize_media(name, title=None):
+    """Dock row-menu loudness pass. file items take the in-place ffmpeg
+    pass; link items force a re-spool (fetches fresh from YouTube through
+    the loudnorm'd faststart). Refuses whatever is on air. Runs on a
+    thread so the poll loop never stalls."""
+    url = None
+    base = None
     import spool as _sp
-    base = os.path.basename(name)
-    if not base.endswith(".mp4") or "/" in base:
-        alert("Normalize refused: %s is not a media file." % name, "WARN")
-        return
+    if isinstance(name, str) and name.startswith("http"):
+        url = name
+        info = _sp.ready(url)
+        if not info:
+            alert("Normalize skipped: that link has no local copy yet — "
+                  "cut to it once so the spool builds, or it streams live.",
+                  "WARN")
+            return
+        base = os.path.basename(info["path"])
+    else:
+        base = os.path.basename(str(name))
+        if not base.endswith(".mp4") or "/" in base:
+            alert("Normalize refused: %s is not a media file." % name, "WARN")
+            return
     src = os.path.join(MEDIA, base)
     tmp = src + ".norm.mp4"
     try:
         _st = load_state()
         with pl_lock():
             _items = load_playlist().get("items") or []
-        _onfile = (_items[max(0, (int(_st.get("index") or 1)) - 1)] or {}).get("file")
-        onair = (_onfile == base)
+        _onitem = (_items[max(0, (int(_st.get("index") or 1)) - 1)] or {})
+        _onfile = _onitem.get("file")
+        onair = ((_onfile == base) or (url and _onitem.get("youtube") == url))
     except Exception:
         onair = False
     if onair:
@@ -1205,6 +1219,10 @@ def _normalize_media(name):
 
     def work():
         try:
+            if url is not None:
+                import spool as _sp2
+                _sp2.renormalize(url, title, alert)
+                return
             if not _sp._has_audio(src):
                 alert("Normalize skipped: %s has no audio stream." % base, "WARN")
                 return
@@ -1233,6 +1251,66 @@ def _normalize_media(name):
             except OSError:
                 pass
     threading.Thread(target=work, daemon=True).start()
+
+
+def _title_watch_pass():
+    """One metadata watch cycle: re-resolve YouTube items that carry a
+    stored title and flag the ones whose title changed (dragged to
+    Available + meta_trip marker; the dock renders Approve/Discard).
+    Bound: at most 3 fresh resolves and 2 trips per cycle, and never trip
+    the on-air item."""
+    with pl_lock():
+        items = list((load_playlist().get("items") or []))
+    st = load_state()
+    onidx = max(0, (int(st.get("index") or 1)) - 1)
+    fresh = 0
+    tripped = []
+    for pos, it in enumerate(items):
+        url = it.get("youtube")
+        old = it.get("title")
+        if not url or not old or it.get("meta_trip") or url in tripped:
+            continue
+        meta = _RESOLVE_CACHE.get(url, (0, None))[1]
+        if meta is None:
+            if fresh >= 3:
+                continue
+            fresh += 1
+        try:
+            meta = cached_resolve(url)
+        except Exception:
+            continue
+        if pos == onidx:
+            continue
+        new = (meta or {}).get("title")
+        if new and new != old:
+            with pl_lock():
+                data = load_playlist()
+                for cand in data.get("items") or []:
+                    if (cand.get("youtube") == url and
+                            cand.get("title") == old and
+                            not cand.get("meta_trip")):
+                        cand["meta_trip"] = {"old": old, "new": new}
+                        cand["status"] = "dormant"
+                        cand.pop("group", None)
+                        cand.pop("gorder", None)
+                        save_playlist(data)
+                        alert("Title changed on YouTube: “%s” is now “%s”. "
+                              "Parked it (Available) and flagged it — "
+                              "approve or discard it from the dock row "
+                              "menu." % (old, new), "INFO")
+                        break
+            tripped.append(url)
+            if len(tripped) >= 2:
+                break
+
+
+def _title_watch():
+    while True:
+        time.sleep(float(os.environ.get("TITLE_WATCH_SECS", "300")))
+        try:
+            _title_watch_pass()
+        except Exception as e:
+            alert("title watch failed: %s." % e, "WARN")
 
 
 def park_decks(renderer, deck, src, deck_sources):
@@ -2064,6 +2142,7 @@ def cmd_loop(renderer):
     plane_down_since = None  # first poll the render plane failed to answer
     plane_restarted_at = 0.0  # last self-healing restart, epoch
     gate_pass = 0  # liveness-gate cadence: full probe every ~30 passes
+    threading.Thread(target=_title_watch, daemon=True).start()
     while True:
         try:
             touch_heartbeat()
@@ -2241,10 +2320,13 @@ def cmd_loop(renderer):
                             except Exception as _me:
                                 alert("transport failed: %s." % _me, "WARN")
                         # Dock loudness verb: {"normalize": {"file": name}}
-                        # spawns a background EBU R128 pass on that file.
+                        # or {"normalize": {"url": link}} (forced re-spool
+                        # through the loudnorm'd faststart).
                         _norm = _ctl.pop("normalize", None)
                         if isinstance(_norm, dict) and _norm.get("file"):
                             _normalize_media(str(_norm["file"]))
+                        elif isinstance(_norm, dict) and _norm.get("url"):
+                            _normalize_media(str(_norm["url"]))
                         with open(CONTROL + ".tmp", "w") as _f:
                             json.dump(_ctl, _f)
                         os.replace(CONTROL + ".tmp", CONTROL)

@@ -45,7 +45,7 @@
          border-bottom: 1px solid var(--bar-border); flex: none; }
   .row input.wide { flex: 1; min-width: 0; }
 
-  #strip { display: flex; gap: 8px; align-items: baseline; padding: 5px 8px;
+  #strip { display: flex; gap: 8px; align-items: center; padding: 5px 8px;
            background: var(--bar); border-bottom: 1px solid var(--bar-border); flex: none; }
   #onair { font-weight: 600; font-size: 11px; white-space: nowrap;
            overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
@@ -97,6 +97,12 @@
   .seclist.closed { display: none; }
   .seclist { border-bottom: 1px solid #14171b; }
   .dropzone { outline: 1px dashed var(--accent); outline-offset: -1px; }
+  .item.rowhover { background: #1d242c; outline: 1px dashed var(--accent);
+                   outline-offset: -1px; }
+  #libbar button.on { background: var(--btn-hover); color: var(--text); }
+  .item.tripped { background: #241f12; border-left-color: var(--warn); }
+  .item .trip { font-size: 9px; flex: none; color: var(--warn);
+                letter-spacing: .05em; }
 
   .trow { display: flex; gap: 5px; padding: 6px; background: var(--bar);
           border-top: 1px solid var(--bar-border); flex: none; align-items: center; }
@@ -143,7 +149,6 @@
   <input id="url" class="wide mutate" list="medialist"
          placeholder="Paste a YouTube link or playlist URL, or a media file…">
   <button id="add" class="primary mutate">Add</button>
-  <button id="ytpl" class="mutate" title="Import a YouTube playlist link as a parked group">Import list</button>
   <datalist id="medialist"></datalist>
   <button id="helpbtn" title="What each control does">?</button>
 </div>
@@ -151,6 +156,19 @@
 <div id="strip">
   <span id="onair">…</span><span id="decktag"></span>
   <span id="nextup"></span><span id="airbad"></span>
+  <span style="flex:1"></span>
+  <label class="mutate" style="display:flex; gap:4px; align-items:center"
+         title="When the roll finishes, reshuffle automatically and start the new order at the top (no immediate repeat)">
+    <input type="checkbox" id="shuf" style="min-height:0">
+    <span style="font-size:10px; color:var(--muted)">shuf at end</span>
+  </label>
+  <button id="shuf-now" class="mutate" title="Shuffle the queue section; the on-air item keeps its slot">Shuffle</button>
+</div>
+
+<div id="libbar" class="trow" style="border-top:0">
+  <span style="font-size:10px; color:var(--muted); letter-spacing:.05em">LIBRARY</span>
+  <button id="tab-v" class="mutate">Videos</button>
+  <button id="tab-m" class="mutate">Music</button>
 </div>
 
 <div id="body">
@@ -161,7 +179,7 @@
 
 <div class="trow">
   <select id="plist" class="mutate" title="Saved queue version to update or replace from"><option value="">(new playlist)</option></select>
-  <button id="p-save" class="mutate">Save</button>
+  <button id="p-save" class="mutate" title="Snapshot the current queue under this name (edits already autosave — this is a restore point)">Save version</button>
   <button id="p-load" class="mutate">Load</button>
   <button id="p-del" class="mutate">Delete</button>
   <span class="grow"></span>
@@ -179,15 +197,6 @@
   </label>
 </div>
 
-<div class="trow" style="border-top:0">
-  <label class="mutate" style="display:flex; gap:5px; align-items:center" title="When the roll finishes, reshuffle automatically and start the new order at the top (no immediate repeat)">
-    <input type="checkbox" id="shuf" style="min-height:0">
-    <span style="font-size:10px; color:var(--muted)">reshuffle at end of roll</span>
-  </label>
-  <span class="grow"></span>
-  <button id="shuf-now" class="mutate" title="Randomize the waiting items now; the on-air item keeps its slot">Shuffle rest</button>
-</div>
-
 <div id="status" aria-live="polite">connecting…</div>
 
 <div id="down">
@@ -203,17 +212,15 @@
 <div id="help">
   <h3>How this dock works</h3>
   <dl>
-    <dt>Add</dt><dd>Pastes become items at the END of the queue and save instantly. A YouTube <b>playlist</b> link must go through <b>Import list</b> instead.</dd>
-    <dt>Import list</dt><dd>Paste a playlist link (one with <b>list=</b> in it) first. The videos arrive as a <b>parked group</b> below the queue, in the playlist's own order — nothing airs until you move items in. Imports only read titles, nothing downloads.</dd>
-    <dt>Order</dt><dd>Plays top to bottom; the <b>NEXT</b> marker shows what really airs after the on-air item (parked rows are skipped). Drag rows to reorder, or use the row menu ⋯.</dd>
-    <dt>Row menu ⋯</dt><dd>Move, park/wake (dormant = never airs, dimmed), play next, <b>normalize audio</b> (file items: one EBU-R128 loudness pass on the file), or remove. On-air rows are protected.</dd>
+    <dt>Add</dt><dd>Pastes become items at the END of the queue and save instantly. A YouTube <b>playlist</b> link (one with <b>list=</b> in it) is detected automatically: it imports as a <b>parked group</b> below the queue, in the playlist's own order — nothing airs until you move items in. Imports only read titles, nothing downloads.</dd>
+    <dt>Order</dt><dd>Plays top to bottom; the <b>NEXT</b> marker shows what really airs after the on-air item (parked rows are skipped). Drag rows to reorder (drop ≤on≤ a row to insert there, drop on empty space to append; a 2s re-render pause no longer breaks drags), or use the row menu ⋯.</dd>
+    <dt>Row menu ⋯</dt><dd>Move, park/wake (Available = parked, never airs, dimmed), play next, <b>tag as Video/Music</b> (which library tab it lives in), <b>normalize audio</b> (file items: in-place EBU-R128 pass; YouTube items: a fresh spool through the loudness pass), or remove. Items that YouTube renamed carry a yellow <b>meta?</b> badge: approve (keep the new title) or discard (delete the row). On-air rows are protected.</dd>
     <dt>Double-click a row</dt><dd><b>Play now</b>: the row moves under the cursor and the on-air item is ended. Use with care — it cuts what is playing.</dd>
-    <dt>Groups</dt><dd>Parked playlists live down here, folded by default. Click a header to fold/unfold. Drag the <b>header</b> straight into the queue to play the whole list there; drag single rows out one at a time. Header buttons: <b>Play</b> (queue at the cursor + cut now), <b>shuf</b> (randomize within the group), <b>orig</b> (restore the playlist's import order).</dd>
-    <dt>Dropping rules</dt><dd>Drop a row on the <b>queue</b> to air it there; on a <b>group</b> to park it inside that playlist; on the <b>Dormant</b> header to park it outside any list.</dd>
+    <dt>Groups</dt><dd>Parked playlists live down here, folded by default, under the tab their rows are tagged for. Click a header to fold/unfold. Drag the <b>header</b> straight into the queue to play the whole list there; drag single rows out one at a time. Header buttons: <b>Play</b> (queue at the cursor + cut now), <b>shuf</b> (randomize within the group), <b>orig</b> (restore the playlist's import order).</dd>
+    <dt>Dropping rules</dt><dd>Drop a row on the <b>queue</b> to air it there; on a <b>group</b> to park it inside that playlist; on the <b>Available</b> header to park it outside any list.</dd>
     <dt>Cache dot</dt><dd><b style="color:var(--ok)">filled</b> = full local copy downloaded; cuts here work with no internet. <b style="color:var(--accent)">pulsing</b> = downloading now. Hollow = live from YouTube.</dd>
-    <dt>Save / Load / Delete</dt><dd>Save versions the working queue under the selected name (a new one when none). Load replaces the queue at the next cut. Delete needs two presses within 3s.</dd>
-    <dt>reshuffle checkbox</dt><dd>When the queue finishes, shuffle and restart from the top automatically.</dd>
-    <dt>Shuffle rest</dt><dd>Shuffles everything except the on-air item and saves. NEXT recalculates.</dd>
+    <dt>Save version / Load / Delete</dt><dd>The queue saves itself on every edit — <b>Save version</b> only snapshots the current queue under a name as a restore point. Load replaces the queue at the next cut. Delete needs two presses within 3s.</dd>
+    <dt>Shuffle (ACTIVE header)</dt><dd><b>Shuffle</b> randomizes the waiting rows and saves; the on-air item keeps its slot. The <b>shuf at end</b> checkbox reshuffles automatically when the roll finishes.</dd>
     <dt>Prev / Skip</dt><dd>Skip ends the on-air item now and starts NEXT (~5s deck swap, debounced 4s). Prev queues the item before the on-air one.</dd>
     <dt>Replay / Pause</dt><dd>File decks only. Replay restarts from 0:00; Pause freezes (Resume unfreezes). A live YouTube stream can't be paused.</dd>
     <dt>ON-AIR VOL</dt><dd>The deck's dB mix, remembered across cuts and restarts. 0 dB = full. Parked decks are muted and paused automatically after every cut.</dd>
@@ -233,6 +240,9 @@ let busy = false;      // a save is in flight: edits blocked till settled
 let stale = false;     // panel answers, but the daemon loop stopped ticking
 let downTries = 0;     // consecutive failed polls (overlay counter)
 const grpOpen = new Set();  // folded/unfolded section names
+let dragFrom = null;   // source row index; dataTransfer.iRef can be lost
+let dragging = false;  // a drag is in flight: the 2s poll must not re-render
+let libTab = "video";  // library tab filter: "video" | "music"
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s)
@@ -350,6 +360,7 @@ function rowEl(i, it, cacheState, parkedSurface) {
   const playable = it.youtube != null || it.file != null;
   const parked = it.status === "dormant";
   r.className = "item" + (i === sel ? " sel" : "") +
+    (it.meta_trip ? " tripped" : "") +
     (parked ? "" : (i === onIdx ? " onair" : i === nxIdx ? " nextup" : ""));
   r.draggable = true;
   r.dataset.i = i;
@@ -359,6 +370,9 @@ function rowEl(i, it, cacheState, parkedSurface) {
     '<span class="t1" style="opacity:' +
     (parked ? ".45" : playable ? "1" : ".3") + '">' +
     esc(itTitle(it)) + "</span>" +
+    (it.meta_trip ? '<span class="trip" title="' + esc(
+      "YouTube renamed this: “" + it.meta_trip.old + "” → “" +
+      it.meta_trip.new + "”. Row menu to approve or discard.") + '">meta?</span>' : "") +
     '<span class="src">' + (it.youtube != null ? "YT" : it.file != null ? "FILE" : "PENDING") + "</span>" +
     '<span class="dur">' + (it.duration ? fmt(it.duration) : "") + "</span>" +
     (!parked && i === nxIdx ? '<span class="cue">next</span>' :
@@ -370,20 +384,31 @@ function rowEl(i, it, cacheState, parkedSurface) {
     if (!parked && i !== onAirIdx()) playNext(i);
   });
   r.addEventListener("dragstart", (ev) => {
+    dragFrom = i; dragging = true;
+    try { ev.dataTransfer.setData("text/plain", String(i)); } catch (e) {}
     ev.dataTransfer.iRef = i;
     ev.dataTransfer.effectAllowed = "move";
     r.classList.add("drag");
   });
-  r.addEventListener("dragend", () => r.classList.remove("drag"));
+  r.addEventListener("dragend", () => {
+    r.classList.remove("drag");
+    dragFrom = null; dragging = false;
+  });
   /* Queue rows also accept drops: dropping on a queue row reorders there,
-     and a parked row dropped on a queue row is unparked at that spot. */
+     and a parked row dropped on a queue row is unparked at that spot.
+     Insert-before semantics: when the dragged row sat above the target,
+     removing it first shifts the target up one slot. */
   if (!parkedSurface) {
     r.addEventListener("dragover", (ev) => ev.preventDefault());
+    r.addEventListener("dragenter", () => r.classList.add("rowhover"));
+    r.addEventListener("dragleave", () => r.classList.remove("rowhover"));
     r.addEventListener("drop", (ev) => {
       ev.preventDefault(); ev.stopPropagation();
-      const from = ev.dataTransfer.iRef;
+      r.classList.remove("rowhover");
+      const from = ev.dataTransfer.iRef != null ?
+        ev.dataTransfer.iRef : dragFrom;
       if (from == null || from === i) return;
-      dropInto(null, i, from);
+      dropInto(null, from < i ? i - 1 : i, from);
     });
   }
   return r;
@@ -398,7 +423,7 @@ function render() {
   const onIt = items[onIdx] || {};
   const nxIdx = effectiveNextIdx();
 
-  $("onair").textContent = "ON AIR · " + (st.in_ad_break ? "AD BREAK"
+  $("onair").textContent = "ACTIVE · " + (st.in_ad_break ? "AD BREAK"
     : itTitle(onIt) || "nothing");
   $("decktag").textContent = "deck " + (st.deck || "A");
   $("nextup").textContent = nxIdx < 0 ? "" :
@@ -423,6 +448,9 @@ function render() {
   }
   $("vol").disabled = stale || busy;
 
+  $("libbar").querySelector("#tab-v").classList.toggle("on", libTab === "video");
+  $("libbar").querySelector("#tab-m").classList.toggle("on", libTab === "music");
+
   const part = partition(items);
   const q = $("queue");
   q.innerHTML = "";
@@ -430,7 +458,7 @@ function render() {
     const e = document.createElement("div");
     e.id = "empty";
     e.textContent =
-      "Queue is empty. Paste a link above, Import a playlist, or drag rows out of the parked groups below.";
+      "Queue is empty. Paste a link above, or drag rows out of the parked groups below.";
     q.appendChild(e);
   }
   const spill = (S.spool || []);
@@ -451,10 +479,24 @@ function bindDropZones() {
     q.classList.remove("dropzone");
     const gRef = ev.dataTransfer.gRef;
     if (gRef) { queueGroup(gRef, false, false); return; }
-    const from = ev.dataTransfer.iRef;
+    const from = ev.dataTransfer.iRef != null ? ev.dataTransfer.iRef : dragFrom;
     if (from == null) return;
     dropInto(null, (S.playlist.items || []).length, from);
   });
+}
+
+/* A row's tab: music-tagged items live in the Music library, everything
+   else is a video. Missing tag = video (legacy rows). */
+const itemTab = (it) => (it.tab === "music" ? "music" : "video");
+
+/* A group's tab follows its rows — a unanimous (or majority) tag wins, so
+   mixed groups stay ambiguous and show in both. */
+function groupTab(items, idxs) {
+  let music = 0, video = 0;
+  idxs.forEach((i) => (itemTab(items[i]) === "music" ? music++ : video++));
+  if (music && !video) return "music";
+  if (video && !music) return "video";
+  return "both";
 }
 
 function renderGroups(items, groups) {
@@ -465,6 +507,9 @@ function renderGroups(items, groups) {
   const spill = (S.spool || []);
   for (const g of names.sort()) {
     const idxs = groups[g];   // true indices, array order
+    if (groupTab(items, idxs) !== "both" && groupTab(items, idxs) !== libTab) {
+      continue;  // this group lives under the other library tab
+    }
     const open = grpOpen.has(g);
     const head = document.createElement("div");
     head.className = "sechead" + (open ? " open" : "") + " clickable";
@@ -491,9 +536,11 @@ function renderGroups(items, groups) {
     });
     head.draggable = true;
     head.addEventListener("dragstart", (ev) => {
+      dragFrom = null; dragging = true;
       ev.dataTransfer.gRef = g;
       ev.dataTransfer.effectAllowed = "copyMove";
     });
+    head.addEventListener("dragend", () => { dragging = false; dragFrom = null; });
     box.appendChild(head);
     const list = document.createElement("div");
     list.className = "seclist" + (open ? "" : " closed");
@@ -502,7 +549,7 @@ function renderGroups(items, groups) {
       r.addEventListener("dragover", (ev) => ev.preventDefault());
       r.addEventListener("drop", (ev) => {
         ev.preventDefault(); ev.stopPropagation();
-        const from = ev.dataTransfer.iRef;
+        const from = ev.dataTransfer.iRef != null ? ev.dataTransfer.iRef : dragFrom;
         if (from == null || from === i) return;
         dropInto(g, null, from);  // parked target: the item joins this group
       });
@@ -516,7 +563,7 @@ function renderGroups(items, groups) {
       ev.preventDefault();
       list.classList.remove("dropzone");
       const gRef = ev.dataTransfer.gRef;
-      const other = ev.dataTransfer.iRef;
+      const other = ev.dataTransfer.iRef != null ? ev.dataTransfer.iRef : dragFrom;
       if (gRef && gRef !== g && other == null) return; // header→group: no-op
       if (other == null) return;
       parkItem(other, g);
@@ -528,14 +575,15 @@ function renderGroups(items, groups) {
 function renderDorm(items, dormant) {
   const box = $("dorm");
   box.innerHTML = "";
-  if (!dormant.length) return;
+  const shown = dormant.filter((i) => itemTab(items[i]) === libTab);
+  if (!shown.length) return;
   const open = grpOpen.has("__dorm");
   const head = document.createElement("div");
   head.className = "sechead" + (open ? " open" : "") + " clickable";
   head.title = "Parked rows: nothing here airs until you drag it back into the queue";
   head.innerHTML =
-    '<span class="caret">▶</span><span class="name">Dormant</span>' +
-    '<span class="count">' + dormant.length + "</span>";
+    '<span class="caret">▶</span><span class="name">Available</span>' +
+    '<span class="count">' + shown.length + "</span>";
   head.addEventListener("click", () => {
     if (open) grpOpen.delete("__dorm"); else grpOpen.add("__dorm");
     render();
@@ -551,11 +599,11 @@ function renderDorm(items, dormant) {
   list.addEventListener("drop", (ev) => {
     ev.preventDefault();
     list.classList.remove("dropzone");
-    const from = ev.dataTransfer.iRef;
+    const from = ev.dataTransfer.iRef != null ? ev.dataTransfer.iRef : dragFrom;
     if (from == null) return;
     parkItem(from, null);
   });
-  dormant.forEach((i) => list.appendChild(rowEl(i, items[i], spill[i] || "miss", true)));
+  shown.forEach((i) => list.appendChild(rowEl(i, items[i], spill[i] || "miss", true)));
   box.appendChild(list);
 }
 
@@ -642,7 +690,9 @@ function orderGroup(g, mode) {
     for (let n = a.length - 1; n >= 0; n--) {
       if (a[n].group === g && a[n].status === "dormant") a.splice(n, 1);
     }
-    picked.forEach((m) => a.splice(Math.min(first, a.length), 0, m));
+    // insert each at first+k, not first — a same-index splice would
+    // reverse the whole group (seen live: orig restored upside-down)
+    picked.forEach((m, k) => a.splice(Math.min(first + k, a.length), 0, m));
   }, mode === "orig"
     ? "“" + g + "” restored to import order" : "“" + g + "” shuffled");
 }
@@ -669,14 +719,39 @@ function rowMenu(ev, i) {
       [a[i], a[i + 1]] = [a[i + 1], a[i]];
     }, "") : null]);
     defs.push(["Play next", i !== onIdx ? () => playNext(i) : null]);
-    defs.push(["Park dormant", () => parkItem(i, null)]);
+    defs.push(["Park (Available)", () => parkItem(i, null)]);
   }
   if (it.file && !parked && i !== onIdx) {
     defs.push(["sep"]);
-    defs.push(["Normalize audio", () => {
+    defs.push(["Normalize audio (file)", () => {
       api("/api/control", { normalize: { file: it.file } })
         .then(() => status("normalizing " + it.file + " — new loudness applies at its next cut"))
         .catch((e) => status("normalize failed: " + e.message, "err"));
+    }]);
+  }
+  if (it.youtube && i !== onIdx) {
+    defs.push(["sep"]);
+    defs.push(["Normalize audio (YouTube)", () => {
+      api("/api/control", { normalize: { url: it.youtube } })
+        .then(() => status("re-spooling " + itTitle(it) + " through the loudness pass — the fresh copy plays at its next cut"))
+        .catch((e) => status("normalize failed: " + e.message, "err"));
+    }]);
+  }
+  defs.push(["sep"]);
+  defs.push([itemTab(it) === "music" ? "Tag as Video" : "Tag as Music", () => {
+    mutate((a) => {
+      a[i].tab = itemTab(it) === "music" ? "video" : "music";
+    }, itemTab(it) === "music" ? "moved to the Videos library" : "moved to the Music library");
+  }]);
+  if (it.meta_trip) {
+    defs.push(["Approve: title → “" + it.meta_trip.new + "”", () => {
+      mutate((a) => {
+        a[i].title = it.meta_trip.new;
+        delete a[i].meta_trip;
+      }, "title updated — the YouTube rename is now the stored name");
+    }]);
+    defs.push(["Discard: delete this video", () => {
+      mutate((a) => a.splice(i, 1), "removed — YouTube's rename was not kept");
     }]);
   }
   defs.push(["sep"]);
@@ -823,9 +898,6 @@ async function ytplImport() {
 
 $("add").addEventListener("click", addInput);
 $("url").addEventListener("keydown", (e) => { if (e.key === "Enter") addInput(); });
-$("ytpl").addEventListener("click", () => {
-  if (!busy) ytplImport();
-});
 
 /* ---------- transport --------------------------------------------------- */
 let skipAt = 0;
@@ -907,6 +979,15 @@ $("shuf-now").addEventListener("click", () => {
     for (let i = 0; i < a.length; i++) a[i] = (i === onIdx) ? on : rest[r++];
   }, "shuffled — the on-air item kept its slot");
 });
+
+/* ---------- library tabs ------------------------------------------------ */
+function setLibTab(t) {
+  if (libTab === t) return;
+  libTab = t;
+  render();
+}
+$("tab-v").addEventListener("click", () => setLibTab("video"));
+$("tab-m").addEventListener("click", () => setLibTab("music"));
 
 /* ---------- playlists ----------------------------------------------------- */
 async function refreshPlaylists(pick) {
@@ -1021,13 +1102,13 @@ async function load(silent) {
     if (wasDown) status("back online");
     fillMedia();
     fillMediaList();
-    render();
+    if (!dragging) render();  // re-rendering mid-drag kills the drop
   } catch (e) {
     downTries++;
     upDown = false;
     if (!silent || downTries <= 1) status("panel unreachable: " + e.message, "err");
     showDown();
-    if (S) render();
+    if (S && !dragging) render();
   }
 }
 
