@@ -17,6 +17,8 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import spool
 
+_ORIG_RUN = subprocess.run  # capture before any monkeypatch rebinds it
+
 tmp = tempfile.mkdtemp()
 spool.SPDIR = os.path.join(tmp, "spool")
 os.makedirs(spool.SPDIR)
@@ -25,6 +27,12 @@ _C = {"stream_spool_keep_hours": 0.001,     # 3.6s = instantly aged
       "stream_spool_max_gb": 3.0,
       "stream_spool_ahead": 1.0}
 spool._knob = lambda name, default: float(_C.get(name.lower(), default))
+
+# The fixture files are byte-dummies with no audio streams; the real guard
+# would purge every one of them as silent. Point the probe at /usr/bin/echo
+# whose stdout is non-empty = "has audio", and cover the guard separately
+# with a probe that outputs nothing.
+spool.FFPROBE = "/usr/bin/echo"
 
 fails = []
 
@@ -81,6 +89,7 @@ def _restore_run():
                                    "spool.py")}
     exec(compile(src, "spool.py", "exec"), ns)
     ns["SPDIR"] = spool.SPDIR    # else the ns .final() hits the REAL cache
+    ns["FFPROBE"] = spool.FFPROBE  # exec re-reads the const; keep the echo mock
     spool._run = ns["_run"]
 
 
@@ -114,6 +123,9 @@ spool._current = None
 
 
 def _fake_proc(argv, **kw):
+    if argv[0] == spool.FFPROBE:               # audio-guard probe: audible
+        return type("R", (), {"returncode": 0,
+                              "stderr": "", "stdout": "aac\n"})()
     if "-movflags" in argv:                    # ffmpeg faststart remux
         open(argv[-1], "wb").write(BIG)
         return type("R", (), {"returncode": 0, "stderr": "", "stdout": ""})()
@@ -211,6 +223,44 @@ check("urls_ahead spool False stops",
 check("urls_ahead dormant skipped",
       spool._urls_ahead([{"youtube": "u1", "status": "dormant"},
                          {"youtube": "u2"}], 0) == [("u2", None)])
+
+# -- 8. audio guard (real subprocess back: real probe binaries run) -------
+spool.subprocess.run = _ORIG_RUN
+ff = os.path.join(tmp, "fakeffmpeg.sh")
+with open(ff, "w") as f:
+    # argv: FFMPEG -hide_banner -v error -y -i RAW -c copy
+    #       -movflags +faststart -f mp4 TMP   => cp "${6}" "${13}"
+    # (dash/positional params ≥10 need braces)
+    f.write('#!/bin/sh\ncp "${6}" "${13}"\n')
+ff_ok = subprocess.run(["chmod", "+x", ff]).returncode == 0
+check("fake ffmpeg executable", ff_ok)
+RAW2 = fpath(K2, ".dl.mp4")
+open(RAW2, "wb").write(BIG)
+spool.FFMPEG = ff
+spool.FFPROBE = "/bin/true"  # stdout empty = silent file
+spool._faststart(K2)
+check("silent faststart purged",
+      not os.path.isfile(fpath(K2, ".mp4")) and spool.ready(URL2) is None)
+check("silent marker set",
+      os.path.isfile(fpath(K2, spool.NOAUDIO)))
+check("silent raw freed", not os.path.isfile(RAW2))
+# ready() stays a miss with the marker on disk: the live pipe (with sound)
+# keeps the item playable and _run refuses a re-download while it stands.
+check("silent marker keeps miss", spool.state(URL2) == "miss")
+# The marker early-return lives in _run's first lines: invoke it and check
+# that it touches nothing in the cache dir.
+before = set(os.listdir(spool.SPDIR))
+spool._run(URL2, None, lambda m, lvl="INFO": None)
+check("marker early-return holds",
+      set(os.listdir(spool.SPDIR)) == before)
+# Recovery path: marker gone + fresh raw (simulating the fixed selector's
+# re-download) -> faststart blesses a file the probe reports as audible.
+spool.FFPROBE = "/usr/bin/echo"
+open(RAW2, "wb").write(BIG)
+os.remove(fpath(K2, spool.NOAUDIO))
+spool._faststart(K2)
+check("audible file blesses",
+      bool(spool.ready(URL2)) and not os.path.isfile(fpath(K2, spool.NOAUDIO)))
 
 print("FAILURES: %s" % (fails or "none"))
 sys.exit(1 if fails else 0)

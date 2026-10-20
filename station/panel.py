@@ -142,11 +142,14 @@ def api_playlists_get():
 
 
 def api_control(data):
-    """Dock transport: control.json is read each daemon pass; skip ends the
-    current item exactly like a natural media end (same code path)."""
+    """Dock transport: control.json is read each daemon pass. skip ends the
+    current item exactly like a natural media end; {"media": {...}} carries
+    the transport/mixer verbs the daemon consumes (pause/resume/restart/mix)."""
     ctl = _read(CONTROL, {})
     if data.get("skip"):
         ctl["skip"] = True
+    if isinstance(data.get("media"), dict):
+        ctl["media"] = dict(data["media"])
     _write(CONTROL, ctl)
     return {"ok": True}
 

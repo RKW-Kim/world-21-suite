@@ -36,6 +36,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 SPDIR = os.path.join(ROOT, "..", "spool")
 JOB_TIMEOUT = 1800
 FFMPEG = ytstream.FFMPEG
+FFPROBE = "/usr/bin/ffprobe"
+NOAUDIO = ".noaudio"  # per-key marker: selector produced a silent file; skip
 
 _state_lock = threading.Lock()
 _current = None
@@ -165,7 +167,9 @@ def _run(url, title, alert):
     spooler wedges forever (kick would keep skipping; nothing retries)."""
     global _current
     k = _key(url)
-    fmt = ytstream.V_FMT + "+ba/" + ytstream.V_FMT
+    if os.path.isfile(final(k + NOAUDIO)):
+        return  # previously produced a silent file; don't redownload forever
+    fmt = "bv*[vcodec^=avc1][height<=720]+ba/b[height<=720]/b"
     argv = ytstream._ytdlp_cmd([
         "-f", fmt, "--no-playlist", "--no-warnings",
         "--merge-output-format", "mp4",
@@ -189,6 +193,11 @@ def _run(url, title, alert):
             _mirror_title(k, title)
             _faststart(k)
             info = ready(url)
+            if os.path.isfile(final(k + NOAUDIO)):
+                # The guard purged the silent bless below; report as a miss.
+                info = None
+                alert("Spool has no audio: v%s. Purged; live stream keeps "
+                      "the sound." % url.rsplit("v=", 1)[-1][:20], "WARN")
             if info:
                 alert("Spooled: %s (%.1fMB)" % (info.get("title") or url,
                                                 info["size"] / 1e6), "INFO")
@@ -224,6 +233,20 @@ def _faststart(k):
             capture_output=True, text=True, timeout=600)
         if p.returncode == 0 and os.path.getsize(tmp) > 0:
             os.replace(tmp, final(k + ".mp4"))
+            if not _has_audio(final(k + ".mp4")):
+                # Silent file: purge the bless so ready() stays a miss (the
+                # live pipe keeps sound), drop the raw frees 150MB+, and the
+                # marker makes _run refuse the url forever.
+                for junk in (".mp4", ".dl.mp4", ".dl.mp4.part"):
+                    try:
+                        os.unlink(final(k + junk))
+                    except OSError:
+                        pass
+                try:
+                    with open(final(k + NOAUDIO), "w") as f:
+                        f.write("1\n")
+                except OSError:
+                    pass
     except subprocess.TimeoutExpired:
         pass
     except OSError:
@@ -234,3 +257,16 @@ def _faststart(k):
                 os.unlink(tmp)
             except OSError:
                 pass
+
+
+def _has_audio(path):
+    """True when the faststarted file carries an audio stream. A silent
+    spool airs silent — the playlist falls back to the live pipe instead."""
+    try:
+        p = subprocess.run([FFPROBE, "-v", "error", "-select_streams", "a",
+                            "-show_entries", "stream=codec_type", "-of",
+                            "csv=p=0", path],
+                           capture_output=True, text=True, timeout=60)
+        return bool((p.stdout or "").strip())
+    except Exception:
+        return True  # probe failure must not purge a good file

@@ -31,6 +31,7 @@ import json
 import os
 import random
 import shutil
+import signal
 import socket
 import sqlite3
 import struct
@@ -39,6 +40,15 @@ import sys
 import threading
 import time
 import urllib.request
+
+import faulthandler  # noqa: E402
+# Wedge forensics: `kill -USR1 <pid>` dumps every thread's Python stack to
+# stderr ("not listening", silent pl_lock holds); earlier restarts lose the
+# evidence — the wedge we chased for an hour started exactly at 05:53-05:56.
+try:
+    faulthandler.register(signal.SIGUSR1, all_threads=True)
+except Exception:
+    pass
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import stream as ytstream  # noqa: E402
@@ -72,6 +82,9 @@ class Renderer:
     def set_mute(self, source, muted): raise NotImplementedError
     def restart_media(self, source): raise NotImplementedError
     def get_media_status(self, source): raise NotImplementedError  # {time_ms, duration_ms, state}
+    def set_volume(self, source, db): raise NotImplementedError
+    def pause_media(self, source): raise NotImplementedError
+    def media_action(self, source, action): raise NotImplementedError  # pause|resume|restart
     def set_transition(self, style, duration_ms): raise NotImplementedError
     def get_stream_status(self): raise NotImplementedError  # {active, dropped_frames}
     def on_media_ended(self, callback): raise NotImplementedError
@@ -281,6 +294,22 @@ class OBSRenderer(Renderer):
 
     def set_mute(self, source, muted):
         self._call("SetInputMute", {"inputName": source, "inputMuted": bool(muted)})
+
+    def set_volume(self, source, db):
+        self._call("SetInputVolume",
+                   {"inputName": source, "inputVolumeDb": float(db)})
+
+    def pause_media(self, source):
+        self._call("TriggerMediaInputAction",
+                   {"inputName": source,
+                    "mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE"})
+
+    def media_action(self, source, action):
+        assert action in ("pause", "resume", "restart")
+        name = "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_" + \
+            {"pause": "PAUSE", "resume": "PLAY", "restart": "RESTART"}[action]
+        self._call("TriggerMediaInputAction",
+                   {"inputName": source, "mediaAction": name})
 
     def restart_media(self, source):
         self._call("TriggerMediaInputAction",
@@ -890,7 +919,7 @@ def play_ad(renderer, data, decks, mid=False):
 # Advance is wall-clock (resolve() knows the duration); the poll loop also
 # enqueues a sentinel when the feed dies, so both paths land in on_ended.
 STREAM_DECK = {"A": "STREAM_A", "B": "STREAM_B"}
-WATCH_POLL = float(os.environ.get("WATCH_POLL", "10"))
+WATCH_POLL = float(os.environ.get("WATCH_POLL", "4"))
 PLANE_DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
 PLANE_RESTART_COOLDOWN = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
 STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
@@ -1031,12 +1060,22 @@ def prime_next_stream(payload, cur, deck):
 
 
 def stream_item_on_air(items, state):
-    """True when the item playing (index-1) is a youtube stream item."""
+    """True when the item playing (index-1) streams live. A YouTube item
+    with a complete spool plays as a FILE (advance() swaps to the local
+    copy), so the naive youtube check would call a cached item a stream —
+    blocking deck transport and dropping the poll backstop for it (seen:
+    pause refused on-air an spooled item at 05:44)."""
     n = len(items)
     if not n:
         return False
     idx = ((state.get("index", 0) or 0) - 1) % n
-    return bool(items[idx].get("youtube"))
+    item = items[idx]
+    url = item.get("youtube")
+    if url is None:
+        return False
+    if item.get("spool") is False:
+        return True
+    return spool.ready(url) is None
 
 
 def media_ready(renderer, source, wait=FEED_WAIT, poll=0.5):
@@ -1222,6 +1261,31 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_source_visible(PROGRAM, src, True)
     renderer.set_source_visible(PROGRAM, deck_sources[other], False)
     renderer.set_source_visible(PROGRAM, STREAM_DECK[other], False)
+    # Reconcile — the trio above trusts OBS ordering; races (item edits
+    # landing mid-advance, a stream source that never got hidden on its own
+    # last cut) can put the wrong deck back. Re-read and force: the
+    # operator saw program showing one item while another was still live.
+    try:
+        have = {i.get("sourceName"): i.get("sceneItemEnabled") for i in renderer._call(
+            "GetSceneItemList", {"sceneName": PROGRAM}).get("sceneItems", [])}
+        for s, want in ((deck_sources[other], False), (STREAM_DECK[other], False),
+                        (STREAM_DECK[deck], False), (src, True)):
+            if have.get(s) != want:
+                renderer.set_source_visible(PROGRAM, s, want)
+    except Exception as e:
+        alert("visibility reconcile skipped: %s." % e, "WARN")
+    # The outgoing file deck stops decoding/paused instead of idling at
+    # ENDED with both decks reading "active" in the media controls panel.
+    try:
+        renderer.pause_media(deck_sources[other])
+    except Exception:
+        pass
+    _vdb = state.get("deck_volume_db")
+    if _vdb is not None:
+        try:
+            renderer.set_volume(src, _vdb)  # operator mix rides every cut
+        except Exception:
+            pass
     if not onair:
         # Measured readiness, POST-activation: OBS media sources sit at
         # MEDIA_STATE_NONE until they become active (restart_on_activate),
@@ -1242,7 +1306,7 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_transition(TRANSITION, 750)
     stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
-    state.update({"index": idx + 1, "deck": deck,
+    state.update({"index": idx + 1, "deck": deck, "deck_paused": False,
                   "just_played": shuffler.item_key(item)})
     if state.pop("fallback_air", None):
         alert("Fail-safe cleared: deck %s plays again." % deck, "INFO")
@@ -1295,7 +1359,8 @@ def advance(renderer, state, data, deck_sources):
 
 STATE_KEYS = ("index", "deck", "stream", "roll_marks",
               "next_roll", "marks_for", "since_ad",
-              "fallback_air", "fallback_idx", "just_played")
+              "fallback_air", "fallback_idx", "just_played",
+              "deck_volume_db", "deck_paused")
 
 
 def merge_save_state(state):
@@ -1830,7 +1895,12 @@ def cmd_loop(renderer):
                         ended_streaks[_src] = ended_streaks.get(_src, 0) + 1
                     else:
                         ended_streaks[_src] = 0
-                    if ended_streaks.get(_src, 0) >= 2:
+                    # One ENDED read is enough: advance only picks the deck
+                    # after media_ready() saw it PLAYING, so anything the
+                    # watch reads as ENDED already survived the cut gate.
+                    # The old 2-streak rule held a finished item on air up
+                    # to two extra watchdog cycles of trailing black.
+                    if ended_streaks.get(_src, 0) >= 1:
                         ended_streaks[_src] = 0
                         with end_lock:
                             if _src not in ended:
@@ -1853,6 +1923,42 @@ def cmd_loop(renderer):
                                                  DECK_A)
                                 if _src not in ended:
                                     ended.append(_src)
+                        # Dock transport/mixer: {"media": {"action": ...}}.
+                        # pause/resume/restart touch only FILE decks — a
+                        # live stream paused is just a half-swallowed feed;
+                        # mix sets input volume db (not system volume) and
+                        # persists so every future cut rides the same mix.
+                        _med = _ctl.pop("media", None)
+                        if isinstance(_med, dict):
+                            try:
+                                _mst = load_state()
+                                _mdeck = decks.get(_mst.get("deck", "A"), DECK_A)
+                                _live = stream_item_on_air(
+                                    data.get("items", []), _mst)
+                                _mact = _med.get("action")
+                                _mdb = _med.get("db")
+                                if _mact == "mix" and isinstance(_mdb, (int, float)):
+                                    _msrc = STREAM_DECK.get(_mst.get("deck", "A"),
+                                                            STREAM_DECK["A"]) if _live else _mdeck
+                                    renderer.set_volume(_msrc, max(-70.0, min(0.0, _mdb)))
+                                    # carry BOTH touch keys: merge_save_state
+                                    # deletes absent STATE_KEYS, so passing
+                                    # only one would eat the other's disk value
+                                    merge_save_state({
+                                        "deck_volume_db": _mdb,
+                                        "deck_paused": _mst.get("deck_paused")})
+                                elif _mact in ("pause", "resume", "restart"):
+                                    if _live:
+                                        alert("Transport ignored: a live stream "
+                                              "is on air, not a file deck.", "WARN")
+                                    else:
+                                        renderer.media_action(_mdeck, _mact)
+                                        merge_save_state({
+                                            "deck_paused": _mact == "pause",
+                                            "deck_volume_db":
+                                                _mst.get("deck_volume_db")})
+                            except Exception as _me:
+                                alert("transport failed: %s." % _me, "WARN")
                         with open(CONTROL + ".tmp", "w") as _f:
                             json.dump(_ctl, _f)
                         os.replace(CONTROL + ".tmp", CONTROL)
@@ -2092,6 +2198,15 @@ class FakeRenderer(Renderer):
 
     def restart_media(self, source):
         self.calls.append(("restart", source))
+
+    def set_volume(self, source, db):
+        self.calls.append(("volume", source, db))
+
+    def pause_media(self, source):
+        self.calls.append(("pause_out", source))
+
+    def media_action(self, source, action):
+        self.calls.append(("act", source, action))
 
     def get_media_status(self, source):
         return {"time_ms": self.pos.get(source, 0), "duration_ms": 1000,

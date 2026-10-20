@@ -131,8 +131,18 @@
   <button id="p-load" class="mutate">Load</button>
   <button id="p-del" class="mutate">Delete</button>
   <span class="grow"></span>
+  <button id="t-replay" class="mutate" title="Replay the on-air item from the start">Replay</button>
+  <button id="t-pause" class="mutate" title="Pause / resume the on-air item">Pause</button>
   <button id="t-prev" class="mutate" title="Queue the previous item and end the current one">Prev</button>
   <button id="t-skip" class="primary mutate" title="End the on-air item now; NEXT starts (~5s)">Skip</button>
+</div>
+
+<div class="trow" style="border-top:0">
+  <label style="display:flex; gap:6px; align-items:center; flex:1" class="mutate">
+    <span style="font-size:10px; color:var(--muted); letter-spacing:.05em">ON-AIR VOL</span>
+    <input type="range" id="vol" min="-60" max="0" step="0.5" style="flex:1; min-height:14px; padding:0">
+    <span id="volval" style="font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; width:58px">0.0 dB</span>
+  </label>
 </div>
 
 <div class="trow" style="border-top:0">
@@ -163,6 +173,8 @@
     <dt>reshuffle checkbox</dt><dd>End-of-roll behavior: when the queue finishes, shuffle it and restart from the top automatically.</dd>
     <dt>Shuffle rest</dt><dd>Shuffles everything except the on-air item and saves. NEXT recalculates.</dd>
     <dt>Prev / Skip</dt><dd>Skip ends the on-air item now and starts NEXT (~5s deck swap). Prev queues the previous item and ends the current. Skip is debounced to once per 4s.</dd>
+    <dt>Replay / Pause</dt><dd>Replay restarts the on-air file from 0:00. Pause freezes it (Resume unfreezes). Both apply to the FILE decks only — a YouTube item streaming live can't be paused.</dd>
+    <dt>ON-AIR VOL</dt><dd>The deck's volume in dB, remembered across cuts and restarts. 0 dB = full. Only the on-air deck is affected; parked decks are muted by the ad-break logic regardless.</dd>
     <dt>Dormant rows</dt><dd>Kept in the list but never air. Use for content you rotate in later.</dd>
   </dl>
   <div style="margin-top:12px"><button id="helpclose">Close</button></div>
@@ -276,6 +288,21 @@ function render() {
   $("airbad").textContent = st.fallback_air ? "fallback on air" : "";
 
   $("shuf").checked = !!S.playlist.shuffle_on_complete;
+
+  /* Transport + mixer state: light only for file-lane items; the pause
+     label mirrors the daemon's deck_paused state so the two windows agree. */
+  const onFileLane = !streamOnAir();
+  $("t-pause").textContent = st.deck_paused ? "Resume" : "Pause";
+  $("t-pause").disabled = !onFileLane;
+  $("t-replay").disabled = !onFileLane;
+  const vdb = st.deck_volume_db;
+  if (typeof vdb === "number" && Date.now() - mixTouched > 1500) {
+    if ($("vol").value != vdb) { $("vol").value = vdb; }
+    if ($("volval").textContent.slice(0, -2).trim() !== Number(vdb).toFixed(1)) {
+      $("volval").textContent = Number(vdb).toFixed(1) + " dB";
+    }
+  }
+  $("vol").disabled = !upDown || busy;
 
   const q = $("queue");
   q.innerHTML = "";
@@ -478,6 +505,44 @@ $("t-prev").addEventListener("click", async () => {
     await api("/api/control", { skip: true });
     status("jumping back to #" + (idx - 1));
   } catch (e) { status("prev failed: " + e.message, "err"); }
+});
+
+/* Live streams cannot pause/replay (a paused feed is a half-swallowed ---
+   RTMP source), so transport lights up only for file-lane items. */
+function streamOnAir() {
+  const items = (S.playlist || {}).items || [];
+  const i = Math.max(0, ((S.state || {}).index || 1) - 1);
+  const it = items[i] || {};
+  if (it.youtube == null) return false;
+  /* transport lights up only for the FILE lanes: no cache ready == the
+     deck is streaming live (spool:false never caches, so never lights) */
+  if (it.spool === false) return true;
+  return ((S.spool || [])[i] || "miss") !== "ready";
+}
+async function transport(action, note) {
+  try {
+    await api("/api/control", { media: { action: action } });
+    status(note);
+  } catch (e) { status(action + " failed: " + e.message, "err"); }
+}
+$("t-pause").addEventListener("click", () => transport(
+  (S.state || {}).deck_paused ? "resume" : "pause",
+  (S.state || {}).deck_paused ? "resuming…" : "paused"));
+$("t-replay").addEventListener("click", () =>
+  transport("restart", "replaying the on-air item from 0:00"));
+
+/* ---------- mixer -------------------------------------------------------- */
+let mixTimer = 0;
+let mixTouched = 0;
+$("vol").addEventListener("input", () => {
+  const db = Number($("vol").value);
+  mixTouched = Date.now();
+  $("volval").textContent = db.toFixed(1) + " dB";
+  clearTimeout(mixTimer);
+  mixTimer = setTimeout(() => {
+    api("/api/control", { media: { action: "mix", db: db } })
+      .catch((e) => status("mix failed: " + e.message, "err"));
+  }, 500);
 });
 
 /* ---------- shuffle ------------------------------------------------------ */
