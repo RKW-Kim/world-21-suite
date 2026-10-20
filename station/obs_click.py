@@ -17,11 +17,15 @@ work (Qt ignores it); verified 2026-10-15.
 
 Requires: python-xlib (pip install python-xlib), ffmpeg for --shot.
 """
+import os
 import subprocess
 import sys
 import time
 
-DISPLAY = ":99"
+# The render plane's X display: the headless Xvfb is :99 by default; when
+# the plane's OBS is opened as a real window (XWayland :0), the unit sets
+# PLANE_DISPLAY so this helper clicks the right server.
+DISPLAY = os.environ.get("PLANE_DISPLAY", ":99")
 
 
 def _display():
