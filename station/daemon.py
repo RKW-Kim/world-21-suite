@@ -923,6 +923,7 @@ WATCH_POLL = float(os.environ.get("WATCH_POLL", "4"))
 PLANE_DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
 PLANE_RESTART_COOLDOWN = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
 STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
+last_advance = 0.0      # poll-loop thread only; refractory anchor for on_ended
 STREAM_SPAWN_TRIES = 15  # 15 x 3s of path_ready polling
 STREAM_EOF = "__stream__"  # sentinel routed like a deck-ended event
 
@@ -1247,6 +1248,16 @@ def park_decks(renderer, deck, src, deck_sources):
                   else deck_sources[deck])
     for s in {id(s): s for s in parked}.values():  # dedupe, keep order
         try:
+            if renderer.get_media_status(s).get(
+                    "state") == "OBS_MEDIA_STATE_PAUSED":
+                # A paused parked deck heals into this exact freeze the
+                # mute invariant was written against: cursor parked, clock
+                # stopped, watchdog says "stalled", OFF-AIR escalates on a
+                # deck nobody is watching. RESTART is the proven unpause.
+                renderer.restart_media(s)
+        except Exception:
+            pass
+        try:
             renderer.set_mute(s, True)
         except Exception:
             pass
@@ -1303,6 +1314,8 @@ def advance(renderer, state, data, deck_sources):
 
     Loop, not recursion: a fully-missing playlist must end on TECHDIFF,
     not in RecursionError."""
+    global last_advance
+    last_advance = time.time()  # refractory anchor for the on_ended guard
     items = data.get("items", [])
     if not items:
         renderer.set_scene(SCENE_TECHDIFF)
@@ -1620,10 +1633,22 @@ def ad_return(renderer, decks, mid=False):
     advance(renderer, load_state(), load_playlist(), decks)
 
 
-def on_ended(renderer, decks, source):
+def on_ended(renderer, decks, source, force=False):
     """Route a media-ended event by source name. Unknown sources are ignored."""
-    # Every route names its trigger: when cuts cascade the operator (and
-    # we) must see WHICH source drove it, not just the playlist churn.
+    # Post-cut refractory (~2 polls): a fresh RESTART/swap on the
+    # just-loaded input can flicker OBS_MEDIA_STATE_ENDED for a moment,
+    # and the poll detector (streak >= 1) reading that window enqueues a
+    # bogus immediate re-advance — the 3s cut cascade. A skip that must
+    # beat the window calls with force=True.
+    if not force and time.time() - last_advance < 6.0:
+        return
+    # Routed triggers name themselves: when cuts cascade the operator (and
+    # we) must see WHICH source drove it, not just playlist churn. Slot
+    # Cam/Screen/Audio and idle AD end-event floods never route at all —
+    # the OBS event bus spews ENDED for them at ~2/s, so they are dropped
+    # here silently instead of burning a log line (and a route) each pass.
+    if source not in (DECK_A, DECK_B, PLAYOUT_C, AD_INPUT, STREAM_EOF):
+        return
     alert("advance trigger: %s." % source, "INFO")
     if source == STREAM_EOF:
         # Wall-clock end of a youtube item (or feed death after respawn
@@ -1674,7 +1699,33 @@ def on_ended(renderer, decks, source):
             # Deck ended under cover of the ad break: ignore it. The
             # return path advances; reacting here would skip an item.
             return
-        advance(renderer, load_state(), load_playlist(), decks)
+        lane = "B" if source == DECK_B else "A"
+        if (st.get("stream") or {}).get("slot"):
+            # A stream item is on air: its deck files end harmlessly while
+            # parked (the mute contract burns the copy); stream items
+            # advance by wall clock (STREAM_EOF), never by deck events.
+            alert("parked %s ended behind a stream; ignored." % source, "INFO")
+            return
+        if not force and st.get("deck", "A") != lane:
+            alert("parked %s ended behind %s; ignored."
+                  % (source, st.get("deck")), "INFO")
+            return
+        # Final gate: a real end HOLDS the input at OBS_MEDIA_STATE_ENDED,
+        # while a straggler event for a file the deck already swapped lands
+        # while the deck reports PLAYING/OPENING for the NEW media. The
+        # observed cascade (cuts every ~3s, 2026-10-20) was exactly this:
+        # each cut fired the OLD file's end up to ~10s late. Swallow those
+        # — but NOT for force (operator skip: the live item is playing,
+        # and that is precisely the point). A plane error here falls back
+        # to trusting the event.
+        try:
+            _mst = renderer.get_media_status(source).get("state")
+        except Exception:
+            _mst = None
+        if not force and _mst and _mst != "OBS_MEDIA_STATE_ENDED":
+            alert("stale end event for %s (media swapped); ignored." % source, "INFO")
+            return
+        advance(renderer, st, load_playlist(), decks)
     # anything else (sting, bed loop, preview) is not the daemon's business
 
 
@@ -2134,10 +2185,25 @@ def cmd_loop(renderer):
                         _ctl = dict(_ctl)
                         if _ctl.pop("skip", False):
                             with end_lock:
-                                _src = decks.get(load_state().get("deck", "A"),
-                                                 DECK_A)
-                                if _src not in ended:
-                                    ended.append(_src)
+                                _sk_st = load_state()
+                                if (_sk_st.get("stream") or {}).get("slot"):
+                                    # Stream item on air: skipping ends the
+                                    # stream (wall clock), the deck file is
+                                    # just parked underneath it.
+                                    _src = STREAM_EOF
+                                else:
+                                    _src = decks.get(
+                                        _sk_st.get("deck", "A"), DECK_A)
+                            # Direct, not queued: an operator slam-skipping
+                            # within the 6s post-cut refractory must still
+                            # beat it, which force=True on a direct route does.
+                            # Swallow-but-consume: control.json gets emptied
+                            # below regardless, so a throwing advance can't
+                            # leave {"skip": true} behind and loop forever.
+                            try:
+                                on_ended(renderer, decks, _src, force=True)
+                            except Exception as _se:
+                                alert("skip failed: %s." % _se, "WARN")
                         # Dock transport/mixer: {"media": {"action": ...}}.
                         # pause/resume/restart touch only FILE decks — a
                         # live stream paused is just a half-swallowed feed;
