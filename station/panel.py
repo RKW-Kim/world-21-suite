@@ -86,20 +86,61 @@ def _dock_version():
         return "0"
 
 
+_title_cache = {}          # url -> title (avoids re-reading 200 .title files a poll)
+_title_cache_at = 0.0
+
+
+def _titles_for(items):
+    """Titles for the YouTube rows, cached: a poll used to open and parse
+    200 title files every 2s, which the dock pays for in latency. The
+    cache is dropped when the playlist changes or once a minute, so a
+    freshly spooled title still shows up."""
+    import spool
+    global _title_cache, _title_cache_at
+    now = time.time()
+    if now - _title_cache_at > 60:
+        _title_cache = {}
+        _title_cache_at = now
+    out = {}
+    missing = False
+    for it in items:
+        url = it.get("youtube")
+        if url is None:
+            continue
+        if url in _title_cache:
+            out[url] = _title_cache[url]
+            continue
+        r = spool.ready(url)
+        if r and r.get("title"):
+            _title_cache[url] = r["title"]
+            out[url] = r["title"]
+        else:
+            missing = True
+    if missing:
+        _title_cache_at = 0.0     # look again next poll
+    return out
+
+
+def _normalize_on(default=True):
+    """Station-wide loudness switch (daemon-owned file)."""
+    v = _read(os.path.join(ROOT, "broadcast", "normalize.json"), None)
+    if isinstance(v, dict) and "on" in v:
+        return bool(v.get("on"))
+    return default
+
+
 def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
-    titles = {}
-    for i in items:
-        url = i.get("youtube")
-        if url is not None:
-            r = spool.ready(url)
-            if r and r.get("title"):
-                titles[url] = r["title"]
+    titles = _titles_for(items)
     hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
     daemon_age = None
+    pass_ms = 0
+    busy = ""
     if isinstance(hb, dict) and isinstance(hb.get("t"), (int, float)):
         daemon_age = round(max(0.0, time.time() - hb["t"]), 1)
+        pass_ms = int(hb.get("pass_ms") or 0)
+        busy = hb.get("busy") or ""
     return {
         "playlist": _read(PLAYLIST, {"items": []}),
         "state": _read(STATE, {}),
@@ -110,7 +151,8 @@ def api_state():
         "spool": [spool.state(i["youtube"]) if i.get("youtube") is not None else "file"
                   for i in items],
         "yt_titles": titles,
-        "daemon": {"stale": daemon_age},
+        "daemon": {"stale": daemon_age, "pass_ms": pass_ms, "busy": busy},
+        "normalize": {"on": _normalize_on()},
         # The dock compares this with the version it loaded and reloads
         # itself when the file changed — an OBS browser dock caches the
         # page, so without this the operator keeps looking at stale UI.
@@ -127,8 +169,11 @@ def api_restart(unit):
 
 
 def api_playlists_post(data):
-    """Saved-playlist library: broadcast/media/playlists/<name>.json.
-    load swaps playlist.json wholesale (daemon hot-reloads next cut)."""
+    """Profile library: broadcast/media/playlists/<name>.json.
+    save stores the playlist it is given (the dock's working copy, so a
+    profile can be saved before it is applied); load RETURNS the profile
+    instead of overwriting the live playlist — the dock stages it and the
+    operator presses Apply."""
     name = str(data.get("name") or "").strip()
     if not name or "/" in name or name.startswith("."):
         return {"ok": False, "err": "bad name"}
@@ -136,21 +181,23 @@ def api_playlists_post(data):
     action = data.get("action")
     if action == "save":
         os.makedirs(PLAYLISTS, exist_ok=True)
-        validate_playlist(_read(PLAYLIST, {}))
-        _write(path, _read(PLAYLIST, {}))
+        pl = data.get("playlist")
+        if not isinstance(pl, dict) or not isinstance(pl.get("items"), list):
+            pl = _read(PLAYLIST, {})
+        validate_playlist(pl)
+        _write(path, pl)
         return {"ok": True}
     if action == "load":
         p = _read(path, None)
         if p is None:
-            return {"ok": False, "err": "no such playlist"}
+            return {"ok": False, "err": "no such profile"}
         validate_playlist(p)
-        _write(PLAYLIST, p)
-        return {"ok": True}
+        return {"ok": True, "playlist": p}
     if action == "delete":
         try:
             os.unlink(path)
         except OSError:
-            return {"ok": False, "err": "no such playlist"}
+            return {"ok": False, "err": "no such profile"}
         return {"ok": True}
     return {"ok": False, "err": "unknown action"}
 
@@ -166,14 +213,21 @@ def api_control(data):
     """Dock transport: control.json is read each daemon pass. skip ends the
     current item exactly like a natural media end; {"media": {...}} carries
     the transport/mixer verbs the daemon consumes (pause/resume/restart/mix);
-    {"normalize": {"file": name}} spawns a background loudness pass."""
+    {"normalize": {"global": true|false}} is the station-wide loudness
+    switch (compress+limit on every playback input)."""
     ctl = _read(CONTROL, {})
     if data.get("skip"):
         ctl["skip"] = True
     if isinstance(data.get("media"), dict):
         ctl["media"] = dict(data["media"])
-    if isinstance(data.get("normalize"), dict) and data["normalize"].get("file"):
-        ctl["normalize"] = {"file": str(data["normalize"]["file"])}
+    norm = data.get("normalize")
+    if isinstance(norm, dict):
+        if norm.get("file"):
+            ctl["normalize"] = {"file": str(norm["file"])}
+        elif norm.get("url"):
+            ctl["normalize"] = {"url": str(norm["url"])}
+        elif "global" in norm:
+            ctl["normalize"] = {"global": bool(norm.get("global"))}
     _write(CONTROL, ctl)
     return {"ok": True}
 

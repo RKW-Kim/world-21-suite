@@ -1211,6 +1211,68 @@ def apply_deck_normalizer(renderer):
         alert("deck normalizer: %s not on this plane." % ", ".join(missing), "WARN")
 
 
+def remove_deck_normalizer(renderer):
+    """Take the station-wide loudness chain back off: the dock's switch is
+    a real off, not a "stop doing it from now on"."""
+    targets = [DECK_A, DECK_B, PLAYOUT_C,
+               STREAM_DECK["A"], STREAM_DECK["B"]]
+    names = ("AStation Compressor", "AStation Limiter")
+    try:
+        present = {inp.get("inputName") for inp
+                   in renderer._call("GetInputList").get("inputs", [])}
+    except Exception as e:
+        alert("deck normalizer off failed: %s." % e, "WARN")
+        return
+    gone = []
+    for src in targets:
+        if src not in present:
+            continue
+        for fname in names:
+            try:
+                renderer._call("RemoveSourceFilter",
+                               {"sourceName": src, "filterName": fname})
+                gone.append(src)
+            except Exception:
+                pass
+    if gone:
+        alert("Deck normalizer off (removed from %s)." % ", ".join(sorted(set(gone))))
+
+
+NORM_FILE = os.path.join(ROOT, "normalize.json")
+
+
+def normalize_on(default=True):
+    """The station-wide loudness switch, kept in its own file: state.json
+    merges delete keys they don't carry, so a switch stored there would
+    be wiped by the next unrelated save."""
+    try:
+        with open(NORM_FILE) as f:
+            v = json.load(f)
+        return bool(v.get("on"))
+    except Exception:
+        return default
+
+
+def write_normalize(on):
+    try:
+        with open(NORM_FILE + ".tmp", "w") as f:
+            json.dump({"on": bool(on), "t": time.time()}, f)
+        os.replace(NORM_FILE + ".tmp", NORM_FILE)
+    except OSError:
+        pass
+
+
+def set_deck_normalizer(renderer, on):
+    """The station-wide loudness switch. On: compress+limit on every
+    playback input (Spotify-style dynamics, no intensity lift). Off: the
+    chain is removed again. The choice is remembered across restarts."""
+    if on:
+        apply_deck_normalizer(renderer)
+    else:
+        remove_deck_normalizer(renderer)
+    write_normalize(bool(on))
+
+
 def probe_plane(renderer):
     """Dump what the plane actually looks like: input names, the filters
     riding on them, and the filter kinds this OBS build offers. The ws
@@ -1255,15 +1317,31 @@ def probe_plane(renderer):
     return rep
 
 
+PASS_STATE = {"ms": 0, "what": "", "since": 0.0}
+
+
 def touch_heartbeat():
-    """Poll-loop liveness marker: the panel/dock read its age to tell
-    'daemon wedged' apart from 'panel unreachable'."""
+    """Liveness marker the panel/dock read to tell 'daemon wedged' apart
+    from 'panel unreachable'. Carries the last poll pass: a pass that is
+    merely SLOW (a busy plane, a long OBS call) must not be reported as a
+    dead daemon — the dock shows that as BUSY, not STALLED."""
     try:
         with open(HEARTBEAT + ".tmp", "w") as f:
-            json.dump({"t": time.time()}, f)
+            json.dump({"t": time.time(),
+                       "pass_ms": PASS_STATE.get("ms", 0),
+                       "busy": PASS_STATE.get("what", "")}, f)
         os.replace(HEARTBEAT + ".tmp", HEARTBEAT)
     except OSError:
         pass
+
+
+def heartbeat_thread():
+    """The heartbeat is written by its own thread, not by the poll loop:
+    a pass blocked on a wedged plane then still proves the process is
+    alive, and the dock can say 'busy' instead of 'not responding'."""
+    while True:
+        touch_heartbeat()
+        time.sleep(1.0)
 
 
 def _normalize_media(name, title=None):
@@ -2204,7 +2282,10 @@ def cmd_loop(renderer):
     except Exception:
         pass
     try:
-        apply_deck_normalizer(renderer)
+        # The loudness switch is remembered: only a station that was
+        # explicitly switched OFF boots without the chain.
+        if normalize_on(True):
+            apply_deck_normalizer(renderer)
     except Exception:
         pass
     try:
@@ -2238,8 +2319,10 @@ def cmd_loop(renderer):
     gate_pass = 0  # liveness-gate cadence: full probe every ~30 passes
     threading.Thread(target=_title_watch, daemon=True).start()
     while True:
+        pass_started = time.time()
+        PASS_STATE["since"] = pass_started
+        PASS_STATE["what"] = "starting"
         try:
-            touch_heartbeat()
             apply_knobs()
             # Reachability gate: a dead plane must not spin the loop, and a
             # plane that stays dead gets restarted (cooldown-capped).
@@ -2258,6 +2341,7 @@ def cmd_loop(renderer):
             # those connects stretched into the very seconds the poll was
             # supposed to save, dragging every skip ~8s late.
             gate_pass = (gate_pass + 1) % 30
+            PASS_STATE["what"] = "plane check"
             try:
                 if renderer._shared is not None and gate_pass != 1:
                     with renderer._lock:
@@ -2325,6 +2409,7 @@ def cmd_loop(renderer):
                         # status: their PLAYOUT ledger input is idle/stale
                         # and would fire spurious advances.
                         _watch.append(_deck_now)
+                PASS_STATE["what"] = "media status"
                 for _src in _watch:
                     try:
                         _ms = renderer.get_media_status(_src)
@@ -2415,12 +2500,15 @@ def cmd_loop(renderer):
                                 alert("transport failed: %s." % _me, "WARN")
                         # Dock loudness verb: {"normalize": {"file": name}}
                         # or {"normalize": {"url": link}} (forced re-spool
-                        # through the loudnorm'd faststart).
+                        # through the loudnorm'd faststart), or the
+                        # station-wide switch {"normalize": {"global": true}}.
                         _norm = _ctl.pop("normalize", None)
                         if isinstance(_norm, dict) and _norm.get("file"):
                             _normalize_media(str(_norm["file"]))
                         elif isinstance(_norm, dict) and _norm.get("url"):
                             _normalize_media(str(_norm["url"]))
+                        elif isinstance(_norm, dict) and "global" in _norm:
+                            set_deck_normalizer(renderer, bool(_norm["global"]))
                         # Read-only plane introspection: {"probe": true}
                         # refreshes broadcast/obs_probe.json (inputs,
                         # filters, available filter kinds).
@@ -2639,6 +2727,8 @@ def cmd_loop(renderer):
                 last_loop_err = sig
                 traceback.print_exc()
                 alert("loop error (see log for traceback).", "WARN")
+        PASS_STATE["ms"] = int((time.time() - pass_started) * 1000)
+        PASS_STATE["what"] = ""
         time.sleep(int(globals().get("WATCH_POLL", 10)))
 
 
@@ -2869,6 +2959,11 @@ def main():
     args = ap.parse_args()
     load_secrets()
     r = OBSRenderer()
+    # Liveness first, before anything that can block: the plane handshake
+    # can hang for a long time, and the dock must still be able to tell
+    # "booting" from "dead" instead of showing a false STALLED.
+    PASS_STATE["what"] = "booting"
+    threading.Thread(target=heartbeat_thread, daemon=True).start()
 
     if args.cmd == "status":
         s = r.get_stream_status()
