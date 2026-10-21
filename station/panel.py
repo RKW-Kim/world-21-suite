@@ -298,31 +298,32 @@ def save_playlist(p):
     """The panel edits the playlist; unknown keys already on disk for OTHER
     flows (ad_plan, idents, per-item fetch metadata) are preserved, not
     silently dropped: the panel is one editor among several."""
-    cur = _read(PLAYLIST, {})
-    out = dict(cur)
-    for k in cur:
-        if k not in _PANEL_KEYS:
-            out[k] = cur[k]  # pass through untouched
-    for k, v in p.items():
-        out[k] = v  # panel owns the editable keys
-    if isinstance(cur.get("items"), list) and \
-            isinstance(out.get("items"), list) and \
-            len(cur["items"]) == len(out["items"]):
-        for old, new in zip(cur["items"], out["items"]):
-            if isinstance(old, dict) and isinstance(new, dict):
-                for k in old:
-                    # the dock owns these too — if its copy dropped the key
-                    # (cleared meta_trip, unparked gorder), it meant it
-                    if k not in ("youtube", "file", "title", "status",
-                                 "duration", "meta_trip", "group",
-                                 "gorder", "tab"):
-                        new.setdefault(k, old[k])
-    validate_playlist(out)
-    # The station lock, like every other writer of playlist.json: an
-    # unlocked read-modify-write races the daemon's own shuffle-save and
-    # one of them loses an edit.
     import daemon
+    # The WHOLE read-modify-write inside the station lock. The read used to
+    # sit outside it: the daemon's shuffle-save/played-marks landing in that
+    # window were published over by this stale copy (AGENTS.md rule 2 —
+    # /api/state POST already did this right).
     with daemon.pl_lock():
+        cur = _read(PLAYLIST, {})
+        out = dict(cur)
+        for k in cur:
+            if k not in _PANEL_KEYS:
+                out[k] = cur[k]  # pass through untouched
+        for k, v in p.items():
+            out[k] = v  # panel owns the editable keys
+        if isinstance(cur.get("items"), list) and \
+                isinstance(out.get("items"), list) and \
+                len(cur["items"]) == len(out["items"]):
+            for old, new in zip(cur["items"], out["items"]):
+                if isinstance(old, dict) and isinstance(new, dict):
+                    for k in old:
+                        # the dock owns these too — if its copy dropped the key
+                        # (cleared meta_trip, unparked gorder), it meant it
+                        if k not in ("youtube", "file", "title", "status",
+                                     "duration", "meta_trip", "group",
+                                     "gorder", "tab"):
+                            new.setdefault(k, old[k])
+        validate_playlist(out)
         _write(PLAYLIST, out)
 
 
@@ -493,9 +494,9 @@ function renderNow() {
   const items = S.playlist.items || [];
   const cur = items[(Math.max(0, parseInt(st.index || 0, 10)) - 1) % Math.max(1, items.length)];
   const flags = ['fallback_air', 'in_ad_break'].map(f => st[f] ? f : null).filter(Boolean).join(',') || '-';
-  rows.push('<tr><td>' + (st.deck || (st.in_ad_break ? 'AD' : '?')) + '</td><td>' +
-    (st.index || 0) + ' / ' + items.length + '</td><td>' +
-    ((cur && (cur.title || cur.youtube || cur.file)) || '—') + '</td><td>' + flags + '</td></tr>');
+  rows.push('<tr><td>' + esc(st.deck || (st.in_ad_break ? 'AD' : '?')) + '</td><td>' +
+    esc(st.index || 0) + ' / ' + items.length + '</td><td>' +
+    esc((cur && (cur.title || cur.youtube || cur.file)) || '—') + '</td><td>' + esc(flags) + '</td></tr>');
   document.querySelector('#now tbody').innerHTML = rows.join('');
 }
 
@@ -558,7 +559,7 @@ function render() {
   Object.entries(S.knob_help || {}).forEach(([k, [label, desc]]) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${k} <span class="desc">(${label})</span></td>` +
-      `<td><input data-k="${k}" size="7" value="${(S.knobs || {})[k] ?? ''}"></td>` +
+      `<td><input data-k="${k}" size="7" value="${esc((S.knobs || {})[k] ?? '')}"></td>` +
       `<td class="desc">${desc}</td>`;
     kb.appendChild(tr);
   });
@@ -567,7 +568,7 @@ function render() {
   fb.innerHTML = '<tr><th>Key</th><th>Current</th><th>Set to (JSON value)</th><th>Meaning</th></tr>';
   (S.state_flags || []).forEach(([k, desc]) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${k}</td><td>${JSON.stringify((S.state || {})[k] ?? '')}</td>` +
+    tr.innerHTML = `<td>${k}</td><td>${esc(JSON.stringify((S.state || {})[k] ?? ''))}</td>` +
       `<td><input data-f="${k}" placeholder="e.g. 0"></td><td class="desc">${desc}</td>`;
     fb.appendChild(tr);
   });
@@ -612,6 +613,10 @@ class Handler(BaseHTTPRequestHandler):
                 for k, v in (p.split("=", 1) for p in name.split("&") if "=" in p):
                     if k == "file":
                         name = v
+            # The dock percent-encodes the filename; decode before the
+            # basename guard, or "intro video.mp4" arrived as a literal
+            # "%20" string and the proxy 404'd every spaced/unicode name.
+            name = urllib.parse.unquote(name)
             name = os.path.basename(name)
             if not name or "/" in name or name.startswith("."):
                 return self._send(404, {"ok": False, "err": "no file"}, "application/json")
