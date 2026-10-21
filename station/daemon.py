@@ -2455,13 +2455,17 @@ def consume_control(renderer, decks, data):
     The panel's api_control holds pl_lock across its whole read-modify-
     write. This side reads under the lock, runs the (slow) consume
     unlocked, then takes the lock again to RE-READ the file fresh and pop
-    exactly the keys the original read contained. A verb posted while the
-    consume was running sits in the fresh copy and survives to the next
-    pass; a stale panel write cannot resurrect a verb this pass already
-    acted on, because the panel writes under the same lock. The old form
-    -- read unlocked, act, rewrite the stale copy -- ate verbs posted
-    mid-consume (a skip posted during a long transition vanished) and
-    could resurrect a consumed one (double-advance).
+    only what is still exactly the verb this pass consumed. A verb whose
+    key this pass never saw survives verbatim; a DIFFERENT verb of a seen
+    kind (a new mix value, a fresh skip after a false) is a new instance
+    and survives to the next pass; an identical repeat of a verb already
+    acted on is indistinguishable from it and is consumed (bare booleans
+    carry no instance identity -- the 6s post-cut refractory exists to
+    absorb slam-skips). A stale panel write cannot resurrect a verb this
+    pass already acted on, because the panel writes under the same lock.
+    The old form -- read unlocked, act, rewrite the stale copy -- ate
+    verbs posted mid-consume (a skip posted during a long transition
+    vanished) and could resurrect a consumed one (double-advance).
     """
     if not os.path.isfile(CONTROL):
         return
@@ -2474,13 +2478,15 @@ def consume_control(renderer, decks, data):
     if not isinstance(_ctl, dict):
         return
     _ctl = dict(_ctl)
-    # What this pass actually SAW: at write-back, exactly these keys are
-    # popped. A verb of the same kind posted while the consume was running
-    # is a NEW instance (the operator pressed skip again) and survives to
-    # the next pass, where it acts on whatever is on air then. A throwing
-    # consume still pops what it saw, so a failing advance cannot leave
-    # {"skip": true} behind and loop forever.
-    _seen = {k for k in _CONTROL_KEYS if k in _ctl}
+    # What this pass actually SAW, with the values seen: at write-back a
+    # key is popped only when the file still holds exactly the verb this
+    # pass consumed. A same-kind verb with a DIFFERENT value posted while
+    # the consume was running is a new instance and survives to the next
+    # pass, where it acts on whatever is on air then. A throwing consume
+    # still pops what it saw (the identical verb is still in the file),
+    # so a failing advance cannot leave {"skip": true} behind and loop
+    # forever.
+    _seen = {k: _ctl[k] for k in _CONTROL_KEYS if k in _ctl}
     if _ctl.pop("skip", False):
         with END_LOCK:
             _sk_st = load_state()
@@ -2515,29 +2521,33 @@ def consume_control(renderer, decks, data):
                 _msrc = STREAM_DECK.get(_mst.get("deck", "A"),
                                         STREAM_DECK["A"]) if _live else _mdeck
                 renderer.set_volume(_msrc, max(-70.0, min(0.0, _mdb)))
-                # carry BOTH touch keys: merge_save_state deletes absent
-                # STATE_KEYS, so passing only one would eat the other's
-                # disk value. Pass the WHOLE state back: merge_save_state
-                # deletes the keys a caller omits, so a 2-key fragment
-                # wiped index/deck/stream/fallback_air and the show
-                # restarted.
+                # The state snapshot rides AFTER the plane call:
+                # set_volume can block for seconds on a slow plane, and
+                # merge_save_state overwrites every STATE_KEY it is
+                # handed -- carrying the pre-call snapshot back would
+                # silently revert anything written meanwhile (the
+                # panel's /api/state, the overlay's /state). Only the
+                # mix keys ride forward on a fresh read.
+                _mst2 = load_state()
                 merge_save_state(dict(
-                    _mst, deck_volume_db=_mdb,
-                    deck_paused=_mst.get("deck_paused")))
+                    _mst2, deck_volume_db=_mdb,
+                    deck_paused=_mst2.get("deck_paused")))
             elif _mact in ("pause", "resume", "restart"):
                 if _live:
                     alert("Transport ignored: a live stream "
                           "is on air, not a file deck.", "WARN")
                 else:
                     renderer.media_action(_mdeck, _mact)
+                    # Same shape as mix: pause/resume carries no db, and
+                    # the saved mix must come from the state AS IT IS
+                    # when the plane call returns, not as it was before
+                    # the call could block (one pause used to wipe it;
+                    # every later cut went out raw).
+                    _mst2 = load_state()
                     merge_save_state(dict(
-                        _mst, deck_paused=(_mact == "pause"),
-                        # pause/resume carries no db: keep the saved mix
-                        # instead of letting a None through merge_save_state
-                        # erase it (one pause used to wipe it; every later
-                        # cut went out raw).
+                        _mst2, deck_paused=(_mact == "pause"),
                         deck_volume_db=(_mdb if _mdb is not None
-                                        else _mst.get("deck_volume_db"))))
+                                        else _mst2.get("deck_volume_db"))))
         except Exception as _me:
             alert("transport failed: %s." % _me, "WARN")
     # Dock loudness verb: {"normalize": {"file": name}} or
@@ -2564,9 +2574,9 @@ def consume_control(renderer, decks, data):
             probe_plane(renderer)
         except Exception as _pe:
             alert("probe failed: %s." % _pe, "WARN")
-    # Write-back under the lock, from a FRESH read: pop only what this
-    # pass consumed. Anything the dock posted while we were consuming is
-    # still in the file and survives for the next pass.
+    # Write-back under the lock, from a FRESH read: pop only what is
+    # still exactly the verb this pass consumed. Anything else the dock
+    # posted while we were consuming survives for the next pass.
     try:
         with pl_lock():
             try:
@@ -2576,8 +2586,9 @@ def consume_control(renderer, decks, data):
                 _fresh = {}
             if not isinstance(_fresh, dict):
                 _fresh = {}
-            for _k in _seen:
-                _fresh.pop(_k, None)
+            for _k, _consumed in _seen.items():
+                if _k not in _fresh or _fresh[_k] == _consumed:
+                    _fresh.pop(_k, None)
             with open(CONTROL + ".tmp", "w") as _f:
                 json.dump(_fresh, _f)
             os.replace(CONTROL + ".tmp", CONTROL)

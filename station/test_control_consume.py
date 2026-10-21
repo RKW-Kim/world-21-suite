@@ -12,7 +12,11 @@ consumed verb (double-advance). The contract now:
   2. every verb this pass consumed is gone from the file;
   3. skip acts exactly once, with force=True (beats the refractory);
   4. a corrupt or non-dict file is swallowed, not crashed on;
-  5. the panel's api_control RMW is atomic under the same station lock.
+  5. the panel's api_control RMW is atomic under the same station lock;
+  6. a same-kind verb with a DIFFERENT value posted mid-consume survives
+     (a new mix value must not be eaten by the write-back);
+  7. an identical repeat of a consumed verb is indistinguishable and
+     fires exactly once; a skip posted over a seen false survives.
 
 Run: python3 station/test_control_consume.py
 """
@@ -130,6 +134,90 @@ with open(CONTROL, "w") as f:
 daemon.on_ended = _real_on_ended
 daemon.consume_control(FakeRenderer(), DECKS, DATA)
 check(read_ctl() == {}, "healthy skip round-trip leaves the file empty")
+
+# ---- 4b: same-kind verbs, by VALUE -------------------------------------
+# A dict verb with a DIFFERENT value posted while the consume runs is a
+# new instance and must survive: the first fix popped by key alone, so a
+# mid-advance fader move was destroyed unheard while the stale value
+# already acted -- the UI said -30, the air played -10.
+seed({"skip": True, "media": {"action": "mix", "db": -10}})
+
+
+def mix_on_ended(renderer, decks, src, force=False):
+    # Panel RMW mid-advance: the operator moved the fader to -30.
+    with daemon.pl_lock():
+        ctl = read_ctl()
+        ctl["media"] = {"action": "mix", "db": -30}
+        with open(CONTROL, "w") as f:
+            json.dump(ctl, f)
+
+
+daemon.on_ended = mix_on_ended
+r3 = FakeRenderer()
+daemon.consume_control(r3, DECKS, DATA)
+after3 = read_ctl()
+check(r3.vols and r3.vols[-1][1] == -10,
+      "the mix this pass consumed is what reached the plane (-10)")
+check("skip" not in after3,
+      "the mid-consume skip is still swallowed (bare boolean, acted once)")
+check(after3.get("media") == {"action": "mix", "db": -30},
+      "a DIFFERENT media verb of a seen kind SURVIVES (was eaten silently before)")
+daemon.on_ended = _real_on_ended
+r4 = FakeRenderer()
+daemon.consume_control(r4, DECKS, DATA)
+check(r4.vols and r4.vols[-1][1] == -30,
+      "the surviving -30 mix reaches the plane on the next pass")
+check(read_ctl() == {}, "and the file is empty again")
+
+# An IDENTICAL repeat of a consumed verb is indistinguishable from it:
+# consumed once, not resurrected, not double-applied.
+seed({"skip": True, "media": {"action": "mix", "db": -10}})
+
+
+def ident_on_ended(renderer, decks, src, force=False):
+    with daemon.pl_lock():
+        ctl = read_ctl()
+        ctl["media"] = {"action": "mix", "db": -10}   # the same verb again
+        with open(CONTROL, "w") as f:
+            json.dump(ctl, f)
+
+
+daemon.on_ended = ident_on_ended
+r5 = FakeRenderer()
+daemon.consume_control(r5, DECKS, DATA)
+check(read_ctl() == {},
+      "an identical same-kind repeat is consumed once, not resurrected")
+
+# A skip posted over a seen false is a NEW skip: it must survive (the
+# key-pop ate it because the kind was seen, regardless of value).
+seed({"skip": False, "probe": True})
+_f5_ran = []
+_real_probe = daemon.probe_plane
+
+
+def f5_probe(renderer):
+    # The no-op pass is mid-consume: the operator hits skip now.
+    with daemon.pl_lock():
+        ctl = read_ctl()
+        ctl["skip"] = True
+        with open(CONTROL, "w") as f:
+            json.dump(ctl, f)
+
+
+def f5_on_ended(renderer, decks, src, force=False):
+    _f5_ran.append(force)
+
+
+daemon.probe_plane = f5_probe
+daemon.on_ended = f5_on_ended
+daemon.consume_control(FakeRenderer(), DECKS, DATA)
+check(_f5_ran == [], "skip:false never reaches on_ended")
+check(read_ctl().get("skip") is True,
+      "a skip posted over a seen false SURVIVES (was destroyed before)")
+daemon.probe_plane = _real_probe
+daemon.on_ended = _real_on_ended
+daemon.consume_control(FakeRenderer(), DECKS, DATA)
+check(read_ctl() == {}, "the surviving skip acts on the next pass and clears")
 
 # ---- 5: the panel's RMW is one atomic step under the station lock ------
 import panel
