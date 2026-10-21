@@ -27,7 +27,7 @@ import sys
 import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 OVERLAY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "overlay")
 STATION_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -388,6 +388,7 @@ def ads_view():
 
 THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
 THUMB_SEM = threading.Semaphore(2)   # at most 2 concurrent thumbnail decodes
+THUMB_HELD = set()   # names with a generate in flight: the sweep must not drop their locks
 THUMB_LOCKS = {}
 THUMB_LOCKS_GUARD = threading.Lock()
 THUMB_LOCKS_CAP = 512
@@ -403,18 +404,29 @@ def thumb_path(fname):
     os.makedirs(THUMB_DIR, exist_ok=True)
     out = os.path.join(THUMB_DIR, fname + ".jpg")
     # One lock object per filename EVER requested grew without bound; when
-    # the map passes its cap, entries whose media is gone are dropped. A
-    # lock dropped while held is harmless: the holder still releases it.
+    # the map passes its cap, entries whose media is gone are dropped --
+    # EXCEPT a lock currently held: dropping a held lock splits lock
+    # identity (a fresh request setdefaults a second object while the
+    # first holder is still inside its critical section), and two ffmpegs
+    # then race on the same .part.jpg -- the half-jpeg class this tmp
+    # scheme exists to kill.
     if len(THUMB_LOCKS) > THUMB_LOCKS_CAP:
         with THUMB_LOCKS_GUARD:
             for k in [k for k in THUMB_LOCKS
-                      if not os.path.isfile(os.path.join(daemon.MEDIA, k))]:
+                      if k not in THUMB_HELD
+                      and not os.path.isfile(os.path.join(daemon.MEDIA, k))]:
                 THUMB_LOCKS.pop(k, None)
     lock = THUMB_LOCKS.get(fname)
     if lock is None:
         with THUMB_LOCKS_GUARD:
             lock = THUMB_LOCKS.setdefault(fname, threading.Lock())
     if lock.acquire(timeout=25):
+        THUMB_HELD.add(fname)
+        # The tmp name is fixed BEFORE the try: the cleanup used to check
+        # out + ".part" -- the first-attempt naming -- so a failed or
+        # crashed ffmpeg left the real <name>.part.jpg behind forever
+        # (nothing else sweeps .thumbs).
+        tmp = out[:-4] + ".part.jpg"
         try:
             if not os.path.exists(out):
                 # At most 2 decoders at a time: the daemon and OBS need
@@ -423,7 +435,6 @@ def thumb_path(fname):
                 # used to leave a HALF JPEG at the final name, and it was
                 # then served forever (the cache never re-checks). The tmp
                 # keeps a .jpg suffix so ffmpeg's muxer guess still works.
-                tmp = out[:-4] + ".part.jpg"
                 with THUMB_SEM:
                     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
                                     "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
@@ -432,11 +443,12 @@ def thumb_path(fname):
                     os.replace(tmp, out)
         except Exception:
             try:
-                if os.path.exists(out + ".part"):
-                    os.remove(out + ".part")
+                if os.path.exists(tmp):
+                    os.remove(tmp)
             except OSError:
                 pass
         finally:
+            THUMB_HELD.discard(fname)
             lock.release()
     if not os.path.exists(out):
         return None
@@ -595,7 +607,23 @@ class Handler(SimpleHTTPRequestHandler):
     def _refused(self):
         self.send_error(403, "origin/referrer refused (set STATION_TOKEN to pin your client)")
 
+    def do_HEAD(self):
+        # The static fallback (send_head) opens the unquoted path: a %00
+        # used to kill the connection with no response (the exact shape
+        # /files grew a 400 for). One guard, both verbs.
+        if "\x00" in unquote(self.path):
+            self.send_response(400)
+            self.end_headers()
+            return
+        super().do_HEAD()
+
     def do_GET(self):
+        if "\x00" in unquote(self.path):
+            # NUL anywhere in the request path: the /files route answers
+            # 400 itself, but ANY other route fell through to the static
+            # handler, whose open() raised ValueError and the connection
+            # died with no response at all.
+            return self._json(400, {"ok": False, "error": "NUL byte in path"})
         if self.headers.get("Upgrade", "").lower() == "websocket":
             if not self._guard_control():
                 return self._refused()
@@ -628,7 +656,10 @@ class Handler(SimpleHTTPRequestHandler):
         elif self.path.startswith("/files/"):
             return self._serve_media(urlparse(self.path).path[7:])
         elif self.path.startswith("/thumbs/"):
-            from urllib.parse import unquote
+            # unquote is a module import now: this branch's function-local
+            # import used to make `unquote` local to ALL of do_GET, and
+            # the NUL guard at the top of the method hit UnboundLocalError
+            # on every request before any branch could bind it.
             tp = thumb_path(unquote(urlparse(self.path).path[len("/thumbs/"):]))
             if not tp:
                 self.send_error(404)
@@ -1141,7 +1172,11 @@ class Handler(SimpleHTTPRequestHandler):
         if not os.path.isfile(os.path.join(MUSIC_DIR, fname)):
             return self._json(404, {"ok": False, "error": "not in music/"})
         try:
-            ensure_bed()
+            # ensure_bed rides the same bounded cap as every handler-side
+            # plane call: it is 1-5 raw RPCs (input list, scene list,
+            # create, scene items) and used to run INLINE -- the one
+            # handler thread the cap commit promised would never pin.
+            plane_call(ensure_bed, timeout=8.0)
             plane_call(lambda: obs_req()._call(
                 "SetInputSettings",
                 {"inputName": BED_INPUT,
