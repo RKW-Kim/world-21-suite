@@ -1662,6 +1662,7 @@ def probe_plane(renderer):
 
 
 PASS_STATE = {"ms": 0, "what": "", "since": 0.0}
+ON_AIR = {"src": None, "pos_ms": 0, "dur_ms": 0, "state": ""}
 
 
 def touch_heartbeat():
@@ -1673,7 +1674,8 @@ def touch_heartbeat():
         with open(HEARTBEAT + ".tmp", "w") as f:
             json.dump({"t": time.time(),
                        "pass_ms": PASS_STATE.get("ms", 0),
-                       "busy": PASS_STATE.get("what", "")}, f)
+                       "busy": PASS_STATE.get("what", ""),
+                       "onair": dict(ON_AIR)}, f)
         os.replace(HEARTBEAT + ".tmp", HEARTBEAT)
     except OSError:
         pass
@@ -3108,18 +3110,16 @@ def cmd_loop(renderer):
                     except Exception:
                         continue
                     # Publish the on-air position so the dock can say how
-                    # long is left, not only what is playing.
-                    try:
-                        with pl_lock():
-                            _st_now = load_state()
-                            _st_now["onair"] = {
-                                "src": _src,
-                                "pos_ms": int(_ms.get("time_ms") or 0),
-                                "dur_ms": int(_ms.get("duration_ms") or 0),
-                                "state": _ms.get("state") or ""}
-                            save_state(_st_now)
-                    except Exception:
-                        pass
+                    # long is left, not only what is playing. It goes in
+                    # the HEARTBEAT, not state.json: rewriting the state
+                    # file every pass churned the disk and -- worse -- its
+                    # mtime changed every 2s, which defeated the dock's
+                    # version check and made it re-fetch 58KB every poll.
+                    ON_AIR.update({
+                        "src": _src,
+                        "pos_ms": int(_ms.get("time_ms") or 0),
+                        "dur_ms": int(_ms.get("duration_ms") or 0),
+                        "state": _ms.get("state") or ""})
                     if _ms.get("state") == "OBS_MEDIA_STATE_ENDED":
                         ended_streaks[_src] = ended_streaks.get(_src, 0) + 1
                     else:

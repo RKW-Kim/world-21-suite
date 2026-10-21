@@ -501,13 +501,29 @@ function liveShuffle() {
   return !!(((S || {}).playlist || {}).shuffle_on_complete);
 }
 
+/* A cheap fingerprint of the list's MEANING. This used to be two
+   JSON.stringify calls over every item -- 37ms a poll, twice a second,
+   in the browser that shares the OBS process. A hash is the same
+   comparison for a hundredth of the work. */
+function itemsFingerprint(items) {
+  let h = 2166136261;
+  const mix = (s) => {
+    s = String(s);
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+  };
+  for (const it of items) {
+    mix(keyOf(it)); mix(it.status || ""); mix(it.group || "");
+    mix(it.gorder == null ? "" : it.gorder); mix(it.tab || "");
+    mix(it.meta_trip ? 1 : 0); mix(it.title || "");
+  }
+  return h;
+}
+
 function markPending() {
-  pending = JSON.stringify(draftItems().map((it) => [keyOf(it), it.status || "",
-    it.group || "", it.gorder == null ? "" : it.gorder, it.tab || "",
-    it.meta_trip ? 1 : 0, it.title || ""])) !==
-    JSON.stringify(liveItems().map((it) => [keyOf(it), it.status || "",
-      it.group || "", it.gorder == null ? "" : it.gorder, it.tab || "",
-      it.meta_trip ? 1 : 0, it.title || ""])) ||
+  pending = itemsFingerprint(draftItems()) !== itemsFingerprint(liveItems()) ||
     /* The item diff above cannot see a playlist-level flag: without this
        the shuffle-at-end toggle staged nothing, Apply refused, and the
        operator could believe it was off while the roll reshuffled. */
@@ -2069,6 +2085,9 @@ async function load(silent) {
         return;
       }
     }
+    /* The live position rides the ping, so the countdown and the progress
+       bar keep moving without the 58KB state fetch. */
+    if (head.onair && S) { S.state = S.state || {}; S.state.onair = head.onair; }
     if (head.v === lastVersion) {
       if (!dragging) render(false);   // strip refresh only; the lists stand
       return;

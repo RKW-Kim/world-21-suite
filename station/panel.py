@@ -161,6 +161,7 @@ def api_ping():
         busy = hb.get("busy") or ""
     return {"v": "|".join(ver), "daemon": {"stale": age, "pass_ms": pass_ms,
                                           "busy": busy},
+            "onair": (hb.get("onair") or {}) if isinstance(hb, dict) else {},
             "normalize": {"on": _normalize_on()},
             "dock_version": _dock_version()}
 
@@ -177,9 +178,13 @@ def api_state():
         daemon_age = round(max(0.0, time.time() - hb["t"]), 1)
         pass_ms = int(hb.get("pass_ms") or 0)
         busy = hb.get("busy") or ""
+    _st = _read(STATE, {})
+    _hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
+    if isinstance(_hb, dict) and _hb.get("onair"):
+        _st["onair"] = _hb["onair"]
     return {
         "playlist": _read(PLAYLIST, {"items": []}),
-        "state": _read(STATE, {}),
+        "state": _st,
         "knobs": _read(KNOBS, {}),
         "knob_help": KNOB_HELP,
         "state_flags": STATE_FLAGS,
@@ -600,6 +605,12 @@ load();
 
 
 class Handler(BaseHTTPRequestHandler):
+    # HTTP/1.1 with keep-alive: the dock polls every 2s, and under
+    # HTTP/1.0 every poll opened a fresh TCP connection (the handler
+    # itself takes 0.4ms; the connection setup was the other ~60ms).
+    # Every response here sets Content-Length, so keep-alive is safe.
+    protocol_version = "HTTP/1.1"
+    timeout = 30
     def _send(self, code, body, ctype="text/html"):
         if isinstance(body, bytes):
             raw = body

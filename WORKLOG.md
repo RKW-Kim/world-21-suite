@@ -2004,3 +2004,26 @@ actually fine.
 - Worth stating plainly: this class of bug is invisible until the
   moment it fires. The station was in a "safe" state (off-air) that
   nobody was watching, because the plane was off on purpose.
+
+## 2026-10-22 (early, 4) — the poll got cheap, and the disk stopped churning
+
+Found by asking why the dock's traffic was still 58KB every 2s, after
+the version check was supposed to have fixed it.
+
+- **The on-air progress was rewriting `state.json` every 2 seconds.**
+  That churned the disk AND -- worse -- changed the state's mtime, which
+  is part of the version stamp the dock polls: so the dock re-fetched the
+  whole 58KB state every poll, forever. The progress now rides the
+  HEARTBEAT (which its own thread already wrote every second), the state
+  file changes only when the state really changes, and the panel's ping
+  carries the live position so the dock's countdown and progress bar keep
+  moving without the big fetch.
+- **The panel spoke HTTP/1.0**: every poll opened a fresh TCP
+  connection. It is now HTTP/1.1 with keep-alive (every response sets
+  Content-Length, so it is safe) plus a 30s socket timeout. The ping
+  went from 2-40ms to 1-5ms.
+- **The pending check was two JSON.stringify calls over every item** --
+  37ms a poll, twice a second, in the browser that shares the OBS
+  process. It is a hash now, like the render signature.
+- Measured after: 10 poll cycles = 0 full state fetches, 272 bytes a
+  cycle, render 3.7ms, and a state file whose mtime no longer moves.
