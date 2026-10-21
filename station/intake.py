@@ -101,6 +101,38 @@ def normalise(raw, dest):
     run("ffmpeg", "-y", "-i", raw, *PROFILE, dest)
 
 
+def _sweep_workdirs():
+    """Remove .intake-tmp-<pid> dirs whose intake is gone.
+
+    A SIGKILLed intake used to leave its raw downloads behind FOREVER (the
+    workdir is eviction-exempt by name), and after weeks of uptime a pid
+    could be REUSED: a fresh job's workdir then adopted the stale raws of
+    a dead one. A workdir dies with its pid -- or once it is old enough
+    that no intake can still be running, because the pid may belong to
+    someone else by now. (os.kill(pid,0) on a live foreign pid raises
+    PermissionError, an OSError: treated as dead, which is correct -- this
+    MEDIA tree belongs to one user.)"""
+    now = time.time()
+    try:
+        names = os.listdir(MEDIA)
+    except OSError:
+        return
+    for n in names:
+        if not n.startswith(".intake-tmp-"):
+            continue
+        d = os.path.join(MEDIA, n)
+        pid = n[len(".intake-tmp-"):]
+        alive = False
+        if pid.isdigit():
+            try:
+                os.kill(int(pid), 0)
+                alive = True
+            except OSError:
+                alive = False
+        if not alive or now - os.path.getmtime(d) > 86400:
+            shutil.rmtree(d, ignore_errors=True)
+
+
 def verify(path, expect_min_s=5):
     p = run("ffprobe", "-v", "error", "-show_entries",
             "format=duration", "-of", "csv=p=0", path)
@@ -185,6 +217,7 @@ def intake(source, title=None, queue=False, target=None):
                 "Unpin, raise the cap, or pick a smaller file. Nothing downloaded."
                 % (est, CACHE_CAP, sum(sizes.get(f, 0) for f in pinned)))
     evict_cache(pinned=pinned)  # make room before the burst, not after
+    _sweep_workdirs()
     # Unique workdir per invocation: daemon prefetch + overlay /music add
     # + CLI intakes can run CONCURRENTLY; a shared .intake-tmp collided
     # raw.* files across jobs (one job adopted the other's half-download).
@@ -202,9 +235,16 @@ def intake(source, title=None, queue=False, target=None):
     else:
         dest = os.path.join(MEDIA, "%s_%d.mp4" % (safe, int(time.time())))
     try:
-        normalise(raw, dest)
-        dur = verify(dest)
-        digest = sha256(dest)
+        # Normalise INTO the workdir, then publish with os.replace. The old
+        # form ran ffmpeg straight at the final name: a SIGKILLed intake
+        # left a partial, broadcast-ELIGIBLE file in MEDIA (right name, no
+        # playlist row, invisible to eviction) while its raw stayed in an
+        # eviction-exempt workdir. verify+hash the tmp, then one atomic
+        # rename: MEDIA only ever holds complete files.
+        out = os.path.join(workdir, "out.mp4")
+        normalise(raw, out)
+        dur = verify(out)
+        digest = sha256(out)
         con = sqlite3.connect(DB)
         con.execute("CREATE TABLE IF NOT EXISTS intake("
                     "source TEXT PRIMARY KEY, filename TEXT, duration REAL, "
@@ -214,6 +254,7 @@ def intake(source, title=None, queue=False, target=None):
                      time.strftime("%Y-%m-%d"), title or safe))
         con.commit()
         con.close()
+        os.replace(out, dest)   # atomic: the cache never sees a partial
         # Estimates undershoot (normalised output can outgrow its input);
         # settle the cap now that the real bytes are known.
         evict_cache(pinned=pinned)
