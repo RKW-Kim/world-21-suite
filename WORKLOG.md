@@ -4,6 +4,102 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-21 — full-tree audit (5 agents) + 13 same-day fixes; fresh-clone baseline established
+
+- Context: the station now has a second machine — a sandbox VM standing in
+  for the migration target. First act there was a clean baseline, and the
+  baseline itself caught the first bug: `test_spool.py` FAILS on a fresh
+  clone (`state -> ready`) because `spool.state()`'s cache invalidated on
+  the spool dir's MTIME, and this box's filesystem never moves it. A
+  finished download reported "fetching" for a full second. The cache key is
+  now the directory's entry set + the spooler's current job — the exact
+  inputs every state transition is made of. Lesson: the mtime was a proxy
+  for the truth; proxies lie on filesystems you haven't met yet.
+- Same fresh-clone baseline killed a second bug: `pl_lock()` opened
+  `broadcast/.station.lock` without ensuring `broadcast/` exists, so
+  `daemon.py selftest` — the documented first step — crashed. makedirs, one
+  line, selftest green on a true fresh clone.
+- Five parallel audit agents then read the whole tree (daemon / panel+dock /
+  overlay+stream+intake / infra+units+setup / the KPLiveDE 24-7-Playout
+  plugin for feature gaps) and returned ~50 findings. Fixed same day, one
+  idea per commit, each verified red→green where a seam existed:
+  1. **File ad breaks self-destructed** — `play_ad()`'s file branch wrote
+     `state["ad_start"]` before `state` existed on that path; every file
+     break raised UnboundLocalError into the unwind path (flash to Ad
+     Break, flash back, latch nothing, re-fire mid-rolls every poll).
+     Reproduced with FakeRenderer + temp root before and after. The write
+     was dead: nothing reads `ad_start` anywhere.
+  2. **The shuffle seam rule never saw stream items** — `item_key()` missed
+     the `youtube` field, so just-played link items had key None and the
+     avoid-set was empty: 43/200 shuffles led the next cycle with the video
+     that had just ended. Regression checks in test_playlist_edges §6 (any
+     seed that leads with the just-played item fails).
+  3. **Boot park muted the on-air deck** after a daemon restart onto a
+     spooled YouTube item (naive youtube-key check vs advance()'s
+     spool-aware one — silent air for the rest of the item). Both now use
+     `stream_item_on_air()`.
+  4. **One pause wiped the saved mix** (deck_volume_db=None through
+     merge_save_state); **the stream respawn budget never persisted**
+     (bumped a throwaway dict; respawn-every-poll storm, each costing a
+     resolve + up to 45s of ready-waits inside one pass).
+  5. **File items never got their planned mid-rolls** — advance()
+     pre-seeded `marks_for` with the new item's seed, which is exactly what
+     the poll's lazy-fill gate compares against. Streams plan at cut; files
+     now leave the previous seed so the gate opens when the media clock
+     reports a duration.
+  6. **Eviction could eat the fail-safe loops and the ad pool** near the
+     cap (the pin set only knew playlist files) — failover() would have
+     found an empty pool and held Tech Diffs immediately.
+  7. **`/library` + `/ads` read request bodies inside pl_lock** — a
+     drip-feeding client held the cross-process flock and froze playout
+     (the loop takes that lock ~20× per pass). Bodies are read before the
+     lock now; live-fired against the real handler stack.
+  8. **The relay wedged at its session cap on a malformed Identify**
+     (KeyError/TypeError escaped the except tuple, done_relay skipped) and
+     accepted client-declared frame lengths up to 2^63 (memory bomb). Both
+     fixed; 32MB cap matches daemon._WS.
+  9. **GET /music's bed probe raised NameError on every call** (class-body
+     function called bare from a method — class scope is not in method
+     lookup), so the page answered plane:"?" forever. Module function now.
+  10. **Panel**: the playlist RMW was torn (read outside pl_lock — the
+      exact race AGENTS.md rule 2 exists for); the legacy page
+      interpolated YouTube titles unescaped (XSS in a surface that can
+      restart units); /api/thumb double-encoded filenames (every spaced
+      name 404'd). All fixed + smoke-tested.
+  11. **setup.sh armed the publish leg** (enable list took every
+      station-*.service — with a real key, provisioning = going live),
+      never enabled station-watchdog.timer (the 5-minute self-heal layer
+      did not exist on provisioned boxes), and a double-sed turned every
+      EnvironmentFile line into a bare path systemd silently drops.
+  12. **BROADCAST_ROOT split-brain**: only the daemon unit got the env; on
+      the documented /var/broadcast VPS layout the panel read the repo
+      tree while the daemon played /var/broadcast. panel.py honors the env
+      now (spool probe stays repo-relative), setup.sh injects it into
+      every unit.
+  13. **Hold states alerted every pass** (all-missing = one WARN per item
+      per re-kick; a night of that rotates the 5,000-row trail over).
+      hold_alert(): first occurrence, repeats hourly.
+- Not fixed (ranked, in docs/KNOWN_ISSUES.md "2026-10-21 audit"): the relay
+  auth bridge + Origin:null guard bypass (WAN-blocking, needs
+  STATION_TOKEN-first), MediaMTX with no publish auth + SRT open to the
+  world, control.json's lock-free cross-process RMW, the dock's broken
+  undo/redo + dead shuffle toggle + hidden-row keyboard cursor +
+  index-into-draft markers, stale-URL respawns, non-atomic intake publish,
+  the thread caps applied once, watchdog scope/exit-code blind spots,
+  sync.py scope mixing, the VPS-shaped OBS unit, `_RESOLVE_CACHE` growth,
+  silent cookie fallback, preflight crashing on the boot it diagnoses.
+- From the 24-7-Playout plugin comparison, the borrow list (value/effort):
+  a live Now/Next viewer overlay fed by the SSE bus (the one viewer-facing
+  gap), planned start/end times per rundown, Discord rundown notifications,
+  config backup/auto-recovery, calendar view. Rejected as already-parity or
+  against station decisions: recording, per-item loudness UI, auto-apply,
+  OBS-plugin architecture, Twitch-centric automation.
+- Sandbox lessons for the record: the OOM-killer here SIGKILLs test runs
+  under memory pressure and the wreckage stalls subsequent runs (stress_cache
+  "hung" twice on wreckage, passed 7/7 clean — the worklog's "verification
+  runs need quiet windows" applies to this box too); faulthandler +
+  file-redirect is the way to autopsy them.
+
 ## 2026-10-15 — Studio relay forensics + UI-drive harness (overnight)
 
 - Root-caused the flapping, in order: (1) socketserver's buffered rfile

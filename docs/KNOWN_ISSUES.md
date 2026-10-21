@@ -5,6 +5,127 @@ Ordered by how much it matters.
 
 ---
 
+## Open defects (2026-10-21 audit)
+
+Found by a five-agent read of the whole tree (daemon, panel+dock,
+overlay/stream/intake, infra, plus the 24-7-Playout-Plugin feature
+comparison). The load-bearing ones were fixed and committed the same
+day (see WORKLOG); these are the ones still open, ranked:
+
+- **The relay auth bridge hands out authenticated OBS control without
+  the OBS password.** `overlay_server.py` /ws + /obs: the bridge
+  replaces the browser's Identify auth with the server secret, and the
+  guard's no-Origin and `Origin: null` bypasses mean any LAN client —
+  or any web page in any browser via a sandboxed iframe — gets the
+  render plane. Fine while BIND=127.0.0.1 + tunnels only; before any
+  WAN exposure this needs STATION_TOKEN required for /ws + /obs (and
+  `hmac.compare_digest` for it). Also: `Origin: null` should refuse
+  when STATION_TOKEN is set, not pass.
+- **MediaMTX has no publish/read auth and setup.sh opens SRT to the
+  world.** `ufw allow 9000:9001/udp` with no source restriction means
+  anyone on the internet can publish `slot-cam`/`slot-screen` (on-air
+  injection when a seat is free) and read everything. Add
+  `authInternalUsers` (publish-only seats) and source-restricted ufw
+  rules; WHIP 8889/tcp + the WebRTC UDP mux are also not opened, so the
+  documented seats can't reach the box from outside.
+- **control.json is a lock-free cross-process RMW.** The panel's
+  api_control read-modify-write races the daemon's consume-and-rewrite
+  (which spans the whole advance, seconds): a skip posted during a long
+  transition can be eaten, or a stale write resurrect a consumed verb
+  (double-advance). Needs one side to hold the station lock, and the
+  daemon to re-read fresh at write-back and pop only what it consumed.
+- **Dock undo/redo is structurally broken.** The history stack stores
+  pre-states only: redo never restores the newest state (one edit +
+  undo + redo loses the staged edit while the bar claims it is
+  staged), and a reload restores the state *before* the last edit.
+  DECISIONS §1 promises durable step-by-step history; store post-states
+  (or persist `draft` itself).
+- **The dock's shuffle-at-end toggle is dead.** `markPending()` only
+  diffs item arrays, so toggling shuffle_on_complete alone never
+  stages, Apply refuses, and the checkbox is never seeded from the
+  station's actual value — the operator can believe it is off while the
+  roll reshuffles.
+- **Keyboard cursor walks rows hidden inside folded groups.**
+  `visibleRows()` returns display:none rows; ↓ off the queue bottom
+  strands the roving tab stop in an invisible row (Enter then acts on
+  what the operator cannot see). Filter out hidden rows.
+- **On-air / NEXT markers are indices into the staged draft.** While
+  edits are pending, the green bar lands on whatever now occupies slot
+  index-1 in the draft, not on the item actually on air. Mark by item
+  identity.
+- **Respawn reuses possibly-dead HLS URLs.** stream.py re-resolves only
+  when the resolve is >30 min old, so a mid-stream 403 inside the
+  window respawns the same dead URLs fifteen times and walks the item
+  to the fault limit, when a fresh resolve would heal it. Always
+  resolve on respawn.
+- **Intake publishes non-atomically.** normalise() writes straight to
+  the final media name; a SIGKILLed intake leaves a partial
+  broadcast-eligible file plus a full raw in an eviction-exempt
+  `.intake-tmp-<pid>` workdir (pid reuse adopts stale workdirs after
+  weeks of uptime). Normalise into the workdir, `os.replace` into
+  place, sweep stale tmpdirs.
+- **The "4s thread cap" exists exactly once (and that once was broken —
+  the probe now works, see the fixed list).** `/intent`, `/obs` proxy
+  and music-set still call the shared renderer inline, so a wedged
+  plane queues handler threads for up to OBS_TIMEOUT each. Wrap plane
+  calls in the bounded helper.
+- **`_RESOLVE_CACHE` never prunes** (unbounded over months of URLs;
+  tens of MB). Drop expired entries during prefetch_stream_pass.
+- **Silent cookie fallback**: stream.py/intake.py pass `--cookies` only
+  when the file exists; a stale file silently downgrades to anonymous
+  and the operator cannot tell why the bot-wall returned. Log once.
+- **preflight.py crashes on a corrupt/missing playlist** — the exact
+  broken boot it exists to diagnose. Guard the load.
+- **Watchdog ignores systemctl exit codes and is scope-blind on root
+  installs** (hardcoded `--user`); a failed start counts as revived.
+  Also no park fence vs `sync.py apply --restart` (a timer firing
+  mid-apply can start the daemon under the merge) and no plane-restart
+  cooldown of its own.
+- **sync.py apply mixes systemd scopes on root installs**: stops
+  system units, "restarts" user units (swallowed failures, station
+  dark). Use the resolved scope for both directions.
+- **station-obs.service is lab-shaped for the VPS**: DISPLAY=:0 with no
+  headless session recipe shipped, no `LIBGL_ALWAYS_SOFTWARE=1` path
+  for a GPU-less boot, BrowserHWAccel=false only written when
+  global.ini already exists, and the setup checklist says 1080p/6000k
+  while config/ + VPS.md say 540p/2500k.
+- **config/collection.json staleness** (listed below) is now sharper:
+  `sync.py apply` would create a duplicate `SMILE | Meet` scene and
+  restart the on-air deck source mid-item; the deck diff also only
+  hides `.enabled`, not `settings.local_file`, so diff is perpetually
+  noisy and trains the operator to ignore drift.
+- **Thumbnail cache bookkeeping**: one lock object per filename ever
+  requested, unbounded waiter queue, and a timeout-killed ffmpeg can
+  leave a partial .jpg that is served forever (generate to tmp +
+  os.replace, cap the map).
+- **`/files` NUL byte** escapes the OSError catch (ValueError → dead
+  connection, no response). Cosmetic; catch it.
+
+### Fixed same-day (2026-10-21) — kept here until the next doc pass
+
+File ad breaks self-destructed (dead `ad_start` write crashed every
+one — the break flash-cut and back, latched nothing); the shuffle seam
+rule never saw stream items (`item_key` missed `youtube` — 43/200
+shuffles led with the just-played video); boot park muted the on-air
+deck after a restart onto a spooled item; pause wiped the saved mix;
+the stream respawn budget never persisted (respawn-every-poll storm);
+file items never got their planned mid-rolls (advance pre-seeded the
+poll's own gate); eviction could eat the fail-safe loops and the ad
+pool; `/library` + `/ads` read bodies inside the station lock (a slow
+client froze playout); the relay wedged at its session cap on a
+malformed Identify and had no frame-size cap; GET /music's probe
+raised NameError on every call; the panel's playlist RMW was torn
+(read outside the lock), the legacy page interpolated titles
+unescaped, and /api/thumb double-encoded filenames; the spool state
+cache served stale states on coarse-mtime filesystems (caught by the
+fresh-clone test baseline on the migration target); hold states
+alerted every pass instead of hourly; pl_lock crashed selftest on a
+fresh clone; setup.sh armed the publish leg, never enabled the
+watchdog timer, double-sed'd EnvironmentFile into a bare path, and
+told only the daemon the BROADCAST_ROOT (panel split-brain).
+
+---
+
 ## Open defects
 
 ### The "monitor" path was missing from MediaMTX (fixed 2026-10-21, but read this)

@@ -190,7 +190,7 @@ Inputs: `PLAYOUT_A`, `PLAYOUT_B` (file decks), `PLAYOUT_C` (fail-safe),
 |---|---|
 | `python3 station/test_spool.py` | Spool states, the blast-rate exits, eviction, the audio guard. |
 | `python3 station/test_fallback.py` | The fail-safe: healthy decks, a stalled deck, the loop_a→loop_b roll, TECHDIFF when the pool runs out. |
-| `python3 station/test_playlist_edges.py` | The index truth table, the up-next scan, degenerate playlists. |
+| `python3 station/test_playlist_edges.py` | The index truth table, the up-next scan, degenerate playlists, the shuffle seam (stream items included). |
 | `python3 station/daemon.py selftest` | Offline: overlay repair, advance, ident routing, dormants, corrupt state, cache eviction, the watchdog. |
 | `python3 station/stress_cache.py` | The cache-eviction battery on a tmpfs. |
 
