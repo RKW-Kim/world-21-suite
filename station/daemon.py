@@ -2421,6 +2421,154 @@ def restart_plane():
         alert("Render plane restart issued; waiting for first Hello.", "INFO")
 
 
+_CONTROL_KEYS = ("skip", "media", "normalize", "refresh", "probe")
+# Guards the ended-events queue shared by the media watch and the poll
+# loop; the dock's skip path (consume_control) reads state under it too.
+END_LOCK = threading.Lock()
+
+
+def consume_control(renderer, decks, data):
+    """Operator commands from the dock/panel: broadcast/control.json.
+
+    {"skip": true} ends the current item exactly like a natural media end;
+    {"media": {...}} carries transport/mixer verbs; {"normalize": ...} the
+    loudness switch; {"refresh": {"url": ...}} one row's metadata;
+    {"probe": true} plane introspection. The file is rewritten without the
+    consumed keys so one POST fires exactly once.
+
+    The panel's api_control holds pl_lock across its whole read-modify-
+    write. This side reads under the lock, runs the (slow) consume
+    unlocked, then takes the lock again to RE-READ the file fresh and pop
+    exactly the keys the original read contained. A verb posted while the
+    consume was running sits in the fresh copy and survives to the next
+    pass; a stale panel write cannot resurrect a verb this pass already
+    acted on, because the panel writes under the same lock. The old form
+    -- read unlocked, act, rewrite the stale copy -- ate verbs posted
+    mid-consume (a skip posted during a long transition vanished) and
+    could resurrect a consumed one (double-advance).
+    """
+    if not os.path.isfile(CONTROL):
+        return
+    try:
+        with pl_lock():
+            with open(CONTROL) as _f:
+                _ctl = json.load(_f)
+    except Exception:
+        return
+    if not isinstance(_ctl, dict):
+        return
+    _ctl = dict(_ctl)
+    # What this pass actually SAW: at write-back, exactly these keys are
+    # popped. A verb of the same kind posted while the consume was running
+    # is a NEW instance (the operator pressed skip again) and survives to
+    # the next pass, where it acts on whatever is on air then. A throwing
+    # consume still pops what it saw, so a failing advance cannot leave
+    # {"skip": true} behind and loop forever.
+    _seen = {k for k in _CONTROL_KEYS if k in _ctl}
+    if _ctl.pop("skip", False):
+        with END_LOCK:
+            _sk_st = load_state()
+            if (_sk_st.get("stream") or {}).get("slot"):
+                # Stream item on air: skipping ends the stream (wall
+                # clock), the deck file is just parked underneath it.
+                _src = STREAM_EOF
+            else:
+                _src = decks.get(_sk_st.get("deck", "A"), DECK_A)
+        # Direct, not queued: an operator slam-skipping within the 6s
+        # post-cut refractory must still beat it, which force=True on a
+        # direct route does. Swallow-but-consume: the consumed keys are
+        # popped at write-back regardless, so a throwing advance can't
+        # leave {"skip": true} behind and loop forever.
+        try:
+            on_ended(renderer, decks, _src, force=True)
+        except Exception as _se:
+            alert("skip failed: %s." % _se, "WARN")
+    # Dock transport/mixer: {"media": {"action": ...}}. pause/resume/
+    # restart touch only FILE decks -- a live stream paused is just a
+    # half-swallowed feed; mix sets input volume db (not system volume)
+    # and persists so every future cut rides the same mix.
+    _med = _ctl.pop("media", None)
+    if isinstance(_med, dict):
+        try:
+            _mst = load_state()
+            _mdeck = decks.get(_mst.get("deck", "A"), DECK_A)
+            _live = stream_item_on_air(data.get("items", []), _mst)
+            _mact = _med.get("action")
+            _mdb = _med.get("db")
+            if _mact == "mix" and isinstance(_mdb, (int, float)):
+                _msrc = STREAM_DECK.get(_mst.get("deck", "A"),
+                                        STREAM_DECK["A"]) if _live else _mdeck
+                renderer.set_volume(_msrc, max(-70.0, min(0.0, _mdb)))
+                # carry BOTH touch keys: merge_save_state deletes absent
+                # STATE_KEYS, so passing only one would eat the other's
+                # disk value. Pass the WHOLE state back: merge_save_state
+                # deletes the keys a caller omits, so a 2-key fragment
+                # wiped index/deck/stream/fallback_air and the show
+                # restarted.
+                merge_save_state(dict(
+                    _mst, deck_volume_db=_mdb,
+                    deck_paused=_mst.get("deck_paused")))
+            elif _mact in ("pause", "resume", "restart"):
+                if _live:
+                    alert("Transport ignored: a live stream "
+                          "is on air, not a file deck.", "WARN")
+                else:
+                    renderer.media_action(_mdeck, _mact)
+                    merge_save_state(dict(
+                        _mst, deck_paused=(_mact == "pause"),
+                        # pause/resume carries no db: keep the saved mix
+                        # instead of letting a None through merge_save_state
+                        # erase it (one pause used to wipe it; every later
+                        # cut went out raw).
+                        deck_volume_db=(_mdb if _mdb is not None
+                                        else _mst.get("deck_volume_db"))))
+        except Exception as _me:
+            alert("transport failed: %s." % _me, "WARN")
+    # Dock loudness verb: {"normalize": {"file": name}} or
+    # {"normalize": {"url": link}} (forced re-spool through the loudnorm'd
+    # faststart), or the station-wide switch {"global": true}.
+    _norm = _ctl.pop("normalize", None)
+    if isinstance(_norm, dict) and _norm.get("file"):
+        _normalize_media(str(_norm["file"]))
+    elif isinstance(_norm, dict) and _norm.get("url"):
+        _normalize_media(str(_norm["url"]))
+    elif isinstance(_norm, dict) and "global" in _norm:
+        set_deck_normalizer(renderer, bool(_norm["global"]))
+    # Dock: "Refresh metadata" on one row.
+    _ref = _ctl.pop("refresh", None)
+    if isinstance(_ref, dict) and _ref.get("url"):
+        threading.Thread(
+            target=refresh_item_metadata,
+            args=(str(_ref["url"]), alert),
+            daemon=True).start()
+    # Read-only plane introspection: {"probe": true} refreshes
+    # broadcast/obs_probe.json (inputs, filters, available filter kinds).
+    if _ctl.pop("probe", False):
+        try:
+            probe_plane(renderer)
+        except Exception as _pe:
+            alert("probe failed: %s." % _pe, "WARN")
+    # Write-back under the lock, from a FRESH read: pop only what this
+    # pass consumed. Anything the dock posted while we were consuming is
+    # still in the file and survives for the next pass.
+    try:
+        with pl_lock():
+            try:
+                with open(CONTROL) as _f2:
+                    _fresh = json.load(_f2)
+            except Exception:
+                _fresh = {}
+            if not isinstance(_fresh, dict):
+                _fresh = {}
+            for _k in _seen:
+                _fresh.pop(_k, None)
+            with open(CONTROL + ".tmp", "w") as _f:
+                json.dump(_fresh, _f)
+            os.replace(CONTROL + ".tmp", CONTROL)
+    except Exception:
+        pass
+
+
 def cmd_loop(renderer):
     import fcntl
     try:
@@ -2449,7 +2597,9 @@ def cmd_loop(renderer):
     mtime = os.path.getmtime(PLAYLIST)
     last_hash = json.dumps(data, sort_keys=True)
     ended = []  # media-ended events queue here; the poll loop drains them.
-    end_lock = threading.Lock()  # ...so a deaf window delays advance, never drops it.
+    # end_lock is module-level now: consume_control (the dock's skip path)
+    # takes it too, and it used to live only here.
+    end_lock = END_LOCK
 
     def note_ended(source):
         # Stream decks report MediaInputPlaybackEnded on every RTMP reader
@@ -2746,113 +2896,8 @@ def cmd_loop(renderer):
                                 ended.append(_src)
             except Exception:
                 pass
-            # Operator commands from the dock/panel: broadcast/control.json,
-            # {"skip": true} ends the current item exactly like a natural
-            # media end; the file is rewritten without the flag so one
-            # POST fires exactly once.
-            try:
-                if os.path.isfile(CONTROL):
-                    with open(CONTROL) as _f:
-                        _ctl = json.load(_f)
-                    if isinstance(_ctl, dict):
-                        _ctl = dict(_ctl)
-                        if _ctl.pop("skip", False):
-                            with end_lock:
-                                _sk_st = load_state()
-                                if (_sk_st.get("stream") or {}).get("slot"):
-                                    # Stream item on air: skipping ends the
-                                    # stream (wall clock), the deck file is
-                                    # just parked underneath it.
-                                    _src = STREAM_EOF
-                                else:
-                                    _src = decks.get(
-                                        _sk_st.get("deck", "A"), DECK_A)
-                            # Direct, not queued: an operator slam-skipping
-                            # within the 6s post-cut refractory must still
-                            # beat it, which force=True on a direct route does.
-                            # Swallow-but-consume: control.json gets emptied
-                            # below regardless, so a throwing advance can't
-                            # leave {"skip": true} behind and loop forever.
-                            try:
-                                on_ended(renderer, decks, _src, force=True)
-                            except Exception as _se:
-                                alert("skip failed: %s." % _se, "WARN")
-                        # Dock transport/mixer: {"media": {"action": ...}}.
-                        # pause/resume/restart touch only FILE decks — a
-                        # live stream paused is just a half-swallowed feed;
-                        # mix sets input volume db (not system volume) and
-                        # persists so every future cut rides the same mix.
-                        _med = _ctl.pop("media", None)
-                        if isinstance(_med, dict):
-                            try:
-                                _mst = load_state()
-                                _mdeck = decks.get(_mst.get("deck", "A"), DECK_A)
-                                _live = stream_item_on_air(
-                                    data.get("items", []), _mst)
-                                _mact = _med.get("action")
-                                _mdb = _med.get("db")
-                                if _mact == "mix" and isinstance(_mdb, (int, float)):
-                                    _msrc = STREAM_DECK.get(_mst.get("deck", "A"),
-                                                            STREAM_DECK["A"]) if _live else _mdeck
-                                    renderer.set_volume(_msrc, max(-70.0, min(0.0, _mdb)))
-                                    # carry BOTH touch keys: merge_save_state
-                                    # deletes absent STATE_KEYS, so passing
-                                    # only one would eat the other's disk value
-                                    # Pass the WHOLE state back: merge_save_state
-                                    # deletes the keys a caller omits, so a
-                                    # 2-key fragment wiped index/deck/stream/
-                                    # fallback_air and the show restarted.
-                                    merge_save_state(dict(
-                                        _mst, deck_volume_db=_mdb,
-                                        deck_paused=_mst.get("deck_paused")))
-                                elif _mact in ("pause", "resume", "restart"):
-                                    if _live:
-                                        alert("Transport ignored: a live stream "
-                                              "is on air, not a file deck.", "WARN")
-                                    else:
-                                        renderer.media_action(_mdeck, _mact)
-                                        merge_save_state(dict(
-                                            _mst, deck_paused=(_mact == "pause"),
-                                            # pause/resume carries no db: keep
-                                            # the saved mix instead of letting
-                                            # a None through merge_save_state
-                                            # erase it (one pause used to wipe
-                                            # it; every later cut went out raw).
-                                            deck_volume_db=(_mdb if _mdb is not None
-                                                            else _mst.get("deck_volume_db"))))
-                            except Exception as _me:
-                                alert("transport failed: %s." % _me, "WARN")
-                        # Dock loudness verb: {"normalize": {"file": name}}
-                        # or {"normalize": {"url": link}} (forced re-spool
-                        # through the loudnorm'd faststart), or the
-                        # station-wide switch {"normalize": {"global": true}}.
-                        _norm = _ctl.pop("normalize", None)
-                        if isinstance(_norm, dict) and _norm.get("file"):
-                            _normalize_media(str(_norm["file"]))
-                        elif isinstance(_norm, dict) and _norm.get("url"):
-                            _normalize_media(str(_norm["url"]))
-                        elif isinstance(_norm, dict) and "global" in _norm:
-                            set_deck_normalizer(renderer, bool(_norm["global"]))
-                        # Dock: "Refresh metadata" on one row.
-                        _ref = _ctl.pop("refresh", None)
-                        if isinstance(_ref, dict) and _ref.get("url"):
-                            threading.Thread(
-                                target=refresh_item_metadata,
-                                args=(str(_ref["url"]), alert),
-                                daemon=True).start()
-                        # Read-only plane introspection: {"probe": true}
-                        # refreshes broadcast/obs_probe.json (inputs,
-                        # filters, available filter kinds).
-                        if _ctl.pop("probe", False):
-                            try:
-                                probe_plane(renderer)
-                            except Exception as _pe:
-                                alert("probe failed: %s." % _pe, "WARN")
-                        with open(CONTROL + ".tmp", "w") as _f:
-                            json.dump(_ctl, _f)
-                        os.replace(CONTROL + ".tmp", CONTROL)
-            except Exception:
-                pass
+            # Operator commands from the dock/panel (see consume_control).
+            consume_control(renderer, decks, data)
             # Stream-item lifecycle: wall-clock duration + feed health. The
             # feed lives in this process, so its death is observable locally
             # after all: two respawns then route to the next item. Runs for

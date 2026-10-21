@@ -250,21 +250,30 @@ def api_control(data):
     current item exactly like a natural media end; {"media": {...}} carries
     the transport/mixer verbs the daemon consumes (pause/resume/restart/mix);
     {"normalize": {"global": true|false}} is the station-wide loudness
-    switch (compress+limit on every playback input)."""
-    ctl = _read(CONTROL, {})
-    if data.get("skip"):
-        ctl["skip"] = True
-    if isinstance(data.get("media"), dict):
-        ctl["media"] = dict(data["media"])
-    norm = data.get("normalize")
-    if isinstance(norm, dict):
-        if norm.get("file"):
-            ctl["normalize"] = {"file": str(norm["file"])}
-        elif norm.get("url"):
-            ctl["normalize"] = {"url": str(norm["url"])}
-        elif "global" in norm:
-            ctl["normalize"] = {"global": bool(norm.get("global"))}
-    _write(CONTROL, ctl)
+    switch (compress+limit on every playback input).
+
+    The whole RMW sits under the station lock: the daemon reads this file,
+    acts for seconds, then re-reads fresh and pops only what it consumed.
+    An unlocked write here could land between its read and write-back --
+    a skip posted during a long transition got eaten, and a stale copy
+    could resurrect a verb the daemon had just consumed (double-advance).
+    """
+    import daemon   # the station lock lives with the daemon
+    with daemon.pl_lock():
+        ctl = _read(CONTROL, {})
+        if data.get("skip"):
+            ctl["skip"] = True
+        if isinstance(data.get("media"), dict):
+            ctl["media"] = dict(data["media"])
+        norm = data.get("normalize")
+        if isinstance(norm, dict):
+            if norm.get("file"):
+                ctl["normalize"] = {"file": str(norm["file"])}
+            elif norm.get("url"):
+                ctl["normalize"] = {"url": str(norm["url"])}
+            elif "global" in norm:
+                ctl["normalize"] = {"global": bool(norm.get("global"))}
+        _write(CONTROL, ctl)
     return {"ok": True}
 
 
