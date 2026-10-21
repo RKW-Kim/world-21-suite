@@ -1839,3 +1839,99 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 - Verified: bash station/selftest.sh — all green (spool, fallback,
   playlist_edges, stream_respawn, control_consume, overlay_auth,
   plane_guard, daemon selftest).
+
+## 2026-10-21 (late, 5) — the web agent's round, verified; three defects fixed
+
+The z.ai agent worked a full round on its own VM and pushed 55 commits
+(`b39358e..90a1154`). This entry records the VERIFICATION, not the
+narrative: what was checked, what was wrong, what was fixed.
+
+### What the round did (and what survived verification)
+
+- **The render plane boots on a GPU-less box** (`f3b92c7`): setup.sh now
+  renders the installed unit per box shape — headless -> Xvfb :99 +
+  `LIBGL_ALWAYS_SOFTWARE=1`, session-without-GPU -> :0 + software GL,
+  lab -> untouched. It also creates `global.ini` with
+  `BrowserHWAccel=false` when missing (a fresh box's first boot used to
+  skip the guard and CEF-crash ~30s in) and skips the VNC unit on a
+  headless box. VERIFIED: the lab shape is preserved in git (a real
+  session on :0 with hardware GL — the llvmpipe burn of 2026-10-20 does
+  NOT come back), the render fails loud when its sed patterns stop
+  matching, and the VPS shape is correct in the text.
+- **The stream respawn left the playout pass** (`fbe378f`): a dead
+  network used to freeze the deck AND every other loop duty for ~4
+  minutes. Now the pass only detects/counts/kicks; resolve+spawn+ready
+  runs on one background thread per deck, with PROC-IDENTITY cleanup (a
+  deck-keyed stop would kill a successor's feed) and a relevance-checked
+  give-up EOF. VERIFIED: the code is sound (identity checks in every
+  exit path, `END_LOCK` around every `_ENDED` append, the drain under
+  the lock) and `test_stream_respawn.py` (29 checks) pins it.
+- **plane_call is a deadline, not a bound** (`773848d`): every plane_call
+  takes a generation and the renderer refuses an RPC older than one that
+  already sent, under the plane lock. `test_plane_guard.py` (12 checks)
+  pins it. VERIFIED: sound; the residual (a single in-flight RPC still
+  completes server-side) is inherent to Python and is recorded.
+- **One canonical suite runner** (`90a1154`): `station/selftest.sh`.
+  VERIFIED: runs green here, 8/8, including the four new harnesses.
+- Also landed and spot-checked as sound: the station lock around the
+  panel's playlist/control RMW, the control.json write-back that pops
+  by VALUE under the lock (a verb the dock posted meanwhile survives),
+  the overlay's seat/plane-call guards, the mediamtx auth tiers, the
+  sync.py scope fix, the eviction pins, the preflight shape check, the
+  shuffler's stream-aware seam rule, the "hold states alert once an
+  hour" change, the intake workdir cleanup, the cookies-not-failing-
+  silently change, and the dock's identity-based on-air marker (VERIFIED
+  in a browser: the marker follows the ITEM, not the slot, across a
+  staged reorder).
+
+### What was WRONG, and is now fixed (d49fe2f)
+
+1. **The unit render never reached four units.** setup.sh injected
+   BROADCAST_ROOT by rewriting an existing `Environment=` line. panel,
+   overlay, watchdog and mediamtx have none, so they silently kept the
+   repo root — and mediamtx's `${BROADCAST_ROOT}/mediamtx.yml` expanded
+   to `/mediamtx.yml`, which does not exist: **the ingest bus never
+   started on a fresh install.** The render now INSERTS the line into
+   `[Service]` (appending to the file put it in `[Install]`, where
+   systemd ignores it: "Referenced but unset environment variable"),
+   and fails loud if a unit expands a variable it never defines.
+2. **The render was untestable.** It lived inside setup.sh, so a
+   harness could only reimplement it — and would have passed while
+   setup.sh regressed. It now lives in `station/render_units.sh`, which
+   setup.sh calls and `station/test_unit_render.py` runs FOR REAL over
+   three box shapes, including a check that the variable lands in
+   `[Service]` (not just in the text) and a check that the render fails
+   loud when the unit text stops matching. The harness has teeth: with
+   the old injection reverted it fails (3 failures).
+3. **Plane-off mode was incoherent.** The daemon sat 15 minutes in
+   `wait_ready`, then its opening cut consumed the queue (the hold flag
+   was only set by the poll loop's gate, which had not run yet), and the
+   fault watchdog counted the deliberately-absent plane as a fault,
+   escalated to OFF-AIR and failed to cut every pass. Now: no boot
+   wait, the hold is armed BEFORE the opening cut, the fault watchdog
+   is off while the plane is off, and the watchdog timer does not alert
+   about a unit that is switched off on purpose.
+
+### The live box, brought in line with the new design
+
+The mediamtx config is now RENDERED (real seat credentials generated into
+`broadcast/secrets.env`, 600, rendered to `broadcast/mediamtx.yml`), the
+installed units carry BROADCAST_ROOT, and the render plane stays MASKED
+(the operator asked for OBS to be closed; the queue holds, the heartbeat
+is fresh, the ingest bus is up).
+
+### Where the loop stands for the next agent
+
+Ranked, from `docs/KNOWN-ISSUES.md`:
+
+1. `config/collection.json` staleness — `sync.py apply` can create a
+   duplicate scene and restart the on-air deck mid-item. Operator-tool
+   fix, medium size.
+2. The dock small print (needs a browser harness on the box).
+3. The duplicate-marker tiebreak (cosmetic).
+4. The VPS render is unproven on a REAL GPU-less box (needs the box).
+
+The two rules the loop taught this round, both now enforced by code
+rather than by memory: **a test file joins `station/selftest.sh` in the
+same commit that adds it**, and **a sed-based render must have a harness
+that runs the real script**.
