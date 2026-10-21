@@ -244,8 +244,7 @@ pkill -x obs-browser-page   # clear the flatpak leftovers, if any
 ## 7. Change verification
 
 ```bash
-python3 station/test_spool.py && python3 station/test_fallback.py && \
-python3 station/test_playlist_edges.py && python3 station/daemon.py selftest
+bash station/selftest.sh   # the whole stdlib suite, one command
 ```
 
 Then watch the live station for a couple of passes:

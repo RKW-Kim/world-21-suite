@@ -79,8 +79,9 @@ read (docs + code)  →  change (small, one idea)  →  verify (tests + the live
 
 **Verify means all three:**
 
-1. `python3 station/test_spool.py`, `test_fallback.py`,
-   `test_playlist_edges.py`, `python3 station/daemon.py selftest` — all pass.
+1. `bash station/selftest.sh` — the whole suite, all green. (The
+   runner's list is canonical: a new test file joins it in the same
+   commit that adds the file.)
 2. The change was seen in the **running** station (a dock screenshot, the
    activity log, the obs-websocket state) — not just in a unit test.
 3. Nothing else regressed: the station is still playing, the heartbeat is

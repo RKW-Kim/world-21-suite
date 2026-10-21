@@ -188,9 +188,14 @@ Inputs: `PLAYOUT_A`, `PLAYOUT_B` (file decks), `PLAYOUT_C` (fail-safe),
 
 | Command | Covers |
 |---|---|
+| `bash station/selftest.sh` | **Everything below, one command.** The list in the script is the canonical suite. |
 | `python3 station/test_spool.py` | Spool states, the blast-rate exits, eviction, the audio guard. |
 | `python3 station/test_fallback.py` | The fail-safe: healthy decks, a stalled deck, the loop_a→loop_b roll, TECHDIFF when the pool runs out. |
 | `python3 station/test_playlist_edges.py` | The index truth table, the up-next scan, degenerate playlists, the shuffle seam (stream items included). |
+| `python3 station/test_stream_respawn.py` | The background respawn: the pass never blocks, one attempt per deck, EOF exactly once, proc-identity cleanup. |
+| `python3 station/test_control_consume.py` | The control write-back: verbs pop by value, no resurrection, no double execution. |
+| `python3 station/test_overlay_auth.py` | The control-plane guard: STATION_TOKEN tiers, Origin rules, compare_digest. |
+| `python3 station/test_plane_guard.py` | plane_call generations: the stale tail of a timed-out sequence dies superseded. |
 | `python3 station/daemon.py selftest` | Offline: overlay repair, advance, ident routing, dormants, corrupt state, cache eviction, the watchdog. |
 | `python3 station/stress_cache.py` | The cache-eviction battery on a tmpfs. |
 

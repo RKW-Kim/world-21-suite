@@ -74,9 +74,10 @@ Rules that keep an audit honest:
 Three things, all required (see `AGENTS.md` §4):
 
 ```bash
-# 1. the tests
-python3 station/test_spool.py && python3 station/test_fallback.py && \
-python3 station/test_playlist_edges.py && python3 station/daemon.py selftest
+# 1. the tests — the WHOLE suite, one command. The runner's list is the
+# canonical suite; a new test file joins it in the same commit that adds
+# the file (a test the runner does not run does not exist).
+bash station/selftest.sh
 
 # 2. the live station
 sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log ORDER BY rowid DESC LIMIT 10;"

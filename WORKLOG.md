@@ -1821,3 +1821,21 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   stream_respawn, selftest). Live proof arrives with the next real
   deaf-plane window: the journal should show "superseded" where it used
   to show a late intent landing.
+
+## 2026-10-21 (late, 4) — the suite got a canonical runner
+
+- Process debt found by looking at my own work: the verify lists named a
+  SUBSET of the suite — docs/AUDIT-LOOP.md, OPERATIONS.md and AGENTS.md
+  each listed 3-4 files while test_control_consume, test_overlay_auth,
+  stress_cache (and the two harnesses added today) existed outside every
+  list. A test the docs do not name is a test the next agent never runs.
+- station/selftest.sh: the whole stdlib suite in one command, each file
+  PASS/FAIL with a tail of its log, non-zero exit on any failure. The
+  rule is now written where it will be read: a new test file joins the
+  runner's list in the same commit that adds the file. The three verify
+  lists now point at the runner instead of maintaining their own
+  subsets, and REFERENCE.md's command table names every file with what
+  it covers.
+- Verified: bash station/selftest.sh — all green (spool, fallback,
+  playlist_edges, stream_respawn, control_consume, overlay_auth,
+  plane_guard, daemon selftest).
