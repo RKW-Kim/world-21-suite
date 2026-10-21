@@ -359,12 +359,10 @@ def ads_view():
 
 
 THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
-
-
-THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
 THUMB_SEM = threading.Semaphore(2)   # at most 2 concurrent thumbnail decodes
 THUMB_LOCKS = {}
 THUMB_LOCKS_GUARD = threading.Lock()
+THUMB_LOCKS_CAP = 512
 
 
 def thumb_path(fname):
@@ -376,6 +374,14 @@ def thumb_path(fname):
         return None
     os.makedirs(THUMB_DIR, exist_ok=True)
     out = os.path.join(THUMB_DIR, fname + ".jpg")
+    # One lock object per filename EVER requested grew without bound; when
+    # the map passes its cap, entries whose media is gone are dropped. A
+    # lock dropped while held is harmless: the holder still releases it.
+    if len(THUMB_LOCKS) > THUMB_LOCKS_CAP:
+        with THUMB_LOCKS_GUARD:
+            for k in [k for k in THUMB_LOCKS
+                      if not os.path.isfile(os.path.join(daemon.MEDIA, k))]:
+                THUMB_LOCKS.pop(k, None)
     lock = THUMB_LOCKS.get(fname)
     if lock is None:
         with THUMB_LOCKS_GUARD:
@@ -385,13 +391,23 @@ def thumb_path(fname):
             if not os.path.exists(out):
                 # At most 2 decoders at a time: the daemon and OBS need
                 # this box's CPU more than a page of thumbnails does.
+                # Write to a tmp name and rename: a timeout-killed ffmpeg
+                # used to leave a HALF JPEG at the final name, and it was
+                # then served forever (the cache never re-checks). The tmp
+                # keeps a .jpg suffix so ffmpeg's muxer guess still works.
+                tmp = out[:-4] + ".part.jpg"
                 with THUMB_SEM:
                     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
                                     "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
-                                    "-vf", "scale=320:-1", "-q:v", "5", out],
+                                    "-vf", "scale=320:-1", "-q:v", "5", tmp],
                                    timeout=20, check=True)
+                    os.replace(tmp, out)
         except Exception:
-            pass
+            try:
+                if os.path.exists(out + ".part"):
+                    os.remove(out + ".part")
+            except OSError:
+                pass
         finally:
             lock.release()
     if not os.path.exists(out):
