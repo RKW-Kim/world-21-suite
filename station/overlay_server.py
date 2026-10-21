@@ -676,27 +676,38 @@ class Handler(SimpleHTTPRequestHandler):
     def _ads_update(self):
         """Write the ad config: cycle count, plan keys, pool links. Takes
         effect at the next transition (the daemon reloads on hash change)."""
-        return self._playlist_write(self._ads_write)
+        body = self._read_body()
+        if body is None:
+            return
+        return self._playlist_write(lambda: self._ads_write(body))
 
-    def _playlist_write(self, fn):
-        # pl_lock is a flock-based CROSS-PROCESS mutex (see daemon): the
-        # daemon's shuffle/advance and intake's append can't slide between
-        # our load and save. Whole RMW inside the lock, every time.
-        with daemon.pl_lock():
-            return fn()
-
-    def _ads_write(self):
+    def _read_body(self):
+        """Parse the request body BEFORE any lock work. Reading inside
+        pl_lock let a slow/drip-feeding client hold the cross-process
+        flock for the whole body read (the socket timeout resets per
+        recv) — the playout loop blocks on that lock ~20x per pass."""
         try:
             length = int(self.headers.get("Content-Length", 0))
             if length < 0 or length > 262144:
                 # A negative length reads until EOF (hangs); a huge one
                 # allocates it, and the state push multiplies it by every
                 # SSE subscriber. This is a memory bomb, not a nitpick.
-                return self.send_error(413, "body too large")
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length) or b"{}")
+                self.send_error(413, "body too large")
+                return None
+            return json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
-            return self._json(400, {"ok": False, "error": "bad JSON"})
+            self.send_error(400, "bad JSON")
+            return None
+
+    def _playlist_write(self, fn):
+        # pl_lock is a flock-based CROSS-PROCESS mutex (see daemon): the
+        # daemon's shuffle/advance and intake's append can't slide between
+        # our load and save. Whole RMW inside the lock, every time - and
+        # only the RMW: the body is read before we get here.
+        with daemon.pl_lock():
+            return fn()
+
+    def _ads_write(self, body):
         try:
             data = daemon.load_playlist()
         except (OSError, ValueError):
@@ -738,26 +749,18 @@ class Handler(SimpleHTTPRequestHandler):
         # Library manager writes: pin/status toggles, metadata edits,
         # add / remove / reorder. Same trust model as /state; serialization
         # lives in _playlist_write (cross-process flock).
-        return self._playlist_write(self._library_write)
+        body = self._read_body()
+        if body is None:
+            return
+        return self._playlist_write(lambda: self._library_write(body))
 
-    def _library_write(self):
-        try:
-            length = int(self.headers.get("Content-Length", 0))
-            if length < 0 or length > 262144:
-                # A negative length reads until EOF (hangs); a huge one
-                # allocates it, and the state push multiplies it by every
-                # SSE subscriber. This is a memory bomb, not a nitpick.
-                return self.send_error(413, "body too large")
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length) or b"{}")
-        except ValueError:
-            return self._json(400, {"ok": False, "error": "bad JSON"})
+    def _library_write(self, body):
         try:
             data = daemon.load_playlist()
         except (OSError, ValueError):
             return self._json(502, {"ok": False, "error": "playlist unreadable"})
-        # NOTE: this read-modify-write holds no lock across its (sub-ms,
-        # pure-Python) span. That is safe now that the daemon side always
+        # NOTE: this read-modify-write runs inside _playlist_write's
+        # pl_lock. That is safe now that the daemon side always
         # re-loads fresh under pl_lock before saving: neither side can any
         # longer clobber the other with a minutes-stale copy. Worst case is
         # a lost shuffle ORDER (self-heals at loop end), never lost items.
