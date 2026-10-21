@@ -156,7 +156,8 @@ browser can POST to it" into "only the holder of the token".
 
 | Change | Why | Effort |
 |---|---|---|
-| **Re-add `LIBGL_ALWAYS_SOFTWARE=1`** to the OBS unit | A VPS has no GLX driver; without it, OBS may fail to create a context. | one line |
+| **Software-GL plane on a GPU-less box** | `setup.sh` **renders `station-obs.service` per box** at provision time: headless (no X socket) → the plane moves to the Xvfb `:99` the unit already Requires, plus `--env=LIBGL_ALWAYS_SOFTWARE=1` (flatpak form, proven pre-2026-10-20); a session without a GPU driver keeps `:0` but forces software GL; session + GPU → the lab shape, untouched. Re-run `setup.sh` to re-render — each run starts from the pristine unit in git, so the render never compounds, and a mismatched unit text fails LOUD instead of booting a `:0` plane on a box with no `:0`. `station-vnc` is skipped on headless boxes (wayvnc has no session to mirror there). | done in setup.sh |
+| **BrowserHWAccel=false on first boot** | The guard used to touch only an EXISTING `global.ini` — a fresh box has none until OBS's first run, so its first boot ran CEF with hardware accel and died ~30s in, every boot (the 2026-10-15 lab outage). `setup.sh` now creates the minimal file (`[General] BrowserHWAccel=false`) when missing. | done in setup.sh |
 | **Lower the output** to 960×540 @ 30 (or 720p @ 25) | Software GL cost scales with pixels. | config |
 | **Keep the window small (1280×720)** and never scale up | Scaling in software is expensive. | already the case |
 | **Set `STREAM_SPOOL_MAX_GB` down to 2** | A 3 GB item through a 20 Mbps link is 20 minutes. | knob |
@@ -170,15 +171,13 @@ browser can POST to it" into "only the holder of the token".
 1. **Do not need a GUI.** The station is a service: OBS renders the
    programme, MediaMTX carries the streams, the dock is a web page. The
    only reason to see the OBS window is to *debug* it.
-2. **Need a GUI for debugging** (recommended): run a headless X/Wayland
-   session and mirror it. `wayvnc` mirrors a Wayland session; on a
-   headless box, run one (`sway`/`Hyprland` on a virtual output) and
-   `wayvnc` on top of it. Alternatively `xpra` over SSH, which is simpler
-   to set up and gives a real terminal too.
-
-The current VNC setup assumes a desktop session already exists
-(`wayvnc` on the user session). On a VPS there is none, so this needs its
-own recipe — see `docs/KNOWN_ISSUES.md`.
+2. **Need a GUI for debugging** (recommended): on the VPS the plane lives
+   on Xvfb `:99` (see the render above), so the lab's own 2026-10-18
+   recipe mirrors it directly — `x11vnc -display :99 -rfbauth <passfile>
+   -localhost` over an SSH tunnel (`ssh -L 5900:127.0.0.1:5900`). No
+   desktop session, no Wayland compositor needed. `wayvnc` is the wrong
+   tool there: it mirrors a Wayland session, and the VPS has none —
+   which is why `setup.sh` skips `station-vnc` on headless boxes.
 
 ## 7. Migration order
 

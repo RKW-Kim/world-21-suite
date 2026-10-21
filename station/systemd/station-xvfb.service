@@ -4,7 +4,14 @@ Before=station-obs.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/Xvfb :99 -screen 0 1920x1080x24
+# 1280x720: the plane window is forced to this exact frame anyway
+# (station-obs ExecStartPost --resize 0 0 1280 720), and on a GPU-less VPS
+# every extra pixel is llvmpipe CPU. Was 1920x1080 in the lab era; the desk
+# shrank to 720 on 2026-10-18 and the unit now matches it.
+# On a box with a real X session (the lab desktop) this display is vestigial
+# -- OBS renders on :0 for iGPU hardware GL. On a headless VPS it is THE
+# plane display: setup.sh renders station-obs.service onto :99.
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1280x720x24
 Restart=always
 RestartSec=5
 

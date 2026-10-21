@@ -1666,3 +1666,56 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
 - Lesson for MBA debugging: when Screen Sharing "hangs" first ask
   `systemctl --user is-active station-vnc` + `ss -tlnp | grep 5900`
   BEFORE blaming UFW.
+
+## 2026-10-21 (late) — the render plane is now VPS-shaped: the unit is rendered per box
+
+- Top open defect from the regression pass: station-obs.service assumed a
+  real X session on :0 with hardware GL — none of which exists on the
+  $5-30/mo box this project is aimed at. Three holes: no display for a
+  headless boot, no LIBGL_ALWAYS_SOFTWARE path for a GPU-less one (it was
+  stripped 2026-10-20 because it hurt the iGPU lab box; on a VPS the same
+  flag is the difference between llvmpipe and "OBS cannot create a GLX
+  context"), and BrowserHWAccel=false only written when global.ini ALREADY
+  existed — a fresh box's first boot skipped the guard and died of the CEF
+  GPU-process crash ~30s in, every boot (the 2026-10-15 class of outage).
+- setup.sh now detects the box shape (any X socket in /tmp/.X11-unix, any
+  /dev/dri/renderD*) and RENDERS the installed unit, the same
+  provision-time-render pattern the mediamtx config uses: headless ->
+  DISPLAY/PLANE_DISPLAY :99 + --env=LIBGL_ALWAYS_SOFTWARE=1 (flatpak form,
+  the one proven before it was removed); session-without-GPU -> :0 kept,
+  software GL forced; lab -> untouched. Every run reinstalls the unit from
+  the pristine git copy first, so renders never compound; the render's
+  seds are verified by grep and FAIL LOUD on a mismatch (a silent miss
+  would boot a :0 plane on a box with no :0 — the exact wedge this
+  prevents). The guarded LIBGL insert survives a future flow that renders
+  without reinstalling.
+- global.ini missing -> setup.sh creates it ([General] BrowserHWAccel=
+  false); existing files keep the old enforce/append paths. Idempotent
+  across re-runs (harness-checked).
+- station-xvfb.service: 1920x1080x24 -> 1280x720x24, matching the live
+  desk (shrunk 2026-10-18, never committed) and the forced window frame;
+  on a VPS every extra pixel is llvmpipe CPU.
+- station-vnc (wayvnc) needs a Wayland session to mirror; on a headless
+  box it would crash-loop forever — the monitor-av class of debt (11k
+  restarts doing nothing). setup.sh now skips installing AND enabling it
+  when no session exists; the headless TD-desk recipe (x11vnc on :99 over
+  an SSH tunnel — the lab's own proven 2026-10-18 flow) is documented in
+  VPS.md §6.
+- Regression grill ON THIS FIX (the operator's standing order), pre-commit:
+  (1) first cut had a broken empty if-branch (left by an edit) that would
+  have re-planted the LIBGL flag inside the headless sed — caught by
+  re-reading the diff before commit; (2) the LIBGL sed insert was NOT
+  idempotent standalone — now guarded, and moot anyway since the install
+  loop resets from git first; (3) set -e survival of the `ls &&` detection
+  lines proven under `set -euo pipefail`; (4) the render harness replays
+  BROADCAST_ROOT injection THEN the render, for all three box shapes,
+  against the real unit text — headless asserts :99 everywhere + exactly
+  one --env=LIBGL flag (the earlier "3 occurrences" scare was the unit's
+  own COMMENTS mentioning the string; the guard matches the --env= prefix,
+  which comments don't carry); (5) 1920x1080 stragglers: only the
+  intentional history comment.
+- Verified: bash -n clean; harness green for lab/session-nogpu/headless;
+  full stdlib suite green (spool, fallback, playlist_edges, selftest,
+  control_consume, overlay_auth). NOT yet proven: a real llvmpipe boot
+  with air — that is VPS.md migration step 3, on the box itself, and it
+  stays on the record in KNOWN_ISSUES.

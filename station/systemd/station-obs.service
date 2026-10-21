@@ -13,6 +13,12 @@ Type=simple
 # WAYLAND_DISPLAY leaks in from the user session, so OBS kept opening on the
 # real Hyprland desktop (incl. its safe-mode dialog) instead of Xvfb :99.
 # Pin Qt to xcb + hide Wayland entirely; never touch the user's screen again.
+# DISPLAY AND GL MODE ARE RENDERED BY setup.sh FOR THIS BOX. The :0 values
+# below are the lab shape (real session, iGPU). On a headless GPU-less VPS
+# setup.sh rewrites the installed unit to :99 + LIBGL_ALWAYS_SOFTWARE=1
+# (Xvfb, llvmpipe). If you edit the ExecStart strings, re-run setup.sh and
+# watch for its render-verify errors — a silent mismatch would boot a :0
+# plane on a box with no :0.
 Environment=DISPLAY=:0
 Environment=PLANE_DISPLAY=:0
 Environment=QT_QPA_PLATFORM=xcb

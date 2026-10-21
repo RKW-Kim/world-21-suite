@@ -167,15 +167,22 @@ fi
 # Xvfb/software-GL ("FATAL: GPU process isn't usable. Goodbye.") and takes the
 # whole main OBS process down ~30s after boot, every boot. Software CEF
 # renders all 7 overlay pages fine and costs one sed.
+# The old guard only touched files that ALREADY existed — which skipped
+# exactly the boot that needs it: a fresh box has no global.ini until OBS's
+# first run, so its first boot ran with hardware CEF and died on schedule.
+# Now the minimal file is created; OBS merges its own keys around it.
 for g in "$HOME/.var/app/com.obsproject.Studio/config/obs-studio/global.ini" \
          "$HOME/.config/obs-studio/global.ini"; do
-  if [ -f "$g" ]; then
-    if grep -q '^BrowserHWAccel=' "$g"; then
-      sed -i 's/^BrowserHWAccel=.*/BrowserHWAccel=false/' "$g"
-    else
-      printf '\nBrowserHWAccel=false\n' >> "$g"
-    fi
+  if [ ! -f "$g" ]; then
+    mkdir -p "$(dirname "$g")"
+    printf '[General]\nBrowserHWAccel=false\n' > "$g"
+    echo "BrowserHWAccel=false written (new file) in $g"
+  elif grep -q '^BrowserHWAccel=' "$g"; then
+    sed -i 's/^BrowserHWAccel=.*/BrowserHWAccel=false/' "$g"
     echo "BrowserHWAccel=false enforced in $g"
+  else
+    printf '\nBrowserHWAccel=false\n' >> "$g"
+    echo "BrowserHWAccel=false appended in $g"
   fi
 done
 
@@ -203,9 +210,19 @@ else
   UNIT_DST="$HOME/.config/systemd/user"; SYS="systemctl --user"
 fi
 mkdir -p "$UNIT_DST"
+# Box shape, decided BEFORE the install loop: it decides which units belong
+# on this box at all (see the render block below for the display/GL render).
+PLANE_GPU=no;     ls /dev/dri/renderD* >/dev/null 2>&1 && PLANE_GPU=yes
+PLANE_SESSION=no; ls /tmp/.X11-unix/X* >/dev/null 2>&1 && PLANE_SESSION=yes
+# wayvnc mirrors the user's Wayland session; on a headless box there is none
+# and the unit would crash-loop forever (the monitor-av class of debt: 11k
+# restarts doing nothing). Skip it there; the headless TD-desk recipe is
+# x11vnc on the Xvfb display (docs/VPS.md §6).
+SKIP_VNC=no; [ "$PLANE_SESSION" = no ] && SKIP_VNC=yes
 for u in "$UNIT_SRC"/station-*.service; do
   case "$u" in
     *monitor-av*) continue ;;   # dead path (mediamtx dropped it 2026-10-18)
+    *station-vnc*) [ "$SKIP_VNC" = yes ] && { echo "station-vnc: skipped (headless box, no Wayland session to mirror)"; continue; } ;;
   esac
   # The unit has to point at THIS install: the repo path, the secrets
   # file and the media root all move together (the VPS install lives in
@@ -221,13 +238,62 @@ for u in "$UNIT_SRC"/station-*.service; do
     sed -i "s|^Environment=|Environment=BROADCAST_ROOT=$ROOT\nEnvironment=|" \
       "$UNIT_DST/$(basename "$u")"
 done
+# Render the OBS unit for THIS box. The unit in git is the lab shape: a real
+# X session on :0 with hardware GL. A GPU-less headless box (the VPS) boots a
+# different plane: Xvfb :99 + llvmpipe. Rendered at provision time like the
+# mediamtx config above, so a re-run self-heals a drifted or hand-edited unit.
+# (Box shape was detected before the install loop; every setup.sh run starts
+# the unit from the pristine git copy, so the render never compounds.)
+#   session := any X socket exists (XWayland on the lab desktop creates X0)
+#   gpu     := a DRM render node exists (/dev/dri/renderD*)
+# A :1-only session (no X0) reads as headless -> safe-but-slower Xvfb plane;
+# re-run setup.sh inside the session to re-render. Detection runs at install
+# time on purpose: a VPS will never grow a GPU, and a desktop install runs
+# setup.sh logged into the session it will air from.
+OBS_UNIT="$UNIT_DST/station-obs.service"
+if [ "$PLANE_SESSION" = yes ] && [ "$PLANE_GPU" = yes ]; then
+  echo "render plane: real session :0, hardware GL (as shipped)"
+else
+  # LIBGL_ALWAYS_SOFTWARE: 2026-10-20 it was stripped because on the lab iGPU
+  # it chained the plane to llvmpipe and burned 2x realtime CPU. On a box
+  # with no GPU driver that trade does not exist — without the flag OBS may
+  # fail to create a GLX context at all. Xvfb cannot host hardware GLX
+  # anyway, so headless means software GL, full stop.
+  # (Guarded insert: the flag must never compound if a future flow renders
+  # without the install-loop reset ahead of it.)
+  if ! grep -q -- '--env=LIBGL_ALWAYS_SOFTWARE=1' "$OBS_UNIT"; then
+    sed -i 's| com.obsproject.Studio --verbose| --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose|' "$OBS_UNIT"
+  fi
+  if [ "$PLANE_SESSION" = yes ]; then
+    echo "render plane: session :0 but NO GPU driver -> LIBGL_ALWAYS_SOFTWARE=1"
+  else
+    sed -i -e 's|--env=DISPLAY=:0|--env=DISPLAY=:99|' \
+           -e 's|--env=PLANE_DISPLAY=:0|--env=PLANE_DISPLAY=:99|' \
+           -e 's|^Environment=DISPLAY=:0|Environment=DISPLAY=:99|' \
+           -e 's|^Environment=PLANE_DISPLAY=:0|Environment=PLANE_DISPLAY=:99|' \
+           "$OBS_UNIT"
+    echo "render plane: headless -> Xvfb :99 + LIBGL_ALWAYS_SOFTWARE=1"
+  fi
+  # The render edits exact strings from the unit file. A future unit edit
+  # that renames one of them must fail LOUD here — not silently boot a :0
+  # plane on a box with no :0, which is the wedge this render exists to
+  # prevent (and the failure mode a quiet sed would produce).
+  grep -q -- '--env=LIBGL_ALWAYS_SOFTWARE=1' "$OBS_UNIT" || {
+    echo "::error::station-obs.service render failed: LIBGL flag not planted — the unit text no longer matches the sed." >&2; exit 1
+  }
+  if [ "$PLANE_SESSION" = no ] && ! grep -q -- '--env=DISPLAY=:99' "$OBS_UNIT"; then
+    echo "::error::station-obs.service render failed: display not moved to :99 — the unit text no longer matches the sed." >&2; exit 1
+  fi
+fi
+
 $SYS daemon-reload
 # The publish leg is NOT enabled here: it goes live on YouTube the moment
 # a real stream key lands in secrets.env, so arming it in setup.sh turned
 # provisioning into an accidental broadcast (docs/OPERATIONS.md). Enable
 # it deliberately once the key is real.
 # shellcheck disable=SC2046
-$SYS enable $(cd "$UNIT_SRC" && ls station-*.service | grep -v -e monitor-av -e station-publish) \
+$SYS enable $(cd "$UNIT_SRC" && ls station-*.service | grep -v -e monitor-av -e station-publish \
+              $([ "$SKIP_VNC" = yes ] && echo -e station-vnc)) \
             station-watchdog.timer 2>&1 | tail -n 2
 if [ "$(id -u)" != "0" ]; then
   if [ "$(loginctl show-user "$USER" 2>/dev/null | grep -c Linger=yes)" = "0" ]; then

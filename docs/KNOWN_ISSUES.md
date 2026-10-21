@@ -13,12 +13,22 @@ commits 8258642..043dbe9) — which found nine real regressions, all fixed
 same-day (9997adf..2641b77, one idea per commit, each with its own
 proof; see WORKLOG). What is STILL open, ranked:
 
-- **station-obs.service is still lab-shaped for the VPS**: DISPLAY=:0
-  with no headless session recipe shipped, no `LIBGL_ALWAYS_SOFTWARE=1`
-  path for a GPU-less boot, and BrowserHWAccel=false only written when
-  global.ini already exists. The checklist/config mismatch is FIXED
-  (setup.sh now reads video.json + encoder.json); the unit itself is
-  not yet VPS-shaped.
+- **The OBS unit render is unproven on a REAL GPU-less box.** The
+  lab-shaped `station-obs.service` defect is fixed in code (2026-10-21):
+  `setup.sh` now renders the installed unit per box — headless → Xvfb
+  `:99` + `--env=LIBGL_ALWAYS_SOFTWARE=1`, session-without-GPU → `:0` +
+  software GL, lab → untouched — and creates `global.ini` with
+  `BrowserHWAccel=false` when it does not exist yet (first boot used to
+  skip the guard and die of the CEF GPU-process crash). Verified by a
+  render harness against the real unit text for all three box shapes.
+  What is NOT yet proven: an actual llvmpipe boot with real air. That is
+  step 3 of the `docs/VPS.md` migration order — bring up the plane alone
+  and check it renders at the intended size before anything airs.
+- **The TD-desk/VNC unit is session-shaped.** `station-vnc.service` runs
+  wayvnc, which mirrors a Wayland session — correct on the lab desktop,
+  useless on a VPS (none exists; setup.sh now skips installing it
+  there). The headless recipe is documented in `docs/VPS.md` §6
+  (x11vnc on the Xvfb `:99` over an SSH tunnel) but ships no unit yet.
 - **config/collection.json staleness**: `sync.py apply` would create a
   duplicate `SMILE | Meet` scene and restart the on-air deck source
   mid-item; the deck diff only hides `.enabled`, not
@@ -114,12 +124,13 @@ path exists any more, and the unit crash-looped 11k+ times doing nothing.
 `setup.sh` no longer installs it, but the file is still in
 `station/systemd/`. Delete it when nobody is looking at the history.
 
-### The Xvfb display `:99` is vestigial
+### The Xvfb display `:99` is vestigial on the lab box (load-bearing on a VPS)
 
-OBS moved to the real session (`:0`) for hardware GL. `station-xvfb.service`
-still runs `Xvfb :99` and `station-obs.service` still `Requires=` it. It
-costs a little RAM and nothing else. Removing it means also fixing
-`obs_click.py`'s default display.
+OBS moved to the real session (`:0`) for hardware GL, so on the lab
+desktop `station-xvfb.service` renders nothing and costs a little RAM.
+It stays: `station-obs.service` still `Requires=` it, and on a headless
+VPS the plane IS `:99` (setup.sh renders the unit onto it — see the top
+of this file). Do not delete it.
 
 ### The title watcher only checks a few items per cycle
 
