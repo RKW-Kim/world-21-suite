@@ -37,11 +37,18 @@ proof; see WORKLOG). What is STILL open, ranked:
   useless on a VPS (none exists; setup.sh now skips installing it
   there). The headless recipe is documented in `docs/VPS.md` §6
   (x11vnc on the Xvfb `:99` over an SSH tunnel) but ships no unit yet.
-- **config/collection.json staleness**: `sync.py apply` would create a
-  duplicate `SMILE | Meet` scene and restart the on-air deck source
-  mid-item; the deck diff only hides `.enabled`, not
-  `settings.local_file`, so diff is perpetually noisy and trains the
-  operator to ignore drift.
+- **config/collection.json is still STALE** (the apply is now safe, the
+  file is not yet current). The capture in git still has `SMILE | Meet`
+  while the live plane has `SMILE | Program` (renamed on the plane after
+  the capture). Two things done: `sync.py apply` now REFUSES a capture
+  that lacks any scene the daemon drives — before touching OBS, with the
+  fix spelled out — so it can no longer create a duplicate scene and
+  orphan the live one; and the diff no longer reports a media source's
+  `settings.local_file` (runtime state, like the deck's eye state), so
+  the diff is quiet enough to be read. What remains needs the plane:
+  re-capture it (`python3 station/sync.py capture`) so the repo file
+  matches the live names. (The plane is currently switched off at the
+  operator's request, so this cannot be done yet.)
 - **station has never published to YouTube end-to-end** (the publish
   leg is deliberately disarmed; see DECISIONS §13). First real cutover
   run is its own checklist.

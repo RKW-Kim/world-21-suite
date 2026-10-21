@@ -1935,3 +1935,31 @@ The two rules the loop taught this round, both now enforced by code
 rather than by memory: **a test file joins `station/selftest.sh` in the
 same commit that adds it**, and **a sed-based render must have a harness
 that runs the real script**.
+
+## 2026-10-22 (early) — the loop continues: `sync.py apply` cannot
+## duplicate a scene any more
+
+Took the top-ranked open item from KNOWN_ISSUES (the web agent's
+round left it first) and closed the dangerous half of it.
+
+- **THE SKEW GUARD.** The capture in git is a snapshot; the live plane
+  renamed a scene ("SMILE | Meet" -> "SMILE | Program"). `sync.py apply`
+  CREATES every capture scene the live plane does not have — so applying
+  the stale capture created a duplicate `SMILE | Meet`, orphaned the
+  live scene, and left the daemon (which drives the LIVE name) cutting
+  to a scene with no deck in it. Apply now REFUSES a capture that lacks
+  any scene the daemon drives, BEFORE it touches OBS, and says what to
+  do (re-capture). Proof: `station/test_sync_guard.py` stubs the RPC to
+  raise if reached, and shows the refusal happens before it.
+- **The diff noise.** A media source's `settings.local_file` is runtime
+  state (the deck points at whatever is playing) — the same class as the
+  deck's eye state, which was already filtered. It is filtered now, so
+  the diff is quiet enough to be read instead of training the operator
+  to ignore drift. The harness proves a REAL difference is still
+  reported.
+- What still needs the plane (it is switched off at the operator's
+  request): re-capture `station/config/collection.json` so the repo file
+  carries the live scene names. Until then apply refuses, which is the
+  safe failure.
+- The new test joins `station/selftest.sh` in the same commit that adds
+  it — the rule from the last round. Suite: all green (10 files).

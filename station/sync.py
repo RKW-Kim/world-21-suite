@@ -351,6 +351,15 @@ def diff_live(files):
                 if len(problems) > 60:
                     problems.append("... (truncated at 60)")
                     return problems
+    # A media source's local_file is runtime state too: the deck points
+    # at whatever is playing. Diffing it produced a permanent, noisy
+    # diff that trains the operator to ignore real drift.
+    kept = []
+    for p in problems:
+        if "local_file" in p:
+            continue
+        kept.append(p)
+    problems = kept
     # Deck eye states are daemon runtime (flips every advance), not config.
     try:
         deck = deck_sources()
@@ -523,6 +532,26 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
     for obj in (col, video, service, transition):
         if "$secret" in json.dumps(obj):
             fill_strict(obj)  # raises with the loud list if anything is missing
+
+    # SKEW GUARD, before any OBS call. The capture in git can be older
+    # than the plane (a scene was renamed on the live side -- "SMILE |
+    # Meet" became "SMILE | Program"). Applying it would CREATE the old
+    # name as a duplicate, orphan the live scene, and leave the daemon
+    # driving a scene with no deck in it. The capture must contain every
+    # scene the daemon drives.
+    required = {daemon.SCENE_STARTING, daemon.SCENE_PROGRAM,
+                daemon.SCENE_LIVE, daemon.SCENE_TECHDIFF,
+                daemon.SCENE_OFFAIR, daemon.SCENE_END}
+    have = {sc["name"] for sc in col["scenes"]}
+    missing = required - have
+    if missing:
+        print("apply: REFUSING -- the capture is stale (it has no %s)."
+              % ", ".join(sorted(missing)))
+        print("apply: re-capture from the live plane first:")
+        print("apply:   python3 station/sync.py capture")
+        print("apply: (a rename on the plane is not a config change; applying")
+        print("apply:  the old capture would duplicate the scene.)")
+        return 1
 
     r = rpc()
     names = [s["sceneName"] for s in r._call("GetSceneList").get("scenes", [])]
