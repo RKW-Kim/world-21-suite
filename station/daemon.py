@@ -3002,6 +3002,14 @@ def cmd_loop(renderer):
                             pinned.add(f)
                     pinned |= {i.get("file") for i in items
                                if i.get("pinned") and i.get("file")}
+                # The safety assets live in MEDIA too: near the cap,
+                # eviction used to eat the fail-safe loops and the ad
+                # pool - the exact files the station leans on when a deck
+                # stalls (failover() finds an empty pool and holds
+                # Tech Diffs immediately) or a break fires.
+                pinned |= set(fallback_files())
+                pinned |= {f for f in (data.get("ad_files") or [])
+                           if isinstance(f, str) and f}
                 evict_cache(pinned=pinned)
             except Exception as e:
                 alert("evict failed: %s." % e, "WARN")
