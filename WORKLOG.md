@@ -4,6 +4,114 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-21 (night) — the fixes got grilled: five adversarial clusters, nine regressions found and fixed
+
+- The operator's directive: "grill/audit even the fixes you made so that
+  they didn't fix one but cause others." Five parallel auditors, one per
+  fix cluster (concurrency, overlay server, intake+spool, watchdog+sync
+  +preflight+stream, dock), each told to assume the fix broke something.
+  It had. Nine commits, one idea each, every one with a probe or a
+  harness run:
+- **apply --restart was dead on arrival (9997adf).** b545cbd's park
+  write called `time.strftime` with only `_time` imported and caught
+  only OSError — NameError killed the documented daily merge flow
+  before anything was stopped, which also means that half of b545cbd
+  was never live-fired despite "each with its own proof". Behind it:
+  the park was never removed (the comment claimed a finally that did
+  not exist — every apply fenced the watchdog for the full TTL), the
+  daemon start hardcoded `systemctl --user` (root install: stopped by
+  scope, never started, "daemon restarted" printed, station dark), and
+  `_run` discarded exit codes. Also in that commit: `parked()` now
+  treats a future mtime as stale (a clock step-back fenced revival for
+  as long as the skew) with 30s slack for write/read jitter.
+- **The control write-back popped by key, not by value (03d7c61).**
+  b2acb62's fix ate more than the documented skip swallow: ANY
+  same-kind verb posted mid-consume was destroyed unheard. Real cadence:
+  fader to −10, SKIP, fader to −30 while the advance runs → the −30
+  popped, the stale −10 acted on the deck the skip had just cut to. UI
+  said −30, air played −10. `_seen` now carries the consumed VALUES and
+  write-back pops only the identical verb; a different dict survives to
+  the next pass; a skip over a seen false survives too. The media path
+  also snapshotted state BEFORE the renderer call and merge_save_state
+  overwrites all 12 STATE_KEYS — a slow-but-alive plane carried the
+  pre-call snapshot back over concurrent writes; the snapshot is
+  post-call now. And the docstring claimed the opposite of the code,
+  which is how the next editor would have reintroduced the
+  double-advance.
+- **The cap contract was false, the thumb cleanup cleaned the wrong
+  name (bab1c0d).** adf4f2f said "every handler-side plane call rides
+  the bounded cap", but POST /music ran ensure_bed() INLINE first — 1-5
+  raw RPCs, the one pin the commit promised was gone (live-fired 502 at
+  10.5s). ensure_bed rides plane_call(8s) now. The thumbnail guard
+  removed `out + ".part"` while the tmp is `<name>.part.jpg` — a failed
+  ffmpeg left the real part-file forever; and the lock-map sweep could
+  drop a HELD lock (media churn mid-generate) → two ffmpegs on one
+  .part.jpg, the half-jpeg class the tmp scheme exists to kill — the
+  sweep skips held names. The %00 fix guarded /files only; every other
+  route fell through to the static handler and died on the NUL with no
+  response — one guard now covers do_GET + do_HEAD. Honest note: my
+  first cut of the NUL guard hit an UnboundLocalError on EVERY request
+  (the /thumbs branch's function-local `from urllib.parse import
+  unquote` made the name local to all of do_GET) — test_overlay_auth
+  caught it before the commit; the local import is gone.
+- **Intake's eviction pin missed the safety assets (6140583).** The
+  daemon's pass pins fallback_files() + ad_files; intake's post-publish
+  evict ran the SAME evict_cache with only on-air ±1 + operator pins —
+  the loops are the oldest files in MEDIA, first in LRU order, so a
+  near-cap intake could evict the fail-safe pool. Pins unified. The
+  test suite then caught the enabling bug: fallback_files() caught only
+  ValueError, so a MISSING playlist crashed intake (stress_cache died)
+  and would have crashed the daemon's own failover on the one boot the
+  fail-safe exists to survive — missing/corrupt now means the DEFAULT
+  evergreen loops.
+- **Small sharp fixes:** preflight walked a wrong-shape playlist
+  unguarded (valid-JSON top-level list → AttributeError — the same
+  traceback-instead-of-finding one step later) and its restore hint
+  named the corrupt file itself + a backups dir nothing writes
+  (1a025e5); the cookies warn-once flag latched forever so a SECOND
+  cookies disappearance stayed silent — the healthy path re-arms it
+  (eba5604).
+- **The dock, three defects (8cedbfe, 1f05f41, 2641b77).** p-load
+  staged the profile's rows but the spread kept the WORKING COPY's
+  shuffle flag — a profile saved switch-ON loaded OFF and Apply wrote
+  the drop silently (Playwright harness: checkbox False→True, disk
+  False→True). Duplicate media: the marker picks the FIRST twin while
+  the station plays the OTHER one, and the row menu protected only the
+  marked row — the playing twin carried an ENABLED Remove; protection
+  now matches by identity key (the marker's first-twin pick stays,
+  documented: onAirIdx also feeds insert points). Biggest: while edits
+  are staged, adoption is blocked, so the daemon's seam reshuffle left
+  the undo stack's base at the OLD order — undo-to-base and Revert
+  armed an Apply that silently un-reshuffled the station and could
+  replay aired items (the overnight case, exactly when a 24/7 station
+  reshuffles). The poll re-seeds the base when the live key sequence
+  drifts under a pending session: Ctrl+Z home now finds draft == live
+  and DISARMS the bar instead of arming an attack on the station's
+  order (harness: draft lands on the reshuffled order, bar hidden,
+  apply-armed false).
+- **What the grill found SOUND** (so nobody re-audits it tomorrow): no
+  lock cycle pl_lock↔END_LOCK (all 26 + 7 acquisition sites mapped);
+  no verb resurrection; no double execution; flock does mutually
+  exclude threads; intake publish is same-FS by construction (workdir
+  under BROADCAST_ROOT — no EXDEV anywhere); the spool state cache is
+  strictly cheaper than the old 2-stats-per-url; the resolve-cache
+  prune turned the title watcher from unbounded re-resolves into a
+  ≤3/5min budget (an improvement, not a storm); the watchdog cannot
+  false-kill a daemon stuck in a resolve (heartbeat is its own thread);
+  SSE never holds a lock on a slow client; the cap blast radius is
+  per-call — the dock cannot be hammered into 504s; /files traversal
+  is solid; the loudness pass cannot publish a half-written file.
+- Deferred, with reasons, in KNOWN_ISSUES: the stream respawn blocks
+  the playout pass on a dead network (architectural — resolve belongs
+  off the playout thread), plane_call is a deadline not a bound
+  (cancellation/sequencing is the real fix), the duplicate-marker
+  tiebreak (touches insert points), and the dock small print.
+- Verification this round: full stdlib suite green after every commit
+  (spool, fallback, playlist_edges, selftest, control_consume — grown
+  from 12 to 20 checks — overlay_auth, stress_cache), plus Playwright
+  dock harness 28 PASS with only the three checks that documented the
+  now-fixed bugs failing INVERTED.
+
 ## 2026-10-21 (evening) — the audit list worked through: 2 WAN blockers, the control race, 4 dock defects, and the long tail (13 commits)
 
 - The PAT landed, so this pass ran as the operator: pull, rebase (the

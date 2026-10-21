@@ -5,15 +5,13 @@ Ordered by how much it matters.
 
 ---
 
-## Open defects (after the 2026-10-21 second pass)
+## Open defects (after the 2026-10-21 regression pass)
 
-The 2026-10-21 audit list below was worked through in a second pass the
-same day: the two WAN blockers, the control.json race, all four dock
-defects, the stale-URL respawns, the non-atomic intake publish, the
-thread caps, the watchdog/sync scope split, the resolve-cache growth,
-the silent cookie fallback, the preflight crash, the thumbnail cache
-and the /files NUL byte are FIXED (commits 8258642..adf4f2f, one idea
-per commit, each with its own proof). Still open, ranked:
+The audit list below was worked through in a second pass, and a third
+pass then grilled THE FIXES THEMSELVES (five adversarial clusters over
+commits 8258642..043dbe9) — which found nine real regressions, all fixed
+same-day (9997adf..2641b77, one idea per commit, each with its own
+proof; see WORKLOG). What is STILL open, ranked:
 
 - **station-obs.service is still lab-shaped for the VPS**: DISPLAY=:0
   with no headless session recipe shipped, no `LIBGL_ALWAYS_SOFTWARE=1`
@@ -29,6 +27,33 @@ per commit, each with its own proof). Still open, ranked:
 - **station has never published to YouTube end-to-end** (the publish
   leg is deliberately disarmed; see DECISIONS §13). First real cutover
   run is its own checklist.
+- **stream respawn blocks the playout pass** (found by the regression
+  pass, deferred as architectural): a fresh resolve on respawn is a
+  network call INSIDE the daemon's single playout thread — a dead
+  network freezes the deck up to ~4 min per attempt (3x20s resolve,
+  spawn re-resolve, ready-wait), and on resolve failure the STALE urls
+  come back via the cache fallback, so "respawns never reuse the dead
+  urls" only holds while resolve succeeds. Needs the resolve moved off
+  the playout pass, not a patch.
+- **plane_call is a deadline, not a bound** (overlay): the 504 answers
+  "we stopped waiting", not "it did not happen" — the abandoned call
+  keeps OBS_LOCK and can still land up to OBS_TIMEOUT later (a late cut
+  can override a retry fired in the meantime). Bounded by arrival rate;
+  a real cancellation or sequencing guard is the actual fix.
+- **duplicate media: the marker lights the first twin** (cosmetic): the
+  protection now covers every row with the on-air identity (1f05f41),
+  but the green bar itself still picks the first twin when the station
+  plays the second. Fixing the marker means teaching onAirIdx the saved
+  slot's ordinal — it also feeds insert points, so it wants its own
+  change + harness.
+- **dock small print**: the staged bar can say "N changes staged" while
+  Apply refuses (net-zero edit sequences); the NEXT-marker walk skips
+  only dormant rows (the daemon also skips failed-resolve/cache-miss/
+  source-only, so the marker can drift or light a source-only twin);
+  row rebuild re-derives both markers per row (O(n²) at 200 rows,
+  measurable, not fatal).
+- **intake workdir sweep: a recycled pid keeps a dead workdir up to
+  24 h** (the mtime escape eventually reaps it; bounded, cosmetic).
 
 ## Fixed same-day (2026-10-21) — kept here until the next doc pass
 
