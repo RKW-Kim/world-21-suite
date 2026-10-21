@@ -33,6 +33,40 @@ USER_UNITS = {"daemon": "station-daemon.service",
               "panel": "station-panel.service",
               "overlay": "station-overlay.service",
               "plane": "station-obs.service"}
+# A sync.py apply --restart parks the watchdog by dropping this file while
+# it stops the daemon, merges the collection and brings units back. A STALE
+# park (an apply that died mid-flight) expires: after PARK_TTL the watchdog
+# resumes, which is exactly the self-heal an aborted apply needs.
+PARK_FILE = os.path.join(BROADCAST, ".watchdog-park")
+PARK_TTL = 900.0
+
+
+def _systemctl(*args, timeout=60):
+    """systemctl in the scope the installer used: root installs run SYSTEM
+    units, everything else --user. The old hardcoded --user silently
+    no-opped on a root install (the command "succeeded" against units that
+    were not the station's). Returns (rc, combined output) so callers can
+    surface WHY a revive failed instead of pretending it worked."""
+    cmd = ["systemctl"]
+    if os.geteuid() != 0:
+        cmd.append("--user")
+    cmd += list(args)
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return p.returncode, (p.stderr.strip() or p.stdout.strip())
+    except Exception as e:
+        return 124, str(e)
+
+
+def parked():
+    """True while a sync.py apply owns the station (fresh park file)."""
+    try:
+        if time.time() - os.path.getmtime(PARK_FILE) < PARK_TTL:
+            return True
+        os.remove(PARK_FILE)   # stale: an apply died mid-flight
+    except OSError:
+        pass
+    return False
 
 
 def load_secrets():
@@ -123,24 +157,16 @@ def plane_alive():
 def unit_active(unit):
     """active, or on its way up (systemd's Restart=always spends a moment
     in "activating" — that is NOT a dead unit)."""
-    try:
-        p = subprocess.run(["systemctl", "--user", "is-active", unit],
-                           capture_output=True, text=True, timeout=10)
-        return p.stdout.strip() in ("active", "activating", "reloading")
-    except Exception:
-        return False
+    rc, out = _systemctl("is-active", unit, timeout=10)
+    return rc == 0 and out in ("active", "activating", "reloading")
 
 
 def unit_disabled(unit):
     """The operator switched this unit off on purpose. A disabled unit is
     not a fault: the watchdog must not start it (that is how you keep the
     OBS window off your desktop)."""
-    try:
-        p = subprocess.run(["systemctl", "--user", "is-enabled", unit],
-                           capture_output=True, text=True, timeout=10)
-        return p.stdout.strip() in ("disabled", "masked", "static")
-    except Exception:
-        return False
+    rc, out = _systemctl("is-enabled", unit, timeout=10)
+    return out in ("disabled", "masked", "static")
 
 
 def daemon_alive():
@@ -154,12 +180,8 @@ def daemon_alive():
 
 
 def restart(unit):
-    try:
-        subprocess.run(["systemctl", "--user", "restart", unit],
-                       capture_output=True, text=True, timeout=60)
-        return True
-    except Exception:
-        return False
+    rc, out = _systemctl("restart", unit)
+    return rc == 0, out
 
 
 def check_piece(name, alive):
@@ -171,13 +193,13 @@ def check_piece(name, alive):
         return True
     if not unit_active(unit):
         # Not running: start it (a stopped unit needs start, not restart).
-        try:
-            subprocess.run(["systemctl", "--user", "start", unit],
-                           capture_output=True, text=True, timeout=60)
-        except Exception:
-            pass
+        rc, out = _systemctl("start", unit)
+        if rc != 0:
+            log("Watchdog: start %s failed (rc=%d): %s" % (unit, rc, out[:200]), "CRIT")
     else:
-        restart(unit)
+        rc, out = restart(unit)
+        if not rc:
+            log("Watchdog: restart %s failed (rc=%d): %s" % (unit, rc, out[:200]), "CRIT")
     time.sleep(6)
     ok = check_again(name)
     if ok:
@@ -212,8 +234,14 @@ def main():
     }
     if check_only:
         off = [k for k, u in USER_UNITS.items() if unit_disabled(u)]
-        print(json.dumps({"daemon_age": age, "intentionally_off": off, **states}, indent=2))
+        print(json.dumps({"daemon_age": age, "parked": parked(),
+                          "intentionally_off": off, **states}, indent=2))
         return 0 if all(states.values()) else 1
+    if parked():
+        # A sync.py apply --restart is mid-flight: units are stopped BY
+        # DESIGN and reviving them would start the daemon under the merge.
+        log("Watchdog: parked (sync apply in progress) — not reviving.", "INFO")
+        return 0
     bad = [k for k, v in states.items() if not v]
     if not bad:
         return 0

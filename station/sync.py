@@ -41,6 +41,9 @@ sys.path.insert(0, HERE)
 import daemon
 
 CONFIG_DIR = os.path.join(HERE, "config")
+# Same resolution as the daemon: the broadcast root moves on the VPS.
+BROADCAST_ROOT = os.environ.get(
+    "BROADCAST_ROOT", os.path.join(os.getcwd(), "broadcast"))
 
 SECRET_EXACT = {"password", "passwd", "key", "token", "secret", "auth",
                 "bearer", "api_key", "apikey", "stream_key", "private_key"}
@@ -730,7 +733,16 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
         return out
 
     print("apply: stopping obs for geometry/encoder load ...")
-    # Park the daemon first: its self-heal restarts the plane when it
+    # Park the watchdog first: a timer firing mid-apply used to "revive"
+    # the daemon while the collection was being merged under it (the park
+    # file is honored by station_watchdog; removed in the finally below).
+    park = os.path.join(BROADCAST_ROOT, ".watchdog-park")
+    try:
+        os.makedirs(BROADCAST_ROOT, exist_ok=True)
+        open(park, "w").write(time.strftime("%Y-%m-%dT%H:%M:%S"))
+    except OSError:
+        park = None
+    # Park the daemon too: its self-heal restarts the plane when it
     # looks dead, which would fight this restart over the singleton lock.
     # Same scope the installer used: a root install uses plain systemctl,
     # a user install uses systemctl --user. The old hardcoded --user
@@ -756,7 +768,7 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
             print("apply: geometry already matches file (no-op)")
     except OSError as e:
         raise SystemExit("apply ABORTED: geometry merge failed (%s)" % e)
-    _run("systemctl", "--user", "start", "station-obs")
+    _run(*(scope + ["start", "station-obs"]))
     print("apply: obs restarted (daemon rides it out via wait_ready; restart the monitor stream)")
     # Wait for the socket, then bring the loop back — an apply that leaves
     # the station dark is a failed apply.
