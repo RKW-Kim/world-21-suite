@@ -23,8 +23,21 @@ def _err(tag, detail):
 
 def run(renderer=None):
     bad = 0
-    data = daemon.load_playlist()
-    state = daemon.load_state()
+    # A corrupt or missing playlist is the exact broken boot this tool
+    # exists to diagnose -- the old bare load_playlist() crashed HERE,
+    # on that boot, with a traceback instead of a finding.
+    try:
+        data = daemon.load_playlist()
+    except (OSError, ValueError) as e:
+        data = {}
+        bad = _err("playlist", "unreadable (%s) -- restore from %s or %s"
+                   % (e, os.path.join(daemon.ROOT, "backups"),
+                      os.path.join(daemon.ROOT, "media", "playlist.json")))
+    try:
+        state = daemon.load_state()
+    except (OSError, ValueError) as e:
+        state = {}
+        bad = _err("state", "unreadable (%s) -- the daemon will rebuild it" % e)
     for it in data.get("items", []):
         f = it.get("file")
         if f and not os.path.exists(os.path.join(daemon.MEDIA, f)):
