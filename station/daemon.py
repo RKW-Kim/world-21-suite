@@ -1956,21 +1956,25 @@ def advance(renderer, state, data, deck_sources):
         alert("Fail-safe cleared: deck %s plays again." % deck, "INFO")
     state["stream"] = onair
     # Mid-roll schedule for this item, if the plan asks for one. Streams
-    # know their duration here and plan now; file items store an empty
-    # schedule and the poll loop fills it the first time the media clock
-    # reports a length. marks_for tags WHICH schedule is stored (the poll
-    # loop recomputes only for a new item), so the unified gate can't get
-    # stuck on a None that never fills — that exact shape left file items
-    # permanently ineligible for mid-rolls.
-    state["roll_marks"] = []
-    state["next_roll"] = 0
-    state["marks_for"] = roll_marks_onair(item, data)
+    # know their duration here and plan now. File items must NOT seed
+    # marks_for here: the poll's lazy-fill gate opens on
+    # marks_for != this item's seed, and pre-seeding it with exactly that
+    # seed closed the gate forever — file items never got their mid-rolls.
+    # Instead, when the new item is not immediately plannable and its seed
+    # differs from what is stored, clear the previous item's plan and leave
+    # marks_for stale so the gate opens the first time the media clock
+    # reports a length.
     if onair and onair.get("dur"):
+        state["marks_for"] = roll_marks_onair(item, data)
+        state["next_roll"] = 0
         marks = plan_rolls(onair["dur"], data, state["marks_for"])
         state["roll_marks"] = marks
         if marks:
             alert("Mid-rolls planned: %s" % ", ".join(
                 "%02d:%02d" % (int(m / 60), int(m % 60)) for m in marks))
+    elif state.get("marks_for") != roll_marks_onair(item, data):
+        state["roll_marks"] = []
+        state["next_roll"] = 0
     try:
         if int(data.get("ad_every") or 0) > 0:
             state["since_ad"] = int(state.get("since_ad") or 0) + 1
