@@ -1875,8 +1875,15 @@ $("p-load").addEventListener("click", async () => {
   try {
     const r = await api("/api/playlists", { action: "load", name: nm });
     if (!r || !r.playlist) { status("profile “" + nm + "” could not be read", "err"); return; }
-    draft = { ...draft, items: (r.playlist.items || []).slice() };
+    draft = { ...draft, items: (r.playlist.items || []).slice(),
+      // The profile's shuffle seam flag rides with its rows. The spread
+      // used to keep the WORKING COPY's flag, so a profile saved with the
+      // switch ON loaded with it OFF — and Apply wrote the drop into the
+      // station silently (the rows staged, the intent did not).
+      shuffle_on_complete: r.playlist.shuffle_on_complete != null
+        ? !!r.playlist.shuffle_on_complete : liveShuffle() };
     pushUndo("loaded profile “" + nm + "”");
+    seedShuf();          // the flag changed: the checkbox must follow the draft
     markPending();
     render(true);
     status("loaded “" + nm + "” into the working copy — press Apply to put it on air");
