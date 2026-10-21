@@ -85,12 +85,11 @@ proof; see WORKLOG). What is STILL open, ranked:
   (2) a stale EOF for an AD slot arriving just after `ad_return` could
   advance once — pre-existing (the bare sentinel cannot name its item),
   and the thread-side relevance check means the NEW code creates none.
-- **duplicate media: the marker lights the first twin** (cosmetic): the
-  protection now covers every row with the on-air identity (1f05f41),
-  but the green bar itself still picks the first twin when the station
-  plays the second. Fixing the marker means teaching onAirIdx the saved
-  slot's ordinal — it also feeds insert points, so it wants its own
-  change + harness.
+- ~~**duplicate media: the marker lights the first twin**~~ — FIXED
+  2026-10-22: identity alone cannot say WHICH copy of a duplicated
+  item is on air, so the lookups carry the ORDINAL (how many rows with
+  that identity come before the saved slot). The marker now lands on the
+  copy the station is actually playing, and the NEXT cue does the same.
 - **dock small print**: CLOSED (2026-10-22). The staged bar now keys on
   the PENDING state, not the history depth, so it can no longer say "N
   changes staged" while Apply would refuse (net-zero edit sequences);

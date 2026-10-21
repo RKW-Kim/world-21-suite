@@ -732,11 +732,28 @@ function savedOnAirIdx() {
    Slots move while edits are staged; the item on air does not. Returns
    the first draft row carrying that identity, skipping one index (the
    on-air row, when the same media appears twice in the list). */
-function draftIdxOfKey(key, notIdx) {
+/* How many rows with this identity come BEFORE slot `upto` in a list.
+   A duplicated item is the same media twice: identity alone cannot say
+   WHICH copy is on air (the marker lit the first twin when the station
+   was playing the second), so the callers carry the ordinal. */
+function ordinalBefore(items, key, upto) {
+  let n = 0;
+  for (let i = 0; i < upto && i < items.length; i++) {
+    if (keyOf(items[i]) === key) n++;
+  }
+  return n;
+}
+
+/* The draft row carrying the n-th occurrence of this identity. */
+function draftIdxOfKey(key, ordinal) {
   if (!key) return -1;
   const items = draftItems();
+  let seen = 0;
   for (let i = 0; i < items.length; i++) {
-    if (i !== notIdx && keyOf(items[i]) === key) return i;
+    if (keyOf(items[i]) === key) {
+      if (seen === (ordinal || 0)) return i;
+      seen++;
+    }
   }
   return -1;
 }
@@ -748,9 +765,14 @@ function onAirIdx() {
      index-1 lit the green bar on whatever stranger now sat there. -1
      when the draft has staged the item away: no marker, and callers
      that use this as an insertion point must clamp. */
-  const it = liveItems()[savedOnAirIdx()];
+  const saved = liveItems();
+  const slot = savedOnAirIdx();
+  const it = saved[slot];
   if (!it || (it.youtube == null && it.file == null)) return -1;
-  return draftIdxOfKey(keyOf(it));
+  const key = keyOf(it);
+  const ord = ordinalBefore(saved, key, slot);
+  const hit = draftIdxOfKey(key, ord);
+  return hit >= 0 ? hit : draftIdxOfKey(key, 0);
 }
 
 function daemonWouldSkip(it) {
@@ -780,7 +802,11 @@ function effectiveNextIdx() {
     const it = saved[j];
     if (daemonWouldSkip(it)) continue;
     if (it.youtube != null || it.file != null || it.source) {
-      return draftIdxOfKey(keyOf(it), onAirIdx());
+      const key = keyOf(it);
+      const ord = ordinalBefore(saved, key, j);
+      const hit = draftIdxOfKey(key, ord);
+      if (hit >= 0) return hit;
+      return draftIdxOfKey(key, 0);
     }
   }
   return -1;
