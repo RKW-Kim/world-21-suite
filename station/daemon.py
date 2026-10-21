@@ -483,6 +483,7 @@ def pl_lock():
     every load→mutate→save sequence, and re-load fresh inside it.
     Blocking is fine: holders always finish in milliseconds."""
     path = os.path.join(ROOT, ".station.lock")
+    os.makedirs(ROOT, exist_ok=True)  # a fresh clone has no broadcast/ yet
     fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
