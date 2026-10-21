@@ -1382,6 +1382,23 @@ def _ensure_filters(renderer, source, chain):
     return made
 
 
+def clear_fault_history(why=""):
+    """Drop the fault history. Used when the faults were caused by a
+    render plane that was switched off on purpose: they are not station
+    faults, and leaving them would trip the REPEAT_LIMIT off-air
+    escalation on the first real fault after the plane returns."""
+    try:
+        with pl_lock():
+            st = load_state()
+            if st.get("faults"):
+                st["faults"] = {}
+                save_state(st)
+                alert("Fault history cleared (%s)." % (why or "stale faults"),
+                      "INFO")
+    except Exception:
+        pass
+
+
 def apply_mic_normalizer(renderer):
     """Host microphones vary wildly and nobody is at the mixer: every local
     audio-input source gets suppress + compressor + limiter, idempotently
@@ -2828,6 +2845,7 @@ def cmd_loop(renderer):
         # the poll loop's gate has not run yet, and without it the boot
         # cut would consume the queue one unplayable link at a time.
         globals()["PLANE_DOWN"] = time.time()
+        clear_fault_history("the plane was switched off on purpose")
         alert("Render plane is switched off on purpose: starting without "
               "it. The queue holds until it returns.", "INFO")
     elif not wait_ready(renderer):
@@ -3026,6 +3044,10 @@ def cmd_loop(renderer):
                     probe.close()
                     if hello.get("op") != 0:
                         raise RuntimeError("not v5")
+                if globals().get("PLANE_DOWN"):
+                    # The plane is back. Whatever it recorded while it was
+                    # away was its absence, not a station fault.
+                    clear_fault_history("the render plane was away")
                 plane_down_since = None
                 globals()["PLANE_DOWN"] = 0
             except Exception:

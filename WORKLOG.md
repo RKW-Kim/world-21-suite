@@ -1986,3 +1986,21 @@ Took the dock items the web agent's round left ranked and closed them.
   daemon also walks past pending rows (registered, not fetched), nameless
   rows and a file that is not on disk. The marker now skips the same
   classes, so it cannot light a row the daemon will walk past.
+
+## 2026-10-22 (early, 3) — a trap in the "turn the plane back on" moment
+
+The plane-off period left 30 `PLAYOUT_A: source missing` hits in the
+fault history (the watchdog counted the deliberately-absent plane before
+the fix). The fault history is a 1-hour sliding window and the
+escalation fires at REPEAT_LIMIT (3) hits of the SAME fault — so the
+first genuine fault after the operator switches the plane back on would
+have tripped the off-air escalation immediately, on a station that was
+actually fine.
+
+- The fault history is now cleared when the plane is switched off on
+  purpose (at boot) and again when it comes back (the down->up
+  transition): those faults were the plane's ABSENCE, not the station's
+  fault.
+- Worth stating plainly: this class of bug is invisible until the
+  moment it fires. The station was in a "safe" state (off-air) that
+  nobody was watching, because the plane was off on purpose.
