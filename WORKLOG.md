@@ -1719,3 +1719,59 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   control_consume, overlay_auth). NOT yet proven: a real llvmpipe boot
   with air — that is VPS.md migration step 3, on the box itself, and it
   stays on the record in KNOWN_ISSUES.
+
+## 2026-10-21 (late, 2) — the respawn left the playout pass: the deck can no longer be frozen by a dead network
+
+- The last architectural defect from the regression pass: a stream feed
+  death was handled INLINE in the daemon's single playout thread — fresh
+  resolve (3x20s subprocess timeouts), spawn re-resolve, then 15x3s of
+  ready-wait, up to twice per item. A dead network froze the deck AND
+  every other loop duty (operator control, advance, the fail-safe watch)
+  for up to ~4 minutes per attempt, and on resolve failure the stale
+  cache fallback burned the whole ready-wait window before the give-up.
+- New shape, same contract: the pass DETECTS (cheap poll()), COUNTS and
+  KICKS; the slow work runs on one background thread per deck
+  (_respawn_work), whose result is adopted only if the item it was
+  spawned for is still the one on air. One attempt per deck at a time
+  (_STREAM_STATE["respawning"]), two per item before the give-up routes
+  STREAM_EOF — the inline contract, kept, plus new observability: the
+  kick itself is now a WARN ("respawn N starting in background").
+- Three structural enablers: (1) the media-ended queue moved from a
+  main() local to module-level _ENDED — a thread cannot route a give-up
+  EOF into a closure list, which is exactly why the respawn was inline
+  in the first place; (2) cleanup inside the thread is by PROC IDENTITY,
+  never deck key — while an attempt sits in its ready-wait the world can
+  hand the deck to a successor (operator skip, ad return), and the old
+  deck-keyed stop_feed would have killed the successor's feed; (3) the
+  EOF consumer hardening: on_ended refuses a STREAM_EOF when no stream
+  item is on air (a queued EOF outliving its item used to advance past
+  whatever the operator just cut to).
+- cached_resolve's docstring now tells the truth: force=True PREFERS
+  fresh urls; on resolve failure the cached meta gets one more try
+  (HLS urls expire in hours, the cache is 30 minutes — a blip resolve is
+  worth a retry), and the attempt cap still ends a dead item.
+- Regression grill ON THIS FIX (standing order), findings applied
+  pre-commit: (a) the crash path originally leaked the adopted feed (an
+  orphan ffmpeg publishing a hidden input) — feed handle moved outside
+  the try, crash path stops by identity; (b) my first test assertions
+  were wrong twice (index semantics: it points at NEXT, so a cut to item
+  2 keeps index=1... the invariant holds, the test lied; FakeRenderer
+  records a file load as "file", not "media") — the code was right both
+  times, the harness now asserts the real contract; (c) TOCTOU on the
+  give-up EOF: relevance is checked under END_LOCK immediately before
+  the append, leaving a ~1-poll window for a stream->stream skip to slip
+  a stale advance — bounded, on the record in KNOWN_ISSUES (closing it
+  fully means carrying the url in the sentinel; not this pass); (d) the
+  pre-existing stale-EOF-after-ad_return case: pre-dates this change,
+  the new code creates none.
+- Verified: new station/test_stream_respawn.py (29 checks: pass returns
+  in 0.00s with a 1.5s resolve scripted; no double-bump in flight; EOF
+  exactly once across attempts; exhaustion kicks no thread; AD path;
+  late finish stopped by identity with no EOF; crashed attempt cleans up
+  AND still routes the give-up; stale EOF cut nothing; current EOF
+  still advances). Full stdlib suite green after the change (spool,
+  fallback, playlist_edges, control_consume, overlay_auth, selftest).
+  NOT live-fired against a real dead YouTube link yet — the next real
+  feed death on the station is the live proof (watch for "respawn 1
+  starting in background" then "respawned (1)" with the pass never
+  going BUSY).

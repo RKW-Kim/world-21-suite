@@ -37,19 +37,25 @@ proof; see WORKLOG). What is STILL open, ranked:
 - **station has never published to YouTube end-to-end** (the publish
   leg is deliberately disarmed; see DECISIONS §13). First real cutover
   run is its own checklist.
-- **stream respawn blocks the playout pass** (found by the regression
-  pass, deferred as architectural): a fresh resolve on respawn is a
-  network call INSIDE the daemon's single playout thread — a dead
-  network freezes the deck up to ~4 min per attempt (3x20s resolve,
-  spawn re-resolve, ready-wait), and on resolve failure the STALE urls
-  come back via the cache fallback, so "respawns never reuse the dead
-  urls" only holds while resolve succeeds. Needs the resolve moved off
-  the playout pass, not a patch.
 - **plane_call is a deadline, not a bound** (overlay): the 504 answers
   "we stopped waiting", not "it did not happen" — the abandoned call
   keeps OBS_LOCK and can still land up to OBS_TIMEOUT later (a late cut
   can override a retry fired in the meantime). Bounded by arrival rate;
   a real cancellation or sequencing guard is the actual fix.
+- **stream respawn residual races (fixed 2026-10-21, narrowed not
+  erased)**: the old defect — resolve+spawn+ready-wait inline INSIDE the
+  playout pass, a dead network freezing the deck ~4 min per attempt — is
+  fixed: `stream_respawn_pass` detects, counts and kicks; the slow work
+  runs on one background thread per deck (`_respawn_work`) with
+  proc-identity cleanup. What remains, bounded: (1) a give-up EOF is
+  relevance-checked in the thread right before it is queued, so an
+  operator skip landing inside the following ~1-poll window can still
+  let a stale EOF advance one extra item (the consumer now refuses EOFs
+  with no stream on air, which kills the common case; the
+  stream->stream case would need the url carried in the sentinel);
+  (2) a stale EOF for an AD slot arriving just after `ad_return` could
+  advance once — pre-existing (the bare sentinel cannot name its item),
+  and the thread-side relevance check means the NEW code creates none.
 - **duplicate media: the marker lights the first twin** (cosmetic): the
   protection now covers every row with the on-air identity (1f05f41),
   but the green bar itself still picks the first twin when the station

@@ -999,8 +999,12 @@ def apply_knobs():
             g[k] = max(int(v), 1)
         else:
             g[k] = max(min(float(v), 3600), 0.5)
-_STREAM_STATE = {"feeds": {}, "resolving": {},
+_STREAM_STATE = {"feeds": {}, "resolving": {}, "respawning": {},
                  "primed": None}   # {"deck","url","meta","feed"} ready-to-cut
+# "respawning": deck -> the one background respawn attempt in flight for
+# it. The playout pass only detects a dead feed, counts the attempt and
+# kicks the thread; the resolve+spawn+ready-wait happens OFF the pass
+# (stream_respawn_pass below).
 STREAM_PRIME_LEAD = float(os.environ.get("STREAM_PRIME_LEAD", "30"))
 _RESOLVE_CACHE = {}  # url -> (epoch, meta)
 _RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
@@ -1008,9 +1012,12 @@ _RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
 
 def cached_resolve(url, force=False):
     """resolve() with a half-hour TTL cache, so cuts never wait on a resolve.
-    force=True skips the cache read (a respawn needs FRESH urls: a mid-stream
-    403 inside the TTL window used to respawn the same dead urls every poll
-    until the item hit the fault limit, when one fresh resolve heals it)."""
+    force=True skips the cache READ (a respawn prefers FRESH urls: a mid-stream
+    403 inside the TTL window would otherwise respawn the same dead urls every
+    poll until the item hit the fault limit). On resolve FAILURE the cached
+    meta is still returned -- honest for HLS (urls expire in hours, the cache
+    is 30 minutes, so a blip resolve is worth one retry with the old urls);
+    repeated death still walks to the attempt cap and ends the item."""
     if not force:
         deadline, meta = _RESOLVE_CACHE.get(url, (0, None))
         # A live stream's HLS urls EXPIRE (hours). The old "live means keep
@@ -1032,12 +1039,153 @@ def stop_feed(deck):
     ytstream.stop(feed)
 
 
+# Media-ended events queue here; main()'s poll loop drains it. Module-level
+# (was a main() local): the background respawn thread routes its give-up
+# STREAM_EOF from outside main(), which is impossible with a closure list
+# and is exactly why the whole respawn used to sit inline on the playout
+# pass.
+_ENDED = []
+
+
+def _respawn_give_up(url, deck, n):
+    """Route the give-up EOF from a failed respawn attempt -- but only if
+    the item this attempt was for is STILL the one on air. The world moves
+    on during a 60s resolve (operator skip, wall-clock advance, ad return):
+    a late EOF for a dead item would advance past whatever is on air now."""
+    try:
+        _st = load_state()
+    except (OSError, ValueError):
+        _st = {}
+    _sm = _st.get("stream") or {}
+    if not (_sm.get("url") == url
+            and (_sm.get("slot") or _st.get("deck")) == deck):
+        return
+    alert("Stream feed died and respawn failed.", "CRIT")
+    with END_LOCK:
+        if STREAM_EOF not in _ENDED:
+            alert("Stream feed exhausted (%s); ending item." % deck, "WARN")
+            _ENDED.append(STREAM_EOF)
+
+
+def _respawn_work(url, deck, n):
+    """One background respawn attempt: fresh resolve, spawn, wait for
+    MediaMTX to publish. Runs OFF the playout pass -- the inline version
+    did all of this between two poll iterations, and a dead network froze
+    the deck (and every other loop duty: control, advance, fail-safe)
+    for up to ~3x20s resolve + 15x3s ready per attempt.
+
+    Cleanup is by PROC IDENTITY, never by deck key: while this attempt is
+    still in its ready-wait the world can hand the deck to a new item
+    (operator skip, ad return), and a deck-keyed stop would kill the
+    successor's feed."""
+    path = ("slot-ad" if deck == "AD"
+            else "slot-stream-%s" % deck.lower())
+    feed = None   # kept outside the try: the crash path stops it by identity
+    try:
+        meta = cached_resolve(url, force=True)
+        if meta and meta.get("hls_v") and meta.get("hls_a"):
+            feed = ytstream.spawn(url, path, meta=meta)
+        ok = False
+        if feed is not None:
+            # Adopt early: while the ready-wait runs, the main loop's death
+            # check must see a live proc, not re-detect the corpse.
+            _STREAM_STATE["feeds"][deck] = feed
+            for _ in range(STREAM_SPAWN_TRIES):
+                if ytstream.path_ready(path):
+                    ok = True
+                    break
+                if feed.poll() is not None:
+                    break
+                time.sleep(3)
+        if not ok:
+            if feed is not None:
+                ytstream.stop(feed)
+                if _STREAM_STATE["feeds"].get(deck) is feed:
+                    _STREAM_STATE["feeds"].pop(deck, None)
+            _respawn_give_up(url, deck, n)
+            return
+        try:
+            _st = load_state()
+        except (OSError, ValueError):
+            _st = {}
+        _sm = _st.get("stream") or {}
+        if _sm.get("url") == url and (_sm.get("slot") or _st.get("deck")) == deck:
+            alert("Stream feed died; respawned (%d)." % n, "WARN")
+        else:
+            # Finished late: the item moved on while this attempt was
+            # waiting. Stop MY proc by identity; the deck's current entry
+            # belongs to whatever is on air now and is not touched.
+            if _STREAM_STATE["feeds"].get(deck) is feed:
+                _STREAM_STATE["feeds"].pop(deck, None)
+            ytstream.stop(feed)
+            alert("Respawn %d finished late (%s); item moved on, feed dropped."
+                  % (n, deck), "INFO")
+    except Exception as e:
+        # A crashed respawn thread would leave the deck with neither a
+        # recovery nor an EOF: route the give-up exactly like a failure,
+        # and stop anything this attempt already spawned (by identity --
+        # the deck's current entry may belong to a successor by now).
+        alert("respawn %d crashed: %s" % (n, e), "WARN")
+        if feed is not None:
+            ytstream.stop(feed)
+            if _STREAM_STATE["feeds"].get(deck) is feed:
+                _STREAM_STATE["feeds"].pop(deck, None)
+        try:
+            _respawn_give_up(url, deck, n)
+        except Exception:
+            pass
+    finally:
+        _STREAM_STATE["respawning"].pop(deck, None)
+
+
+def stream_respawn_pass(_sm, _deck):
+    """Feed-death handling for the on-air stream item. Runs on the playout
+    pass; every slow part happens on the respawn thread, so the pass never
+    blocks (the inline version spent up to ~4 min inside one iteration on
+    a dead network). One attempt per deck at a time; two per item before
+    the item is ended -- the inline contract, kept."""
+    _rt = _STREAM_STATE["respawning"].get(_deck)
+    if _rt is not None:
+        if _rt.is_alive():
+            return  # a background attempt owns this deck's recovery
+        _STREAM_STATE["respawning"].pop(_deck, None)  # finished; reap
+    _urls = _sm.get("url")
+    if int(_sm.get("respawns") or 0) < 2:
+        with pl_lock():
+            # Persist the bump on a FRESH load: this used to mutate the
+            # throwaway load_state() dict only, so every pass saw
+            # respawns=0 and a dead feed was respawned on every poll.
+            _sv = load_state()
+            _svsm = _sv.get("stream") or {}
+            _svsm["respawns"] = int(_svsm.get("respawns") or 0) + 1
+            _sv["stream"] = _svsm
+            save_state(_sv)
+        _n = _svsm["respawns"]
+        _sm["respawns"] = _n
+        alert("Stream feed died; respawn %d starting in background." % _n,
+              "WARN")
+        _t = threading.Thread(target=_respawn_work, args=(_urls, _deck, _n),
+                              daemon=True)
+        _STREAM_STATE["respawning"][_deck] = _t
+        _t.start()
+    else:
+        alert("Stream feed exhausted (%s); ending item." % _deck, "WARN")
+        with END_LOCK:
+            if STREAM_EOF not in _ENDED:
+                _ENDED.append(STREAM_EOF)
+
+
 def start_stream_feed(url, deck, meta=None, fresh=False):
     """Spawn on the deck's MTX path and wait until MediaMTX publishes.
     Returns (feed, meta) or None on spawn/ready failure. deck "AD" is the
     ad-break slot (same pipeline, landed in the ad scene). fresh=True
-    forces a re-resolve (respawns must never reuse the dead urls that
-    killed the feed in the first place)."""
+    forces a re-resolve instead of trusting the caller's meta.
+
+    Used by the CUT paths (advance, prime, ad break) -- all of which may
+    block the pass for the ready-wait, an accepted cost at a transition.
+    The RESPAWN path must not: it runs through _respawn_work, off the
+    playout pass, with proc-identity cleanup (a deck-keyed stop here would
+    kill a successor feed if the world moved on mid-wait)."""
     meta = meta or cached_resolve(url, force=fresh)
     if not meta:
         return None
@@ -2190,6 +2338,13 @@ def on_ended(renderer, decks, source, force=False):
             return
         if st.get("in_ad_break"):
             return  # content feed ended under cover of the break
+        if not st.get("stream"):
+            # Stale EOF: the stream item it was routed for is already gone
+            # (an operator skip or an ad return landed between the append
+            # and this drain). Advancing here would skip whatever the
+            # operator is watching now.
+            alert("stale stream EOF; no stream on air to end.", "INFO")
+            return
         advance(renderer, st, load_playlist(), decks)
         return
     if source == AD_INPUT:
@@ -2628,7 +2783,10 @@ def cmd_loop(renderer):
     last_loop_err = None
     mtime = os.path.getmtime(PLAYLIST)
     last_hash = json.dumps(data, sort_keys=True)
-    ended = []  # media-ended events queue here; the poll loop drains them.
+    ended = _ENDED  # media-ended events queue; the poll loop drains it.
+    # Module-level object (see _ENDED above): the background respawn thread
+    # routes its give-up EOF from outside main(), which a main-local list
+    # made impossible.
     # end_lock is module-level now: consume_control (the dock's skip path)
     # takes it too, and it used to live only here.
     end_lock = END_LOCK
@@ -2942,42 +3100,12 @@ def cmd_loop(renderer):
                     _deck = _sm.get("slot") or _sst.get("deck", "A")
                     _feed = _STREAM_STATE["feeds"].get(_deck)
                     if not ytstream.alive(_feed):
-                        _urls = _sm.get("url")
-                        if int(_sm.get("respawns") or 0) < 2:
-                            with pl_lock():
-                                # Persist the bump on a FRESH load: this used
-                                # to mutate the throwaway load_state() dict
-                                # only, so every pass saw respawns=0 and a
-                                # dead feed was respawned on every poll
-                                # (each attempt costing a resolve + up to
-                                # 15x3s of ready-waits inside one pass).
-                                _sv = load_state()
-                                _svsm = _sv.get("stream") or {}
-                                _svsm["respawns"] = \
-                                    int(_svsm.get("respawns") or 0) + 1
-                                _sv["stream"] = _svsm
-                                save_state(_sv)
-                            _sm["respawns"] = _svsm["respawns"]
-                            # fresh=True: the urls in hand just died mid-TTL;
-                            # reusing them respawns the same death every poll
-                            # until the item walks to the fault limit.
-                            _again = start_stream_feed(_urls, _deck, fresh=True)
-                            if _again:
-                                _STREAM_STATE["feeds"][_deck] = _again[0]
-                                alert("Stream feed died; respawned (%d)."
-                                      % _sm["respawns"], "WARN")
-                            else:
-                                alert("Stream feed died and respawn failed.", "CRIT")
-                                if STREAM_EOF not in ended:
-                                    alert("Stream feed exhausted (%s); ending item."
-                                          % _sm.get("slot", "?"), "WARN")
-                                with end_lock:
-                                    if STREAM_EOF not in ended:
-                                        ended.append(STREAM_EOF)
-                        else:
-                            with end_lock:
-                                if STREAM_EOF not in ended:
-                                    ended.append(STREAM_EOF)
+                        # Feed health moved OFF the playout pass
+                        # (2026-10-21): the pass only detects, counts and
+                        # kicks; the resolve+spawn+ready-wait runs on the
+                        # respawn thread, so a dead network can no longer
+                        # freeze the deck for minutes. stream_respawn_pass.
+                        stream_respawn_pass(_sm, _deck)
                     _dur = _sm.get("dur")
                     if _dur:
                         _elapsed = time.time() - _sm.get("start", 0)
