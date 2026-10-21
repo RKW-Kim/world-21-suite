@@ -1963,3 +1963,26 @@ round left it first) and closed the dangerous half of it.
   safe failure.
 - The new test joins `station/selftest.sh` in the same commit that adds
   it — the rule from the last round. Suite: all green (10 files).
+
+## 2026-10-22 (early, 2) — the dock's small print, closed
+
+Took the dock items the web agent's round left ranked and closed them.
+
+- **The rebuild was O(n^2).** `rowEl()` called `onAirIdx()` (an O(n)
+  identity scan) and `effectiveNextIdx()` (O(n) for every row: 41,209
+  key comparisons per rebuild, inside the OBS process, next to the video
+  render). Both are computed once per rebuild now: 41,209 -> 22
+  comparisons, measured by instrumenting the scan.
+- **The progress bar froze.** It is painted inside the row, and the list
+  is only rebuilt when its content changes, so the bar sat at the last
+  rebuild's width while the item played on. It updates in place now,
+  like the strip countdown.
+- **The staged bar could lie.** It said "N changes staged" while Apply
+  would refuse (a net-zero edit sequence: edit, then undo back to the
+  applied state). It keys on the PENDING state now; the history depth
+  and the pending difference are two different truths and the bar says
+  which one it is showing.
+- **The NEXT marker could lie.** It skipped parked rows only, while the
+  daemon also walks past pending rows (registered, not fetched), nameless
+  rows and a file that is not on disk. The marker now skips the same
+  classes, so it cannot light a row the daemon will walk past.

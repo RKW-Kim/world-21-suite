@@ -86,12 +86,15 @@ proof; see WORKLOG). What is STILL open, ranked:
   plays the second. Fixing the marker means teaching onAirIdx the saved
   slot's ordinal — it also feeds insert points, so it wants its own
   change + harness.
-- **dock small print**: the staged bar can say "N changes staged" while
-  Apply refuses (net-zero edit sequences); the NEXT-marker walk skips
-  only dormant rows (the daemon also skips failed-resolve/cache-miss/
-  source-only, so the marker can drift or light a source-only twin);
-  row rebuild re-derives both markers per row (O(n²) at 200 rows,
-  measurable, not fatal).
+- **dock small print**: CLOSED (2026-10-22). The staged bar now keys on
+  the PENDING state, not the history depth, so it can no longer say "N
+  changes staged" while Apply would refuse (net-zero edit sequences);
+  the NEXT-marker walk now skips the same classes the daemon skips
+  (parked, pending, nameless, a file that is not on disk) instead of
+  only parked rows, so the marker cannot light a row the daemon will
+  walk past; and the row rebuild is linear again (the on-air identity
+  scan and the next-item walk are computed once per rebuild, not once
+  per row: 41,209 key comparisons -> 22).
 - **intake workdir sweep: a recycled pid keeps a dead workdir up to
   24 h** (the mtime escape eventually reaps it; bounded, cosmetic).
 

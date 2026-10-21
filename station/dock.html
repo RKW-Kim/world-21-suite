@@ -624,9 +624,14 @@ function renderStagedBar() {
   const on = pending || histIndex > 0;
   bar.style.display = on ? "flex" : "none";
   if (!on) return;
-  $("stagedcount").textContent = histIndex > 0
+  /* Two different truths, and the bar must not blur them: the HISTORY
+     depth (how many steps you can walk back) and the PENDING state
+     (whether Apply would change anything). A net-zero edit sequence
+     (edit, then undo back to the applied state) has history but no
+     pending change -- and Apply correctly refuses it. */
+  $("stagedcount").textContent = pending
     ? histIndex + " change" + (histIndex === 1 ? "" : "s") + " staged"
-    : "staged changes";
+    : (histIndex > 0 ? "back at the applied state" : "staged changes");
   $("staged-undo").disabled = histIndex <= 0;
   $("staged-redo").disabled = histIndex >= history.length;
 }
@@ -732,15 +737,32 @@ function onAirIdx() {
   return draftIdxOfKey(keyOf(it));
 }
 
+function daemonWouldSkip(it) {
+  /* The classes the daemon walks past in advance(): parked rows, rows
+     that are still pending (registered, not fetched yet), nameless rows,
+     and a file that is not on disk. A marker that lights a row the
+     daemon will skip is a marker that lies. (An unresolvable link is
+     the one class the dock cannot know about -- it shows the link and
+     the daemon skips it if it fails to resolve.) */
+  if (!it) return true;
+  if (it.status === "dormant") return true;
+  if (it.youtube == null && it.file == null) return true;
+  if (it.file != null) {
+    const have = (S && S.media_files) || [];
+    if (have.length && have.indexOf(it.file) < 0) return true;
+  }
+  return false;
+}
+
 function effectiveNextIdx() {
   /* What actually airs next: the daemon walks the SAVED playlist from
-     index, skipping dormant and unnamed rows -- so the marker walks the
-     same item there, then draws on the matching draft row (by identity,
-     so a staged reorder does not push the NEXT cue onto a stranger). */
+     index, skipping what it cannot play -- so the marker walks the same
+     item there, then draws on the matching draft row (by identity, so a
+     staged reorder does not push the NEXT cue onto a stranger). */
   const saved = liveItems();
   for (let j = savedOnAirIdx() + 1; j < saved.length; j++) {
     const it = saved[j];
-    if (it.status === "dormant") continue;
+    if (daemonWouldSkip(it)) continue;
     if (it.youtube != null || it.file != null || it.source) {
       return draftIdxOfKey(keyOf(it), onAirIdx());
     }
