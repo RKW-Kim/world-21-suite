@@ -105,5 +105,30 @@ daemon.save_playlist({"shuffle_on_complete": False, "items": [
 check("all-dormant none up-next",
       all(not i["up_next"] for i in overlay_server.library_view()["items"]))
 
+# -- 6. the seam rule must see stream items ---------------------------------
+# The just-played item must never lead the next cycle. Stream items carry
+# `youtube` (not `url`): a None key there used to drop them from the avoid
+# set entirely, so the audience got the same video twice in a row.
+import random
+import shuffler
+
+yt = {"title": "YT", "youtube": "https://youtu.be/seamTEST00"}
+check("stream item has a key", shuffler.item_key(yt) is not None)
+check("url item has a key",
+      shuffler.item_key({"url": "https://x/v"}) is not None)
+check("cycle last keys see youtube",
+      shuffler.cycle_last_keys([yt, {"file": "a.mp4"}], count=2) ==
+      [shuffler.item_key(yt), "a.mp4"])
+pool = [yt] + [{"file": "s%d.mp4" % i, "title": str(i)} for i in range(6)]
+for seed in range(200):
+    random.seed(seed)
+    out = shuffler.reshuffle([dict(i) for i in pool],
+                             [shuffler.item_key(yt)])
+    if shuffler.item_key(out[0]) == shuffler.item_key(yt):
+        check("seam: just-played never leads (seed %d)" % seed, False)
+        break
+else:
+    check("seam: just-played never leads (200 seeds)", True)
+
 print("FAILURES: %s" % (fails or "none"))
 sys.exit(1 if fails else 0)

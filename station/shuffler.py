@@ -18,8 +18,12 @@ NOT_SAME_BEFORE = 1
 
 
 def item_key(item):
-    """Stable identity across /library edits: catalog id, else path."""
-    return item.get("id") or item.get("file") or item.get("url")
+    """Stable identity across /library edits: catalog id, else path/link.
+    `youtube` must be in the chain: stream items carry it (not `url`), and
+    a None key silently left them out of the seam rule's avoid set — the
+    just-played video then led the next cycle 43/200 shuffles."""
+    return item.get("id") or item.get("file") or item.get("youtube") \
+        or item.get("url")
 
 
 def reshuffle(items, last_keys=()):
