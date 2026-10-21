@@ -5,7 +5,15 @@ Ordered by how much it matters.
 
 ---
 
-## Open defects (after the 2026-10-21 regression pass)
+## Open defects (after the 2026-10-21 regression pass AND the web
+## agent's round, verified 2026-10-22)
+
+> **Verified 2026-10-22 (the z.ai agent's 55-commit round, reviewed
+> on the box).** The round's four fixes are sound and its suite runner
+> works. Three defects were found in ITS work and fixed here: the unit
+> render never reached four units (the ingest bus would not have
+> started on a fresh install), the render was untestable, and
+> plane-off mode was incoherent. Details: WORKLOG, 2026-10-21 (late, 5).
 
 The audit list below was worked through in a second pass, and a third
 pass then grilled THE FIXES THEMSELVES (five adversarial clusters over
@@ -162,6 +170,22 @@ input pointing at nothing. It is harmless (no audio) but it is not the
 finished thing.
 
 ---
+
+## Closed since the last round (kept here so nobody re-investigates them)
+
+- **The unit render never reached four units** (panel, overlay,
+  watchdog, mediamtx had no `Environment=` line, so the BROADCAST_ROOT
+  injection was a no-op and mediamtx's `${BROADCAST_ROOT}/mediamtx.yml`
+  expanded to `/mediamtx.yml` — the ingest bus never started on a fresh
+  install). Fixed: the render inserts the line into `[Service]` and
+  fails loud when a unit expands a variable it never defines. The
+  render moved to `station/render_units.sh` so
+  `station/test_unit_render.py` can run the real thing.
+- **The daemon's opening cut consumed the queue while the plane was
+  off**: the "hold" flag was only set by the poll loop's gate, which has
+  not run at boot. Fixed: the hold is armed before the opening cut, and
+  the fault watchdog does not count a deliberately-absent plane as a
+  fault (it used to escalate to OFF-AIR and fail to cut every pass).
 
 ## Deliberately not done
 
