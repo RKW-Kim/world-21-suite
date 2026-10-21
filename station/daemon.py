@@ -1006,16 +1006,20 @@ _RESOLVE_CACHE = {}  # url -> (epoch, meta)
 _RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
 
 
-def cached_resolve(url):
-    """resolve() with a half-hour TTL cache, so cuts never wait on a resolve."""
-    deadline, meta = _RESOLVE_CACHE.get(url, (0, None))
-    # A live stream's HLS urls EXPIRE (hours). The old "live means keep
-    # it forever" short-circuit handed every respawn the same dead urls,
-    # so a feed could never come back. Age it like everything else.
-    if meta and (deadline + _RESOLVE_TTL > time.time()
-                 or (meta.get("live") and meta.get("hls_at", 0)
-                     > time.time() - 1800)):
-        return meta
+def cached_resolve(url, force=False):
+    """resolve() with a half-hour TTL cache, so cuts never wait on a resolve.
+    force=True skips the cache read (a respawn needs FRESH urls: a mid-stream
+    403 inside the TTL window used to respawn the same dead urls every poll
+    until the item hit the fault limit, when one fresh resolve heals it)."""
+    if not force:
+        deadline, meta = _RESOLVE_CACHE.get(url, (0, None))
+        # A live stream's HLS urls EXPIRE (hours). The old "live means keep
+        # it forever" short-circuit handed every respawn the same dead urls,
+        # so a feed could never come back. Age it like everything else.
+        if meta and (deadline + _RESOLVE_TTL > time.time()
+                     or (meta.get("live") and meta.get("hls_at", 0)
+                         > time.time() - 1800)):
+            return meta
     meta = ytstream.resolve(url)
     if meta and meta.get("hls_v") and meta.get("hls_a"):
         _RESOLVE_CACHE[url] = (time.time(), meta)
@@ -1028,11 +1032,13 @@ def stop_feed(deck):
     ytstream.stop(feed)
 
 
-def start_stream_feed(url, deck, meta=None):
+def start_stream_feed(url, deck, meta=None, fresh=False):
     """Spawn on the deck's MTX path and wait until MediaMTX publishes.
     Returns (feed, meta) or None on spawn/ready failure. deck "AD" is the
-    ad-break slot (same pipeline, landed in the ad scene)."""
-    meta = meta or cached_resolve(url)
+    ad-break slot (same pipeline, landed in the ad scene). fresh=True
+    forces a re-resolve (respawns must never reuse the dead urls that
+    killed the feed in the first place)."""
+    meta = meta or cached_resolve(url, force=fresh)
     if not meta:
         return None
     path = ("slot-ad" if deck == "AD"
@@ -1057,6 +1063,16 @@ def prefetch_stream_pass(data, state):
     """Resolve upcoming youtube items in the background so advance never
     blocks on a resolve. One dict of in-flight threads, best-effort: a
     missed resolve is simply re-attempted inline at advance time."""
+    # Prune the cache while here: entries past their TTL that a cached_resolve
+    # would no longer serve are dead weight (months of URLs accumulate to
+    # tens of MB and every lookup walks a map that never shrinks).
+    now = time.time()
+    for u in list(_RESOLVE_CACHE):
+        deadline, meta = _RESOLVE_CACHE[u]
+        fresh_live = (meta.get("live") and meta.get("hls_at", 0)
+                      > now - 1800)
+        if not (deadline + _RESOLVE_TTL > now or fresh_live):
+            del _RESOLVE_CACHE[u]
     items = data.get("items", [])
     n = len(items)
     if not n:
@@ -2926,7 +2942,10 @@ def cmd_loop(renderer):
                                 _sv["stream"] = _svsm
                                 save_state(_sv)
                             _sm["respawns"] = _svsm["respawns"]
-                            _again = start_stream_feed(_urls, _deck)
+                            # fresh=True: the urls in hand just died mid-TTL;
+                            # reusing them respawns the same death every poll
+                            # until the item walks to the fault limit.
+                            _again = start_stream_feed(_urls, _deck, fresh=True)
                             if _again:
                                 _STREAM_STATE["feeds"][_deck] = _again[0]
                                 alert("Stream feed died; respawned (%d)."
