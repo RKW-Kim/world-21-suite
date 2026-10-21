@@ -2129,3 +2129,23 @@ fixed:
 - The dock and the plane AGREE: the same title, a countdown that ticks
   (3:17 -> 3:12), a progress bar that moves (30% -> 32%), and the same
   NEXT row.
+
+## 2026-10-22 (late, 3) — the two operator features that were still open
+
+- **BULK RENAME REVIEW.** One renamed video is a row-menu job; a
+  channel-wide relabel can flag dozens of rows, and clicking through
+  each one is a trap. The dock now shows a review bar whenever rows are
+  flagged ("N videos renamed on YouTube", with the count of the ones
+  held back because the video is a different one) and offers
+  approve-all / discard-all. Like every other edit, they STAGE: the
+  operator still presses Apply.
+- **THE METADATA SWEEP IS WORKING** (it was already running; nobody had
+  checked): 7 of 203 rows now carry a captured description, the channel
+  and a checked-at stamp. The preview card shows them, and the manual
+  "refresh metadata" button re-resolves one row on demand.
+
+The live rename that surfaced while testing is a good example of WHY
+the amber dot exists: the "Big Buck Bunny (prime test)" row's YouTube
+id now serves a completely different upload (Lady Gaga - Gimme More).
+The duration check catches that case and holds it; a title-only change
+would have kept playing.

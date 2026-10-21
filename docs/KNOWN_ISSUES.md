@@ -253,9 +253,14 @@ finished thing.
 - **Scheduled profiles** (day/night running orders switching on a clock).
 - **A queue timeline / playhead** (the Studio Player pattern): a visual
   running order with a draggable playhead.
-- **Bulk review of amber rows** (approve all / discard all) — the operator
-  asked for the bulk action alongside the per-row one.
-- **The daily metadata sweep** described above.
+- ~~**Bulk review of amber rows**~~ — DONE 2026-10-22: the dock shows a
+  review bar when rows are flagged ("N videos renamed on YouTube") with
+  approve-all / discard-all, staged like every other edit.
+- ~~**The daily metadata sweep**~~ — DONE (it was already running; it
+  captures the description, the channel and a checked-at stamp for the
+  items it visits — 7 of 203 rows carry one so far). The gap that
+  remains: it only visits what it reaches, so a fresh import shows "no
+  description captured — press refresh" until the first sweep reaches it.
 
 ---
 

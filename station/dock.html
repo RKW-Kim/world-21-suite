@@ -162,6 +162,11 @@
   /* The "you have unsaved changes" prompt. It is deliberately loud: the
      operator must not click away believing the station already took the
      edit. */
+  #review { display: none; align-items: center; gap: 6px; padding: 5px 8px;
+            background: #3a2f12; border-top: 1px solid #6b551d; flex: none;
+            color: var(--warn); font-size: 11px; }
+  #review button.icon { background: #2a2417; border-color: #6b551d; }
+  #review button.icon:hover { background: #3a3020; }
   #staged { display: none; align-items: center; gap: 6px; padding: 5px 8px;
             background: #3a2f12; border-top: 1px solid #6b551d; flex: none;
             color: var(--warn); font-size: 11px; }
@@ -349,6 +354,16 @@
   </label>
 </div>
 
+<div id="review" role="status" style="display:none">
+  <span id="reviewtext"></span>
+  <button id="review-approve" class="icon" title="Approve every renamed title (staged, then Apply)"
+          aria-label="Approve all renamed titles">
+    <svg class="i" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button id="review-discard" class="icon" title="Delete every renamed video (staged, then Apply)"
+          aria-label="Discard all renamed videos">
+    <svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+</div>
+
 <div id="staged" role="status" style="display:none">
   <span id="stagedcount">staged changes</span>
   <button id="staged-apply" class="primary icon" title="Apply the staged changes" aria-label="Apply staged changes">
@@ -531,6 +546,7 @@ function markPending() {
   $("apply").classList.toggle("pending", pending);
   $("pending").textContent = pending ? "staged changes — press Apply" : "";
   renderStagedBar();
+  renderReviewBar();
 }
 
 function seedShuf() {
@@ -632,6 +648,51 @@ function revertToApplied() {
   render(true);
   saveHistory();
   status("reverted to the last applied state — press Apply to confirm");
+}
+
+/* The rename-review bar. One video renamed is a row-menu job; a
+   channel-wide rename (a label change on the account, say) can flag
+   dozens of rows, and clicking through each one is a trap. */
+function flaggedItems() {
+  return draftItems().map((it, i) => ({it: it, i: i}))
+    .filter((r) => r.it.meta_trip);
+}
+
+function renderReviewBar() {
+  const bar = $("review");
+  if (!bar) return;
+  const flagged = flaggedItems();
+  bar.style.display = flagged.length ? "flex" : "none";
+  if (!flagged.length) return;
+  const held = flagged.filter((r) => r.it.meta_trip.same_video === false).length;
+  $("reviewtext").textContent = flagged.length + " video" +
+    (flagged.length === 1 ? "" : "s") + " renamed on YouTube" +
+    (held ? " (" + held + " held back — different video)" : "");
+}
+
+function approveAll() {
+  const flagged = flaggedItems();
+  if (!flagged.length) return;
+  mutate((a) => {
+    flagged.forEach((r) => {
+      const it = a[r.i];
+      if (!it || !it.meta_trip) return;
+      it.title = it.meta_trip.new;
+      const held = it.meta_trip.same_video === false;
+      delete it.meta_trip;
+      if (held && it.status === "dormant" && !it.group) it.status = null;
+    });
+  }, "approved " + flagged.length + " renamed title(s) — staged, press Apply");
+}
+
+function discardAll() {
+  const flagged = flaggedItems();
+  if (!flagged.length) return;
+  if (!confirm("Delete " + flagged.length + " renamed video(s) from the queue?")) return;
+  mutate((a) => {
+    const drop = new Set(flagged.map((r) => r.i));
+    for (let i = a.length - 1; i >= 0; i--) if (drop.has(i)) a.splice(i, 1);
+  }, "discarded " + flagged.length + " renamed video(s) — staged, press Apply");
 }
 
 function renderStagedBar() {
@@ -1990,6 +2051,8 @@ $("p-del").addEventListener("click", async () => {
 });
 
 /* ---------- staged-change prompt ---------------------------------------- */
+$("review-approve").addEventListener("click", approveAll);
+$("review-discard").addEventListener("click", discardAll);
 $("staged-apply").addEventListener("click", applyChanges);
 $("staged-undo").addEventListener("click", undo);
 $("staged-redo").addEventListener("click", redo);
