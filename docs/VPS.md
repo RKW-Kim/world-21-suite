@@ -35,11 +35,29 @@ Two honest anchors before the numbers:
   x264 ultrafast CBR 2500k — that is the *lab* profile. The 1080p60
   target is a different box class, not a config nudge.
 
+**MEASURED on this box, 2026-10-22 (the headless shape: Xvfb :99 +
+llvmpipe, 1280x720, the full scene with 7 resident CEF browser
+sources): OBS burns 238% CPU.** Two consequences that the tables below
+cannot show:
+
+- **The websocket greetings hang under that load.** The daemon could
+  not connect to the plane (it timed out, crash-looped, and every later
+  handshake was blocked behind the stuck one). The client now closes
+  deterministically on a failed handshake and the plane is restarted
+  after three greetings in a row that never came -- but the load itself
+  is the cause.
+- **So the headless build must be the LIGHT one.** `station/render_scenes.py`
+  has `LAB_LIGHT=1` for exactly this ("the 2-core lab box cannot feed
+  12 resident CEF mouths"): the browser sources are stripped, the
+  overlays are composited by the render instead. Budget for the light
+  build, or buy cores.
+
 Cost model on a GPU-less VPS (llvmpipe + x264, modern dedicated x86):
 
 | Profile | Render (llvmpipe) | Encode (x264) | vCPU needed | RAM |
 |---|---|---|---|---|
 | 960x540 @30 / 2500k ultrafast (shipped) | ~0.5-1 core | ~0.5 core | **3** | 4 GB |
+| ...but the FULL scene (7 CEF browser sources) at 1280x720 | MEASURED 238% CPU | ~0.5 core | **8** | 16 GB |
 | 1280x720 @60 / 4000k veryfast | ~1.5 cores | ~1.5 cores | **4-5** | 8 GB |
 | 1920x1080 @60 / 6000k veryfast (target) | ~2-3 cores | ~3 cores | **8** | 16 GB |
 
@@ -49,6 +67,16 @@ and can simply take longer. The daemon/panel/overlay are trivial. OBS is
 the whole story.
 
 ```
+**Budget pick — the SHIPPED profile, light build, 720p30** (the honest
+minimum for a box with no GPU):
+
+```
+CPU      6 vCPU dedicated (Hetzner CPX31-class)
+RAM      12 GB
+DISK     160 GB NVMe
+```
+The 1080p60 target is a different box class (below).
+
 Budget pick  — 1080p60 (the stated target):
 CPU      8 vCPU dedicated (Hetzner CPX41-class AMD EPYC)
 RAM      16 GB          — OBS+CEF ~2 GB, page cache for the 50 GB media cache
