@@ -13,19 +13,28 @@ ROOT="${BROADCAST_ROOT:-./broadcast}"
 
 [ -d overlay ] || { echo "::error::run from the repo root (no overlay/ found)."; exit 1; }
 
-for bin in ffmpeg ffprobe python3 curl; do
+for bin in ffmpeg ffprobe python3 curl yt-dlp; do
   command -v "$bin" >/dev/null || { echo "::error::$bin missing. Install ffmpeg + python3 + curl first."; exit 1; }
 done
 
 mkdir -p "$ROOT"/{media,assets/idents,overlays,backups,recordings} station/manifest
+# Absolute, so the unit can point at the same file wherever BROADCAST_ROOT
+# lives (the VPS install uses /var/broadcast).
+ROOT="$(cd "$ROOT" && pwd)"
 [ -f "$ROOT/media/playlist.json" ] || cp station/playlist.json "$ROOT/media/playlist.json"
 
 # Firewall: open exactly the SRT ingest ports, nothing else.
 # (Lab lesson 2026-10-12: ufw default-DROP silently killed laptop-to-laptop
 # SRT while loopback passed and ping lied. Only a two-machine run reveals it.)
 if command -v ufw >/dev/null; then
+  # mediamtx.yml states the model: "UFW allows only 22/tcp". Allowing a
+  # port is not a policy: without default-deny incoming, everything else
+  # (the overlay control plane on 7070) stays reachable.
+  sudo ufw default deny incoming 2>/dev/null || true
+  sudo ufw allow 22/tcp comment 'ssh' 2>/dev/null || true
   if sudo ufw allow 9000:9001/udp comment 'station SRT ingest' 2>/dev/null; then
-    echo "ufw: opened 9000:9001/udp for SRT ingest"
+    sudo ufw --force enable 2>/dev/null || true
+    echo "ufw: default-deny incoming, ssh + SRT ingest allowed"
   else
     echo "::warning::could not open SRT ports via ufw; do it by hand."
   fi
@@ -40,9 +49,11 @@ OBS_PASS=change-me
 # No bot to host, no token to rotate. WhatsApp later if ever (needs Twilio/CallMeBot).
 DISCORD_WEBHOOK=
 EOF
-  chmod 600 "$ROOT/secrets.env"
-  echo "wrote $ROOT/secrets.env (mode 600) — fill in YOUTUBE_STREAM_KEY"
+  echo "wrote $ROOT/secrets.env — fill in YOUTUBE_STREAM_KEY"
 fi
+# Always, not only on creation: a hand-made or restored secrets file kept
+# mode 644 and the stream key stayed world-readable.
+chmod 600 "$ROOT/secrets.env" 2>/dev/null || true
 
 # Render-plane deps (VPS + headless lab): a virtual display for OBS plus the
 # pinned Flatpak build. setup.sh never installs system packages itself — OS
@@ -130,11 +141,28 @@ else
 fi
 mkdir -p "$UNIT_DST"
 for u in "$UNIT_SRC"/station-*.service; do
-  sed "s|%h/Documents/GitHub/world-21-suite|$PWD|g" "$u" > "$UNIT_DST/$(basename "$u")"
+  case "$u" in
+    *monitor-av*) continue ;;   # dead path (mediamtx dropped it 2026-10-18)
+  esac
+  # The unit has to point at THIS install: the repo path, the secrets
+  # file and the media root all move together (the VPS install lives in
+  # /var/broadcast, not in the repo).
+  sed -e "s|%h/Documents/GitHub/world-21-suite|$PWD|g" \
+      -e "s|/home/rkw/Documents/GitHub/world-21-suite|$PWD|g" \
+      -e "s|EnvironmentFile=.*|EnvironmentFile=$ROOT/secrets.env|" \
+      -e "s|EnvironmentFile=||" \
+      "$u" > "$UNIT_DST/$(basename "$u")"
+  # Only the daemon needs the media root; the panel and overlay read it
+  # from the same place.
+  if grep -q "daemon.py loop" "$UNIT_DST/$(basename "$u")"; then
+    grep -q "^Environment=BROADCAST_ROOT=" "$UNIT_DST/$(basename "$u")" || \
+      sed -i "s|^Environment=|Environment=BROADCAST_ROOT=$ROOT\nEnvironment=|" \
+        "$UNIT_DST/$(basename "$u")"
+  fi
 done
 $SYS daemon-reload
 # shellcheck disable=SC2046
-$SYS enable $(cd "$UNIT_SRC" && ls station-*.service) 2>&1 | tail -n 2
+$SYS enable $(cd "$UNIT_SRC" && ls station-*.service | grep -v monitor-av) 2>&1 | tail -n 2
 if [ "$(id -u)" != "0" ]; then
   if [ "$(loginctl show-user "$USER" 2>/dev/null | grep -c Linger=yes)" = "0" ]; then
     echo "::warning::linger is OFF — user units die at logout and autostart can't work."

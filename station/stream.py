@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 import urllib.request
 
 log = logging.getLogger("stream")
@@ -37,7 +38,7 @@ MTX_RTMP = "rtmp://127.0.0.1:1935"
 MTX_API = "http://127.0.0.1:9997"
 V_FMT = "bv*[vcodec^=avc1][height<=720][protocol*=m3u8]/bv*[vcodec^=avc1][protocol*=m3u8]"
 A_FMT = "ba[acodec^=mp4a][protocol*=m3u8]/ba[protocol*=m3u8]"
-RESOLVE_TIMEOUT = 60
+RESOLVE_TIMEOUT = 20     # three serial probes: 3x this is the worst case
 READY_TIMEOUT = 45
 
 # YouTube serves some videos to anonymous IPs only after a bot check
@@ -96,19 +97,32 @@ def resolve(url):
     return {"id": j.get("id"), "title": j.get("title") or url,
             "duration": None if live else j.get("duration"),
             "thumbnail": j.get("thumbnail"), "live": live,
+            "hls_at": time.time(),
             "hls_v": _g(url, V_FMT), "hls_a": _g(url, A_FMT)}
 
 
 def spawn(url, path, meta=None):
-    """Start the feed ffmpeg publishing to a MediaMTX path. Returns proc."""
+    """Start the feed ffmpeg publishing to a MediaMTX path. Returns proc.
+
+    HLS urls expire (hours). A meta older than 30 minutes is re-resolved
+    here, so a respawn does not hand ffmpeg the same dead urls."""
+    if meta and meta.get("hls_at", 0) < time.time() - 1800:
+        fresh = resolve(url)
+        if fresh:
+            meta = fresh
     meta = meta or resolve(url)
     if not meta or not meta.get("hls_v") or not meta.get("hls_a"):
         log.warning("spawn %s: unresolvable", url)
         return None
     try:
-        err = open(os.environ.get("FFERR_PATH", "/tmp/feed-%s.err" % path), "ab")
+        # Truncate per spawn: /tmp is a tmpfs (RAM) and the log grew
+        # forever, one stats line per 0.5s of stream.
+        err = open(os.environ.get("FFERR_PATH", "/tmp/feed-%s.err" % path), "wb")
         ff = subprocess.Popen(
-            [FFMPEG, "-hide_banner", "-loglevel", "info",
+            [FFMPEG, "-hide_banner", "-loglevel", "warning",
+             # 15s socket timeout: without it a dead upstream keeps the
+             # process alive (and the frame frozen) forever.
+             "-rw_timeout", "15000000", "-reconnect", "1", "-reconnect_streamed", "1",
              "-re", "-i", meta["hls_v"], "-re", "-i", meta["hls_a"],
              "-c", "copy", "-f", "flv", "%s/%s" % (MTX_RTMP, path)],
             stdout=subprocess.DEVNULL, stderr=err)
@@ -133,7 +147,8 @@ def stop(proc):
     except subprocess.TimeoutExpired:
         try:
             proc.kill()
-        except OSError:
+            proc.wait(timeout=5)   # reap: a killed child is a zombie until waited on
+        except (OSError, subprocess.TimeoutExpired):
             pass
     except OSError:
         pass

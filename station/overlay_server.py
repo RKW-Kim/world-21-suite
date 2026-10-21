@@ -360,6 +360,7 @@ THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
 
 
 THUMB_DIR = os.path.join(daemon.MEDIA, ".thumbs")
+THUMB_SEM = threading.Semaphore(2)   # at most 2 concurrent thumbnail decodes
 THUMB_LOCKS = {}
 THUMB_LOCKS_GUARD = threading.Lock()
 
@@ -380,10 +381,13 @@ def thumb_path(fname):
     if lock.acquire(timeout=25):
         try:
             if not os.path.exists(out):
-                subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
-                                "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
-                                "-vf", "scale=320:-1", "-q:v", "5", out],
-                               timeout=20, check=True)
+                # At most 2 decoders at a time: the daemon and OBS need
+                # this box's CPU more than a page of thumbnails does.
+                with THUMB_SEM:
+                    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error",
+                                    "-y", "-ss", "0.25", "-i", src, "-frames:v", "1",
+                                    "-vf", "scale=320:-1", "-q:v", "5", out],
+                                   timeout=20, check=True)
         except Exception:
             pass
         finally:
@@ -459,6 +463,10 @@ def ensure_bed():
 
 
 class Handler(SimpleHTTPRequestHandler):
+    # 30s socket timeout. The base class default is None, and
+    # StreamRequestHandler only calls settimeout() when it is set: a
+    # client that connects and says nothing pinned a thread + fd forever.
+    timeout = 30
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
 
@@ -500,6 +508,10 @@ class Handler(SimpleHTTPRequestHandler):
             # WHIP (the OBS side needs nothing — seats fill themselves).
             self._serve_file(os.path.join(STATION_DIR, "whip.html"), "text/html", nocache=True)
         elif self.path == "/state":
+            if not self._guard():
+                # The file:// pages are allowed by _guard; a random site
+                # in the operator's browser is not.
+                return self._refused()
             body = json.dumps(load_state()).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -544,6 +556,14 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
             self.send_header("Access-Control-Allow-Origin", "*")  # file:// pages
             self.end_headers()
+            # Reap the dead: a client that vanishes without a FIN leaves
+            # the socket ESTABLISHED and the heartbeat writes keep
+            # succeeding, so the thread and the SUBS entry live forever.
+            try:
+                self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
+            except OSError:
+                pass
             q = queue.Queue(maxsize=16)
 
             def _close_sse():
@@ -598,6 +618,11 @@ class Handler(SimpleHTTPRequestHandler):
             return
         try:
             length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
             patch = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             self.send_error(400, "bad JSON")
@@ -622,11 +647,16 @@ class Handler(SimpleHTTPRequestHandler):
         # Trust model = same as /state (LAN/tunnel-only users, no auth token).
         try:
             length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
             body = json.loads(self.rfile.read(length) or b"{}") if length else {}
         except ValueError:
             body = {}
         try:
-            r = daemon.OBSRenderer()
+            r = obs_req()          # the shared connection, not a new one
             if name == "scene":
                 if not body.get("name"):
                     return self._json(400, {"ok": False, "error": "scene needs {\"name\"}"})
@@ -653,6 +683,12 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _ads_write(self):
         try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
@@ -702,6 +738,12 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _library_write(self):
         try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
@@ -869,6 +911,12 @@ class Handler(SimpleHTTPRequestHandler):
         # password, and never pays a handshake.
         try:
             length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
+            length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self._json(400, {"ok": False, "error": "bad JSON"})
@@ -893,12 +941,15 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, {"ok": False, "error": msg[:200]})
 
     def _bed_probe():
+        # Its OWN connection: the shared renderer serialises on one lock,
+        # so a probe that used it blocked /obs and /music behind it.
         try:
+            r = daemon.OBSRenderer()
             ins = {i.get("inputName") for i in
-                   obs_req()._call("GetInputList").get("inputs", [])}
+                   r._call("GetInputList").get("inputs", [])}
             if BED_INPUT in ins:
-                return {"bed": (obs_req()._call("GetInputSettings",
-                                                {"inputName": BED_INPUT})
+                return {"bed": (r._call("GetInputSettings",
+                                        {"inputName": BED_INPUT})
                                 .get("inputSettings", {}).get("local_file")),
                         "plane": "up"}
             return {"bed": None, "plane": "up"}
@@ -923,6 +974,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(200, dict(tracks=music_tracks(),
                                         bed=out.get("bed"), plane=out.get("plane")))
         try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > 262144:
+                # A negative length reads until EOF (hangs); a huge one
+                # allocates it, and the state push multiplies it by every
+                # SSE subscriber. This is a memory bomb, not a nitpick.
+                return self.send_error(413, "body too large")
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
@@ -1044,8 +1101,13 @@ class Handler(SimpleHTTPRequestHandler):
         if rng.startswith("bytes="):
             try:
                 part = rng[6:].split("-", 1)
-                start = int(part[0]) if part[0] else 0
-                end = int(part[1]) if part[1] else size - 1
+                if not part[0] and part[1]:
+                    # "bytes=-500" means the LAST 500 bytes, not the first.
+                    start = max(0, size - int(part[1]))
+                    end = size - 1
+                else:
+                    start = int(part[0]) if part[0] else 0
+                    end = int(part[1]) if part[1] else size - 1
                 end = min(end, size - 1)
                 if start > end or start >= size:
                     raise ValueError
@@ -1263,30 +1325,32 @@ class Handler(SimpleHTTPRequestHandler):
         def cli_read():
             # browser-role frame: masked, as servers require. Answers ping,
             # then keeps reading for the Identify.
-            hdr = b""
-            while len(hdr) < 2:
-                chunk = self.rfile.read(2 - len(hdr))
-                if not chunk:
-                    raise RuntimeError("browser EOF")
-                hdr += chunk
-            op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
-            if ln == 126:
-                ln = _st.unpack(">H", _read_exact(2))[0]
-            elif ln == 127:
-                ln = _st.unpack(">Q", _read_exact(8))[0]
-            if not hdr[1] & 0x80:
-                raise RuntimeError("unmasked browser frame")
-            mask = _read_exact(4)
-            payload = _read_exact(ln)
-            data = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
-            if op == 0x8:
-                raise RuntimeError("browser closed")
-            if op == 0x9:  # ping -> pong, then keep reading for Identify
-                down.sendall(bytes([0x8A, 0x00]))
-                return cli_read()
-            if op != 0x1:
-                raise RuntimeError("expected text frame")
-            return json.loads(data.decode())
+            # Iterative, not recursive: a ping flood must not grow the stack.
+            while True:
+                hdr = b""
+                while len(hdr) < 2:
+                    chunk = self.rfile.read(2 - len(hdr))
+                    if not chunk:
+                        raise RuntimeError("browser EOF")
+                    hdr += chunk
+                op, ln = hdr[0] & 0x0F, hdr[1] & 0x7F
+                if ln == 126:
+                    ln = _st.unpack(">H", _read_exact(2))[0]
+                elif ln == 127:
+                    ln = _st.unpack(">Q", _read_exact(8))[0]
+                if not hdr[1] & 0x80:
+                    raise RuntimeError("unmasked browser frame")
+                mask = _read_exact(4)
+                payload = _read_exact(ln)
+                data = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
+                if op == 0x8:
+                    raise RuntimeError("browser closed")
+                if op == 0x9:  # ping -> pong, then keep reading for Identify
+                    down.sendall(bytes([0x8A, 0x00]))
+                    continue
+                if op != 0x1:
+                    raise RuntimeError("expected text frame")
+                return json.loads(data.decode())
 
         def _read_exact(n):
             # Reads via rfile, not the raw socket: the handler's buffered

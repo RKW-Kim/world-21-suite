@@ -1055,7 +1055,10 @@ function rowMenu(ev, i, anchor) {
       mutate((a) => {
         a[i].title = it.meta_trip.new;
         delete a[i].meta_trip;
-      }, "title updated — staged");
+        /* The watcher parked the row while flagging it: approving the
+           title has to unpark it too, or the approved video never airs. */
+        if (a[i].status === "dormant" && !a[i].group) a[i].status = null;
+      }, "title updated — staged, press Apply");
     }]);
   }
   m.innerHTML = "";

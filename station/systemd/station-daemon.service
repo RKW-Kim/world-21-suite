@@ -1,7 +1,11 @@
 [Unit]
 Description=Station playout daemon (loop, watchdog, cache, alerts)
 After=station-obs.service
-Requires=station-obs.service
+# Wants=, not Requires=: AGENTS.md says the daemon must survive a plane
+# restart. With Requires= the daemon's OWN watchdog heal (it stops
+# station-obs) stopped the daemon too, and three OBS crashes in 10
+# minutes put the plane in "failed" and took the playout engine with it.
+Wants=station-obs.service
 
 [Service]
 Type=simple

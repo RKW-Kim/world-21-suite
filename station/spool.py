@@ -47,7 +47,7 @@ _current = None
 
 def _knob(name, default):
     try:
-        with open(os.path.join(ROOT, "..", "knobs.json")) as f:
+        with open(os.path.join(ROOT, "..", "broadcast", "knobs.json")) as f:
             return float(json.load(f).get(name) or default)
     except Exception:
         return default
@@ -74,9 +74,17 @@ def ready(url):
 def state(url):
     if ready(url):
         return "ready"
-    part = final(_key(url) + ".dl.mp4.part")
-    if _current == url or os.path.isfile(part):
+    if _current == url:
         return "fetching"
+    # yt-dlp writes per-format partials (<key>.dl.f137.mp4.part), so the
+    # old "<key>.dl.mp4.part" probe never matched a real download.
+    key = _key(url)
+    try:
+        for f in os.listdir(SPDIR):
+            if f.startswith(key + ".dl.") and f.endswith(".part"):
+                return "fetching"
+    except OSError:
+        pass
     return "miss"
 
 
@@ -110,7 +118,16 @@ def _cleanup():
     live_pref = final(_key(_current)) if _current else None
     evict = [f for f in files
              if not (live_pref and f[2].startswith(live_pref))]
-    evict.sort(key=lambda f: (-f[1], f[0]))   # largest first, oldest tiebreak
+    def _rank(f):
+        """Duplicates first, then largest, then oldest."""
+        base = os.path.basename(f[2])
+        dup = 0
+        if ".dl." in base and base.endswith(".mp4"):
+            key = base.split(".dl.")[0]
+            if os.path.exists(os.path.join(SPDIR, key + ".mp4")):
+                dup = 1   # a raw with a blessed sibling: pure duplication
+        return (dup, -f[1], f[0])
+    evict.sort(key=_rank)
     for f in list(evict):
         if used <= cap or used - f[1] < cap * 0.8:
             break
@@ -187,7 +204,12 @@ def _run(url, title, alert):
     global _current
     k = _key(url)
     if os.path.isfile(final(k + NOAUDIO)):
-        return  # previously produced a silent file; don't redownload forever
+        # Previously produced a silent file; don't redownload forever.
+        # _current MUST still be cleared here: the early return used to
+        # skip the finally, and one silent item wedged the spooler for
+        # the whole station uptime.
+        _current = None
+        return
     fmt = "bv*[vcodec^=avc1][height<=720]+ba/b[height<=720]/b"
     argv = ytstream._ytdlp_cmd([
         "-f", fmt, "--no-playlist", "--no-warnings",
@@ -195,7 +217,8 @@ def _run(url, title, alert):
         "--max-filesize", "%dM" % (_knob("STREAM_SPOOL_MAX_GB", 3.0) * 1024),
         "--retries", "3", "--newline",
         # .dl. name: ready() must not see the raw (tail-moov) artifact
-        "-o", final(k + ".dl.%(ext)s"), url])
+        # Process-unique: two spoolers must never share a temp file.
+        "-o", final(k + ".dl.%d.%%(ext)s" % os.getpid()), url])
     try:
         try:
             p = subprocess.run(argv, capture_output=True, text=True,
@@ -207,10 +230,10 @@ def _run(url, title, alert):
         except OSError as e:
             alert("Spool failed: %s" % e, "WARN")
             return
-        raw = final(k + ".dl.mp4")
-        if os.path.isfile(raw) or ready(url) is not None:
+        raw = _find_raw(k)
+        if raw or ready(url) is not None:
             _mirror_title(k, title)
-            _faststart(k)
+            _faststart(k, raw=raw)
             info = ready(url)
             if os.path.isfile(final(k + NOAUDIO)):
                 # The guard purged the silent bless below; report as a miss.
@@ -236,15 +259,49 @@ def _mirror_title(k, title):
     if not title:
         return
     try:
-        with open(final(k + ".title"), "w") as f:
+        tmp = final(k + ".title.tmp")
+        with open(tmp, "w") as f:
             json.dump({"title": str(title)}, f)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, final(k + ".title"))
     except OSError:
         pass
 
 
-def _faststart(k):
-    raw = final(k + ".dl.mp4")
-    tmp = final(k + ".fs.mp4")
+def _find_raw(k):
+    """The raw download this process produced: <key>.dl.<pid>.mp4."""
+    try:
+        cands = [f for f in os.listdir(SPDIR)
+                 if f.startswith(k + ".dl.") and f.endswith(".mp4")]
+    except OSError:
+        return None
+    cands.sort(key=lambda f: os.path.getmtime(os.path.join(SPDIR, f)),
+               reverse=True)
+    for f in cands:
+        p = os.path.join(SPDIR, f)
+        if os.path.getsize(p) > 0:
+            return p
+    return None
+
+
+def _measured_loudnorm(out):
+    """The measured_* block from loudnorm's JSON report, as filter args."""
+    try:
+        i = out.rfind("{")
+        j = out.find("}", i)
+        blob = json.loads(out[i:j + 1])
+        return (":measured_I=%s:measured_TP=%s:measured_LRA=%s"
+                ":measured_thresh=%s:offset=%s:linear=true"
+                % (blob["input_i"], blob["input_tp"], blob["input_lra"],
+                   blob["input_thresh"], blob["target_offset"]))
+    except Exception:
+        return ""
+
+
+def _faststart(k, raw=None):
+    raw = raw or final(k + ".dl.mp4")
+    tmp = final(k + ".fs.%d.mp4" % os.getpid())
     try:
         # Loudness fix at intake: a music video spooled from YouTube plays
         # on air at a different perceived loudness than the studio cards
@@ -253,10 +310,28 @@ def _faststart(k):
         # only copied; a silent raw falls back to plain copy (loudnorm has
         # no audio stream to bind to).
         if LOUDNORM and _has_audio(raw):
+            # Two-pass loudnorm. A single pass runs in DYNAMIC mode, which
+            # cannot hold the target on wide-LRA music (it clamps to
+            # LRA/TP and pumps); measuring first and applying with
+            # linear=true hits the target exactly. The second pass also
+            # pins the sample rate: loudnorm resamples to 192k internally
+            # and the encoder then wrote 96kHz files.
+            measured = ""
+            try:
+                mp = subprocess.run(
+                    [FFMPEG, "-hide_banner", "-v", "info", "-i", raw,
+                     "-map", "0:a",
+                     "-af", "loudnorm=" + LOUDNORM + ":print_format=json",
+                     "-f", "null", "-"],
+                    capture_output=True, text=True, timeout=300)
+                # loudnorm prints its JSON report on STDERR.
+                measured = _measured_loudnorm(mp.stderr or "")
+            except Exception:
+                measured = ""
             cmd = [FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", raw,
                    "-map", "0:v", "-c:v", "copy", "-map", "0:a",
-                   "-af", "loudnorm=" + LOUDNORM,
-                   "-c:a", "aac", "-b:a", "192k",
+                   "-af", "loudnorm=" + LOUDNORM + measured,
+                   "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
                    "-movflags", "+faststart", "-f", "mp4", tmp]
         else:
             cmd = [FFMPEG, "-hide_banner", "-v", "error", "-y", "-i", raw,
@@ -268,7 +343,7 @@ def _faststart(k):
                 # Silent file: purge the bless so ready() stays a miss (the
                 # live pipe keeps sound), drop the raw frees 150MB+, and the
                 # marker makes _run refuse the url forever.
-                for junk in (".mp4", ".dl.mp4", ".dl.mp4.part"):
+                for junk in (".mp4", ".dl.mp4"):
                     try:
                         os.unlink(final(k + junk))
                     except OSError:

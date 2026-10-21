@@ -732,8 +732,13 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
     print("apply: stopping obs for geometry/encoder load ...")
     # Park the daemon first: its self-heal restarts the plane when it
     # looks dead, which would fight this restart over the singleton lock.
-    _run("systemctl", "--user", "stop", "station-daemon")
-    _run("systemctl", "--user", "stop", "station-obs")
+    # Same scope the installer used: a root install uses plain systemctl,
+    # a user install uses systemctl --user. The old hardcoded --user
+    # silently no-opped on a system install, and the daemon was then
+    # running while the collection was merged under it.
+    scope = ["systemctl"] if os.geteuid() == 0 else ["systemctl", "--user"]
+    _run(*(scope + ["stop", "station-daemon"]))
+    _run(*(scope + ["stop", "station-obs"]))
     _time.sleep(3)
     for _ in range(3):
         left = _pids()

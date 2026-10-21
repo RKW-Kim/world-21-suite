@@ -1,0 +1,12 @@
+[Unit]
+Description=Station control panel (loopback only)
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+ExecStart=/usr/bin/python3 station/panel.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

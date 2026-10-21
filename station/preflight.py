@@ -38,6 +38,9 @@ def run(renderer=None):
                            renderer._call("GetSceneList")["scenes"]]
         except Exception:
             print("WARN obs        scene list unreadable (renderer down)")
+            # Not a PASS: with no scene list the check below was skipped
+            # entirely and the boot reported "scenes ok".
+            bad = _err("obs", "scene list unreadable (renderer down)")
     wanted = [getattr(daemon, a) for a in
               ("SCENE_STARTING", "SCENE_PROGRAM", "SCENE_OFFAIR",
                "SCENE_TECHDIFF", "SCENE_END", "SCENE_LIVE", "AD_SCENE")]

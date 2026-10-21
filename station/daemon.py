@@ -382,6 +382,9 @@ def _post_webhook(hook, payload):
         print("[WARN] discord failed: %s" % e, flush=True)
 
 
+ALERT_KEEP_ROWS = 5000     # the log is a trail, not a ledger
+
+
 def alert(msg, level="WARN"):
     row = (time.strftime("%Y-%m-%d %H:%M:%S"), level, msg)
     try:
@@ -394,6 +397,10 @@ def alert(msg, level="WARN"):
             pass
         con.execute("CREATE TABLE IF NOT EXISTS activity_log(ts TEXT, level TEXT, msg TEXT)")
         con.execute("INSERT INTO activity_log VALUES (?,?,?)", row)
+        # Keep the log bounded: one row per item rotation, forever, is a
+        # slow disk leak on a 24/7 station.
+        con.execute("DELETE FROM activity_log WHERE rowid <= "
+                    "(SELECT MAX(rowid) - ? FROM activity_log)", (ALERT_KEEP_ROWS,))
         con.commit()
         con.close()
     except Exception as e:
@@ -511,7 +518,7 @@ class Watchdog:
     def check_source(self, source, on_air):
         st = self.r.get_media_status(source)
         now = time.time()
-        if st["state"] == "missing":
+        if st["state"] in ("missing", "OBS_MEDIA_STATE_MISSING"):
             return self.fault(source, "source missing", on_air)
         if st["time_ms"] < 0:
             return True  # exists but idle/loading: nothing to measure yet.
@@ -867,6 +874,12 @@ def play_ad(renderer, data, decks, mid=False):
             except Exception:
                 pass
             mute_stream_decks(renderer, False)
+            # We already cut to the ad scene: come back to the program, or
+            # the station sits on a silent ad card until a human fixes it.
+            try:
+                renderer.set_scene(SCENE_PROGRAM)
+            except Exception:
+                pass
             return False
         with pl_lock():
             state = load_state()
@@ -890,6 +903,7 @@ def play_ad(renderer, data, decks, mid=False):
             renderer.set_source_visible(AD_SCENE, AD_INPUT, True)
             renderer.set_scene(AD_SCENE)
             renderer.restart_media(AD_INPUT)
+            state["ad_start"] = time.time()   # wall-clock backstop, see poll loop
         except Exception as e:
             alert("Ad break failed to start (%s); playing on." % e, "WARN")
             try:
@@ -898,6 +912,12 @@ def play_ad(renderer, data, decks, mid=False):
             except Exception:
                 pass
             mute_stream_decks(renderer, False)
+            # We already cut to the ad scene: come back to the program, or
+            # the station sits on a silent ad card until a human fixes it.
+            try:
+                renderer.set_scene(SCENE_PROGRAM)
+            except Exception:
+                pass
             return False
         with pl_lock():
             state = load_state()
@@ -924,6 +944,7 @@ PLANE_DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
 PLANE_RESTART_COOLDOWN = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
 STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
 last_advance = 0.0      # poll-loop thread only; refractory anchor for on_ended
+last_advance_src = None  # ...for WHICH source (the one we just cut to)
 STREAM_SPAWN_TRIES = 15  # 15 x 3s of path_ready polling
 STREAM_EOF = "__stream__"  # sentinel routed like a deck-ended event
 
@@ -961,7 +982,12 @@ _RESOLVE_TTL = 1800  # HLS URLs expire in hours; refresh sooner
 def cached_resolve(url):
     """resolve() with a half-hour TTL cache, so cuts never wait on a resolve."""
     deadline, meta = _RESOLVE_CACHE.get(url, (0, None))
-    if meta and (meta.get("live") or deadline + _RESOLVE_TTL > time.time()):
+    # A live stream's HLS urls EXPIRE (hours). The old "live means keep
+    # it forever" short-circuit handed every respawn the same dead urls,
+    # so a feed could never come back. Age it like everything else.
+    if meta and (deadline + _RESOLVE_TTL > time.time()
+                 or (meta.get("live") and meta.get("hls_at", 0)
+                     > time.time() - 1800)):
         return meta
     meta = ytstream.resolve(url)
     if meta and meta.get("hls_v") and meta.get("hls_a"):
@@ -1079,12 +1105,14 @@ def stream_item_on_air(items, state):
     return spool.ready(url) is None
 
 
-def media_ready(renderer, source, wait=FEED_WAIT, poll=0.5):
+def media_ready(renderer, source, wait=None, poll=0.5):
     """True once `source`'s media state shows the file actually loaded.
     The only state a broken/absent/unbufferable file never reaches is
     open/playing — measured, not assumed. The poll exists because the
     alternative was cutting blind and letting the watchdog burn 8 REPEAT
     faults per stall on air (observed live 2026-10-18)."""
+    if wait is None:
+        wait = float(globals().get("FEED_WAIT", 4))
     deadline = time.time() + wait
     while True:
         try:
@@ -1541,6 +1569,7 @@ def failover(renderer, state, decks, skip_idx):
         if not media_ready(renderer, PLAYOUT_C):
             continue
         renderer.set_transition(TRANSITION, 750)
+        globals()["last_advance_src"] = PLAYOUT_C
         state.update({"index": skip_idx + 1, "deck": "C", "fallback_air": True,
                       "stream": None, "fallback_idx": start + fi + 1})
         merge_save_state(state)
@@ -1564,6 +1593,12 @@ def advance(renderer, state, data, deck_sources):
         alert("Playlist empty; holding.", "WARN")
         return
     skipped = dormant = pending = 0
+    try:
+        # The DISK cursor as of entry: if it moves while we work, the
+        # operator moved it and their value wins.
+        sidx0 = load_state().get("index", 0)
+    except Exception:
+        sidx0 = state.get("index", 0)
     try:
         every = int(data.get("ad_every") or 0)
     except (TypeError, ValueError):
@@ -1658,10 +1693,11 @@ def advance(renderer, state, data, deck_sources):
         if not started:
             alert("Stream deck %s failed to publish %s. Skipping." % (deck, item.get("title") or url), "CRIT")
             state["index"] = idx + 1
-            return  # skipped this round; the playlist loop comes back around
+            merge_save_state(state)   # persist the skip, or the same link
+            return                    # blocks the queue for good
         feed, meta = started
         src = STREAM_DECK[deck]
-        onair = {"start": primed["t"] if primed and primed.get("url") == url else time.time(),
+        onair = {"start": time.time(),
                  "dur": item.get("duration") or meta.get("duration"),
                  "url": url, "respawns": 0, "slot": deck}
     else:
@@ -1683,6 +1719,9 @@ def advance(renderer, state, data, deck_sources):
     renderer.set_source_visible(PROGRAM, src, True)
     renderer.set_source_visible(PROGRAM, deck_sources[other], False)
     renderer.set_source_visible(PROGRAM, STREAM_DECK[other], False)
+    # The fail-safe deck is the topmost scene item: if a failover left it
+    # visible, it covers everything that plays after it.
+    renderer.set_source_visible(PROGRAM, PLAYOUT_C, False)
     # Reconcile — the trio above trusts OBS ordering; races (item edits
     # landing mid-advance, a stream source that never got hidden on its own
     # last cut) can put the wrong deck back. Re-read and force: the
@@ -1691,7 +1730,8 @@ def advance(renderer, state, data, deck_sources):
         have = {i.get("sourceName"): i.get("sceneItemEnabled") for i in renderer._call(
             "GetSceneItemList", {"sceneName": PROGRAM}).get("sceneItems", [])}
         for s, want in ((deck_sources[other], False), (STREAM_DECK[other], False),
-                        (STREAM_DECK[deck], False), (src, True)):
+                        (STREAM_DECK[deck], False), (PLAYOUT_C, False),
+                        (src, True)):
             if have.get(s) != want:
                 renderer.set_source_visible(PROGRAM, s, want)
     except Exception as e:
@@ -1721,6 +1761,15 @@ def advance(renderer, state, data, deck_sources):
                 failover(renderer, state, deck_sources, idx)
                 return
     renderer.set_transition(TRANSITION, 750)
+    # A fault cut us to TECHDIFF: come back to the program when the next
+    # item starts, or the audience stares at the fault card.
+    try:
+        if renderer._call("GetCurrentProgramScene").get(
+                "currentProgramSceneName") == SCENE_TECHDIFF:
+            renderer.set_scene(SCENE_PROGRAM)
+    except Exception:
+        pass
+    globals()["last_advance_src"] = src   # the flicker guard watches THIS input
     stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck, "deck_paused": False,
@@ -1763,9 +1812,19 @@ def advance(renderer, state, data, deck_sources):
             shuffler.reshuffle(fresh.get("items", []),
                                [state["just_played"]] if state.get("just_played") else [])
             save_playlist(fresh)
+            globals()["_SELF_WROTE_PLAYLIST"] = True
             data["items"] = fresh["items"]
         state["index"] = 0
         alert("Playlist exhausted; reshuffled.", "INFO")
+    # The operator may have re-pinned the cursor while we were busy: the
+    # dock knows which item is on air, we only know what we saw at entry.
+    try:
+        with pl_lock():
+            _disk = load_state()
+            if _disk.get("index") != sidx0:
+                state["index"] = _disk["index"]
+    except Exception:
+        pass
     merge_save_state(state)
     try:
         if spool.kick(data.get("items") or [], state["index"], alert=alert):
@@ -1882,7 +1941,8 @@ def on_ended(renderer, decks, source, force=False):
     # and the poll detector (streak >= 1) reading that window enqueues a
     # bogus immediate re-advance — the 3s cut cascade. A skip that must
     # beat the window calls with force=True.
-    if not force and time.time() - last_advance < 6.0:
+    if not force and source == last_advance_src \
+            and time.time() - last_advance < 6.0:
         return
     # Routed triggers name themselves: when cuts cascade the operator (and
     # we) must see WHICH source drove it, not just playlist churn. Slot
@@ -1978,12 +2038,30 @@ def wait_ready(renderer, tries=None, pause=15):
     import time as _t
     if tries is None:
         tries = int(os.environ.get("OBS_READY_TRIES", "12"))
+    long_to = int(os.environ.get("OBS_TIMEOUT", "60"))
     for n in range(1, tries + 1):
         try:
+            with renderer._lock:
+                if renderer._shared is None:
+                    # 8s, not the 60s default: a hung TCP handshake must
+                    # not burn a minute per try.
+                    ws = renderer._connect(timeout=8)
+                    try:
+                        ws.s.settimeout(long_to)
+                    except OSError:
+                        pass
+                    renderer._shared = ws
             renderer._call("GetVersion")
             return True
         except Exception as e:
             print("render plane not ready (%d/%d): %s" % (n, tries, e), flush=True)
+            with renderer._lock:
+                try:
+                    if renderer._shared is not None:
+                        renderer._shared.close()
+                except Exception:
+                    pass
+                renderer._shared = None
             _t.sleep(pause)
     return False
 
@@ -2392,6 +2470,10 @@ def cmd_loop(renderer):
                     on_ended(renderer, decks, source)
                 except Exception as e:
                     alert("advance deferred (%s); retrying next pass." % e, "WARN")
+                    # The failed advance must not hold the refractory: the
+                    # retry would be swallowed and the deck stay half-cut.
+                    globals()["last_advance"] = 0.0
+                    globals()["last_advance_src"] = None
                     with end_lock:
                         ended.append(source)
             # Poll-driven end detection backs up media-ended events, which
@@ -2483,19 +2565,22 @@ def cmd_loop(renderer):
                                     # carry BOTH touch keys: merge_save_state
                                     # deletes absent STATE_KEYS, so passing
                                     # only one would eat the other's disk value
-                                    merge_save_state({
-                                        "deck_volume_db": _mdb,
-                                        "deck_paused": _mst.get("deck_paused")})
+                                    # Pass the WHOLE state back: merge_save_state
+                                    # deletes the keys a caller omits, so a
+                                    # 2-key fragment wiped index/deck/stream/
+                                    # fallback_air and the show restarted.
+                                    merge_save_state(dict(
+                                        _mst, deck_volume_db=_mdb,
+                                        deck_paused=_mst.get("deck_paused")))
                                 elif _mact in ("pause", "resume", "restart"):
                                     if _live:
                                         alert("Transport ignored: a live stream "
                                               "is on air, not a file deck.", "WARN")
                                     else:
                                         renderer.media_action(_mdeck, _mact)
-                                        merge_save_state({
-                                            "deck_paused": _mact == "pause",
-                                            "deck_volume_db":
-                                                _mst.get("deck_volume_db")})
+                                        merge_save_state(dict(
+                                            _mst, deck_paused=(_mact == "pause"),
+                                            deck_volume_db=_mdb))
                             except Exception as _me:
                                 alert("transport failed: %s." % _me, "WARN")
                         # Dock loudness verb: {"normalize": {"file": name}}
@@ -2570,8 +2655,9 @@ def cmd_loop(renderer):
                             # Skipped when the next item's spool is at
                             # work or done: a local copy outranks a live
                             # deck and the prime would be thrown away.
+                            _pidx = int((load_state().get("index") or 1)) - 1
                             nxt = spool._urls_ahead(data.get("items") or [],
-                                                    idx)
+                                                    _pidx)
                             if not (nxt and (spool.ready(nxt[0][0])
                                              or spool.state(nxt[0][0]) == "fetching")):
                                 prime_next_stream(data, _sm,
@@ -2654,10 +2740,15 @@ def cmd_loop(renderer):
             # our back; re-baseline the hash so the next poll doesn't announce
             # our own shuffle as a human edit. A same-window human edit rides
             # along silently — rare, harmless, content still loads.
-            try:
-                last_hash = json.dumps(load_playlist(), sort_keys=True)
-            except ValueError:
-                pass
+            # Re-baseline ONLY for our own shuffle write: re-baselining
+            # every pass folded a human edit into the hash, and the next
+            # pass then saw "no change" and kept the stale order.
+            if globals().get("_SELF_WROTE_PLAYLIST"):
+                globals()["_SELF_WROTE_PLAYLIST"] = False
+                try:
+                    last_hash = json.dumps(load_playlist(), sort_keys=True)
+                except ValueError:
+                    pass
             try:
                 items = data.get("items", [])
                 st8 = load_state()
@@ -2674,7 +2765,7 @@ def cmd_loop(renderer):
                 evict_cache(pinned=pinned)
             except Exception as e:
                 alert("evict failed: %s." % e, "WARN")
-            prefetch_pass(data, state, in_flight, failed)
+            prefetch_pass(data, load_state(), in_flight, failed)
             prefetch_stream_pass(data, load_state())
             try:
                 # Re-kick: after an OBS restart nothing is playing, so no
@@ -2729,7 +2820,7 @@ def cmd_loop(renderer):
                 alert("loop error (see log for traceback).", "WARN")
         PASS_STATE["ms"] = int((time.time() - pass_started) * 1000)
         PASS_STATE["what"] = ""
-        time.sleep(int(globals().get("WATCH_POLL", 10)))
+        time.sleep(max(1, int(globals().get("WATCH_POLL", 10))))
 
 
 # --------------------------------------------------------------- selftest ---

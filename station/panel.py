@@ -288,7 +288,12 @@ def save_playlist(p):
                                  "gorder", "tab"):
                         new.setdefault(k, old[k])
     validate_playlist(out)
-    _write(PLAYLIST, out)
+    # The station lock, like every other writer of playlist.json: an
+    # unlocked read-modify-write races the daemon's own shuffle-save and
+    # one of them loses an edit.
+    import daemon
+    with daemon.pl_lock():
+        _write(PLAYLIST, out)
 
 
 def validate_playlist(p):
@@ -595,13 +600,18 @@ class Handler(BaseHTTPRequestHandler):
                     _write(KNOBS, knobs)
                 _send_ok(self)
             elif self.path.startswith("/api/state"):
+                import daemon   # the station lock lives with the daemon
                 allowed = {"index", "just_played", "fallback_air",
                            "in_ad_break", "ad_mid", "ad_reports"}
-                st = _read(STATE, {})
-                for k, v in (data.get("state") or {}).items():
-                    if k in allowed:
-                        st[k] = v
-                _write(STATE, st)
+                # The station lock: the daemon reads and writes the same
+                # file, and an unlocked read-modify-write here silently
+                # ate its index update (and vice versa).
+                with daemon.pl_lock():
+                    st = _read(STATE, {})
+                    for k, v in (data.get("state") or {}).items():
+                        if k in allowed:
+                            st[k] = v
+                    _write(STATE, st)
                 _send_ok(self)
             elif self.path.startswith("/api/restart"):
                 self._send(200, api_restart(data.get("unit")), "application/json")
