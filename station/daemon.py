@@ -417,6 +417,21 @@ def alert(msg, level="WARN"):
     })).start()
 
 
+_hold_last = {}  # hold-alert key -> ts
+
+
+def hold_alert(key, msg, level):
+    """A hold state (all items dormant/missing, a cache miss) repeats on
+    every pass while it lasts — an all-missing playlist used to write one
+    WARN per item per pass, and a night of that erodes the 5,000-row
+    evidence trail (and Discord, if hooked). First occurrence alerts;
+    repeats at most hourly."""
+    now = time.time()
+    if now - _hold_last.get(key, 0) >= 3600:
+        _hold_last[key] = now
+        alert(msg, level)
+
+
 # ---------------------------------------------------------------- playlist ---
 def load_secrets():
     """Source broadcast/secrets.env into the environment (no-op if absent).
@@ -1815,17 +1830,21 @@ def advance(renderer, state, data, deck_sources):
         path = os.path.join(MEDIA, item["file"])
         if os.path.exists(path):
             break
-        alert("Cache miss: %s. Skipping to next." % item["file"], "WARN")
+        hold_alert("miss:" + item["file"],
+                   "Cache miss: %s. Skipping to next." % item["file"], "WARN")
         state["index"] = idx + 1
         skipped += 1
     else:
         renderer.set_scene(SCENE_TECHDIFF)
         if pending and not skipped and not dormant:
-            alert("Every playlist item still fetching; holding.", "WARN")
+            hold_alert("hold:fetching",
+                       "Every playlist item still fetching; holding.", "WARN")
         elif dormant and not skipped and not pending:
-            alert("Every playlist item dormant; holding.", "CRIT")
+            hold_alert("hold:dormant",
+                       "Every playlist item dormant; holding.", "CRIT")
         else:
-            alert("Every playlist item missing; holding.", "CRIT")
+            hold_alert("hold:missing",
+                       "Every playlist item missing; holding.", "CRIT")
         return
     primed = _STREAM_STATE.pop("primed", None)
     deck = "B" if state.get("deck", "A") == "A" else "A"
