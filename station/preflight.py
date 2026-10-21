@@ -4,7 +4,7 @@ Checks the benign-looking failures that only surface hours into a run:
 missing media files, OBS scenes renamed under us (the SCENE_PROGRAM
 Meet->Program drift), and disk pressure where the cache lives.
 
-python3 station/preflight.py [--scrict]   # WARN-only by default
+python3 station/preflight.py [--strict]   # WARN-only by default
 """
 import os
 import sys
@@ -28,11 +28,19 @@ def run(renderer=None):
     # on that boot, with a traceback instead of a finding.
     try:
         data = daemon.load_playlist()
+        if not isinstance(data, dict) or not isinstance(
+                data.get("items", []), list):
+            # Valid JSON, wrong shape (a bare list, a string, items not a
+            # list): the walk below would raise AttributeError -- the
+            # same "traceback instead of a finding" the guard above
+            # exists to prevent, one step later.
+            raise ValueError("playlist is not the expected shape "
+                             "(need {\"items\": [...]})")
     except (OSError, ValueError) as e:
         data = {}
-        bad = _err("playlist", "unreadable (%s) -- restore from %s or %s"
-                   % (e, os.path.join(daemon.ROOT, "backups"),
-                      os.path.join(daemon.ROOT, "media", "playlist.json")))
+        bad = _err("playlist", "unreadable (%s) -- the seed to restore is %s"
+                   % (e, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                      "playlist.json")))
     try:
         state = daemon.load_state()
     except (OSError, ValueError) as e:
