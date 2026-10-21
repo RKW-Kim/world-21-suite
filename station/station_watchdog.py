@@ -61,9 +61,14 @@ def _systemctl(*args, timeout=60):
 def parked():
     """True while a sync.py apply owns the station (fresh park file)."""
     try:
-        if time.time() - os.path.getmtime(PARK_FILE) < PARK_TTL:
+        age = time.time() - os.path.getmtime(PARK_FILE)
+        # Negative age = mtime in the future. A clock stepped back (NTP
+        # correction, VM resume) used to fence the watchdog until wall
+        # time crawled past mtime+TTL — hours. A small slack absorbs
+        # second-scale jitter between apply's write and this read.
+        if -30.0 <= age < PARK_TTL:
             return True
-        os.remove(PARK_FILE)   # stale: an apply died mid-flight
+        os.remove(PARK_FILE)   # stale (expired, or from the future)
     except OSError:
         pass
     return False

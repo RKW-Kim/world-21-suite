@@ -711,13 +711,21 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
     import time as _time
 
     def _run(*args):
+        # Honest exit codes: a silently failed systemctl step is how a
+        # root install went dark with a green apply. rc is returned (0
+        # ok) and every failure prints, callers decide what is fatal.
         try:
-            _sp.run(list(args), timeout=120,
-                    stdout=_sp.DEVNULL, stderr=_sp.DEVNULL)
-            return True
+            p = _sp.run(list(args), timeout=120,
+                        stdout=_sp.PIPE, stderr=_sp.PIPE, text=True)
         except Exception as e:
             print("apply: restart step %s failed: %s" % (args[-1], e))
-            return False
+            return 1
+        if p.returncode != 0:
+            tail = (p.stderr or p.stdout or "").strip().splitlines()
+            print("apply: restart step %r failed rc=%d: %s"
+                  % (" ".join(args), p.returncode,
+                     tail[-1] if tail else "(no output)"))
+        return p.returncode
 
     def _pids():
         out = []
@@ -734,14 +742,23 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
 
     print("apply: stopping obs for geometry/encoder load ...")
     # Park the watchdog first: a timer firing mid-apply used to "revive"
-    # the daemon while the collection was being merged under it (the park
-    # file is honored by station_watchdog; removed in the finally below).
+    # the daemon while the collection was being merged under it. The park
+    # is lifted in the finally below — on success and on every abort —
+    # so only an apply killed outright leaves a stale park, which the
+    # watchdog self-heals after its TTL. (The old code said "removed in
+    # the finally below" but never removed it: every apply fenced the
+    # watchdog for the full TTL, revive-free, including the plane.)
     park = os.path.join(BROADCAST_ROOT, ".watchdog-park")
+    parked = False
     try:
         os.makedirs(BROADCAST_ROOT, exist_ok=True)
-        open(park, "w").write(time.strftime("%Y-%m-%dT%H:%M:%S"))
-    except OSError:
+        with open(park, "w") as _pf:
+            _pf.write(_time.strftime("%Y-%m-%dT%H:%M:%S"))
+        parked = True
+    except OSError as e:
         park = None
+        print("apply WARNING: could not write the watchdog park (%s); "
+              "the watchdog may race this restart" % e)
     # Park the daemon too: its self-heal restarts the plane when it
     # looks dead, which would fight this restart over the singleton lock.
     # Same scope the installer used: a root install uses plain systemctl,
@@ -749,41 +766,53 @@ def apply_all(repo_dir, do_restart, profile=None, collection=None):
     # silently no-opped on a system install, and the daemon was then
     # running while the collection was merged under it.
     scope = ["systemctl"] if os.geteuid() == 0 else ["systemctl", "--user"]
-    _run(*(scope + ["stop", "station-daemon"]))
-    _run(*(scope + ["stop", "station-obs"]))
-    _time.sleep(3)
-    for _ in range(3):
-        left = _pids()
-        if not left:
-            break
-        _sp.run(["kill", "-9"] + left, stdout=_sp.DEVNULL,
-                stderr=_sp.DEVNULL)
-        _time.sleep(2)
-    if _pids():
-        raise SystemExit("apply ABORTED: obs tree would not die; refusing to merge under a live writer")
     try:
-        if apply_geometry_to_file(col_path, col, geo_changed, skip_visible=deck_sources()):
-            print("apply: geometry merged into %s (%d rows)" % (col_path, len(geo_changed)))
-        else:
-            print("apply: geometry already matches file (no-op)")
-    except OSError as e:
-        raise SystemExit("apply ABORTED: geometry merge failed (%s)" % e)
-    _run(*(scope + ["start", "station-obs"]))
-    print("apply: obs restarted (daemon rides it out via wait_ready; restart the monitor stream)")
-    # Wait for the socket, then bring the loop back — an apply that leaves
-    # the station dark is a failed apply.
-    import socket as _s
-    for _ in range(36):
+        _run(*(scope + ["stop", "station-daemon"]))
+        _run(*(scope + ["stop", "station-obs"]))
+        _time.sleep(3)
+        for _ in range(3):
+            left = _pids()
+            if not left:
+                break
+            _sp.run(["kill", "-9"] + left, stdout=_sp.DEVNULL,
+                    stderr=_sp.DEVNULL)
+            _time.sleep(2)
+        if _pids():
+            raise SystemExit("apply ABORTED: obs tree would not die; refusing to merge under a live writer")
         try:
-            probe = _s.create_connection(("127.0.0.1", 4455), timeout=2)
-            probe.close()
-            break
-        except OSError:
-            _time.sleep(5)
-    else:
-        print("apply WARNING: :4455 never came back; starting daemon anyway")
-    _run("systemctl", "--user", "start", "station-daemon")
-    print("apply: daemon restarted")
+            if apply_geometry_to_file(col_path, col, geo_changed, skip_visible=deck_sources()):
+                print("apply: geometry merged into %s (%d rows)" % (col_path, len(geo_changed)))
+            else:
+                print("apply: geometry already matches file (no-op)")
+        except OSError as e:
+            raise SystemExit("apply ABORTED: geometry merge failed (%s)" % e)
+        if _run(*(scope + ["start", "station-obs"])) != 0:
+            print("apply WARNING: station-obs start failed; the :4455 probe below will confirm")
+        print("apply: obs restarted (daemon rides it out via wait_ready; restart the monitor stream)")
+        # Wait for the socket, then bring the loop back — an apply that leaves
+        # the station dark is a failed apply.
+        import socket as _s
+        for _ in range(36):
+            try:
+                probe = _s.create_connection(("127.0.0.1", 4455), timeout=2)
+                probe.close()
+                break
+            except OSError:
+                _time.sleep(5)
+        else:
+            print("apply WARNING: :4455 never came back; starting daemon anyway")
+        if _run(*(scope + ["start", "station-daemon"])) != 0:
+            raise SystemExit(
+                "apply FAILED: the daemon did not start — the watchdog is "
+                "unparked below and will retry; check the journal for "
+                "station-daemon")
+        print("apply: daemon restarted")
+    finally:
+        if parked and park:
+            try:
+                os.remove(park)
+            except OSError:
+                pass
 
 
 def main(argv=None):
