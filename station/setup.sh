@@ -150,19 +150,22 @@ for u in "$UNIT_SRC"/station-*.service; do
   sed -e "s|%h/Documents/GitHub/world-21-suite|$PWD|g" \
       -e "s|/home/rkw/Documents/GitHub/world-21-suite|$PWD|g" \
       -e "s|EnvironmentFile=.*|EnvironmentFile=$ROOT/secrets.env|" \
-      -e "s|EnvironmentFile=||" \
       "$u" > "$UNIT_DST/$(basename "$u")"
-  # Only the daemon needs the media root; the panel and overlay read it
-  # from the same place.
-  if grep -q "daemon.py loop" "$UNIT_DST/$(basename "$u")"; then
-    grep -q "^Environment=BROADCAST_ROOT=" "$UNIT_DST/$(basename "$u")" || \
-      sed -i "s|^Environment=|Environment=BROADCAST_ROOT=$ROOT\nEnvironment=|" \
-        "$UNIT_DST/$(basename "$u")"
-  fi
+  # Every unit gets the media root, not just the daemon: panel, overlay
+  # and watchdog honor BROADCAST_ROOT too. One unit left on the repo tree
+  # meant a /var/broadcast daemon playing state the others couldn't see.
+  grep -q "^Environment=BROADCAST_ROOT=" "$UNIT_DST/$(basename "$u")" || \
+    sed -i "s|^Environment=|Environment=BROADCAST_ROOT=$ROOT\nEnvironment=|" \
+      "$UNIT_DST/$(basename "$u")"
 done
 $SYS daemon-reload
+# The publish leg is NOT enabled here: it goes live on YouTube the moment
+# a real stream key lands in secrets.env, so arming it in setup.sh turned
+# provisioning into an accidental broadcast (docs/OPERATIONS.md). Enable
+# it deliberately once the key is real.
 # shellcheck disable=SC2046
-$SYS enable $(cd "$UNIT_SRC" && ls station-*.service | grep -v monitor-av) 2>&1 | tail -n 2
+$SYS enable $(cd "$UNIT_SRC" && ls station-*.service | grep -v -e monitor-av -e station-publish) \
+            station-watchdog.timer 2>&1 | tail -n 2
 if [ "$(id -u)" != "0" ]; then
   if [ "$(loginctl show-user "$USER" 2>/dev/null | grep -c Linger=yes)" = "0" ]; then
     echo "::warning::linger is OFF — user units die at logout and autostart can't work."

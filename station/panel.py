@@ -18,12 +18,18 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HEREDOC_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HEREDOC_DIR)
-MEDIA = os.path.join(ROOT, "broadcast", "media")
+# BROADCAST_ROOT (as the daemon defines it) is the broadcast dir itself.
+# Only the daemon unit used to be told the root: with BROADCAST_ROOT set
+# (the documented VPS layout), the daemon played /var/broadcast while the
+# panel read the repo tree - dock saves invisible, heartbeat never found.
+ROOT = os.environ.get("BROADCAST_ROOT") or \
+    os.path.join(os.path.dirname(HEREDOC_DIR), "broadcast")
+REPO = os.path.dirname(HEREDOC_DIR)  # the spool cache is repo-relative
+MEDIA = os.path.join(ROOT, "media")
 PLAYLIST = os.path.join(MEDIA, "playlist.json")
-STATE = os.path.join(ROOT, "broadcast", "state.json")
-KNOBS = os.path.join(ROOT, "broadcast", "knobs.json")
-CONTROL = os.path.join(ROOT, "broadcast", "control.json")
+STATE = os.path.join(ROOT, "state.json")
+KNOBS = os.path.join(ROOT, "knobs.json")
+CONTROL = os.path.join(ROOT, "control.json")
 PLAYLISTS = os.path.join(MEDIA, "playlists")
 PORT = int(os.environ.get("PANEL_PORT", "8220"))
 
@@ -125,7 +131,7 @@ def _titles_for(items):
 
 def _normalize_on(default=True):
     """Station-wide loudness switch (daemon-owned file)."""
-    v = _read(os.path.join(ROOT, "broadcast", "normalize.json"), None)
+    v = _read(os.path.join(ROOT, "normalize.json"), None)
     if isinstance(v, dict) and "on" in v:
         return bool(v.get("on"))
     return default
@@ -143,10 +149,10 @@ def api_ping():
         except OSError:
             ver.append("0-0")
     try:
-        ver.append(str(int(os.stat(os.path.join(ROOT, "spool")).st_mtime_ns)))
+        ver.append(str(int(os.stat(os.path.join(REPO, "spool")).st_mtime_ns)))
     except OSError:
         ver.append("0")
-    hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
+    hb = _read(os.path.join(ROOT, "heartbeat.json"), {})
     age, pass_ms, busy = None, 0, ""
     if isinstance(hb, dict):
         if isinstance(hb.get("t"), (int, float)):
@@ -163,7 +169,7 @@ def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
     titles = _titles_for(items)
-    hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
+    hb = _read(os.path.join(ROOT, "heartbeat.json"), {})
     daemon_age = None
     pass_ms = 0
     busy = ""
