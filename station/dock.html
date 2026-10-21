@@ -2066,6 +2066,24 @@ async function load(silent) {
       }
       seedShuf();
       markPending();
+    } else {
+      /* The station moved UNDER a pending session: the daemon rewrites
+         playlist.json behind the dock (a completed roll reshuffles the
+         seam), and a pending edit outranks adoption — so the undo stack's
+         base used to stay at the OLD order. Undo-to-base and Revert then
+         armed an Apply that silently un-reshuffled the station and could
+         replay aired items. Re-seed the base to what the station runs
+         NOW: undo-to-base and Revert land on today's truth, the staged
+         edits stay (they are full snapshots, still visible, still
+         applyable as a conscious act), and a Ctrl+Z all the way home
+         finds draft == live, so the bar disarms instead of arming. */
+      const liveKeys = (fresh.playlist.items || []).map(keyOf).join("\u0000");
+      const baseKeys = (appliedSnap || []).map(keyOf).join("\u0000");
+      if (liveKeys !== baseKeys) {
+        appliedSnap = (fresh.playlist.items || []).map((x) => Object.assign({}, x));
+        saveHistory();
+        status("the station's playlist changed underneath — the undo base moved with it", "warn");
+      }
     }
     fillMedia();
     fillMediaList();
