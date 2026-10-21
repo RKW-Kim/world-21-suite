@@ -402,7 +402,9 @@ def thumb_path(fname):
 MUSIC_DIR = os.path.join(daemon.MEDIA, "music")
 os.makedirs(MUSIC_DIR, exist_ok=True)
 BED_INPUT = "Music Bed"
-BED_SCENES = ("Starting", "Off Air", "End Credits")
+# The bed is a WAITING-ROOM bed: the scenes that carry no media of their
+# own. Program and Ad Break carry audio and must never share with it.
+BED_SCENES = ("Starting", "Off Air", "End Credits", "TechDiffs")
 MONITOR_PATH = "monitor"  # MediaMTX path the lab profile streams to
 MONITOR_AV_PATH = "monitor-av"  # same return, Opus audio (ffmpeg repack)
 MONITOR_WHEP = "http://127.0.0.1:8889/%s/whep"

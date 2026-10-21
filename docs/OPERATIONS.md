@@ -1,0 +1,205 @@
+# Operations
+
+The runbook: how to run it, how to tell whether it is healthy, and what to
+do when it is not.
+
+---
+
+## 1. Install (a fresh box)
+
+```bash
+sudo bash station/setup.sh
+```
+
+What it does: creates the broadcast tree, writes `broadcast/secrets.env`
+(mode 600) if absent, installs the systemd units into
+`~/.config/systemd/user/` (or `/etc/systemd/system/` as root), fetches the
+pinned MediaMTX binary, and warns about missing system packages. It is
+idempotent; re-running it is safe.
+
+Then:
+
+```bash
+systemctl --user enable --now station-obs station-mediamtx station-overlay \
+    station-panel station-daemon station-watchdog.timer
+```
+
+`station/setup.sh` already enables the units; the command above is the
+"right now" version.
+
+**Never enable `station-publish.service` until `YOUTUBE_STREAM_KEY` in
+`broadcast/secrets.env` is a real key.** The publish script refuses to run
+with the placeholder, but the unit should not be armed either.
+
+## 2. Health
+
+One command tells you whether the station is alive:
+
+```bash
+python3 station/station_watchdog.py --check
+```
+
+```json
+{ "daemon_age": 0.87, "daemon": true, "panel": true, "overlay": true, "plane": true }
+```
+
+Anything `false` means: run the watchdog (without `--check`) and it will
+restart that piece and tell you whether it came back.
+
+More detail:
+
+```bash
+# what is on air, and how far through it
+python3 -c "import json;print(json.load(open('broadcast/state.json')).get('onair'))"
+
+# the last 30 things that happened
+sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log ORDER BY rowid DESC LIMIT 30;"
+
+# only the bad things today
+sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log WHERE level<>'INFO' AND ts>date('now') ORDER BY rowid DESC;"
+
+# unit states
+systemctl --user --no-pager status station-daemon station-obs station-panel station-overlay
+
+# the dock
+curl -s http://127.0.0.1:8220/api/ping | python3 -m json.tool
+```
+
+Healthy means: heartbeat age under ~2 s, `pass_ms` in the tens, no CRIT
+rows in the last hour, and the programme scene showing exactly one deck
+plus the ticker and the watermark.
+
+## 3. The log is the evidence trail
+
+`broadcast/activity.db` (SQLite, capped at 5,000 rows) is the operator's
+record. It is written by the daemon, the panel and the overlay server.
+Levels: `INFO` (normal life), `WARN` (something degraded), `CRIT` (the
+station is impaired).
+
+**Tests must not write to it.** The test scripts point `daemon.DB` at a
+temp file; keep it that way, or the trail fills with fiction.
+
+## 4. Failures you will actually hit
+
+### "The daemon is not responding"
+
+Almost always **busy**, not dead. The heartbeat is written by its own
+thread and carries how long the last pass took and what it was doing:
+
+```bash
+cat broadcast/heartbeat.json
+# {"t": 1792543148.8, "pass_ms": 45, "busy": "media status"}
+```
+
+The dock says *"daemon busy (media status) — last pass took 11.4s"* rather
+than raising the alarm. A real stall (no heartbeat for 45 s) is what the
+watchdog revives.
+
+### "The plane is wedged"
+
+Symptom: the dock stops updating, the daemon logs `advance deferred`, and
+the programme freezes on the last frame.
+
+- **Do not probe obs-websocket from outside.** Fresh handshakes hang for
+  minutes on this build, and the server frequently does not greet a second
+  client. You will conclude the plane is dead when it is fine.
+- Read the journal and the activity log instead:
+  `journalctl --user -u station-daemon -n 50`.
+- One restart usually heals it: `systemctl --user restart station-obs`.
+  **Say that you are doing it** — it cuts the programme.
+- If the daemon is wedged rather than the plane:
+  `kill -USR1 $(cat broadcast/daemon.pid)` dumps a stack trace.
+
+### "The dock is stale / shows old UI"
+
+OBS browser docks cache the page. The dock compares the `dock_version` in
+`/api/ping` with the one it loaded and reloads itself. If it did not:
+
+```bash
+curl -s http://127.0.0.1:8220/api/ping | grep -o '"dock_version":"[^"]*"'
+```
+
+The panel stamps the served bytes with `mtime-size`; if they differ from
+what the dock reports, the dock is on an old build → refresh the OBS dock
+panel (or restart the OBS window).
+
+### "The programme is black"
+
+It should never be. If it is:
+
+1. Which scene is on air? `python3 station/daemon.py status` or read
+   `state.json`'s `deck`.
+2. `SMILE | Tech Diffs` means the fail-safe ran out of files: the decks
+   are broken. Check the media dir for the item that was supposed to play.
+3. `SMILE | Off Air` means the fault limit was hit: the station stopped on
+   purpose and wants a human.
+4. Program with no visible deck means a visibility reconcile failed. The
+   daemon re-reads the scene on every cut; check
+   `GetSceneItemList` for `SMILE | Program`.
+
+### "The stream is not going out"
+
+- The publish leg is **off by default**. `systemctl --user status
+  station-publish` — if it is not active, nothing is publishing, by design.
+- The publish script refuses to run with the placeholder key.
+- OBS must have an RTMP output: the daemon creates it at boot **only** when
+  a real key is present (`ensure_stream_output()`).
+- The chain is OBS → `rtmp://127.0.0.1:1935/monitor` → `publish_youtube.sh`
+  → YouTube. If MediaMTX has no `monitor` path, OBS's output goes inactive
+  and the daemon logs `Stream output not active!`.
+
+### "YouTube says 'Sign in to confirm you're not a bot'"
+
+`yt-dlp` is being rate-limited on this IP. The fix is cookies:
+`YTDLP_COOKIES=browser:chromium` (or a `cookies.txt` path) in
+`broadcast/secrets.env`.
+
+### "The spool is not downloading"
+
+```bash
+python3 -c "import spool;print(spool.state('https://youtu.be/<id>'))"
+```
+
+`miss` means it never started (check the daemon log for `Spooling next in
+background`), `fetching` means it is running, `ready` means the local copy
+exists. A `.noaudio` marker beside the key means that selector produced a
+silent file and will never be retried (by design).
+
+### "The knobs do nothing"
+
+`broadcast/knobs.json` is read by the daemon every pass. Only the keys in
+`KNOB_HELP` are accepted, and only numeric values. The daemon's key list is
+`KNOB_KEYS`; the three spool knobs are read directly by the spooler.
+
+## 5. Routine operations
+
+| Task | How |
+|---|---|
+| Change the running order | The dock: drag rows, then **Apply**. The change lands at the next cut. |
+| Undo a staged change | Ctrl+Z in the dock, or the undo button in the staged bar. Step by step back to the last applied state. |
+| Save a running order as a profile | The dock: type a name, press the save icon. Profiles live in `broadcast/media/playlists/`. |
+| Load a profile | The dock: select it, press the folder icon. It **stages**; press Apply to put it on air. |
+| Import a YouTube playlist | Paste a link with `list=` in the dock's top field. It becomes a parked group. |
+| Change the loudness | The wave icon in the strip: on = compress+limit everywhere, off = removed. |
+| Restart the daemon | The dock's down overlay → Restart daemon (two presses), or `systemctl --user restart station-daemon`. |
+| Restart the plane | `systemctl --user restart station-obs` — it cuts the programme. Say so first. |
+
+## 6. Change verification
+
+```bash
+python3 station/test_spool.py && python3 station/test_fallback.py && \
+python3 station/test_playlist_edges.py && python3 station/daemon.py selftest
+```
+
+Then watch the live station for a couple of passes:
+
+```bash
+sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log ORDER BY rowid DESC LIMIT 10;"
+cat broadcast/heartbeat.json
+```
+
+## 7. The VPS
+
+The station moves to a headless box eventually. `docs/VPS.md` has the spec
+sheet, the platform shortlist, the security posture, and the code changes
+that a GPU-less box needs. Read it before provisioning anything.

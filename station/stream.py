@@ -94,9 +94,15 @@ def resolve(url):
     except ValueError:
         return None
     live = bool(j.get("is_live"))
+    desc = j.get("description") or ""
     return {"id": j.get("id"), "title": j.get("title") or url,
             "duration": None if live else j.get("duration"),
             "thumbnail": j.get("thumbnail"), "live": live,
+            # The description is what the dock's preview panel shows: the
+            # operator confirms a video by reading it, not by its title.
+            "description": desc[:4000],
+            "upload_date": j.get("upload_date") or j.get("release_date") or "",
+            "channel": j.get("channel") or j.get("uploader") or "",
             "hls_at": time.time(),
             "hls_v": _g(url, V_FMT), "hls_a": _g(url, A_FMT)}
 

@@ -1,95 +1,108 @@
-# smile.co.ke — broadcast overlay kit
+# world-21-suite — a 24/7 live station
 
-Scenes and modules for a Smile.co.ke livestream. Plain HTML, CSS and one
-inline script per page. No build step, no framework, no dependencies.
+A small broadcast stack that plays a curated roll of videos on a loop, with
+live YouTube streams, ad breaks, a fail-safe, overlay graphics, an operator
+dock, and a watchdog that keeps it alive without a human.
 
-Every page is a standalone OBS **Browser Source**. Drop the file in, set the
-size, done.
+This repository is **self-describing**: everything an engineer (human or
+agent) needs to run, debug, change and verify the station is in `docs/`.
+Read the two entry points below and you are oriented.
 
 ---
 
-## Layout
+## The 60-second orientation
 
-```
-overlay/     the kit — 14 live pages + the museum + the lab archive   (5.7M)
-archive/core/  old source-of-truth originals + Qwen design ref (archived, nothing loads it)
-docs/        SKILLS-GUIDE.md — every agent skill installed on this box
-audit/       best-moment reference frames, one per scene              (8.3M)
-scripts/     deploy-pages-branch.sh — the only script that matters
-brand.json   the brand tokens
-CHANGELOG.md
-```
+| Question | Answer |
+|---|---|
+| What is the station? | A headless-ish OBS ("the render plane") + a Python playout daemon ("the brain") + a local operator dock. |
+| What plays? | A JSON playlist of items (local files and YouTube links), in order, with ad breaks every N items. |
+| Who drives it? | `station/daemon.py` — the playout loop, the watchdog, the spooler, the title watcher. |
+| Who does the operator talk to? | The **dock**: `http://127.0.0.1:8220/dock`, opened as an OBS Custom Browser Dock. |
+| Where does state live? | `broadcast/` — playlist, cursor, knobs, activity log, heartbeat. All gitignored; it is live state. |
+| What happens if OBS dies? | The daemon restarts the render plane; the station watchdog restarts the daemon, panel and overlay server. |
+| What happens if a video fails? | The fail-safe deck (`PLAYOUT_C`) takes the air; after that, the Tech Diffs card. Never black. |
 
-Deploy with:
+---
+
+## The documentation map
+
+Read in this order if you are new; skip to the one you need if you are not.
+
+| Document | What it answers |
+|---|---|
+| **[AGENTS.md](AGENTS.md)** | The contract for working on this repo: rules, invariants, the workflow, what must never be touched. **Read this first.** |
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | How the pieces fit: components, data flow, the playout state machine, the OBS model, the file formats. |
+| **[docs/OPERATIONS.md](docs/OPERATIONS.md)** | Running it, health checks, the failures you will actually hit and their fixes. |
+| **[docs/REFERENCE.md](docs/REFERENCE.md)** | The lookup tables: environment variables, HTTP endpoints, knobs, units, ports, on-disk formats. |
+| **[docs/DECISIONS.md](docs/DECISIONS.md)** | Why things are the way they are. The decisions that were argued about, so you do not relitigate them. |
+| **[docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)** | What is still broken, what is deliberately unfixed, what is stale. |
+| **[docs/AUDIT-LOOP.md](docs/AUDIT-LOOP.md)** | The autonomous improve-the-codebase loop: how to audit, verify and land a change without a human in the room. |
+| **[docs/VPS.md](docs/VPS.md)** | Moving the station to a headless VPS: the spec sheet, the platforms, the security posture, what must change in the code. |
+| [docs/e2e-test.md](docs/e2e-test.md) | The compressed-time proof that the loop actually works. |
+| [docs/machine-sync.md](docs/machine-sync.md) | One committed OBS config, every machine 1:1. |
+| [docs/scene-portability.md](docs/scene-portability.md) | Designing scenes on one machine, airing on another. |
+| [PRODUCT.md](PRODUCT.md) / [DESIGN.md](DESIGN.md) / [SCENES.md](SCENES.md) | The product intent, the interface design, the scene inventory. |
+| [WORKLOG.md](WORKLOG.md) / [CHANGELOG.md](CHANGELOG.md) | The narrative history and the release notes. |
+
+---
+
+## Running it
 
 ```bash
-bash scripts/deploy-pages-branch.sh
+# One-time install (on the target box)
+sudo bash station/setup.sh          # units, secrets, mediamtx, deps
+
+# The station is a set of systemd user units
+systemctl --user start station-obs station-mediamtx station-overlay station-panel station-daemon
+systemctl --user enable --now station-watchdog.timer
+
+# Health
+python3 station/station_watchdog.py --check     # all four pieces, one line each
+sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log ORDER BY rowid DESC LIMIT 20;"
+
+# The operator dock
+#   http://127.0.0.1:8220/dock     (OBS Custom Browser Dock, or any browser)
 ```
 
-It regenerates `gh-pages` from `overlay/` on `main` and pushes. Live at
-`https://rkw-kim.github.io/world-21-suite/`.
+Tests (stdlib only, no pytest, no network):
 
-> The folder is `overlay/` — singular. It has been called `overly/` before and
-> that was a mistake.
-
----
-
-## The contract
-
-These rules hold across every page. Breaking one breaks compositing in OBS.
-
-| Rule | Why |
-|---|---|
-| **Scenes are opaque. Modules are transparent.** | Scenes paint their own room. `ticker`, `watermark` and `speaking` must composite over gameplay. |
-| **No `color-scheme` meta on transparent pages.** | It makes Chromium paint an opaque root canvas, turning a transparent source into a dark rectangle. All three carry a comment saying so. |
-| **Bottom 76px is the ticker's dock.** | `--safe-b: 76px` on every scene. The ticker module is exactly 1920×76. |
-| **Corners stay clear.** | Top-left is where the watermark docks. |
-| **No canvas, no rAF.** | At most one gated `setInterval` per page — the clock. Everything else is compositor CSS. |
-| **Motion is transform/opacity only.** | No animated blur, no animated filter. |
-| **Reduced motion is a real poster state**, not a disabled animation. |
-| **The logo is verbatim.** | `Smile-Logo.svg` paths copied exactly, never redrawn. |
-
-### Modules — layer these above any scene
-
-| Module | Size | Params |
-|---|---|---|
-| `ticker.html` | 1920×76 | `?mode=market\|offair` · `?scale=` |
-| `watermark.html` | transparent | `?corner=tl\|tr\|bl\|br` · `?size=s\|m\|l\|xl` · `?icon=1` · `?scrim=1` · `?anim=breathe` |
-
-`coming-up.html` is a full-screen bumper, not a transparent module.
-
-### Scenes
-
-`starting-soon` · `brb` · `intermission` · `intermission-b` · `qa` ·
-`tech-diff` · `speaking` · `end` · `end-credits`
-
-Most accept the schedule contract: `?plan=` · `?who=` · `?next=` · `?ep=`.
-`speaking.html` adds `?names=` · `?emojis=` · `?ad=` · `?adimg=` · `?screen=1` ·
-`?noad=1` · `?chat=right` · `?nochat=1` · `?bg=studio` · `?guide=1`.
+```bash
+python3 station/test_spool.py
+python3 station/test_fallback.py
+python3 station/test_playlist_edges.py
+python3 station/daemon.py selftest
+python3 station/stress_cache.py
+```
 
 ---
 
-## Driving it
+## Repository layout
 
-Every scene is driven entirely by URL params — no file to write, no server, no
-bot bridge. `?plan=`, `?next=`, `?who=`, `?ep=`, `?ad=`, `?names=`, and so on.
-That is deliberate: an OBS browser source can be pointed at a URL with a query
-string, and Streamer.bot can swap scenes by editing that string.
-
-**Not implemented:** there is no `state.json` live-feed bridge. Older docs
-referenced one; no scene ever read it. If you want trades pushed into the
-ticker at runtime, that has to be built — the ticker markup is static HTML
-today.
+```
+station/            the station itself
+  daemon.py           playout loop, watchdog, spooler, title watcher, fail-safe
+  panel.py            the operator's HTTP surface (dock + control verbs) on :8220
+  dock.html           the dock UI (single file, no build step, no dependencies)
+  overlay_server.py   overlay pages, SSE state push, control plane on :7070
+  spool.py            YouTube download cache, loudness pass, eviction
+  stream.py           live YouTube feeds (yt-dlp -> ffmpeg -> MediaMTX)
+  shuffler.py         the shuffle seam rule
+  preflight.py        boot-time sanity checks
+  sync.py             OBS config in/out (one committed truth, many machines)
+  station_watchdog.py revives a dead station (run by a systemd timer)
+  publish_youtube.sh  the publish leg: OBS -> MediaMTX -> YouTube (off by default)
+  systemd/            the unit files (copied into ~/.config/systemd/user by setup.sh)
+broadcast/          LIVE STATE (gitignored): playlist, cursor, knobs, logs, media
+spool/              the YouTube download cache (gitignored)
+overlay/            the overlay pages OBS renders as browser sources
+docs/               this documentation
+```
 
 ---
 
-## Editing a scene
+## Working on this repo
 
-Open the HTML. There is no build step and nothing to compile — reload in OBS
-and the change is live. Every page carries a header comment explaining what it
-is and which decisions were deliberate; **read it before you edit.** Most of the
-odd-looking choices (the 76px dock, the absent color-scheme meta, the flat
-faces) are there because the alternative was tried and broke something.
-
-`speaking.html` is the reference implementation of the compositing rules. If
-you add a scene, copy its structure rather than reinventing it.
+Read [AGENTS.md](AGENTS.md). The short version: the station is live, changes
+are staged and applied deliberately, every writer of the live files takes the
+station lock, and a change is not done until it has been verified in the
+running station and the tests are green.

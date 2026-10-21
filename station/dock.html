@@ -94,6 +94,10 @@
   .item.sel { background: var(--btn-active-bg); border-left-color: var(--accent); }
   .item .mark { color: var(--accent); font-size: 10px; flex: none; width: 8px; }
   .item.onair { border-left-color: var(--ok); }
+  /* Played: dimmed, with a tick. The group shuffle needs to know what
+     has already aired, and the eye should too. */
+  .item.played .t1 { opacity: .38 !important; text-decoration: line-through; }
+  .item.played .mark { color: var(--ok); }
   .item.drag { opacity: .4; }
   /* Drop position is drawn, not guessed: a line where the row will land. */
   .item.dropbefore { box-shadow: inset 0 2px 0 var(--accent); }
@@ -125,6 +129,9 @@
   .sechead .name.grab { cursor: grab; }
   .sechead .count { color: var(--muted); font-size: 10px;
                     font-variant-numeric: tabular-nums; }
+  .sechead .gkind { color: var(--muted); font-size: 9px; letter-spacing: .08em;
+                    border: 1px solid var(--bar-border); border-radius: 3px;
+                    padding: 1px 5px; flex: none; }
   .sechead button { font-size: 10px; }
   .sechead .fold { display: flex; gap: 8px; align-items: center; flex: 1;
                    min-width: 0; text-align: left; background: none; border: 0;
@@ -152,6 +159,16 @@
   #status { padding: 5px 8px; background: var(--bar); border-top: 1px solid var(--bar-border);
             color: var(--muted); font-size: 10px; flex: none; min-height: 22px;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* The "you have unsaved changes" prompt. It is deliberately loud: the
+     operator must not click away believing the station already took the
+     edit. */
+  #staged { display: none; align-items: center; gap: 6px; padding: 5px 8px;
+            background: #3a2f12; border-top: 1px solid #6b551d; flex: none;
+            color: var(--warn); font-size: 11px; }
+  #staged .stagedhint { color: #b9a074; font-size: 10px; }
+  #staged button.icon { background: #2a2417; border-color: #6b551d; }
+  #staged button.icon:hover { background: #3a3020; }
+  #staged button.icon:disabled { opacity: .35; }
   #status.warn { color: var(--warn); }
   #status.err { color: var(--danger-text); }
   /* Errors are urgent and untied to a control: they get their own
@@ -182,6 +199,31 @@
   #help b { color: var(--text); }
   #help .k { display: inline-block; border: 1px solid var(--bar-border);
              border-radius: 3px; padding: 0 4px; color: var(--text); }
+
+  /* The preview card: click a row to see what it actually is. */
+  #preview { position: absolute; right: 8px; bottom: 74px; width: 330px;
+             max-width: calc(100% - 16px); z-index: 5; display: flex;
+             gap: 9px; padding: 9px; background: #14181d; color: var(--text);
+             border: 1px solid var(--bar-border); border-radius: 5px;
+             box-shadow: 0 6px 20px rgba(0,0,0,.7); }
+  #preview[hidden] { display: none; }
+  #preview-close { position: absolute; top: 4px; right: 4px; min-height: 22px;
+                   min-width: 22px; padding: 2px; background: none;
+                   border: 0; color: var(--muted); }
+  #preview-thumb { flex: none; width: 128px; height: 72px; background: #0a0d10;
+                   border: 1px solid var(--bar-border); border-radius: 3px;
+                   display: flex; align-items: center; justify-content: center;
+                   overflow: hidden; }
+  #preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #preview-nothumb { font-size: 9px; color: var(--muted); }
+  #preview-body { flex: 1; min-width: 0; }
+  #preview-title { font-size: 12px; font-weight: 600; margin-bottom: 2px;
+                   padding-right: 18px; }
+  #preview-sub { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+  #preview-desc { font-size: 11px; color: #b9c0c8; max-height: 92px;
+                  overflow-y: auto; white-space: pre-wrap; }
+  .preview-actions { display: flex; gap: 5px; margin-top: 7px; }
+  .preview-actions a { text-decoration: none; }
 
   #menu { position: absolute; background: var(--bar); border: 1px solid var(--bar-border);
           border-radius: 4px; z-index: 4; display: none; min-width: 200px;
@@ -214,6 +256,7 @@
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v11H3z"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></symbol>
     <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h9a6 6 0 010 12H8"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9h-9a6 6 0 000 12h5"/></symbol>
     <symbol id="i-replay" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></symbol>
     <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 3v6h6"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
@@ -223,6 +266,7 @@
     <symbol id="i-help" viewBox="0 0 24 24"><path d="M12 18h.01M9.1 9a3 3 0 1 1 4 2.8c-.8.4-1.1 1-1.1 1.7v.5"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></symbol>
   </defs>
 </svg>
 
@@ -305,6 +349,20 @@
   </label>
 </div>
 
+<div id="staged" role="status" style="display:none">
+  <span id="stagedcount">staged changes</span>
+  <button id="staged-apply" class="primary icon" title="Apply the staged changes" aria-label="Apply staged changes">
+    <svg class="i" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button id="staged-undo" class="icon" title="Undo one staged change (Ctrl+Z)" aria-label="Undo one staged change">
+    <svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></button>
+  <button id="staged-redo" class="icon" title="Redo one staged change (Ctrl+Shift+Z)" aria-label="Redo one staged change">
+    <svg class="i" aria-hidden="true"><use href="#i-redo"/></svg></button>
+  <button id="staged-revert" class="icon" title="Go back to the state the station is actually running" aria-label="Revert to applied state">
+    <svg class="i" aria-hidden="true"><use href="#i-reset"/></svg></button>
+  <span class="grow"></span>
+  <span class="stagedhint">the station is still running the old order</span>
+</div>
+
 <div id="status" role="status" aria-live="polite">connecting…</div>
 <div id="statusErr" role="alert" aria-live="assertive"></div>
 
@@ -339,6 +397,27 @@
   <div style="margin-top:12px"><button id="helpclose">Close</button></div>
 </div>
 
+<div id="preview" hidden>
+  <button id="preview-close" class="icon" title="Close" aria-label="Close the preview">
+    <svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div id="preview-thumb"><img id="preview-img" alt=""><span id="preview-nothumb">no still frame</span></div>
+  <div id="preview-body">
+    <div id="preview-title"></div>
+    <div id="preview-sub"></div>
+    <div id="preview-desc"></div>
+    <div class="preview-actions">
+      <button id="preview-refresh" class="icon mutate" title="Refresh this video's metadata from YouTube"
+              aria-label="Refresh metadata">
+        <svg class="i" aria-hidden="true"><use href="#i-reset"/></svg></button>
+      <button id="preview-play" class="icon mutate" title="Play this row now" aria-label="Play this row now">
+        <svg class="i" aria-hidden="true"><use href="#i-play"/></svg></button>
+      <a id="preview-open" class="icon mutate" target="_blank" rel="noreferrer" title="Open on YouTube"
+         aria-label="Open on YouTube">
+        <svg class="i" aria-hidden="true"><use href="#i-open"/></svg></a>
+    </div>
+  </div>
+</div>
+
 <div id="menu" role="menu" aria-label="Row actions"></div>
 
 <script>
@@ -365,7 +444,7 @@ let filter = "";          // title filter
 let lastSig = null;       // signature of what is on screen (skip no-op renders)
 let lastVersion = null;   // server version stamp: skip the full fetch when nothing moved
 let dockVersion = window.__DOCK_VERSION__ || null;
-let undoStack = [];       // staged states, newest last
+let undoStack = [];       // (legacy) replaced by the durable history below
 let busyMsg = "";         // last "daemon is busy" note
 
 const $ = (id) => document.getElementById(id);
@@ -424,32 +503,114 @@ function markPending() {
       it.meta_trip ? 1 : 0, it.title || ""]));
   $("apply").classList.toggle("pending", pending);
   $("pending").textContent = pending ? "staged changes — press Apply" : "";
+  renderStagedBar();
 }
 
-function pushUndo() {
-  undoStack.push(clone(draft));
-  if (undoStack.length > 30) undoStack.shift();
+/* ---------- staged-change history -------------------------------------- */
+/* The history is durable (localStorage) so it survives a reload, and it
+   walks back step by step to the last APPLIED state. The operator asked
+   for exactly this: never lose a step, and always be able to go back to
+   what the station is actually running. */
+const HIST_KEY = "w21.dock.history";
+let history = [];        // [{label, items}] — the state BEFORE each edit
+let histIndex = 0;       // how many of them are currently applied to the draft
+let appliedSnap = null;  // the last state the station actually runs
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HIST_KEY);
+    if (!raw) return;
+    const h = JSON.parse(raw);
+    if (h && Array.isArray(h.history)) {
+      history = h.history;
+      histIndex = Math.min(h.histIndex || 0, history.length);
+      appliedSnap = h.appliedSnap || null;
+    }
+  } catch (e) { /* corrupt store: start fresh */ }
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem(HIST_KEY, JSON.stringify({
+      history: history.slice(-40), histIndex, appliedSnap}));
+  } catch (e) { /* storage full/blocked: the session still works */ }
+}
+
+function pushUndo(label) {
+  history = history.slice(0, histIndex);
+  history.push({label: label || "change", items: clone(draftItems())});
+  histIndex = history.length;
+  if (history.length > 40) { history = history.slice(-40); histIndex = history.length; }
+  saveHistory();
+}
+
+function undo() {
+  if (histIndex <= 0) { status("nothing left to undo", "warn"); return; }
+  histIndex--;
+  const step = history[histIndex];
+  draft = { ...(draft || {}), items: clone(step.items) };
+  markPending();
+  render(true);
+  saveHistory();
+  status("undone one step (“" + step.label + "”) — "
+    + (histIndex === 0 ? "back at the applied state" : histIndex + " step(s) left"));
+}
+
+function redo() {
+  if (histIndex >= history.length) { status("nothing to redo", "warn"); return; }
+  histIndex++;
+  const step = history[histIndex];
+  if (step) draft = { ...(draft || {}), items: clone(step.items) };
+  markPending();
+  render(true);
+  saveHistory();
+  status("redone one step");
+}
+
+/* Back to the state the station is actually running. */
+function revertToApplied() {
+  if (!appliedSnap) { status("no applied snapshot to go back to", "warn"); return; }
+  history = history.slice(0, histIndex);
+  history.push({label: "revert to applied", items: clone(appliedSnap)});
+  histIndex = history.length;
+  draft = { ...(draft || {}), items: clone(appliedSnap) };
+  markPending();
+  render(true);
+  saveHistory();
+  status("reverted to the last applied state — press Apply to confirm");
+}
+
+function renderStagedBar() {
+  const bar = $("staged");
+  if (!bar) return;
+  const on = pending || histIndex > 0;
+  bar.style.display = on ? "flex" : "none";
+  if (!on) return;
+  $("stagedcount").textContent = histIndex > 0
+    ? histIndex + " change" + (histIndex === 1 ? "" : "s") + " staged"
+    : "staged changes";
+  $("staged-undo").disabled = histIndex <= 0;
+  $("staged-redo").disabled = histIndex >= history.length;
+}
+
+function pushApplied() {
+  appliedSnap = clone(draftItems());
+  history = [];
+  histIndex = 0;
+  saveHistory();
 }
 
 function mutate(fn, label) {
   /* Every edit lands in the working copy. Nothing is sent to the station
      until Apply — so a burst of actions cannot pile up server writes or
      half-applied states. */
-  pushUndo();
+  pushUndo(label);
   const items = draftItems().slice();
   fn(items);
   draft = { ...(draft || {}), items };
   markPending();
   render(true);
   if (label) status(label);
-}
-
-function undo() {
-  if (!undoStack.length) { status("nothing to undo", "warn"); return; }
-  draft = undoStack.pop();
-  markPending();
-  render(true);
-  status("undone — the working copy is back one step");
 }
 
 let applying = false;
@@ -466,9 +627,11 @@ async function applyChanges() {
   applying = true;
   try {
     await api("/api/save", { playlist: draft, knobs: S.knobs || {} });
+    pushApplied();
     pending = false;
     $("apply").classList.remove("pending");
     $("pending").textContent = "";
+    renderStagedBar();
     status("applied — the station takes the new order at the next cut");
     load(true);
   } catch (e) {
@@ -568,6 +731,7 @@ function rowEl(i, it, cacheState, parkedSurface) {
   const parked = it.status === "dormant";
   r.className = "item" + (i === sel ? " sel" : "") +
     (it.meta_trip ? " tripped" : "") +
+    (it.played ? " played" : "") +
     (parked ? "" : (i === onIdx ? " onair" : i === nxIdx ? " nextup" : ""));
   r.draggable = true;
   r.dataset.i = i;
@@ -585,7 +749,8 @@ function rowEl(i, it, cacheState, parkedSurface) {
     ? (cached ? "YT cached" : "YT live")
     : it.file != null ? "FILE" : "PENDING";
   r.innerHTML =
-    '<span class="mark" aria-hidden="true">' + (i === sel ? "▸" : "") + "</span>" +
+    '<span class="mark" aria-hidden="true">' +
+      (i === sel ? "▸" : (it.played ? "✓" : "")) + "</span>" +
     '<span class="num">' + (parked ? "" : "#" + (i + 1)) + "</span>" +
     '<span class="dot ' + health + '" role="img" aria-label="' +
     esc(healthLabel) + '">' + (health === "file" ? "○" : "●") + "</span>" +
@@ -602,7 +767,7 @@ function rowEl(i, it, cacheState, parkedSurface) {
     (!parked && i === onIdx ? '<span class="bar"><i style="width:' +
       (oaDur > 0 ? Math.max(0, Math.min(100, Math.round(oaPos / oaDur * 100))) : 0) +
       '%"></i></span>' : "");
-  r.addEventListener("click", () => { sel = i; render(true); });
+  r.addEventListener("click", () => { sel = i; openPreview(i); });
   r.addEventListener("dblclick", () => {
     if (!parked && i !== onAirIdx()) playNext(i);
   });
@@ -807,6 +972,18 @@ function renderGroups(items, groups) {
     count.className = "count";
     count.textContent = idxs.length;
     fold.appendChild(count);
+    /* What this group IS, at a glance: a YouTube playlist, a folder of
+       local files, or a mix. */
+    const kinds = {yt: 0, file: 0};
+    idxs.forEach((i) => {
+      if (items[i].youtube) kinds.yt++; else if (items[i].file) kinds.file++;
+    });
+    const kind = document.createElement("span");
+    kind.className = "gkind";
+    kind.textContent = kinds.yt && kinds.file ? "MIXED"
+      : kinds.yt ? "YT PLAYLIST" : kinds.file ? "FILES" : "";
+    kind.title = kinds.yt ? "Imported from YouTube" : "Local files";
+    fold.appendChild(kind);
     const bPlay = document.createElement("button");
     bPlay.className = "mutate icon"; bPlay.innerHTML = icon("play");
     bPlay.title = "Queue the whole list at the cursor and cut to it now";
@@ -1008,32 +1185,131 @@ function queueGroup(g, cutNow, atEnd) {
 }
 
 function orderGroup(g, mode) {
+  /* Spotify-style, in place: only the NOT-PLAYED items move. The ones
+     already played keep their slots, so turning shuffle OFF does not
+     drag what was sent past back into the running order, and turning
+     shuffle ON again can still re-shuffle everything that has not
+     played yet (including what the shuffle pushed into the shadow
+     zone). */
   mutate((a) => {
-    const idxs = [];
+    const slots = [];
     a.forEach((it, i) => {
-      if (it.group === g && it.status === "dormant") idxs.push(i);
+      if (it.group === g && it.status === "dormant") slots.push({pos: i, it});
     });
-    if (idxs.length < 2) return;
-    const first = Math.min.apply(null, idxs);
-    let picked = idxs.map((i) => a[i]);
+    if (slots.length < 2) return;
+    const played = slots.filter((s) => s.it.played);
+    const open = slots.filter((s) => !s.it.played);
+    if (!open.length) return;      // everything played: nothing to reorder
+    let order;
     if (mode === "orig") {
-      picked.sort((x, y) => (x.gorder == null ? 1e9 : x.gorder) -
-                           (y.gorder == null ? 1e9 : y.gorder));
+      order = open.slice().sort((x, y) =>
+        (x.it.gorder == null ? 1e9 : x.it.gorder) -
+        (y.it.gorder == null ? 1e9 : y.it.gorder));
     } else {
-      for (let n = picked.length - 1; n > 0; n--) {
+      order = open.slice();
+      for (let n = order.length - 1; n > 0; n--) {
         const k = Math.floor(Math.random() * (n + 1));
-        [picked[n], picked[k]] = [picked[k], picked[n]];
+        [order[n], order[k]] = [order[k], order[n]];
       }
     }
-    for (let n = a.length - 1; n >= 0; n--) {
-      if (a[n].group === g && a[n].status === "dormant") a.splice(n, 1);
-    }
-    // insert each at first+k, not first — a same-index splice would
-    // reverse the whole group (seen live: orig restored upside-down)
-    picked.forEach((m, k) => a.splice(Math.min(first + k, a.length), 0, m));
+    open.forEach((s, k) => { a[s.pos] = order[k].it; });
   }, mode === "orig"
-    ? "“" + g + "” restored to import order — staged" : "“" + g + "” shuffled — staged");
+    ? "“" + g + "” back to import order (played items untouched) — staged"
+    : "“" + g + "” shuffled (played items untouched) — staged");
 }
+
+/* Send a whole group back to Available. The item that is playing right
+   now stays on air until it finishes, then it goes back with the rest. */
+function parkGroup(g) {
+  mutate((a) => {
+    const onIdx = onAirIdx();
+    a.forEach((it, i) => {
+      if (it.group !== g) return;
+      if (i === onIdx) return;          // the playing one stays
+      it.status = "dormant";
+      it.group = g;
+      if (typeof it.gorder !== "number") it.gorder = 0;
+    });
+  }, "group sent back to Available — the playing item stays until it ends");
+}
+
+/* ---------- preview card ------------------------------------------------- */
+/* Click a row to see what it actually IS: a still frame, the real title,
+   the description, where it came from and how fresh the metadata is. The
+   operator confirms a video by looking at it, not by trusting a title. */
+let previewIdx = -1;
+
+function openPreview(i) {
+  const items = draftItems();
+  const it = items[i];
+  if (!it) return;
+  previewIdx = i;
+  const p = $("preview");
+  p.hidden = false;
+  $("preview-title").textContent = itTitle(it);
+  const bits = [];
+  if (it.channel) bits.push(it.channel);
+  if (it.duration) bits.push(fmt(it.duration));
+  if (it.youtube) bits.push("YouTube link");
+  if (it.file) bits.push("local file");
+  if (it.played) bits.push("played");
+  if (it.meta_checked) {
+    const age = Math.round((Date.now() / 1000) - it.meta_checked);
+    bits.push(age < 3600 ? "checked " + Math.max(1, Math.round(age / 60)) + "m ago"
+                          : "checked " + Math.round(age / 3600) + "h ago");
+  } else {
+    bits.push("metadata not checked yet");
+  }
+  $("preview-sub").textContent = bits.join(" · ");
+  $("preview-desc").textContent = it.desc || "(no description captured — press refresh)";
+  const img = $("preview-img");
+  const box = $("preview-thumb");
+  if (it.file) {
+    img.src = "/api/thumb?file=" + encodeURIComponent(it.file);
+    img.alt = "Still frame of " + itTitle(it);
+    img.style.display = "block";
+    box.style.display = "flex";
+    $("preview-nothumb").style.display = "none";
+    img.onerror = () => {
+      img.style.display = "none";
+      $("preview-nothumb").style.display = "inline";
+    };
+  } else {
+    img.style.display = "none";
+    $("preview-nothumb").style.display = "inline";
+  }
+  const link = $("preview-open");
+  if (it.youtube) {
+    link.href = it.youtube;
+    link.style.display = "inline-flex";
+  } else {
+    link.style.display = "none";
+  }
+  $("preview-play").disabled = (i === onAirIdx());
+}
+
+function closePreview() {
+  $("preview").hidden = true;
+  previewIdx = -1;
+}
+
+$("preview-close").addEventListener("click", closePreview);
+$("preview-refresh").addEventListener("click", async () => {
+  const it = draftItems()[previewIdx];
+  if (!it || !it.youtube) { status("only links have metadata to refresh", "warn"); return; }
+  try {
+    await api("/api/control", { refresh: { url: it.youtube } });
+    status("refreshing the metadata for that link…");
+  } catch (e) {
+    status("refresh failed: " + e.message, "err");
+  }
+});
+$("preview-play").addEventListener("click", () => {
+  if (previewIdx < 0) return;
+  const i = previewIdx;
+  closePreview();
+  playNext(i);
+});
 
 /* ---------- row menu --------------------------------------------------- */
 /* The menu is a real menu: it takes focus, arrows walk it, Escape closes
@@ -1076,6 +1352,10 @@ function rowMenu(ev, i, anchor) {
     defs.push(["Play now (cuts the on-air item)", i !== onIdx ? () => playNext(i) : null]);
     defs.push(["Park (Available)", () => parkItem(i, null)]);
   }
+  if (it.group) {
+    defs.push(["sep"]);
+    defs.push(["Send this group back to Available", () => parkGroup(it.group)]);
+  }
   defs.push(["sep"]);
   defs.push([itemTab(it) === "music" ? "Tag as Video" : "Tag as Music", () => {
     mutate((a) => {
@@ -1086,10 +1366,13 @@ function rowMenu(ev, i, anchor) {
     defs.push(["Approve: title → “" + it.meta_trip.new + "”", () => {
       mutate((a) => {
         a[i].title = it.meta_trip.new;
+        /* same_video: the watcher only flagged it (same length) and left
+           it playing — approving must not unpark a row the OPERATOR
+           parked. Without it: the watcher parked it (a different video
+           under the old name) and approval releases it. */
+        const held = it.meta_trip.same_video === false;
         delete a[i].meta_trip;
-        /* The watcher parked the row while flagging it: approving the
-           title has to unpark it too, or the approved video never airs. */
-        if (a[i].status === "dormant" && !a[i].group) a[i].status = null;
+        if (held && a[i].status === "dormant" && !a[i].group) a[i].status = null;
       }, "title updated — staged, press Apply");
     }]);
   }
@@ -1198,6 +1481,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if ($("menu").classList.contains("on")) { closeMenu(); e.preventDefault(); return; }
     if ($("help").classList.contains("on")) { closeHelp(); e.preventDefault(); return; }
+    if (!$("preview").hidden) { closePreview(); e.preventDefault(); return; }
     return;
   }
   if ($("menu").classList.contains("on")) {
@@ -1227,7 +1511,8 @@ document.addEventListener("keydown", (e) => {
   }
   if (inField) return;
   if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
-    undo(); e.preventDefault(); return;
+    if (e.shiftKey) redo(); else undo();
+    e.preventDefault(); return;
   }
   if (e.key === "ArrowDown") { moveCursor(1); e.preventDefault(); }
   else if (e.key === "ArrowUp") { moveCursor(-1); e.preventDefault(); }
@@ -1512,6 +1797,21 @@ $("p-del").addEventListener("click", async () => {
   } catch (e) { status("delete failed: " + e.message, "err"); }
 });
 
+/* ---------- staged-change prompt ---------------------------------------- */
+$("staged-apply").addEventListener("click", applyChanges);
+$("staged-undo").addEventListener("click", undo);
+$("staged-redo").addEventListener("click", redo);
+$("staged-revert").addEventListener("click", revertToApplied);
+
+/* Leaving with staged changes is the mistake the operator asked us to
+   catch. beforeunload covers a closed tab; the bar covers everything
+   else (an OBS dock has no tab to close). */
+window.addEventListener("beforeunload", (e) => {
+  if (!pending && histIndex <= 0) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+
 /* ---------- help ---------------------------------------------------------- */
 let helpReturnFocus = null;
 function openHelp() {
@@ -1631,6 +1931,13 @@ async function load(silent) {
        staged; a pending edit outranks whatever the station says. */
     if (!pending) {
       draft = { ...fresh.playlist, items: (fresh.playlist.items || []).map((x) => Object.assign({}, x)) };
+      /* A reload must not throw away staged work: the durable history
+         holds the last working copy. */
+      if (histIndex > 0 && history[histIndex - 1]) {
+        draft = { ...draft, items: clone(history[histIndex - 1].items) };
+        pending = true;
+        status("staged changes restored after a reload — press Apply or Revert", "warn");
+      }
       markPending();
     }
     fillMedia();
@@ -1656,6 +1963,7 @@ $("btn-retry").addEventListener("click", async () => {
 
 bindDropZones();
 refreshPlaylists();
+loadHistory();
 load();
 setInterval(load, 2000);
 </script>

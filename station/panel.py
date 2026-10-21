@@ -13,6 +13,8 @@ import os
 import shutil
 import subprocess
 import time
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HEREDOC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -583,7 +585,12 @@ load();
 
 class Handler(BaseHTTPRequestHandler):
     def _send(self, code, body, ctype="text/html"):
-        raw = body.encode() if isinstance(body, str) else json.dumps(body).encode()
+        if isinstance(body, bytes):
+            raw = body
+        elif isinstance(body, str):
+            raw = body.encode()
+        else:
+            raw = json.dumps(body).encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(raw)))
@@ -595,6 +602,28 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, api_state(), "application/json")
         elif self.path.startswith("/api/ping"):
             self._send(200, api_ping(), "application/json")
+        elif self.path.startswith("/api/thumb"):
+            # The dock shows a poster frame for the row it is inspecting.
+            # The overlay server owns the thumbnail cache; the panel
+            # proxies it so the dock stays same-origin.
+            name = ""
+            if "?" in self.path:
+                name = self.path.split("?", 1)[1]
+                for k, v in (p.split("=", 1) for p in name.split("&") if "=" in p):
+                    if k == "file":
+                        name = v
+            name = os.path.basename(name)
+            if not name or "/" in name or name.startswith("."):
+                return self._send(404, {"ok": False, "err": "no file"}, "application/json")
+            try:
+                with urllib.request.urlopen(
+                        "http://127.0.0.1:7070/thumbs/" + urllib.parse.quote(name),
+                        timeout=20) as r:
+                    body = r.read()
+                self._send(200, body, "image/jpeg")
+            except Exception as e:
+                self._send(404, {"ok": False, "err": str(e)[:80]},
+                           "application/json")
         elif self.path.startswith("/api/playlists"):
             self._send(200, api_playlists_get(), "application/json")
         elif self.path.startswith("/dock"):

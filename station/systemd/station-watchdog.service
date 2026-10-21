@@ -1,0 +1,10 @@
+[Unit]
+Description=Station watchdog (is the station alive, and can we revive it)
+After=station-daemon.service station-panel.service station-overlay.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+EnvironmentFile=-%h/Documents/GitHub/world-21-suite/broadcast/secrets.env
+ExecStart=/usr/bin/python3 station/station_watchdog.py
+TimeoutStartSec=120

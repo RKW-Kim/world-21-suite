@@ -569,6 +569,10 @@ class Watchdog:
         if st["active"]:
             self._was_active = True
             return True
+        if not publish_expected():
+            # No stream key: this is a local station, not a broken one.
+            # Logging it as a CRIT every pass drowned the real alerts.
+            return False
         if self._was_active is not False:
             # Transition into inactive: loud once. While it stays down (lab
             # has no stream key at all), hourly reminder, not per-poll spam.
@@ -1304,6 +1308,96 @@ def set_deck_normalizer(renderer, on):
     write_normalize(bool(on))
 
 
+def publish_expected():
+    """Is this station supposed to be publishing at all? Without a real
+    YouTube stream key it is a LOCAL station, and "the output is not
+    active" is not a fault worth alerting on."""
+    key = os.environ.get("YOUTUBE_STREAM_KEY", "") or ""
+    return bool(key) and not key.startswith("paste-once") and key != "change-me"
+
+
+def ensure_stream_output(renderer):
+    """Give the station its YouTube output when it has a real key.
+
+    The render plane ships with no RTMP output: the station was never
+    publishing, it was only LOOKING like a broadcaster (and logging
+    "Stream output not active!" every pass). With a key in secrets.env
+    the output is created once at boot; without one the station stays
+    local and quiet."""
+    if not publish_expected():
+        return
+    try:
+        outs = renderer._call("GetOutputList").get("outputs", [])
+    except Exception:
+        return
+    for o in outs:
+        if o.get("outputKind") in ("rtmp_output", "rtmp_custom"):
+            return                      # already there
+    try:
+        renderer._call("CreateOutput", {
+            "outputName": "YouTube",
+            "outputKind": "rtmp_output",
+            "outputSettings": {
+                "server": "rtmp://a.rtmp.youtube.com/live2",
+                "key": os.environ.get("YOUTUBE_STREAM_KEY", "")}})
+        alert("YouTube output created — the station is publishing.", "INFO")
+    except Exception as e:
+        alert("Could not create the YouTube output: %s" % e, "WARN")
+
+
+def refresh_item_metadata(url, alert_fn=None):
+    """Re-resolve one item's metadata and store it on the playlist item
+    (title, description, channel, duration, checked-at). This is the
+    operator's manual "refresh this video's details" button; the same
+    fields are filled in by the title watcher as it goes."""
+    meta = ytstream.resolve(url)
+    if not meta:
+        if alert_fn:
+            alert_fn("Could not refresh the metadata for that link.", "WARN")
+        return None
+    with pl_lock():
+        data = load_playlist()
+        for it in data.get("items") or []:
+            if it.get("youtube") == url:
+                it["title"] = meta.get("title") or it.get("title")
+                it["desc"] = meta.get("description") or it.get("desc") or ""
+                it["channel"] = meta.get("channel") or it.get("channel") or ""
+                if meta.get("duration"):
+                    it["duration"] = meta["duration"]
+                it["meta_checked"] = int(time.time())
+                save_playlist(data)
+                if alert_fn:
+                    alert_fn("Metadata refreshed for “%s”." % it.get("title"), "INFO")
+                return it
+    if alert_fn:
+        alert_fn("That link is not in the playlist any more.", "WARN")
+    return None
+
+
+def ensure_bed_isolation(renderer):
+    """The music bed belongs to the waiting-room scenes (Starting / Off
+    Air / End Credits / Tech Diffs) and nowhere else: program, ad break
+    and the live scene all carry their own audio, and a bed under them
+    fights it. If a bed input ever ended up there, take it out."""
+    bed = "Music Bed"
+    for scene in (SCENE_PROGRAM, AD_SCENE, SCENE_LIVE):
+        try:
+            items = renderer._call(
+                "GetSceneItemList", {"sceneName": scene}).get("sceneItems", [])
+        except Exception:
+            continue
+        for it in items:
+            if it.get("sourceName") == bed and it.get("sceneItemEnabled"):
+                try:
+                    renderer._call("SetSceneItemEnabled", {
+                        "sceneName": scene, "sceneItemId": it["sceneItemId"],
+                        "sceneItemEnabled": False})
+                    alert("Music bed disabled in %s: it must not fight the "
+                          "program audio." % scene, "WARN")
+                except Exception:
+                    pass
+
+
 def probe_plane(renderer):
     """Dump what the plane actually looks like: input names, the filters
     riding on them, and the filter kinds this OBS build offers. The ws
@@ -1448,6 +1542,9 @@ def _normalize_media(name, title=None):
     threading.Thread(target=work, daemon=True).start()
 
 
+_SWEEP_DAY = None   # the day of the last full metadata sweep
+
+
 def _title_watch_pass():
     """One metadata watch cycle: re-resolve YouTube items that carry a
     stored title and flag the ones whose title changed (dragged to
@@ -1458,6 +1555,15 @@ def _title_watch_pass():
         items = list((load_playlist().get("items") or []))
     st = load_state()
     onidx = max(0, (int(st.get("index") or 1)) - 1)
+    # Once a day, walk the whole list: the operator wants to know that a
+    # video's metadata is still current, not only when it happens to
+    # change. The daily pass resolves more items per cycle; the rest of
+    # the day stays cheap.
+    today = time.strftime("%Y-%m-%d")
+    sweep = _SWEEP_DAY != today
+    if sweep:
+        _SWEEP_DAY = today
+    limit = 20 if sweep else 3
     fresh = 0
     tripped = []
     for pos, it in enumerate(items):
@@ -1467,7 +1573,7 @@ def _title_watch_pass():
             continue
         meta = _RESOLVE_CACHE.get(url, (0, None))[1]
         if meta is None:
-            if fresh >= 3:
+            if fresh >= limit:
                 continue
             fresh += 1
         try:
@@ -1477,22 +1583,59 @@ def _title_watch_pass():
         if pos == onidx:
             continue
         new = (meta or {}).get("title")
+        if new and new == old:
+            # Nothing changed, but the description may never have been
+            # captured: the dock's preview panel shows it.
+            with pl_lock():
+                data = load_playlist()
+                touched = False
+                for cand in data.get("items") or []:
+                    if (cand.get("youtube") == url and
+                            cand.get("title") == old and
+                            not cand.get("desc") and
+                            (meta or {}).get("description")):
+                        cand["desc"] = (meta or {}).get("description") or ""
+                        cand["channel"] = (meta or {}).get("channel") or ""
+                        cand["meta_checked"] = int(time.time())
+                        touched = True
+                        break
+                if touched:
+                    save_playlist(data)
         if new and new != old:
+            # A renamed video is usually the SAME video: let it keep
+            # playing and just flag it. But if the DURATION also changed,
+            # this is a different upload wearing the old name — that one
+            # is held back (parked) until the operator approves it.
+            old_dur = it.get("duration")
+            new_dur = (meta or {}).get("duration")
+            same_video = not (old_dur and new_dur and
+                              abs(float(old_dur) - float(new_dur)) > 1.0)
             with pl_lock():
                 data = load_playlist()
                 for cand in data.get("items") or []:
                     if (cand.get("youtube") == url and
                             cand.get("title") == old and
                             not cand.get("meta_trip")):
-                        cand["meta_trip"] = {"old": old, "new": new}
-                        cand["status"] = "dormant"
-                        cand.pop("group", None)
-                        cand.pop("gorder", None)
+                        cand["meta_trip"] = {"old": old, "new": new,
+                                             "same_video": bool(same_video)}
+                        if not same_video:
+                            # A different video under the old name: hold it
+                            # until it is approved, and keep it out of the
+                            # groups so it cannot air from a playlist.
+                            cand["status"] = "dormant"
+                            cand.pop("group", None)
+                            cand.pop("gorder", None)
                         save_playlist(data)
-                        alert("Title changed on YouTube: “%s” is now “%s”. "
-                              "Parked it (Available) and flagged it — "
-                              "approve or discard it from the dock row "
-                              "menu." % (old, new), "INFO")
+                        if same_video:
+                            alert("Title changed on YouTube: “%s” is now "
+                                  "“%s”. Same video, same length — it keeps "
+                                  "playing, flagged for review." % (old, new), "INFO")
+                        else:
+                            alert("Title changed on YouTube: “%s” is now "
+                                  "“%s” AND the duration changed (%s -> %s): "
+                                  "that is a different video, so it is held "
+                                  "back until you approve it." % (
+                                      old, new, old_dur, new_dur), "WARN")
                         break
             tripped.append(url)
             if len(tripped) >= 2:
@@ -1783,6 +1926,20 @@ def advance(renderer, state, data, deck_sources):
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck, "deck_paused": False,
                   "just_played": shuffler.item_key(item)})
+    # Mark the item that just finished as PLAYED. The dock needs this for
+    # the Spotify-style group shuffle: turning shuffle off must not
+    # replay what was already sent past, and turning it on again must be
+    # able to re-shuffle everything that has NOT played yet.
+    try:
+        with pl_lock():
+            _pl = load_playlist()
+            for _c in _pl.get("items") or []:
+                if shuffler.item_key(_c) == shuffler.item_key(item):
+                    _c["played"] = 1
+                    break
+            save_playlist(_pl)
+    except Exception:
+        pass
     if state.pop("fallback_air", None):
         alert("Fail-safe cleared: deck %s plays again." % deck, "INFO")
     state["stream"] = onair
@@ -1958,7 +2115,8 @@ def on_ended(renderer, decks, source, force=False):
     # Cam/Screen/Audio and idle AD end-event floods never route at all —
     # the OBS event bus spews ENDED for them at ~2/s, so they are dropped
     # here silently instead of burning a log line (and a route) each pass.
-    if source not in (DECK_A, DECK_B, PLAYOUT_C, AD_INPUT, STREAM_EOF):
+    if source not in (DECK_A, DECK_B, PLAYOUT_C, AD_INPUT, STREAM_EOF,
+                      IDENT_SRC):
         return
     alert("advance trigger: %s." % source, "INFO")
     if source == STREAM_EOF:
@@ -2376,6 +2534,14 @@ def cmd_loop(renderer):
     except Exception:
         pass
     try:
+        ensure_bed_isolation(renderer)
+    except Exception:
+        pass
+    try:
+        ensure_stream_output(renderer)
+    except Exception:
+        pass
+    try:
         probe_plane(renderer)
     except Exception:
         pass
@@ -2616,6 +2782,13 @@ def cmd_loop(renderer):
                             _normalize_media(str(_norm["url"]))
                         elif isinstance(_norm, dict) and "global" in _norm:
                             set_deck_normalizer(renderer, bool(_norm["global"]))
+                        # Dock: "Refresh metadata" on one row.
+                        _ref = _ctl.pop("refresh", None)
+                        if isinstance(_ref, dict) and _ref.get("url"):
+                            threading.Thread(
+                                target=refresh_item_metadata,
+                                args=(str(_ref["url"]), alert),
+                                daemon=True).start()
                         # Read-only plane introspection: {"probe": true}
                         # refreshes broadcast/obs_probe.json (inputs,
                         # filters, available filter kinds).

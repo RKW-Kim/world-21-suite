@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish the programme to YouTube (OFF by default: enable deliberately)
+After=station-mediamtx.service station-obs.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/GitHub/world-21-suite
+EnvironmentFile=-%h/Documents/GitHub/world-21-suite/broadcast/secrets.env
+ExecStart=/bin/bash %h/Documents/GitHub/world-21-suite/station/publish_youtube.sh
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target

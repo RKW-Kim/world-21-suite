@@ -35,6 +35,12 @@ paths:
   # Ad-break streams: same pipeline as the decks, but landed in the ad
   # scene (STREAM AD input) so a break can roll a YouTube link too.
   slot-ad:
-  # The lab-era "monitor"/"monitor-av" return paths are gone 2026-10-18:
-  # on the real station OBS publishes straight to YouTube and the
-  # monitor-av repackager sat restarting 11k+ times doing nothing.
+  # The program output sink. OBS publishes the finished programme here
+  # (station/config/service.json -> rtmp://127.0.0.1:1935/monitor); the
+  # publish leg (station/publish_youtube.sh) takes it from here to YouTube.
+  # It was removed 2026-10-18 as "the lab-era return path" -- but OBS still
+  # targets it, so the output was INACTIVE and the daemon logged
+  # "Stream output not active!" on every pass. The monitor-av repackager
+  # (station-monitor-av.service) is the dead half of that pair and stays
+  # uninstalled.
+  monitor:
