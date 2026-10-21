@@ -466,6 +466,26 @@ def ensure_bed():
     return BED_INPUT
 
 
+def _bed_probe():
+    # Module level, not a Handler method: as a class-body name it was never
+    # in method scope, so every GET /music raised NameError inside the probe
+    # thread and answered plane:"?" bed:null. Its OWN connection: the shared
+    # renderer serialises on one lock, so a probe that used it blocked /obs
+    # and /music behind it.
+    try:
+        r = daemon.OBSRenderer()
+        ins = {i.get("inputName") for i in
+               r._call("GetInputList").get("inputs", [])}
+        if BED_INPUT in ins:
+            return {"bed": (r._call("GetInputSettings",
+                                    {"inputName": BED_INPUT})
+                            .get("inputSettings", {}).get("local_file")),
+                    "plane": "up"}
+        return {"bed": None, "plane": "up"}
+    except Exception:
+        return {"bed": None, "plane": "down"}
+
+
 class Handler(SimpleHTTPRequestHandler):
     # 30s socket timeout. The base class default is None, and
     # StreamRequestHandler only calls settimeout() when it is set: a
@@ -947,23 +967,6 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(502, {"ok": False, "error": msg[:200]})
             return self._json(200, {"ok": False, "error": msg[:200]})
 
-    def _bed_probe():
-        # Its OWN connection: the shared renderer serialises on one lock,
-        # so a probe that used it blocked /obs and /music behind it.
-        try:
-            r = daemon.OBSRenderer()
-            ins = {i.get("inputName") for i in
-                   r._call("GetInputList").get("inputs", [])}
-            if BED_INPUT in ins:
-                return {"bed": (r._call("GetInputSettings",
-                                        {"inputName": BED_INPUT})
-                                .get("inputSettings", {}).get("local_file")),
-                        "plane": "up"}
-            return {"bed": None, "plane": "up"}
-        except Exception:
-            return {"bed": None, "plane": "down"}
-
-
     def _music(self):
         # Music bed management. GET: tracks on disk + current bed file.
         # POST {op:set, file}: validate, ensure the input, point + restart.
@@ -1345,6 +1348,11 @@ class Handler(SimpleHTTPRequestHandler):
                     ln = _st.unpack(">H", _read_exact(2))[0]
                 elif ln == 127:
                     ln = _st.unpack(">Q", _read_exact(8))[0]
+                if ln > 32 * 1024 * 1024:
+                    # Same cap daemon._WS applies: the declared length is
+                    # client-controlled and _read_exact would otherwise
+                    # accumulate it (a 2^63 header = a memory bomb).
+                    raise RuntimeError("frame too large (%d)" % ln)
                 if not hdr[1] & 0x80:
                     raise RuntimeError("unmasked browser frame")
                 mask = _read_exact(4)
@@ -1392,7 +1400,11 @@ class Handler(SimpleHTTPRequestHandler):
                 raise RuntimeError("identify rejected")
             srv_send(identified)
             sys.stderr.write("overlay: relay bridged (authenticated)\n")
-        except (OSError, RuntimeError, ValueError) as e:
+        except Exception as e:
+            # Broad on purpose: a malformed Identify (missing/null "d")
+            # raised KeyError/TypeError past the old tuple and skipped
+            # done_relay forever - two of those wedged the relay at its
+            # session cap until a service restart.
             sys.stderr.write("overlay: relay auth failed (%s)\n" % e)
             self.close_connection = True
             try:
