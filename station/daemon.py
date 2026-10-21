@@ -2789,7 +2789,13 @@ def cmd_loop(renderer):
                                         renderer.media_action(_mdeck, _mact)
                                         merge_save_state(dict(
                                             _mst, deck_paused=(_mact == "pause"),
-                                            deck_volume_db=_mdb))
+                                            # pause/resume carries no db: keep
+                                            # the saved mix instead of letting
+                                            # a None through merge_save_state
+                                            # erase it (one pause used to wipe
+                                            # it; every later cut went out raw).
+                                            deck_volume_db=(_mdb if _mdb is not None
+                                                            else _mst.get("deck_volume_db"))))
                             except Exception as _me:
                                 alert("transport failed: %s." % _me, "WARN")
                         # Dock loudness verb: {"normalize": {"file": name}}
@@ -2837,7 +2843,20 @@ def cmd_loop(renderer):
                     if not ytstream.alive(_feed):
                         _urls = _sm.get("url")
                         if int(_sm.get("respawns") or 0) < 2:
-                            _sm["respawns"] = int(_sm.get("respawns") or 0) + 1
+                            with pl_lock():
+                                # Persist the bump on a FRESH load: this used
+                                # to mutate the throwaway load_state() dict
+                                # only, so every pass saw respawns=0 and a
+                                # dead feed was respawned on every poll
+                                # (each attempt costing a resolve + up to
+                                # 15x3s of ready-waits inside one pass).
+                                _sv = load_state()
+                                _svsm = _sv.get("stream") or {}
+                                _svsm["respawns"] = \
+                                    int(_svsm.get("respawns") or 0) + 1
+                                _sv["stream"] = _svsm
+                                save_state(_sv)
+                            _sm["respawns"] = _svsm["respawns"]
                             _again = start_stream_feed(_urls, _deck)
                             if _again:
                                 _STREAM_STATE["feeds"][_deck] = _again[0]
