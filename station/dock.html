@@ -512,9 +512,9 @@ function markPending() {
    for exactly this: never lose a step, and always be able to go back to
    what the station is actually running. */
 const HIST_KEY = "w21.dock.history";
-let history = [];        // [{label, items}] — the state BEFORE each edit
-let histIndex = 0;       // how many of them are currently applied to the draft
-let appliedSnap = null;  // the last state the station actually runs
+let history = [];        // [{label, items}] — the state AFTER each edit
+let histIndex = 0;       // how many of those edits are applied to the draft
+let appliedSnap = null;  // the items the station actually runs (stack base)
 
 function loadHistory() {
   try {
@@ -537,6 +537,12 @@ function saveHistory() {
 }
 
 function pushUndo(label) {
+  /* POST-states: history[i] is the draft AS IT WAS AFTER edit i+1, and
+     histIndex counts how many of those edits the draft carries. Redo
+     walks FORWARD into the newest entry — with pre-states the newest
+     state was never in the stack at all, so redo silently dropped the
+     last staged edit while the bar claimed it was still staged. */
+  if (!appliedSnap) appliedSnap = clone(liveItems());
   history = history.slice(0, histIndex);
   history.push({label: label || "change", items: clone(draftItems())});
   histIndex = history.length;
@@ -544,11 +550,16 @@ function pushUndo(label) {
   saveHistory();
 }
 
+/* The draft as it stood after n edits: 0 is the applied base. */
+function histItems(n) {
+  return n > 0 ? (history[n - 1] || {}).items : (appliedSnap || liveItems());
+}
+
 function undo() {
   if (histIndex <= 0) { status("nothing left to undo", "warn"); return; }
+  const step = history[histIndex - 1];
   histIndex--;
-  const step = history[histIndex];
-  draft = { ...(draft || {}), items: clone(step.items) };
+  draft = { ...(draft || {}), items: clone(histItems(histIndex)) };
   markPending();
   render(true);
   saveHistory();
@@ -559,12 +570,11 @@ function undo() {
 function redo() {
   if (histIndex >= history.length) { status("nothing to redo", "warn"); return; }
   histIndex++;
-  const step = history[histIndex];
-  if (step) draft = { ...(draft || {}), items: clone(step.items) };
+  draft = { ...(draft || {}), items: clone(histItems(histIndex)) };
   markPending();
   render(true);
   saveHistory();
-  status("redone one step");
+  status("redone one step (“" + history[histIndex - 1].label + "”)");
 }
 
 /* Back to the state the station is actually running. */
@@ -603,11 +613,12 @@ function pushApplied() {
 function mutate(fn, label) {
   /* Every edit lands in the working copy. Nothing is sent to the station
      until Apply — so a burst of actions cannot pile up server writes or
-     half-applied states. */
-  pushUndo(label);
+     half-applied states. The history snapshot is taken AFTER the edit:
+     the stack stores what each step produced, not what it replaced. */
   const items = draftItems().slice();
   fn(items);
   draft = { ...(draft || {}), items };
+  pushUndo(label);
   markPending();
   render(true);
   if (label) status(label);
@@ -1771,8 +1782,8 @@ $("p-load").addEventListener("click", async () => {
   try {
     const r = await api("/api/playlists", { action: "load", name: nm });
     if (!r || !r.playlist) { status("profile “" + nm + "” could not be read", "err"); return; }
-    pushUndo();
     draft = { ...draft, items: (r.playlist.items || []).slice() };
+    pushUndo("loaded profile “" + nm + "”");
     markPending();
     render(true);
     status("loaded “" + nm + "” into the working copy — press Apply to put it on air");
@@ -1931,8 +1942,14 @@ async function load(silent) {
        staged; a pending edit outranks whatever the station says. */
     if (!pending) {
       draft = { ...fresh.playlist, items: (fresh.playlist.items || []).map((x) => Object.assign({}, x)) };
+      /* The stack base: what the station ACTUALLY runs right now. Undo
+         walks back to this, so it must be re-seeded on every clean
+         adoption (the daemon can rewrite the playlist behind us — a
+         completed roll reshuffles it). */
+      appliedSnap = clone(draft.items);
       /* A reload must not throw away staged work: the durable history
-         holds the last working copy. */
+         holds the last working copy. Post-states mean history[histIndex
+         - 1] IS the state the operator was looking at. */
       if (histIndex > 0 && history[histIndex - 1]) {
         draft = { ...draft, items: clone(history[histIndex - 1].items) };
         pending = true;
