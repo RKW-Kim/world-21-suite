@@ -121,7 +121,7 @@ The station's egress is a YouTube RTMP push plus yt-dlp downloads.
 | obs-websocket (4455) | **Never public.** It is full OBS control. It is loopback in the current setup — keep it that way (OBS binds `*` by default, so firewall 4455 explicitly). |
 | MediaMTX (1935, 8889, 9000) | The ingest bus. The seats publish here. If the seats are remote, allow only their addresses; otherwise keep them on the tunnel. |
 | The publish leg (YouTube) | Outbound only. The key lives in `secrets.env` (600). |
-| The firewall | `ufw default deny incoming`, then allow SSH (or the tunnel), and the SRT ports you genuinely need. `setup.sh` now does this. |
+| The firewall | `ufw default deny incoming`, then allow SSH (or the tunnel). Seat ports (SRT 9000/udp, WHIP 8889/tcp, ICE 8189/udp) open per SOURCE NETWORK with `setup.sh --seat <CIDR>` — never world-open; mediamtx `authInternalUsers` carries the credentials. |
 
 Set `STATION_TOKEN` on any box that is reachable from a network you do not
 control: it turns the overlay control plane from "any web page in your

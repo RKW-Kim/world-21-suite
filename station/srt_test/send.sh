@@ -51,7 +51,24 @@ tee_out() { # $1 = srt url. tee always needs an explicit format (no extension to
   fi
 }
 
-AV_URL="srt://$HOST:9000?streamid=publish:slot-cam&latency=$LATENCY"
+# Seat credentials (mediamtx authInternalUsers, 2026-10-21): a publish from
+# a non-loopback IP needs user:pass inside the streamid. If a secrets.env
+# is next to this script's repo (same box) it is read automatically; a
+# remote sender exports SEAT_CAM_PASS / SEAT_SCREEN_PASS by hand.
+# Loopback sends keep the bare streamid (the loopback tier is anonymous).
+SEAT_CAM_ID="seat-cam:${SEAT_CAM_PASS:-}"
+SEAT_SCREEN_ID="seat-screen:${SEAT_SCREEN_PASS:-}"
+if [ -r "$(dirname "$0")/../broadcast/secrets.env" ] && [ -z "${SEAT_CAM_PASS:-}" ]; then
+  # shellcheck disable=SC1091
+  . "$(dirname "$0")/../broadcast/secrets.env"
+  SEAT_CAM_ID="seat-cam:${SEAT_CAM_PASS}"
+  SEAT_SCREEN_ID="seat-screen:${SEAT_SCREEN_PASS}"
+fi
+if [ -z "${SEAT_CAM_PASS:-}" ]; then
+  echo "note: no SEAT_CAM_PASS -- sending anonymously (works from loopback only)"
+fi
+
+AV_URL="srt://$HOST:9000?streamid=publish:slot-cam:$SEAT_CAM_ID&latency=$LATENCY"
 echo "== pushing cam+mic to $AV_URL (latency budget $((LATENCY/1000))ms) =="
 
 if [ "$MODE" = "--test" ]; then
@@ -99,7 +116,7 @@ if [ "$SCREEN" = "1" ]; then
       -f avfoundation -framerate 30 -i "$SCR" \
       -map 0:v -vf "scale=1280:-2" \
       -c:v libx264 -preset "$PRESET" -tune zerolatency -b:v "$VBITRATE" \
-      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen&latency=$LATENCY" &
+      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen:$SEAT_SCREEN_ID&latency=$LATENCY" &
   elif [ "${XDG_SESSION_TYPE:-}" != "x11" ] && [ -z "${DISPLAY:-}" ]; then
     echo "::warning::screen capture needs X11 (this box is ${XDG_SESSION_TYPE:-unknown})."
     echo "  On Wayland: share the screen from OBS on this laptop, or skip --screen."
@@ -110,7 +127,7 @@ if [ "$SCREEN" = "1" ]; then
     ffmpeg -hide_banner -loglevel warning \
       -f x11grab -framerate 30 -video_size 1920x1080 -i "${DISPLAY:-:0}.0+0,0" \
       -c:v libx264 -preset veryfast -tune zerolatency -b:v 3000k \
-      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen&latency=$LATENCY" &
+      -f mpegts "srt://$HOST:9000?streamid=publish:slot-screen:$SEAT_SCREEN_ID&latency=$LATENCY" &
   fi
 fi
 wait

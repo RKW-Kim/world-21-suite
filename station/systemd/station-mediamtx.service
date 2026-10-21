@@ -6,7 +6,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=%h/Documents/GitHub/world-21-suite
-ExecStart=%h/Documents/GitHub/world-21-suite/station/third_party/mediamtx station/mediamtx.yml
+# The RENDERED config (setup.sh substitutes the seat passes into
+# $BROADCAST_ROOT/mediamtx.yml, mode 600). The repo file is the template.
+ExecStart=%h/Documents/GitHub/world-21-suite/station/third_party/mediamtx ${BROADCAST_ROOT}/mediamtx.yml
 Restart=always
 RestartSec=5
 

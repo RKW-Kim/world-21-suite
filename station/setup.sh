@@ -23,21 +23,44 @@ mkdir -p "$ROOT"/{media,assets/idents,overlays,backups,recordings} station/manif
 ROOT="$(cd "$ROOT" && pwd)"
 [ -f "$ROOT/media/playlist.json" ] || cp station/playlist.json "$ROOT/media/playlist.json"
 
-# Firewall: open exactly the SRT ingest ports, nothing else.
-# (Lab lesson 2026-10-12: ufw default-DROP silently killed laptop-to-laptop
-# SRT while loopback passed and ping lied. Only a two-machine run reveals it.)
+# Firewall: default-deny incoming; SSH always; contribution-seat ports
+# ONLY for the seat networks the operator names. (Lab lesson 2026-10-12:
+# ufw default-DROP silently killed laptop-to-laptop SRT while loopback
+# passed and ping lied. Only a two-machine run reveals it.)
+#
+#   bash station/setup.sh --seat 192.168.1.0/24 --seat 203.0.113.7/32
+#
+# Before 2026-10-21 this opened 9000:9001/udp to the WHOLE internet -- with
+# no mediamtx auth, anyone could publish slot-cam and inject on air. Auth
+# now lives in mediamtx.yml (authInternalUsers, passes in secrets.env), so
+# the firewall adds SOURCE RESTRICTION on top: a seat network is opened
+# deliberately, per protocol, or not at all.
+SEAT_NETS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --seat) SEAT_NETS="$SEAT_NETS ${2:-}"; shift; [ $# -gt 0 ] && shift || true ;;
+    *) shift ;;
+  esac
+done
 if command -v ufw >/dev/null; then
   # mediamtx.yml states the model: "UFW allows only 22/tcp". Allowing a
   # port is not a policy: without default-deny incoming, everything else
   # (the overlay control plane on 7070) stays reachable.
   sudo ufw default deny incoming 2>/dev/null || true
   sudo ufw allow 22/tcp comment 'ssh' 2>/dev/null || true
-  if sudo ufw allow 9000:9001/udp comment 'station SRT ingest' 2>/dev/null; then
-    sudo ufw --force enable 2>/dev/null || true
-    echo "ufw: default-deny incoming, ssh + SRT ingest allowed"
-  else
-    echo "::warning::could not open SRT ports via ufw; do it by hand."
+  for net in $SEAT_NETS; do
+    sudo ufw allow from "$net" to any port 9000 proto udp comment 'station SRT ingest (seat)' 2>/dev/null || true
+    sudo ufw allow from "$net" to any port 8889 proto tcp comment 'station WHIP (seat)' 2>/dev/null || true
+    sudo ufw allow from "$net" to any port 8189 proto udp comment 'station WebRTC ICE mux (seat)' 2>/dev/null || true
+    echo "ufw: seat network $net -> SRT 9000/udp, WHIP 8889/tcp, ICE 8189/udp"
+  done
+  if [ -z "$SEAT_NETS" ]; then
+    echo "ufw: no --seat networks given: seats stay OFF the WAN (loopback + tunnels only)."
   fi
+  sudo ufw --force enable 2>/dev/null || true
+  sudo ufw status numbered 2>/dev/null | sed -n '1,12p'
+else
+  [ -n "$SEAT_NETS" ] && echo "::warning::ufw not present; open seat ports by hand for:$SEAT_NETS"
 fi
 
 if [ ! -f "$ROOT/secrets.env" ]; then
@@ -48,12 +71,50 @@ OBS_PASS=change-me
 # Discord channel webhook URL for alerts (Server Settings > Integrations > Webhooks).
 # No bot to host, no token to rotate. WhatsApp later if ever (needs Twilio/CallMeBot).
 DISCORD_WEBHOOK=
+# Contribution-seat credentials (mediamtx authInternalUsers). One seat per
+# path; publish-only. SRT streamid: publish:<path>:<user>:<pass>
 EOF
-  echo "wrote $ROOT/secrets.env — fill in YOUTUBE_STREAM_KEY"
+  for s in CAM SCREEN AUDIO AD; do
+    P="$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+    echo "SEAT_${s}_PASS=$P" >> "$ROOT/secrets.env"
+  done
+  echo "wrote $ROOT/secrets.env (seat passes generated) — fill in YOUTUBE_STREAM_KEY"
+else
+  # Idempotent upgrade: an older secrets.env predates the seat passes.
+  # mediamtx.yml expands ${SEAT_*_PASS}; an unset var becomes an EMPTY
+  # password, which would accept an empty credential -- so every missing
+  # seat pass is generated once, here.
+  for s in CAM SCREEN AUDIO AD; do
+    if ! grep -q "^SEAT_${s}_PASS=" "$ROOT/secrets.env"; then
+      P="$(openssl rand -hex 16 2>/dev/null || head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+      echo "SEAT_${s}_PASS=$P" >> "$ROOT/secrets.env"
+      echo "generated SEAT_${s}_PASS (was missing)"
+    fi
+  done
 fi
 # Always, not only on creation: a hand-made or restored secrets file kept
 # mode 644 and the stream key stayed world-readable.
 chmod 600 "$ROOT/secrets.env" 2>/dev/null || true
+
+# Render the mediamtx config with the real seat passes. The repo file is a
+# template: mediamtx does NOT expand environment variables inside the YAML
+# (proved 2026-10-21 — the literal "${SEAT_CAM_PASS}" became the password),
+# so the passes are substituted HERE, at provision time, into a 600-mode
+# file the mediamtx unit runs. This is also the plugin's one good lifecycle
+# habit adopted wholesale: the config is regenerated on every setup run, so
+# a drifted or hand-edited render self-heals on the next provision.
+set -a; . "$ROOT/secrets.env"; set +a
+sed -e "s|\${SEAT_CAM_PASS}|${SEAT_CAM_PASS:-}|g" \
+    -e "s|\${SEAT_SCREEN_PASS}|${SEAT_SCREEN_PASS:-}|g" \
+    -e "s|\${SEAT_AUDIO_PASS}|${SEAT_AUDIO_PASS:-}|g" \
+    -e "s|\${SEAT_AD_PASS}|${SEAT_AD_PASS:-}|g" \
+    station/mediamtx.yml > "$ROOT/mediamtx.yml"
+if grep -q '\${SEAT_' "$ROOT/mediamtx.yml"; then
+  echo "::error::rendered mediamtx.yml still has placeholder passes — secrets.env is missing entries." >&2
+  exit 1
+fi
+chmod 600 "$ROOT/mediamtx.yml"
+echo "rendered mediamtx config -> $ROOT/mediamtx.yml (600)"
 
 # Render-plane deps (VPS + headless lab): a virtual display for OBS plus the
 # pinned Flatpak build. setup.sh never installs system packages itself — OS
@@ -70,8 +131,10 @@ if [ ! -x station/third_party/mediamtx ]; then
     *) echo "::error::no MediaMTX asset mapped for $(uname -s)/$(uname -m). Fetch by hand."; exit 1 ;;
   esac
   echo "fetching MediaMTX $MTX_VER ($MTX_OS) ..."
+  # Release assets carry the v in the filename (mediamtx_v1.21.2_linux_amd64);
+  # the stripped form 404s (seen 2026-10-21 against the v1.21.2 release).
   curl -fSL -o /tmp/mtx.tar.gz \
-    "https://github.com/bluenviron/mediamtx/releases/download/$MTX_VER/mediamtx_${MTX_VER#v}_$MTX_OS.tar.gz"
+    "https://github.com/bluenviron/mediamtx/releases/download/$MTX_VER/mediamtx_${MTX_VER}_$MTX_OS.tar.gz"
   mkdir -p station/third_party
   tar xzf /tmp/mtx.tar.gz -C station/third_party/ mediamtx
   rm -f /tmp/mtx.tar.gz

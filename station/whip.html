@@ -94,8 +94,8 @@ button.rec .icon, .seat.live button.rec{background:var(--one)}
 <div class="bar">
   <label class="hint" style="margin:0">Station host
     <input id="host" placeholder="this box's own address" spellcheck="false"></label>
-  <label class="hint" style="margin:0">Publish token
-    <input id="tok" placeholder="only if the VPS asks" spellcheck="false"></label>
+  <label class="hint" style="margin:0">Seat credentials (user:pass)
+    <input id="tok" placeholder="seat-cam:…, only if the VPS asks" spellcheck="false"></label>
 </div>
 <p class="hint">One tab = your whole on-air presence. Each connect publishes its own WHIP
 stream, so the studio seats fill themselves the moment frames land — no OBSBrowser
@@ -170,7 +170,10 @@ function publish(seat, stream){
     .then(function(){
       var hdr = {"Content-Type": "application/sdp"};
       var tok = TOK.value.trim();
-      if (tok) hdr["Authorization"] = "Bearer " + tok;
+      // mediamtx internal auth (authInternalUsers) speaks HTTP Basic on
+      // WHIP, not Bearer: the field takes seat credentials "user:pass"
+      // (e.g. "seat-cam:<SEAT_CAM_PASS>"), empty = anonymous (loopback).
+      if (tok) hdr["Authorization"] = "Basic " + btoa(tok);
       return fetch('http://' + (HOST.value || location.hostname).trim()
         + ':8889/' + PATHS[seat] + '/whip',
         {method: 'POST', headers: hdr, body: pc.localDescription.sdp});

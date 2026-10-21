@@ -3,12 +3,41 @@
 # streams that either have frames or don't — a state the watchdog can act on.
 # One SRT port; streamid selects the path. Control API on loopback only.
 #
+# AUTH (2026-10-21, closes the on-air-injection audit finding): internal
+# authentication is on, in three tiers. Before this, the shipped default
+# applied -- user:any/pass:any from ANY IP -- which meant anyone who could
+# reach :9000 could publish onto a path OBS reads (on-air injection).
+#
+# THIS FILE IS A TEMPLATE. mediamtx does NOT expand environment variables
+# inside the YAML (proved 2026-10-21: the literal "${SEAT_CAM_PASS}" became
+# the password), so setup.sh renders the real seat passes into
+# $BROADCAST_ROOT/mediamtx.yml (mode 600) and the mediamtx unit points at
+# THAT file. Edit this template, then re-run setup.sh to re-render.
+#
+#   1. LOOPBACK (127.0.0.1, ::1): any user incl. anonymous, every action.
+#      OBS monitor publish (rtmp://127.0.0.1:1935/monitor), the ffmpeg deck
+#      publishes (RTSP/TCP localhost), OBS SRT reads
+#      (srt://127.0.0.1:9000?streamid=read:slot-cam), the dock's WHEP proxy
+#      and the control API: all keep working with ZERO credential changes.
+#   2. SEAT USERS: publish-only, one path each, credential required. The
+#      passes are rendered in from broadcast/secrets.env by setup.sh (the
+#      rendered config is what the mediamtx unit runs).
+#   3. EVERYTHING ELSE: refused. A seat credential cannot publish `monitor`
+#      (its permission names one path), cannot read, and an anonymous
+#      remote client matches no entry at all.
+#
+# Seat URLs after this change:
+#   SRT:  srt://HOST:9000?streamid=publish:slot-cam:seat-cam:$SEAT_CAM_PASS
+#   WHIP: http://HOST:8889/slot-cam/whip   (Basic auth, seat-cam:$SEAT_CAM_PASS)
+#
 # User-facing surfaces stay reachable beyond the box: SRT (:9000, seats) and
 # WHIP/WHEP (:8889 + the WebRTC UDP listeners, contribution seats and the
-# director monitor). Everything else binds LOOPBACK — with binds off, any
-# LAN/WAN peer could RTMP/RTSP-publish straight onto a path OBS reads
-# timestamped persistently (on-air injection; seen-audit fix 2026-10-17;
-# revisit with auth when cutover adds publish roles).
+# director monitor) -- and are gated at BOTH layers now: credentials here,
+# source-restricted firewall rules in setup.sh (--seat CIDR). Everything
+# else binds LOOPBACK -- with binds off, any LAN/WAN peer could
+# RTMP/RTSP-publish straight onto a path OBS reads timestamped persistently
+# (on-air injection; seen-audit fix 2026-10-17; the auth half closed
+# 2026-10-21).
 logLevel: debug
 srtAddress: :9000
 api: yes
@@ -16,11 +45,50 @@ apiAddress: 127.0.0.1:9997
 rtspAddress: 127.0.0.1:8554
 rtmpAddress: 127.0.0.1:1935
 hlsAddress: 127.0.0.1:8888
+# MoQ (Media over QUIC) is ON by default in v1.21 and opens wildcard
+# listeners on 8892/tcp+udp and 8893/udp. Nothing here speaks MoQ; each
+# wildcard listener is one more door to hold shut.
+moq: false
 # WebRTC/WHIP/WHEP keeps mediamtx's default binds: v1.21 opens a second,
-# hard-coded wildcard UDP listener on the mux port that cannot coexist with
-# a specific-LAN-IP bind (bind: address already in use, seen 2026-10-18).
-# Exposure is therefore pinned at the firewall instead: UFW allows only
-# 22/tcp, and the TD desk adds 8889/tcp + 8892/udp from its own IP.
+# hard-coded wildcard UDP listener that cannot coexist with a specific-LAN-IP
+# bind (bind: address already in use, seen 2026-10-18). The ICE/media mux is
+# 8189/udp in v1.21 (NOT 8892 — that port belongs to MoQ now). Exposure is
+# pinned at the firewall instead: UFW allows only 22/tcp by default; seats
+# add their own source network with `setup.sh --seat <CIDR>`.
+
+authInternalUsers:
+  # Tier 1: the box itself. Anonymous, every action, loopback only.
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1"]
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
+      - action: metrics
+      - action: pprof
+  # Tier 2: contribution seats. Publish-only, one path each.
+  - user: seat-cam
+    pass: ${SEAT_CAM_PASS}
+    permissions:
+      - action: publish
+        path: slot-cam
+  - user: seat-screen
+    pass: ${SEAT_SCREEN_PASS}
+    permissions:
+      - action: publish
+        path: slot-screen
+  - user: seat-audio
+    pass: ${SEAT_AUDIO_PASS}
+    permissions:
+      - action: publish
+        path: slot-audio
+  - user: seat-ad
+    pass: ${SEAT_AD_PASS}
+    permissions:
+      - action: publish
+        path: slot-ad
 
 paths:
   slot-cam:
