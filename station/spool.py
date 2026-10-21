@@ -71,24 +71,29 @@ def ready(url):
     return info
 
 
-_state_cache = {}        # url -> state, invalidated by the spool dir mtime
-_state_cache_dir = None
-_state_cache_at = 0.0
+_state_cache = {}        # url -> state, invalidated when the entry set moves
+_state_key = None        # (sorted spool names, current job) the cache was built on
 
 
 def state(url):
     """ready / fetching / miss. Cached: the panel asks for 200 of these
-    every poll, and each one used to be two stat() calls."""
-    global _state_cache, _state_cache_dir, _state_cache_at
-    now = time.time()
+    per playlist render, and each one used to be two stat() calls.
+
+    The invalidation key is the spool directory's ENTRY SET plus the
+    spooler's current job — every state transition is made of exactly
+    those. An earlier draft keyed on the directory's mtime; filesystems
+    with coarse mtime granularity never changed it (verified: this box's
+    overlayfs), so a finished download served as 'fetching' for a full
+    second and test_spool's state->ready caught it."""
+    global _state_cache, _state_key
     try:
-        dirmtime = os.stat(SPDIR).st_mtime
+        names = tuple(sorted(os.listdir(SPDIR)))
     except OSError:
-        dirmtime = 0
-    if dirmtime != _state_cache_dir or now - _state_cache_at > 1.0:
+        names = ()
+    key = (names, _current)
+    if key != _state_key:
         _state_cache = {}
-        _state_cache_dir = dirmtime
-        _state_cache_at = now
+        _state_key = key
     hit = _state_cache.get(url)
     if hit is not None:
         return hit
