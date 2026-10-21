@@ -61,6 +61,11 @@ def _ytdlp_cmd(extra):
             base += ["--cookies-from-browser", c.split(":", 1)[1]]
         elif os.path.isfile(c):
             base += ["--cookies", c]
+            # Healthy again: re-arm the warn. The flag used to latch for
+            # the process lifetime, so after one fix a SECOND cookies
+            # disappearance (days later) resolved anonymously in silence.
+            if _COOKIES_WARNED:
+                _COOKIES_WARNED = False
         elif not _COOKIES_WARNED:
             # A configured-but-missing cookies file silently downgraded to
             # anonymous -- and the operator could not tell why the bot-wall
