@@ -24,37 +24,59 @@ have to change, and the box needs real cores.
 
 ## 2. Recommended specification
 
+Two honest anchors before the numbers:
+
+- **The laptop datapoint does not transfer.** "OBS ran fine on the i3/i7
+  laptop while I did other things" was OBS IDLE — not encoding. The
+  streaming cost is the x264 encode plus (on a GPU-less box) llvmpipe
+  compositing, and neither was measured on that laptop.
+- **The config tree is the source of truth for what airs.** The shipped
+  profile (`station/config/video.json` + `encoder.json`) is 960x540 @30,
+  x264 ultrafast CBR 2500k — that is the *lab* profile. The 1080p60
+  target is a different box class, not a config nudge.
+
+Cost model on a GPU-less VPS (llvmpipe + x264, modern dedicated x86):
+
+| Profile | Render (llvmpipe) | Encode (x264) | vCPU needed | RAM |
+|---|---|---|---|---|
+| 960x540 @30 / 2500k ultrafast (shipped) | ~0.5-1 core | ~0.5 core | **3** | 4 GB |
+| 1280x720 @60 / 4000k veryfast | ~1.5 cores | ~1.5 cores | **4-5** | 8 GB |
+| 1920x1080 @60 / 6000k veryfast (target) | ~2-3 cores | ~3 cores | **8** | 16 GB |
+
+The deck pipelines cost nothing (HLS -> MPEGTS `-c copy`, no re-encode);
+intake's loudness pass is offline (~50 s of one core per 4-minute item)
+and can simply take longer. The daemon/panel/overlay are trivial. OBS is
+the whole story.
+
 ```
-CPU      8 vCPU (dedicated, not shared)   — software GL + loudnorm + downloads
-RAM      16 GB                            — OBS (1.5 GB) + ffmpeg + a 3-8 GB page cache for the spool
-DISK     200 GB NVMe                       — media cache (50 GB cap) + spool + the flatpak/obs image
-NETWORK  5 TB+ monthly, 1 Gbps            — a 3 GB item is a long download at 20 Mbps
-OS       Ubuntu 24.04 LTS (or Arch)        — systemd user units either way
-REGION   any well-peered region; EU or US  — see §4
+Budget pick  — 1080p60 (the stated target):
+CPU      8 vCPU dedicated (Hetzner CPX41-class AMD EPYC)
+RAM      16 GB          — OBS+CEF ~2 GB, page cache for the 50 GB media cache
+DISK     200+ GB NVMe   — media cache cap (50 GB) + spool (raw+blessed ~2x) + flatpak
+NETWORK  20 TB class    — 6000 kbps 24/7 ≈ 2 TB/mo out, plus deck pulls in
+OS       Ubuntu 24.04 LTS (or Arch)
+≈ $26-30/month. Fits the budget at the top end.
+
+Comfort pick — if 1080p30 or 720p60 is acceptable:
+CPU      4-5 vCPU dedicated (Hetzner CPX31)
+≈ $15-18/month, real headroom.
+
+Floor pick — the shipped 540p30 profile, cheapest real box:
+CPU      3 vCPU dedicated (Hetzner CPX21)
+≈ $9-11/month.
 ```
 
-**Why 8 vCPU and not 4.** Software GL at 720p30 wants ~2 cores of pure
-render; the loudness pass wants another; yt-dlp merging wants another; and
-the box must stay responsive while all three run, because a starved box
-shows up as "the station is struggling". 4 vCPU works at 720p30 with
-little headroom; 8 is the point where the station is boring again.
+**Non-negotiables:** *dedicated* vCPU (a shared "2 vCPU" burst line will
+drop frames the moment the loudness pass overlaps a scene render); NVMe
+(not SSD-archive tiers); and 8 GB RAM minimum for the 1080p60 profile —
+a 4 GB box page-thrashes the media cache against OBS and it shows up as
+"the station is struggling".
 
-**Why 16 GB and not 8.** OBS with a browser source and a compositor costs
-1.5–2 GB; ffmpeg's loudnorm and yt-dlp's merge are memory-hungry on
-720p files; the page cache for the spool wants 3–8 GB so a download does
-not fight the render. 8 GB works with `STREAM_SPOOL_MAX_GB` at 2, 16 GB
-does not need tuning.
-
-**Why 200 GB.** `CACHE_CAP_BYTES` is 50 GB and the spool holds raw +
-blessed copies (2× the cap). Plus the Flatpak OBS image, the MediaMTX
-binary, the OS. 200 GB NVMe leaves room to raise the media cap.
-
-**GPU-less alternative.** If the box is going to be a VPS, consider whether
-it needs OBS at all: the render plane could be replaced by a compositor
-that composites the overlay pages and the deck video (OBS is doing scene
-management, not effects). That is a rewrite of the render half, not a
-config change. Keep OBS: it is the least risky path and it is what the
-scenes are built in.
+**$5-10 tier, honestly:** at that price only shared-vCPU or very old
+cycles are on the table. That runs the 540p30 lab profile marginally at
+best; it will not hold 1080p60. If the budget is hard-capped, the right
+move is the floor profile on a CPX21-class box, not a cheap box chasing
+the 1080p60 target.
 
 ## 3. Platform shortlist
 
@@ -68,9 +90,12 @@ Prices move; check before buying. Ordered by value.
 | **Vultr / DigitalOcean / Linode** | Easiest: hourly billing, many regions, good docs. | 2–4× the price of the value providers. |
 | **Contabo** | Cheapest per core by a wide margin. | Oversold shared CPU; the single-core performance is poor, which is exactly what llvmpipe needs. Not recommended. |
 
-**Recommendation:** a Hetzner CCX (8 dedicated vCPU, 32 GB, 240 GB NVMe)
-or an OVH equivalent. Budget roughly €40–70/month; anything materially
-cheaper will be CPU-starved.
+**Recommendation (2026-10-21, priced against a real budget):** Hetzner
+CPX41 (8 dedicated vCPU, 16 GB, 320 GB NVMe) for the 1080p60 target —
+~€26/month; CPX31 (4 vCPU) if the profile drops to 1080p30/720p60;
+CPX21 (3 vCPU) for the shipped 540p30 profile. The old €40-70 CCX
+suggestion was sized for a 720p30 render the config tree no longer
+carries; the CPX line hits the same cores for less.
 
 **Do not** buy a cheap VPS with 1–2 vCPU "for now": software GL plus a
 loudness pass on 2 cores will drop frames, and the first symptom is the

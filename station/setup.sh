@@ -239,7 +239,26 @@ fi
 cat <<'EOF'
 
 OBS profile checklist (set once in the GUI; profiles can't be safely templated):
-  Output 1920x1080, 30fps | x264 superfast CBR 6000k | keyframe 2s | AAC 128k
+EOF
+# The checklist numbers are READ from the config tree, not restated here:
+# two places that can disagree is how "1080p/6000k" and "540p/2500k" both
+# ended up written down as the truth. The config tree is the source.
+python3 - <<'PYEOF'
+import json, os
+try:
+    v = json.load(open("station/config/video.json"))
+    e = json.load(open("station/config/encoder.json")).get("streamEncoder.json", {})
+    out = "%dx%d @%sfps" % (v.get("outputWidth", "?"), v.get("outputHeight", "?"),
+                            v.get("fpsNumerator", "?"))
+    enc = "x264 %s CBR %sk, keyint %ss" % (e.get("preset", "?"),
+                                           e.get("bitrate", "?"), e.get("keyint_sec", "?"))
+    print("  Output %s | %s" % (out, enc))
+    print("  (canvas %dx%d; change station/config/video.json + encoder.json to move)" %
+          (v.get("baseWidth", "?"), v.get("baseHeight", "?")))
+except Exception as ex:
+    print("  (config unreadable: %s — set Output/encoder by hand, then sync.py capture)" % ex)
+PYEOF
+cat <<'EOF'
   websocket server on 127.0.0.1:4455 with password (= OBS_PASS in secrets.env)
   Load scene collection: broadcast/scenes/SMILE-Station.json
 EOF
