@@ -18,6 +18,9 @@ daemon.MEDIA = os.path.join(tmp, "media")
 os.makedirs(daemon.MEDIA)
 daemon.PLAYLIST = os.path.join(daemon.MEDIA, "playlist.json")
 daemon.STATE = os.path.join(tmp, "state.json")
+# The station's activity log is the operator's evidence trail: a
+# test run must not write its alerts into the live database.
+daemon.DB = os.path.join(tmp, "activity.db")
 daemon.DB = os.path.join(tmp, "a.db")
 daemon.ROOT = tmp
 

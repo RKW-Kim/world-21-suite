@@ -23,6 +23,9 @@ os.makedirs(media, exist_ok=True)
 daemon.MEDIA = media
 daemon.PLAYLIST = os.path.join(media, "playlist.json")
 daemon.STATE = os.path.join(tmp, "state.json")
+# The station's activity log is the operator's evidence trail: a
+# test run must not write its alerts into the live database.
+daemon.DB = os.path.join(tmp, "activity.db")
 for n in ("a.mp4", "b.mp4", "loop_a.mp4", "loop_b.mp4"):
     open(os.path.join(media, n), "w").write("0")
 DECKS = {"A": daemon.DECK_A, "B": daemon.DECK_B}

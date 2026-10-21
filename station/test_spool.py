@@ -22,6 +22,13 @@ _ORIG_RUN = subprocess.run  # capture before any monkeypatch rebinds it
 tmp = tempfile.mkdtemp()
 spool.SPDIR = os.path.join(tmp, "spool")
 os.makedirs(spool.SPDIR)
+# The station's activity log is the operator's evidence trail: a test
+# run must not write its alerts into the live database.
+try:
+    import daemon
+    daemon.DB = os.path.join(tmp, "activity.db")
+except Exception:
+    pass
 
 _C = {"stream_spool_keep_hours": 0.001,     # 3.6s = instantly aged
       "stream_spool_max_gb": 3.0,
