@@ -699,18 +699,51 @@ function linkState(it) {
   return "file";
 }
 
-function onAirIdx() {
+/* The SAVED playlist's on-air position: state.index is 1-based and points
+   at the NEXT item, so the item on air is items[index - 1]. The saved
+   playlist is what the station actually runs; the draft is only the
+   staged edit. */
+function savedOnAirIdx() {
   return Math.max(0, ((S.state || {}).index || 1) - 1);
 }
 
-function effectiveNextIdx() {
-  /* The NEXT marker must show what actually airs: dormant and unnamed rows
-     are silently skipped by the daemon, so the marker skips them too. */
+/* A row's stable identity is the MEDIA itself: keyOf() is youtube|file.
+   Slots move while edits are staged; the item on air does not. Returns
+   the first draft row carrying that identity, skipping one index (the
+   on-air row, when the same media appears twice in the list). */
+function draftIdxOfKey(key, notIdx) {
+  if (!key) return -1;
   const items = draftItems();
-  for (let j = onAirIdx() + 1; j < items.length; j++) {
-    const it = items[j];
+  for (let i = 0; i < items.length; i++) {
+    if (i !== notIdx && keyOf(items[i]) === key) return i;
+  }
+  return -1;
+}
+
+function onAirIdx() {
+  /* The on-air row inside the WORKING COPY, found by item identity. With
+     rows inserted/removed/reordered above it in a staged draft, the
+     station's index no longer names the draft slot -- marking slot
+     index-1 lit the green bar on whatever stranger now sat there. -1
+     when the draft has staged the item away: no marker, and callers
+     that use this as an insertion point must clamp. */
+  const it = liveItems()[savedOnAirIdx()];
+  if (!it || (it.youtube == null && it.file == null)) return -1;
+  return draftIdxOfKey(keyOf(it));
+}
+
+function effectiveNextIdx() {
+  /* What actually airs next: the daemon walks the SAVED playlist from
+     index, skipping dormant and unnamed rows -- so the marker walks the
+     same item there, then draws on the matching draft row (by identity,
+     so a staged reorder does not push the NEXT cue onto a stranger). */
+  const saved = liveItems();
+  for (let j = savedOnAirIdx() + 1; j < saved.length; j++) {
+    const it = saved[j];
     if (it.status === "dormant") continue;
-    if (it.youtube != null || it.file != null || it.source) return j;
+    if (it.youtube != null || it.file != null || it.source) {
+      return draftIdxOfKey(keyOf(it), onAirIdx());
+    }
   }
   return -1;
 }
@@ -868,7 +901,9 @@ function render(force) {
   const items = draftItems();
   const st = S.state || {};
   const onIdx = onAirIdx();
-  const onIt = items[onIdx] || {};
+  /* The strip is station truth, not working-copy truth: it names what is
+     on air right now even if the draft has staged that row away. */
+  const onIt = liveItems()[savedOnAirIdx()] || {};
   const nxIdx = effectiveNextIdx();
 
   /* The strip and the small controls update every pass; the LISTS are
@@ -1224,7 +1259,7 @@ function queueGroup(g, cutNow, atEnd) {
       if (a[n].group === g && a[n].status === "dormant") picked.push(a.splice(n, 1)[0]);
     }
     picked.reverse();  // splice removed them end-first
-    const where = atEnd ? a.length : Math.min(onAirIdx(), a.length);
+    const where = atEnd ? a.length : Math.max(0, Math.min(onAirIdx(), a.length));
     picked.forEach((m) => {
       m.status = null; m.group = null; delete m.gorder;
       a.splice(where, 0, m);
@@ -1593,7 +1628,9 @@ function playNext(i) {
   mutate((a) => {
     const [m] = a.splice(i, 1);
     m.status = null; m.group = null; delete m.gorder;
-    a.splice(onAirIdx(), 0, m);
+    /* -1: the on-air item is staged away -- land the play-now at the
+       top, where the station's cursor will pick it up. */
+    a.splice(Math.max(0, onAirIdx()), 0, m);
   }, "playing now — applying and cutting");
   /* A cut cannot wait for a staged Apply: the station has to see the new
      order now, so this one action is pushed straight through. */
@@ -1714,11 +1751,12 @@ $("t-prev").addEventListener("click", async () => {
 });
 
 /* Live streams cannot pause/replay (a paused feed is a half-swallowed
-   RTMP source), so transport lights up only for file-lane items. */
+   RTMP source), so transport lights up only for file-lane items.
+   The DECK's truth comes from the saved playlist -- S.spool is built
+   over it (panel.py) and a staged draft must not re-label the deck. */
 function streamOnAir() {
-  const items = draftItems();
-  const i = Math.max(0, ((S.state || {}).index || 1) - 1);
-  const it = items[i] || {};
+  const i = savedOnAirIdx();
+  const it = liveItems()[i] || {};
   if (it.youtube == null) return false;
   /* no cache ready == the deck is streaming live (spool:false never
      caches, so never lights) */
