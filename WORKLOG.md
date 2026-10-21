@@ -1775,3 +1775,49 @@ cannot fetch nor set inputs; mpv needs a window headless lacks. Built:
   feed death on the station is the live proof (watch for "respawn 1
   starting in background" then "respawned (1)" with the pass never
   going BUSY).
+
+## 2026-10-21 (late, 3) — plane_call is now a bound: the stale tail of a timed-out sequence dies "superseded"
+
+- The regression pass deferred this as architectural: plane_call's 504
+  answered "we stopped waiting", not "it did not happen" — the abandoned
+  call kept the plane lock and a timed-out MULTI-RPC sequence (an INTENT,
+  ensure_bed) could keep landing its remaining RPCs up to OBS_TIMEOUT
+  later, on top of a newer intent that fired meanwhile. That is the "late
+  cut overrides a retry" shape: the plane ends on the older intent.
+- Fix: a generation guard, at the only point that can be atomic. Every
+  plane_call takes the next generation (overlay_server._PLANE_GEN); its
+  worker thread stamps it into the renderer's thread-local
+  (OBSRenderer._tls.gen); _call — holding the plane lock — refuses an RPC
+  whose generation is OLDER than the newest one that already SENT
+  (OBSAppError, connection stands), and updates _sent_gen under the same
+  lock. Check+send atomic means a stale RPC can never slip between its
+  check and its send. The daemon's own calls carry no generation and are
+  never refused — the guard exists only where the deadline exists.
+- Semantics, stated: within ONE call its whole sequence lands (same
+  generation); once a NEWER call has sent, every older in-flight
+  sequence's remaining RPCs are refused — the newest operator action
+  wins, which is the correct contract for a console. Single RPCs already
+  in flight server-side still complete (Python cannot kill a thread;
+  nothing of that call follows it, and the daemon's reconcile pass
+  re-forces visibility/mutes at the next cut).
+- Regression grill ON THIS FIX, pre-commit: (1) plane_call routes are
+  all operator-initiated POSTs (intents, /obs passthrough, /music, ad
+  refresh) — no background poll carries generations, so there is no
+  "poll starves intent" trap; the tap poll and the event loop ride their
+  own ungenerated renderers; (2) ensure_bed superseded mid-ensure is
+  self-healing (idempotent, re-run on the next probe) and the daemon's
+  reconcile covers half-intents; (3) thread-local gens die with their
+  doomed threads — no leak, no cross-thread contamination; (4) the
+  first test run caught MY OWN harness bug (the wait loop exited while
+  the abandoned thread was still sleeping) — the code was right, the
+  probe was not; (5) the guard raise is OBSAppError, which _call already
+  re-raises without dropping the connection — no transport churn.
+- Verified: new station/test_plane_guard.py (12 checks: stale refused
+  BEFORE the send with the connection standing; same-gen sequences
+  continue; ungenerated daemon-shape calls unaffected; the timed-out
+  sequence's tail dies superseded while the newer call lands; one call's
+  own two-RPC sequence never refused). Full stdlib suite green
+  (spool, fallback, playlist_edges, control_consume, overlay_auth,
+  stream_respawn, selftest). Live proof arrives with the next real
+  deaf-plane window: the journal should show "superseded" where it used
+  to show a late intent landing.

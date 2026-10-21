@@ -48,6 +48,11 @@ INTENTS = {
 
 OBS_REQ = None  # one held request connection (OBSRenderer._call is locked)
 OBS_LOCK = threading.Lock()
+# Plane-call generations: every plane_call takes the next number; the
+# renderer refuses an RPC older than one that already sent, so a timed-out
+# multi-RPC sequence cannot land its tail over a newer intent.
+_PLANE_GEN = [0]
+_PLANE_GEN_LOCK = threading.Lock()
 METERS = {}  # inputName -> peak 0..1, fed by the event loop below
 METERS_LOCK = threading.Lock()
 RELAY_SLOTS = threading.Lock()
@@ -132,10 +137,29 @@ def plane_call(fn, timeout=4.0):
     until the server exhausts. The 4s cap exists once (the /music probe);
     every handler-side plane call goes through here now. A wedged call
     leaves one doomed daemon thread behind -- the honest price of
-    answering instead of hanging."""
+    answering instead of hanging.
+
+    The deadline is a BOUND, not a lie: every call takes a generation;
+    the renderer refuses an RPC whose generation is older than one that
+    already sent (daemon.OBSRenderer._call, atomic under the plane lock).
+    A timed-out MULTI-RPC sequence (an intent, ensure_bed) therefore
+    cannot keep landing its tail over a newer intent that fired
+    meanwhile -- the abandoned thread's remaining RPCs die as
+    "superseded" instead of overriding the newer call. Single-RPC fns
+    that already sent behave as before (the RPC itself can still land;
+    nothing of theirs follows it)."""
     out = {}
+    with _PLANE_GEN_LOCK:
+        _PLANE_GEN[0] += 1
+        gen = _PLANE_GEN[0]
 
     def _go():
+        try:
+            r = obs_req()
+            r._tls.gen = gen   # thread-local: only THIS thread carries it
+        except Exception as e:
+            out["e"] = e
+            return
         try:
             out["v"] = fn()
         except Exception as e:

@@ -37,11 +37,20 @@ proof; see WORKLOG). What is STILL open, ranked:
 - **station has never published to YouTube end-to-end** (the publish
   leg is deliberately disarmed; see DECISIONS §13). First real cutover
   run is its own checklist.
-- **plane_call is a deadline, not a bound** (overlay): the 504 answers
-  "we stopped waiting", not "it did not happen" — the abandoned call
-  keeps OBS_LOCK and can still land up to OBS_TIMEOUT later (a late cut
-  can override a retry fired in the meantime). Bounded by arrival rate;
-  a real cancellation or sequencing guard is the actual fix.
+- **plane_call is a deadline, not a bound** — FIXED 2026-10-21 to the
+  extent Python can: every plane_call takes a generation and the
+  renderer refuses an RPC older than one that already sent (the guard
+  lives inside the plane lock, so a stale RPC cannot slip between its
+  check and its send). A timed-out MULTI-RPC sequence (an intent,
+  ensure_bed) now dies "superseded" instead of landing its tail over a
+  newer intent — the "late cut overrides a retry" shape is gone
+  (test_plane_guard.py pins it). What remains, inherent: a single RPC
+  already in flight server-side when its deadline hits will still
+  complete — nothing of that call follows it, and the daemon's
+  reconcile pass re-forces visibility/mutes at the next cut, so the
+  residue is one request that landed late, not a sequence that
+  overrode newer intent. Real cancellation would need cooperative
+  checkpoints inside every call; not worth it at this blast radius.
 - **stream respawn residual races (fixed 2026-10-21, narrowed not
   erased)**: the old defect — resolve+spawn+ready-wait inline INSIDE the
   playout pass, a dead network freezing the deck ~4 min per attempt — is

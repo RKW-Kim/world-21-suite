@@ -209,6 +209,15 @@ class OBSRenderer(Renderer):
         self._ended_cb = None
         self._shared = None
         self._lock = threading.Lock()
+        # Superseded-call guard: _tls carries the caller's generation (set
+        # only by overlay_server.plane_call threads); _sent_gen is the
+        # newest generation that has SENT an RPC. A thread carrying an
+        # older generation than one that already sent is refused — its
+        # sequence outlived its deadline, and letting its tail run is how
+        # a late abandoned cut overrides a retry that landed meanwhile.
+        # The daemon's own calls set no generation and never see this.
+        self._tls = threading.local()
+        self._sent_gen = 0
 
     def _connect(self, timeout="default"):
         # Calls default to 60s: on weak boxes a SetInputSettings can stall the
@@ -252,6 +261,15 @@ class OBSRenderer(Renderer):
                 self._shared = self._connect()
             ws = self._shared
             try:
+                # The guard lives INSIDE the lock: check and send are
+                # atomic, so a stale RPC can never slip between its check
+                # and its send. OBSAppError keeps the connection standing.
+                gen = getattr(self._tls, "gen", None)
+                if gen is not None:
+                    if gen < self._sent_gen:
+                        raise OBSAppError(
+                            "superseded: a newer plane call already landed")
+                    self._sent_gen = gen
                 self._seq += 1
                 rid = "daemon-%d" % self._seq
                 ws.send({"op": 6, "d": {"requestType": req, "requestId": rid,
