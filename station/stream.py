@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 import time
 import urllib.request
 
@@ -48,9 +49,11 @@ READY_TIMEOUT = 45
 #   browser:chromium          (lab convenience; uses the desktop profile)
 # Unset = anonymous. Configure via the daemon unit's environment.
 _COOKIES = os.environ.get("YTDLP_COOKIES", "")
+_COOKIES_WARNED = False
 
 
 def _ytdlp_cmd(extra):
+    global _COOKIES_WARNED
     base = [YTDLP, "--no-playlist"]
     c = _COOKIES
     if c:
@@ -58,6 +61,13 @@ def _ytdlp_cmd(extra):
             base += ["--cookies-from-browser", c.split(":", 1)[1]]
         elif os.path.isfile(c):
             base += ["--cookies", c]
+        elif not _COOKIES_WARNED:
+            # A configured-but-missing cookies file silently downgraded to
+            # anonymous -- and the operator could not tell why the bot-wall
+            # came back. Say it once, loudly, then keep going.
+            _COOKIES_WARNED = True
+            sys.stderr.write("stream: YTDLP_COOKIES=%r does not exist -- "
+                             "resolving anonymously (bot-wall risk)\n" % c)
     return base + extra
 
 

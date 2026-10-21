@@ -65,6 +65,11 @@ def already_done(source):
     return row[0] if row else None
 
 
+# Warned-once flag for a configured-but-missing YTDLP_COOKIES file (the
+# fetch would otherwise silently run anonymous; see fetch_source).
+_warned_cookies = {"warned": False}
+
+
 def fetch_source(source, workdir):
     """Return a local raw file. URLs via yt-dlp; anything else must be a file."""
     if os.path.isfile(source):
@@ -88,6 +93,13 @@ def fetch_source(source, workdir):
         cmd += ["--cookies-from-browser", browser]
     elif os.path.isfile(cookies):
         cmd += ["--cookies", cookies]
+    elif cookies and not _warned_cookies.get("warned"):
+        # Same silent-fallback lesson as stream.py: a configured cookies
+        # path that is missing downgrades to anonymous and the operator
+        # cannot tell why the bot-wall returned. Say it once.
+        _warned_cookies["warned"] = True
+        sys.stderr.write("intake: YTDLP_COOKIES=%r does not exist -- "
+                         "fetching anonymously (bot-wall risk)\n" % cookies)
     cmd.append(source)
     run(*cmd)
     cands = [os.path.join(workdir, f) for f in os.listdir(workdir)

@@ -1122,6 +1122,12 @@ class Handler(SimpleHTTPRequestHandler):
         import mimetypes
         import urllib.parse as _up
         rel = _up.unquote(rel)
+        if "\x00" in rel:
+            # A %00 in the path raises ValueError from os.path.join --
+            # outside the OSError catch, that killed the connection with
+            # no response at all. A bad request gets a bad-request answer.
+            self.send_error(400, "bad path")
+            return
         path = os.path.normpath(os.path.join(daemon.MEDIA, rel))
         # realpath: a symlink inside media/ must not escape to secrets.env
         # (one level up) or anywhere else. Dotfiles never served either.
