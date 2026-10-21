@@ -494,16 +494,34 @@ function draftItems() {
   return (draft || {}).items || [];
 }
 
+function liveShuffle() {
+  /* The station's actual reshuffle-at-end switch (playlist.json, served
+     with /api/state). The dock owns staging it; the daemon reads it when
+     a roll completes. */
+  return !!(((S || {}).playlist || {}).shuffle_on_complete);
+}
+
 function markPending() {
   pending = JSON.stringify(draftItems().map((it) => [keyOf(it), it.status || "",
     it.group || "", it.gorder == null ? "" : it.gorder, it.tab || "",
     it.meta_trip ? 1 : 0, it.title || ""])) !==
     JSON.stringify(liveItems().map((it) => [keyOf(it), it.status || "",
       it.group || "", it.gorder == null ? "" : it.gorder, it.tab || "",
-      it.meta_trip ? 1 : 0, it.title || ""]));
+      it.meta_trip ? 1 : 0, it.title || ""])) ||
+    /* The item diff above cannot see a playlist-level flag: without this
+       the shuffle-at-end toggle staged nothing, Apply refused, and the
+       operator could believe it was off while the roll reshuffled. */
+    !!((draft || {}).shuffle_on_complete) !== liveShuffle();
   $("apply").classList.toggle("pending", pending);
   $("pending").textContent = pending ? "staged changes — press Apply" : "";
   renderStagedBar();
+}
+
+function seedShuf() {
+  /* The checkbox mirrors the WORKING COPY — seeded from the station on a
+     clean load, carried through undo/redo/revert with the rest of the
+     staged state — never the operator's last click. */
+  $("shuf").checked = !!((draft || {}).shuffle_on_complete);
 }
 
 /* ---------- staged-change history -------------------------------------- */
@@ -544,7 +562,8 @@ function pushUndo(label) {
      last staged edit while the bar claimed it was still staged. */
   if (!appliedSnap) appliedSnap = clone(liveItems());
   history = history.slice(0, histIndex);
-  history.push({label: label || "change", items: clone(draftItems())});
+  history.push({label: label || "change", items: clone(draftItems()),
+    shuf: !!((draft || {}).shuffle_on_complete)});
   histIndex = history.length;
   if (history.length > 40) { history = history.slice(-40); histIndex = history.length; }
   saveHistory();
@@ -559,7 +578,10 @@ function undo() {
   if (histIndex <= 0) { status("nothing left to undo", "warn"); return; }
   const step = history[histIndex - 1];
   histIndex--;
-  draft = { ...(draft || {}), items: clone(histItems(histIndex)) };
+  const back = histIndex > 0 ? history[histIndex - 1] : null;
+  draft = { ...(draft || {}), items: clone(histItems(histIndex)),
+    shuffle_on_complete: back && back.shuf != null ? back.shuf : liveShuffle() };
+  seedShuf();
   markPending();
   render(true);
   saveHistory();
@@ -570,20 +592,26 @@ function undo() {
 function redo() {
   if (histIndex >= history.length) { status("nothing to redo", "warn"); return; }
   histIndex++;
-  draft = { ...(draft || {}), items: clone(histItems(histIndex)) };
+  const step = history[histIndex - 1];
+  draft = { ...(draft || {}), items: clone(histItems(histIndex)),
+    shuffle_on_complete: step && step.shuf != null ? step.shuf : liveShuffle() };
+  seedShuf();
   markPending();
   render(true);
   saveHistory();
-  status("redone one step (“" + history[histIndex - 1].label + "”)");
+  status("redone one step (“" + step.label + "”)");
 }
 
 /* Back to the state the station is actually running. */
 function revertToApplied() {
   if (!appliedSnap) { status("no applied snapshot to go back to", "warn"); return; }
   history = history.slice(0, histIndex);
-  history.push({label: "revert to applied", items: clone(appliedSnap)});
+  history.push({label: "revert to applied", items: clone(appliedSnap),
+    shuf: liveShuffle()});
   histIndex = history.length;
-  draft = { ...(draft || {}), items: clone(appliedSnap) };
+  draft = { ...(draft || {}), items: clone(appliedSnap),
+    shuffle_on_complete: liveShuffle() };
+  seedShuf();
   markPending();
   render(true);
   saveHistory();
@@ -1705,7 +1733,14 @@ $("vol").addEventListener("input", () => {
 
 /* ---------- shuffle + loudness switch ---------------------------------- */
 $("shuf").addEventListener("change", () => {
+  /* No working copy yet (the first poll has not landed): staging a
+     playlist-level flag into an empty draft would let Apply wipe the
+     queue. Ignore the click; the load re-seeds the checkbox. */
+  if (!draft || !S) return;
   draft = { ...(draft || {}), shuffle_on_complete: $("shuf").checked };
+  /* The toggle is a staged step like any other: it goes on the history
+     stack (items ride along unchanged), so Ctrl+Z un-toggles it. */
+  pushUndo("reshuffle-at-end " + ($("shuf").checked ? "on" : "off"));
   markPending();
   render(true);
   status("reshuffle-at-end " + ($("shuf").checked ? "on" : "off") + " — staged");
@@ -1951,10 +1986,13 @@ async function load(silent) {
          holds the last working copy. Post-states mean history[histIndex
          - 1] IS the state the operator was looking at. */
       if (histIndex > 0 && history[histIndex - 1]) {
-        draft = { ...draft, items: clone(history[histIndex - 1].items) };
+        const step = history[histIndex - 1];
+        draft = { ...draft, items: clone(step.items),
+          shuffle_on_complete: step.shuf != null ? step.shuf : liveShuffle() };
         pending = true;
         status("staged changes restored after a reload — press Apply or Revert", "warn");
       }
+      seedShuf();
       markPending();
     }
     fillMedia();
