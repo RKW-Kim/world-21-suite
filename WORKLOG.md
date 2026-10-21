@@ -4,6 +4,111 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-21 (evening) — the audit list worked through: 2 WAN blockers, the control race, 4 dock defects, and the long tail (13 commits)
+
+- The PAT landed, so this pass ran as the operator: pull, rebase (the
+  render-plane mask commits came in from the live machine mid-flight —
+  PLANE_AUTORESTART + the hold-queue guard read clean, kept as-is), work,
+  push. One idea per commit, each with its own proof.
+- **The relay auth bridge (top blocker).** /ws + /obs hand out
+  AUTHENTICATED render-plane control — the server completes OBS auth with
+  its own secret. A token now makes those surfaces REQUIRE it
+  (Authorization header or ?token= — browser WS handshakes cannot carry
+  headers), compare_digest, and Origin:null REFUSES under a token instead
+  of passing (that was the sandboxed-iframe hole). No token configured =
+  the tunnel trust model unchanged, so nothing existing broke.
+  test_overlay_auth.py live-fires the handler stack: 5 failures on the old
+  code, 0 on the new.
+- **MediaMTX auth (blocker two).** The shipped default is user:any/pass:any
+  from any IP — i.e. anyone who could reach :9000 could inject on air.
+  Three tiers now: loopback anonymous-everything (OBS monitor publish, ffmpeg
+  decks, OBS SRT reads, WHEP proxy, API keep working with ZERO credential
+  churn), seat users publish-only on ONE path each, everything else refused.
+  Proved live against the real binary on this box: loopback RTMP publish
+  accepted, remote anonymous SRT refused, seat-cam credential allowed on
+  slot-cam but refused on monitor.
+  - Lesson: **mediamtx does NOT expand ${VARS} in the YAML** — the literal
+    string became the password (the live test caught it: correct pass
+    refused, literal pass accepted). The config is a TEMPLATE now;
+    setup.sh renders the real passes into $BROADCAST_ROOT/mediamtx.yml
+    (600) and the unit runs that file. Adopted from the 24-7-Playout
+    plugin's one genuinely good lifecycle habit: regenerate the config at
+    provision time.
+  - Lesson two: **v1.21's WebRTC ICE mux is 8189/udp, not 8892** — MoQ took
+    8892 (and is ON by default with wildcard listeners; disabled here).
+    Every firewall rule and doc that said 8892 now says 8189.
+  - setup.sh: `--seat CIDR` (repeatable) opens SRT/WHIP/ICE per SOURCE
+    NETWORK — nothing seat-shaped is world-open anymore; the old
+    `ufw allow 9000:9001/udp` is gone. whip.html sends Basic (mediamtx
+    internal auth), srt_test/send.sh embeds seat credentials.
+  - Bonus catch: the release asset is `mediamtx_v1.21.2_...` — the URL
+    stripped the v and 404'd, so setup.sh's mediamtx fetch was broken.
+- **control.json race.** The panel's api_control RMW and the daemon's
+  consume (which spans a whole advance — seconds) shared no lock: a skip
+  posted mid-transition was EATEN by the stale write-back; a stale panel
+  write could resurrect a consumed verb (double-advance). Panel holds
+  pl_lock across its RMW; the daemon (consume_control, extracted from the
+  loop) reads under the lock, acts unlocked, then re-reads FRESH and pops
+  exactly the keys the original read contained. Verbs posted mid-consume
+  survive; consumed ones cannot be resurrected. The one deliberate
+  swallow: a skip posted during a skip consume (bare booleans have no
+  instance identity; the refractory exists for slam-skips).
+  END_LOCK moved to module level for the skip path.
+- **The dock's four defects**, browser-verified red→green per defect
+  (Playwright harness against a real panel on :8221): undo/redo stores
+  POST-states (redo reaches the newest step; reload restores what the
+  operator saw); the shuffle-at-end toggle stages, applies and seeds;
+  the keyboard cursor never lands on a folded (display:none) row; the
+  on-air/NEXT green bar follows ITEM IDENTITY (youtube-url-or-file), not
+  draft slot index.
+- **The long tail**, one commit each: respawns resolve FRESH (a mid-TTL
+  403 used to respawn the same dead urls to the fault limit) +
+  _RESOLVE_CACHE finally prunes; preflight diagnoses a corrupt/missing
+  playlist instead of crashing on the exact boot it exists to diagnose;
+  watchdog/sync share one systemd scope (sync STOPped system units but
+  STARTed user ones — a root install stayed dark), watchdog surfaces
+  systemctl exit codes, and apply --restart drops a .watchdog-park the
+  watchdog honors (15-min stale expiry = the self-heal for an apply that
+  died mid-flight); intake publishes ATOMICALLY (normalise into the
+  workdir, verify, os.replace — no more partial broadcast-eligible files)
+  and sweeps dead-pid workdirs (pid reuse can't adopt stale raws); the
+  silent cookie fallback says itself once; /files answers a %00 path with
+  400 instead of a dead connection; thumbnails generate to a .part.jpg
+  and rename (a killed ffmpeg served a HALF jpeg forever — first attempt
+  used .part alone and ffmpeg refused to guess the muxer: the live test
+  caught it) with a 512-cap on the lock map; every handler-side plane
+  call rides the bounded cap now (a wedged plane answers 504 instead of
+  pinning threads for OBS_TIMEOUT each).
+- **VPS answer for the 1080p60 target (budget $5-30)**: the honest
+  anchors are that the laptop datapoint was OBS IDLE (no encode measured)
+  and deck pipelines are -c copy (free) — so the whole story is llvmpipe
+  render + x264. Three tiers priced in docs/VPS.md: CPX41-class 8
+  dedicated vCPU (~$26-30) for 1080p60, CPX31 (~$15-18) for
+  1080p30/720p60, CPX21 (~$9-11) for the shipped 540p30 profile. Shared
+  burst vCPU will drop frames; 8 GB is the floor at 1080p60. setup.sh's
+  OBS checklist now READS video.json/encoder.json instead of restating
+  numbers (the "1080p/6000k vs 540p/2500k" two-truths bug).
+- From the plugin deep-dive (its v0.8.41 release ships SOURCE — 12k lines
+  of C++ mined; the git repo itself is binaries-only): their mediamtx
+  config is WORSE than ours (no auth, wildcard binds) — but the adopt
+  list is real: per-seat signal status in the dock (3s paths/list poll
+  + OBS media state per row), planned start/end times per rundown with a
+  60s drift warning, Now/Next viewer overlay on the SSE bus with their
+  push-on-change cadence, config backup/auto-recovery (atomic save +
+  parse-validated .bak restore), Discord rundown notifications,
+  next-up event ~20s before item end. REJECT confirmed: their mediamtx
+  config, alwaysAvailable slates (masks the dead-input state the
+  watchdog uses), recording, the OBS-plugin architecture (12k-line Qt
+  dock inside the OBS process is the cautionary example), Twitch
+  automation, their live-feed failure posture (display-only; our
+  failover→fallback→Tech Diffs is ahead).
+- Sandbox notes: mediamtx runs here, so the auth matrix was proven
+  against the real binary (P1-P7). This sandbox's ffmpeg SRT client
+  EOFs instantly against mediamtx v1.21 WITH and WITHOUT auth — a
+  client incompatibility, not the config; the real lab SRT flow
+  (laptop-to-laptop, OBS) was proven earlier and seat streamids now
+  carry credentials.
+
 ## 2026-10-21 — full-tree audit (5 agents) + 13 same-day fixes; fresh-clone baseline established
 
 - Context: the station now has a second machine — a sandbox VM standing in
