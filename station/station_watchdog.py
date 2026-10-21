@@ -131,6 +131,18 @@ def unit_active(unit):
         return False
 
 
+def unit_disabled(unit):
+    """The operator switched this unit off on purpose. A disabled unit is
+    not a fault: the watchdog must not start it (that is how you keep the
+    OBS window off your desktop)."""
+    try:
+        p = subprocess.run(["systemctl", "--user", "is-enabled", unit],
+                           capture_output=True, text=True, timeout=10)
+        return p.stdout.strip() in ("disabled", "masked", "static")
+    except Exception:
+        return False
+
+
 def daemon_alive():
     """The daemon is alive only if the UNIT is running AND it is still
     ticking. A stopped daemon leaves a fresh heartbeat behind for a
@@ -152,6 +164,9 @@ def restart(unit):
 
 def check_piece(name, alive):
     unit = USER_UNITS[name]
+    if unit_disabled(unit):
+        log("Watchdog: %s is switched off on purpose — leaving it off." % unit, "INFO")
+        return True
     if alive:
         return True
     if not unit_active(unit):
@@ -196,7 +211,8 @@ def main():
         "plane": plane_alive(),
     }
     if check_only:
-        print(json.dumps({"daemon_age": age, **states}, indent=2))
+        off = [k for k, u in USER_UNITS.items() if unit_disabled(u)]
+        print(json.dumps({"daemon_age": age, "intentionally_off": off, **states}, indent=2))
         return 0 if all(states.values()) else 1
     bad = [k for k, v in states.items() if not v]
     if not bad:

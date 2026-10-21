@@ -184,7 +184,47 @@ silent file and will never be retried (by design).
 | Restart the daemon | The dock's down overlay → Restart daemon (two presses), or `systemctl --user restart station-daemon`. |
 | Restart the plane | `systemctl --user restart station-obs` — it cuts the programme. Say so first. |
 
-## 6. Change verification
+## 6. Switching the render plane off (and on again)
+
+The operator can keep the OBS window off their desktop while the rest of
+the station runs. Three things have to agree, or something will bring the
+window back:
+
+```bash
+# 1. stop it and keep it from starting at boot
+systemctl --user disable --now station-obs.service
+
+# 2. tell the daemon not to resurrect it (the live unit carries this)
+#    Environment=PLANE_AUTORESTART=0
+systemctl --user restart station-daemon
+
+# 3. the watchdog leaves a disabled unit alone
+python3 station/station_watchdog.py --check    # "intentionally_off": ["plane"]
+```
+
+**While the plane is off, the queue HOLDS.** `advance()` refuses to
+consume items when the renderer is not answering — otherwise every item
+would be skipped as "unplayable" and the playlist would be empty by
+morning. The daemon keeps running, keeps the state, and logs
+`Render plane is down: holding the queue`.
+
+**To turn it back on:**
+
+```bash
+systemctl --user enable --now station-obs.service
+# and remove the override from the live daemon unit:
+#   Environment=PLANE_AUTORESTART=0   ->  delete the line
+systemctl --user daemon-reload && systemctl --user restart station-daemon
+```
+
+The flatpak leaves orphaned CEF processes behind when it is stopped
+(`obs-browser-page`); they hold memory and a GPU context:
+
+```bash
+pkill -x obs-browser-page; pkill -x obs; pkill -x bwrap
+```
+
+## 7. Change verification
 
 ```bash
 python3 station/test_spool.py && python3 station/test_fallback.py && \
@@ -198,7 +238,7 @@ sqlite3 broadcast/activity.db "SELECT ts,level,msg FROM activity_log ORDER BY ro
 cat broadcast/heartbeat.json
 ```
 
-## 7. The VPS
+## 8. The VPS
 
 The station moves to a headless box eventually. `docs/VPS.md` has the spec
 sheet, the platform shortlist, the security posture, and the code changes

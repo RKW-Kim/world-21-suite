@@ -945,6 +945,11 @@ def play_ad(renderer, data, decks, mid=False):
 STREAM_DECK = {"A": "STREAM_A", "B": "STREAM_B"}
 WATCH_POLL = float(os.environ.get("WATCH_POLL", "4"))
 PLANE_DOWN_SECS = float(os.environ.get("PLANE_DOWN_SECS", "600"))
+# The render plane can be switched OFF on purpose (the operator does not
+# want the OBS window on their desktop). With this set to 0 the daemon
+# stops resurrecting it: the plane stays down until it is switched back
+# on by hand.
+PLANE_AUTORESTART = os.environ.get("PLANE_AUTORESTART", "1") != "0"
 PLANE_RESTART_COOLDOWN = float(os.environ.get("PLANE_RESTART_COOLDOWN", "1800"))
 STREAM_GRACE = 8.0      # seconds past duration before wall-clock advance
 last_advance = 0.0      # poll-loop thread only; refractory anchor for on_ended
@@ -1546,6 +1551,7 @@ _SWEEP_DAY = None   # the day of the last full metadata sweep
 
 
 def _title_watch_pass():
+    global _SWEEP_DAY
     """One metadata watch cycle: re-resolve YouTube items that carry a
     stored title and flag the ones whose title changed (dragged to
     Available + meta_trip marker; the dock renders Approve/Discard).
@@ -1743,6 +1749,13 @@ def advance(renderer, state, data, deck_sources):
     if not items:
         renderer.set_scene(SCENE_TECHDIFF)
         alert("Playlist empty; holding.", "WARN")
+        return
+    if globals().get("PLANE_DOWN"):
+        # The renderer is not answering: HOLD. Advancing now would consume
+        # the playlist item by item (each one "unplayable" because nothing
+        # can play it) and the queue would be empty by morning.
+        alert("Render plane is down: holding the queue, nothing advanced.",
+              "WARN")
         return
     skipped = dormant = pending = 0
     try:
@@ -2618,11 +2631,15 @@ def cmd_loop(renderer):
                     if hello.get("op") != 0:
                         raise RuntimeError("not v5")
                 plane_down_since = None
+                globals()["PLANE_DOWN"] = 0
             except Exception:
                 now = time.time()
+                globals()["PLANE_DOWN"] = now
                 if plane_down_since is None:
                     plane_down_since = now
-                elif now - plane_down_since > DOWN_SECS and now - plane_restarted_at > COOLDOWN_SECS:
+                elif (PLANE_AUTORESTART and
+                      now - plane_down_since > DOWN_SECS and
+                      now - plane_restarted_at > COOLDOWN_SECS):
                     plane_restarted_at = now
                     alert("Render plane unreachable; restarting it.", "CRIT")
                     restart_plane()
