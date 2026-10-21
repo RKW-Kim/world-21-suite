@@ -100,8 +100,12 @@ proof; see WORKLOG). What is STILL open, ranked:
   walk past; and the row rebuild is linear again (the on-air identity
   scan and the next-item walk are computed once per rebuild, not once
   per row: 41,209 key comparisons -> 22).
-- **intake workdir sweep: a recycled pid keeps a dead workdir up to
-  24 h** (the mtime escape eventually reaps it; bounded, cosmetic).
+- ~~**intake workdir sweep: a recycled pid keeps a dead workdir up to
+  24 h**~~ — FIXED 2026-10-22: the workdir now names its process's
+  START TIME as well as its pid (`/proc/<pid>/stat` field 22), and the
+  sweep only trusts a pid whose start time still matches. A recycled pid
+  can no longer keep a dead workdir (or hand a fresh job the stale raws
+  of a dead one). `station/test_intake_sweep.py` pins all four cases.
 
 ## Fixed same-day (2026-10-21) — kept here until the next doc pass
 

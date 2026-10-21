@@ -113,6 +113,21 @@ def normalise(raw, dest):
     run("ffmpeg", "-y", "-i", raw, *PROFILE, dest)
 
 
+def _proc_starttime(pid):
+    """The process's start time in clock ticks since boot (/proc stat
+    field 22), or None. Two processes can share a pid over time; they
+    never share a start time."""
+    try:
+        with open("/proc/%d/stat" % pid) as f:
+            data = f.read()
+        # the comm field can contain spaces and parentheses: take the
+        # fields AFTER the last ')'
+        rest = data[data.rfind(")") + 2:].split()
+        return int(rest[19])          # field 22 overall
+    except Exception:
+        return None
+
+
 def _sweep_workdirs():
     """Remove .intake-tmp-<pid> dirs whose intake is gone.
 
@@ -133,7 +148,10 @@ def _sweep_workdirs():
         if not n.startswith(".intake-tmp-"):
             continue
         d = os.path.join(MEDIA, n)
-        pid = n[len(".intake-tmp-"):]
+        tag = n[len(".intake-tmp-"):]
+        parts = tag.split("-")
+        pid = parts[0]
+        born = parts[1] if len(parts) > 1 else None
         alive = False
         if pid.isdigit():
             try:
@@ -141,6 +159,11 @@ def _sweep_workdirs():
                 alive = True
             except OSError:
                 alive = False
+            if alive and born is not None:
+                # The pid is alive -- but is it the SAME process? A
+                # recycled pid used to keep a dead workdir for a day.
+                if _proc_starttime(int(pid)) != int(born):
+                    alive = False
         if not alive or now - os.path.getmtime(d) > 86400:
             shutil.rmtree(d, ignore_errors=True)
 
@@ -252,7 +275,12 @@ def intake(source, title=None, queue=False, target=None):
     # Unique workdir per invocation: daemon prefetch + overlay /music add
     # + CLI intakes can run CONCURRENTLY; a shared .intake-tmp collided
     # raw.* files across jobs (one job adopted the other's half-download).
-    workdir = os.path.join(MEDIA, ".intake-tmp-%s" % os.getpid())
+    # The workdir names the pid AND that process's start time: a recycled
+    # pid then cannot be mistaken for the original owner, and a dead
+    # workdir is reclaimed the moment the sweep looks.
+    _st = _proc_starttime(os.getpid())
+    workdir = os.path.join(MEDIA, ".intake-tmp-%s%s" % (
+        os.getpid(), ("-%d" % _st) if _st is not None else ""))
     os.makedirs(workdir, exist_ok=True)
     raw = fetch_source(source, workdir)
     name = (title or os.path.splitext(os.path.basename(source))[0])[:80]
