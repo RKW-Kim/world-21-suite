@@ -98,6 +98,22 @@ class _WS:
 
     def __init__(self, host, port, timeout=5):
         self.s = socket.create_connection((host, port), timeout=timeout)
+        try:
+            self._upgrade(host, port)
+        except Exception:
+            # A half-finished handshake must not leave the socket open:
+            # obs-websocket's server hands out greetings one client at a
+            # time, so a client that upgraded and never read its greeting
+            # WEDGES THE PLANE for every later connection (proved live:
+            # one stuck client, and no new handshake was greeted -- not
+            # even after the stuck client closed).
+            try:
+                self.s.close()
+            except OSError:
+                pass
+            raise
+
+    def _upgrade(self, host, port):
         key = base64.b64encode(os.urandom(16)).decode()
         self.s.sendall(("GET / HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\n"
                         "Connection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
@@ -231,7 +247,14 @@ class OBSRenderer(Renderer):
         except OSError as e:
             raise RuntimeError("render plane unreachable at %s:%d (%s)"
                                % (self.host, self.port, e))
-        hello = ws.recv()
+        try:
+            hello = ws.recv()
+        except Exception:
+            try:
+                ws.close()
+            except Exception:
+                pass
+            raise
         if hello.get("op") != 0:
             ws.close()
             raise RuntimeError("not an obs-websocket v5 server")
@@ -550,6 +573,11 @@ class Watchdog:
             alert(msg, level)
 
     def check_source(self, source, on_air):
+        # A deck that is idle while the queue HOLDS (a link that will not
+        # resolve yet) is not stalled: faulting it escalated a healthy
+        # station to OFF-AIR every time YouTube was slow.
+        if HOLDING.get("since") and time.time() - HOLDING["since"] < 900:
+            return True
         st = self.r.get_media_status(source)
         now = time.time()
         if st["state"] in ("missing", "OBS_MEDIA_STATE_MISSING"):
@@ -1617,6 +1645,35 @@ def ensure_bed_isolation(renderer):
                     pass
 
 
+def cover_idle_deck(renderer, state, decks):
+    """The programme must never be black.
+
+    The question is NOT "is the deck idle" -- a deck can be busy
+    playing a FROZEN file (the watchdog's "stalled at 41ms"), and that is
+    just as black. The question is: is ANY of the programme visible? If
+    not, the fail-safe takes the air with its holding card until the
+    item is ready. The index is NOT moved: the item is pending, not
+    skipped."""
+    try:
+        items = renderer._call(
+            "GetSceneItemList", {"sceneName": SCENE_PROGRAM}).get("sceneItems", [])
+        visible = {i.get("sourceName") for i in items if i.get("sceneItemEnabled")}
+    except Exception:
+        return
+    programme = {DECK_A, DECK_B, PLAYOUT_C,
+                 STREAM_DECK["A"], STREAM_DECK["B"]}
+    if visible & programme:
+        return              # something IS on air: no black to cover
+    if state.get("fallback_air"):
+        return              # the fail-safe is already holding the air
+    try:
+        # skip_idx = index-1 keeps the cursor where it is: failover
+        # advances to skip_idx+1, which is the same slot.
+        failover(renderer, state, decks, max(0, int(state.get("index") or 1) - 1))
+    except Exception:
+        pass
+
+
 def probe_plane(renderer):
     """Dump what the plane actually looks like: input names, the filters
     riding on them, and the filter kinds this OBS build offers. The ws
@@ -1663,6 +1720,10 @@ def probe_plane(renderer):
 
 PASS_STATE = {"ms": 0, "what": "", "since": 0.0}
 ON_AIR = {"src": None, "pos_ms": 0, "dur_ms": 0, "state": ""}
+# Set while the queue HOLDS for a link that will not resolve yet. A deck
+# that is idle because we are waiting is not stalled, and faulting it
+# would escalate a healthy station to OFF-AIR for a slow YouTube.
+HOLDING = {"since": 0.0, "why": ""}
 
 
 def touch_heartbeat():
@@ -2017,9 +2078,32 @@ def advance(renderer, state, data, deck_sources):
             # Link item: needs no disk (link outranks a stale file copy).
             # Resolve is cached by prefetch; a miss resolves inline here,
             # costing a few seconds on this transition only.
+            # Cover FIRST: the resolve can take 45s on a slow YouTube, and
+            # if the deck is idle the audience would stare at black for
+            # all of it. The fail-safe's holding card takes the air.
+            cover_idle_deck(renderer, state, deck_sources)
             meta = cached_resolve(url)
             if meta:
                 break
+            # A resolve that failed for a TRANSIENT reason (a timeout, a
+            # bot check, a network hiccup) must NOT consume the item: on a
+            # slow YouTube (30-60s per metadata call from a datacentre IP)
+            # the old behaviour made the station eat its own playlist, one
+            # item every few seconds. HOLD instead: the current item keeps
+            # playing and the prefetch warms this one.
+            if not ytstream.resolve_failure_is_permanent():
+                alert("Link not resolving yet (%s): holding the queue."
+                      % (item.get("title") or url), "WARN")
+                HOLDING["since"] = time.time()
+                HOLDING["why"] = str(item.get("title") or url)
+                cover_idle_deck(renderer, state, deck_sources)
+                return
+            # Permanent: the video is gone. Skip it -- but not more than
+            # a few per pass, so a run of dead videos cannot chew through
+            # the whole playlist in one go.
+            if skipped >= 3:
+                alert("Several dead links in a row: holding the queue.", "WARN")
+                return
             alert("Unplayable link: %s. Skipping." % (item.get("title") or url), "WARN")
             state["index"] = idx + 1
             skipped += 1
@@ -2161,6 +2245,8 @@ def advance(renderer, state, data, deck_sources):
         pass
     globals()["last_advance_src"] = src   # the flicker guard watches THIS input
     stop_feed(other)  # the just-cut deck's feed (if any) ends with its slot
+    HOLDING["since"] = 0.0
+    HOLDING["why"] = ""
     alert("Now playing: %s." % (item.get("title") or item.get("youtube", "?")), "INFO")
     state.update({"index": idx + 1, "deck": deck, "deck_paused": False,
                   "just_played": shuffler.item_key(item)})
@@ -2455,13 +2541,17 @@ def wait_ready(renderer, tries=None, pause=15):
     if tries is None:
         tries = int(os.environ.get("OBS_READY_TRIES", "12"))
     long_to = int(os.environ.get("OBS_TIMEOUT", "60"))
+    stuck = 0
     for n in range(1, tries + 1):
         try:
             with renderer._lock:
                 if renderer._shared is None:
-                    # 8s, not the 60s default: a hung TCP handshake must
-                    # not burn a minute per try.
-                    ws = renderer._connect(timeout=8)
+                    # 20s, not the 60s default: a hung TCP handshake must
+                    # not burn a minute per try. 20s (not 8s) because a
+                    # SOFTWARE-GL plane can be slow to answer -- and the
+                    # difference matters: a too-short timeout turns a slow
+                    # plane into a crash loop.
+                    ws = renderer._connect(timeout=20)
                     try:
                         ws.s.settimeout(long_to)
                     except OSError:
@@ -2478,6 +2568,21 @@ def wait_ready(renderer, tries=None, pause=15):
                 except Exception:
                     pass
                 renderer._shared = None
+            # Three greetings in a row that never came: the plane's
+            # control plane is WEDGED (a client that upgraded and never
+            # read its greeting blocks every later handshake -- proved
+            # live). Waiting 15 minutes for it to un-wedge is not
+            # booting, it is dying slowly: restart the plane instead.
+            stuck += 1
+            if stuck >= 3:
+                stuck = 0
+                try:
+                    restart_plane()
+                    print("render plane restarted (greeting wedged)", flush=True)
+                except Exception as re:
+                    print("plane restart failed: %s" % re, flush=True)
+                _t.sleep(pause)
+                continue
             _t.sleep(pause)
     return False
 
@@ -3024,6 +3129,10 @@ def cmd_loop(renderer):
             # supposed to save, dragging every skip ~8s late.
             gate_pass = (gate_pass + 1) % 30
             PASS_STATE["what"] = "plane check"
+            # Operator commands FIRST: a skip must not wait behind a
+            # 45s metadata resolve or a slow OBS call. The verbs are
+            # cheap; the playout work is not.
+            consume_control(renderer, decks, data)
             try:
                 if renderer._shared is not None and gate_pass != 1:
                     with renderer._lock:
@@ -3136,8 +3245,6 @@ def cmd_loop(renderer):
                                 ended.append(_src)
             except Exception:
                 pass
-            # Operator commands from the dock/panel (see consume_control).
-            consume_control(renderer, decks, data)
             # Stream-item lifecycle: wall-clock duration + feed health. The
             # feed lives in this process, so its death is observable locally
             # after all: two respawns then route to the next item. Runs for

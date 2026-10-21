@@ -39,7 +39,40 @@ MTX_RTMP = "rtmp://127.0.0.1:1935"
 MTX_API = "http://127.0.0.1:9997"
 V_FMT = "bv*[vcodec^=avc1][height<=720][protocol*=m3u8]/bv*[vcodec^=avc1][protocol*=m3u8]"
 A_FMT = "ba[acodec^=mp4a][protocol*=m3u8]/ba[protocol*=m3u8]"
-RESOLVE_TIMEOUT = 20     # three serial probes: 3x this is the worst case
+RESOLVE_TIMEOUT = 45     # three serial probes: 3x this is the worst case
+
+# Why the last resolve failed, and whether it is PERMANENT. A video that
+# is gone will never come back; a timeout or a bot check will. The
+# station used to treat both as "unplayable" and SKIP the item -- so a
+# slow YouTube (30-60s per metadata call from a datacentre IP) made the
+# station eat its own playlist, one item every few seconds.
+LAST_ERROR = {"reason": "", "permanent": False, "at": 0.0}
+
+_PERMANENT_MARKERS = (
+    "video unavailable", "private video", "has been removed",
+    "is not available", "members-only", "account associated with this video",
+    "removed by the uploader", "video is no longer available",
+    "copyright", "not available in your country",
+)
+
+
+def _classify(err, timed_out=False):
+    low = (err or "").lower()
+    permanent = any(m in low for m in _PERMANENT_MARKERS)
+    LAST_ERROR.update({"reason": (err or ("timeout" if timed_out else ""))[:200],
+                       "permanent": permanent, "at": time.time()})
+    return permanent
+
+
+def resolve_failure_is_permanent(since=0.0):
+    """True when the last resolve failed for good (the video is gone).
+    A timeout, a bot check or a network error is TRANSIENT: the item
+    must be held, not consumed."""
+    if not LAST_ERROR.get("at"):
+        return False
+    if since and LAST_ERROR["at"] < since:
+        return False      # an older failure says nothing about this one
+    return bool(LAST_ERROR.get("permanent"))
 READY_TIMEOUT = 45
 
 # YouTube serves some videos to anonymous IPs only after a bot check
@@ -98,10 +131,17 @@ def resolve(url):
         p = subprocess.run(
             _ytdlp_cmd(["--dump-json", "--no-warnings", url]),
             capture_output=True, text=True, timeout=RESOLVE_TIMEOUT)
-    except (subprocess.TimeoutExpired, OSError) as e:
+    except subprocess.TimeoutExpired as e:
+        _classify("timeout after %ss" % RESOLVE_TIMEOUT, timed_out=True)
+        log.warning("resolve %s: timed out after %ss (TRANSIENT)",
+                    url, RESOLVE_TIMEOUT)
+        return None
+    except OSError as e:
+        _classify(str(e))
         log.warning("resolve %s: %s", url, e)
         return None
     if p.returncode != 0:
+        _classify((p.stderr or "")[-400:])
         log.warning("resolve %s failed: %s", url, (p.stderr or "")[-200:])
         return None
     try:

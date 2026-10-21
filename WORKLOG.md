@@ -2027,3 +2027,65 @@ the version check was supposed to have fixed it.
   process. It is a hash now, like the render signature.
 - Measured after: 10 poll cycles = 0 full state fetches, 272 bytes a
   cycle, render 3.7ms, and a state file whose mtime no longer moves.
+
+## 2026-10-22 (late) — BATTLE TEST: the plane up, the station broken, and
+## the two root causes behind every "the station is struggling"
+
+The advantage of this box over a sandbox: the render plane can be brought
+UP and the playout can be attacked. The operator's OBS is off, so the
+test ran in the HEADLESS shape (Xvfb :99 + software GL — the VPS shape),
+which is invisible on their desktop and was restored to masked
+afterwards.
+
+### What the battle test found
+
+1. **THE STATION WAS EATING ITS OWN PLAYLIST.** YouTube's metadata
+   endpoint takes 30-60s from this IP (the resolve SUCCEEDS given 45s;
+   the daemon's timeout was 20s). So every link timed out, the daemon
+   called it "unplayable" and SKIPPED it — one item every 10-20s, the
+   roll draining itself. This is the "daemon is struggling" feeling, and
+   it would be catastrophic on a VPS (a datacentre IP is exactly where
+   YouTube rate-limits hardest).
+   FIXED: a resolve failure is now classified. PERMANENT (the video is
+   gone) → skip it. TRANSIENT (a timeout, a bot check, a network
+   hiccup) → HOLD the queue and try again. A run of dead links is capped
+   at 3 per pass, so a list of dead videos cannot be chewed through in
+   one go. `station/test_resolve_hold.py` pins all four behaviours.
+2. **THE PROGRAMME WENT BLACK WHILE WAITING.** Holding is right, but a
+   hold with an idle (or frozen) deck leaves the audience looking at
+   black. The fail-safe's holding card now takes the air whenever
+   NOTHING of the programme is visible. Verified live: PLAYOUT_C playing
+   loop_a, the position advancing (5.8s -> 11.8s).
+3. **THE WATCHDOG FAULTED THE STATION FOR WAITING.** "PLAYOUT_A: stalled
+   at 41ms" x3 → OFF-AIR, while the station was merely waiting for a
+   link. A deliberate hold is not a stall: the watchdog now stands down
+   while we hold.
+4. **THE OPERATOR'S COMMANDS WAITED BEHIND THE RESOLVE.** The control
+   channel ran AFTER the advance work in the pass, so a skip sat behind
+   a 45s metadata call. It now runs FIRST in the pass.
+5. **THE "PLANE IS WEDGED" MYSTERY, SOLVED.** Proved with a deliberate
+   experiment: a client that completes the websocket upgrade and NEVER
+   READS its greeting blocks EVERY later handshake — not even after the
+   stuck client closes. One timed-out client therefore wedges the
+   plane's control plane for the daemon, the overlay server and the
+   dock. That is the chronic "the plane is wedged, a restart heals it"
+   symptom, and it is self-inflicted: the daemon's own failed boot
+   attempts were creating the stuck clients.
+   FIXED: the websocket client now closes its socket deterministically
+   on ANY handshake failure; the boot's greeting timeout went 8s -> 20s
+   (a software-GL plane is slow; 8s turned "slow" into a crash loop);
+   and three greetings in a row that never came now RESTART the plane
+   instead of waiting 15 minutes for it to un-wedge.
+6. **THE VPS SHAPE, MEASURED (not guessed).** With the full scene under
+   llvmpipe, OBS burns **238% CPU** and its websocket greetings
+   intermittently hang for tens of seconds. The agent's cost table
+   (0.5-1 core for 540p30) is far too optimistic with 7 resident CEF
+   browser sources. The headless build must be the LIGHT one
+   (LAB_LIGHT=1 strips the browser sources) or the box needs more cores
+   than anyone budgeted. `docs/VPS.md` now carries the measured numbers.
+
+### The state afterwards
+
+OBS is masked again (the operator's request), the daemon is back in
+plane-off mode (the queue holds, the heartbeat is fresh, the ingest bus
+is up), and the suite is green with the new harness in it.

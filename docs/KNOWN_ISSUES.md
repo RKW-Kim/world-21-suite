@@ -205,6 +205,27 @@ finished thing.
   the fault watchdog does not count a deliberately-absent plane as a
   fault (it used to escalate to OFF-AIR and fail to cut every pass).
 
+## Closed 2026-10-22 (battle test with the plane up)
+
+- **The station ate its own playlist** when YouTube was slow: every
+  resolve timed out, every link was called "unplayable" and SKIPPED.
+  Now a resolve failure is classified: permanent (the video is gone) ->
+  skip; transient (timeout, bot check, network) -> HOLD the queue. A run
+  of dead links is capped at 3 per pass.
+- **The programme went black while the station waited.** The fail-safe's
+  holding card now takes the air whenever nothing of the programme is
+  visible.
+- **The watchdog faulted the station for waiting** (OFF-AIR while
+  holding for a link). A deliberate hold is not a stall.
+- **The operator's commands waited behind a 45s resolve.** The control
+  channel now runs first in the pass.
+- **The "plane is wedged" mystery**: a client that upgrades the
+  websocket and never reads its greeting blocks EVERY later handshake
+  (proved by experiment) -- and the daemon's own failed boots were
+  creating the stuck clients. The client now closes deterministically on
+  any handshake failure, the boot timeout went 8s -> 20s, and three
+  greetings in a row that never came now restart the plane.
+
 ## Deliberately not done
 
 | Item | Why |
