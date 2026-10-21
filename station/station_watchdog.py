@@ -247,7 +247,11 @@ def main():
         # DESIGN and reviving them would start the daemon under the merge.
         log("Watchdog: parked (sync apply in progress) — not reviving.", "INFO")
         return 0
-    bad = [k for k, v in states.items() if not v]
+    # A unit that is switched off on purpose is not "not answering" -- it
+    # is off. Alerting on it every cycle filled the operator's log with
+    # rows that meant nothing.
+    off = [k for k, u in USER_UNITS.items() if unit_disabled(u)]
+    bad = [k for k, v in states.items() if not v and k not in off]
     if not bad:
         return 0
     log("Watchdog: %s not answering. Reviving." % ", ".join(bad), "WARN")

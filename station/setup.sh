@@ -219,73 +219,14 @@ PLANE_SESSION=no; ls /tmp/.X11-unix/X* >/dev/null 2>&1 && PLANE_SESSION=yes
 # restarts doing nothing). Skip it there; the headless TD-desk recipe is
 # x11vnc on the Xvfb display (docs/VPS.md §6).
 SKIP_VNC=no; [ "$PLANE_SESSION" = no ] && SKIP_VNC=yes
-for u in "$UNIT_SRC"/station-*.service; do
-  case "$u" in
-    *monitor-av*) continue ;;   # dead path (mediamtx dropped it 2026-10-18)
-    *station-vnc*) [ "$SKIP_VNC" = yes ] && { echo "station-vnc: skipped (headless box, no Wayland session to mirror)"; continue; } ;;
-  esac
-  # The unit has to point at THIS install: the repo path, the secrets
-  # file and the media root all move together (the VPS install lives in
-  # /var/broadcast, not in the repo).
-  sed -e "s|%h/Documents/GitHub/world-21-suite|$PWD|g" \
-      -e "s|/home/rkw/Documents/GitHub/world-21-suite|$PWD|g" \
-      -e "s|EnvironmentFile=.*|EnvironmentFile=$ROOT/secrets.env|" \
-      "$u" > "$UNIT_DST/$(basename "$u")"
-  # Every unit gets the media root, not just the daemon: panel, overlay
-  # and watchdog honor BROADCAST_ROOT too. One unit left on the repo tree
-  # meant a /var/broadcast daemon playing state the others couldn't see.
-  grep -q "^Environment=BROADCAST_ROOT=" "$UNIT_DST/$(basename "$u")" || \
-    sed -i "s|^Environment=|Environment=BROADCAST_ROOT=$ROOT\nEnvironment=|" \
-      "$UNIT_DST/$(basename "$u")"
-done
-# Render the OBS unit for THIS box. The unit in git is the lab shape: a real
-# X session on :0 with hardware GL. A GPU-less headless box (the VPS) boots a
-# different plane: Xvfb :99 + llvmpipe. Rendered at provision time like the
-# mediamtx config above, so a re-run self-heals a drifted or hand-edited unit.
-# (Box shape was detected before the install loop; every setup.sh run starts
-# the unit from the pristine git copy, so the render never compounds.)
-#   session := any X socket exists (XWayland on the lab desktop creates X0)
-#   gpu     := a DRM render node exists (/dev/dri/renderD*)
-# A :1-only session (no X0) reads as headless -> safe-but-slower Xvfb plane;
-# re-run setup.sh inside the session to re-render. Detection runs at install
-# time on purpose: a VPS will never grow a GPU, and a desktop install runs
-# setup.sh logged into the session it will air from.
-OBS_UNIT="$UNIT_DST/station-obs.service"
-if [ "$PLANE_SESSION" = yes ] && [ "$PLANE_GPU" = yes ]; then
-  echo "render plane: real session :0, hardware GL (as shipped)"
-else
-  # LIBGL_ALWAYS_SOFTWARE: 2026-10-20 it was stripped because on the lab iGPU
-  # it chained the plane to llvmpipe and burned 2x realtime CPU. On a box
-  # with no GPU driver that trade does not exist — without the flag OBS may
-  # fail to create a GLX context at all. Xvfb cannot host hardware GLX
-  # anyway, so headless means software GL, full stop.
-  # (Guarded insert: the flag must never compound if a future flow renders
-  # without the install-loop reset ahead of it.)
-  if ! grep -q -- '--env=LIBGL_ALWAYS_SOFTWARE=1' "$OBS_UNIT"; then
-    sed -i 's| com.obsproject.Studio --verbose| --env=LIBGL_ALWAYS_SOFTWARE=1 com.obsproject.Studio --verbose|' "$OBS_UNIT"
-  fi
-  if [ "$PLANE_SESSION" = yes ]; then
-    echo "render plane: session :0 but NO GPU driver -> LIBGL_ALWAYS_SOFTWARE=1"
-  else
-    sed -i -e 's|--env=DISPLAY=:0|--env=DISPLAY=:99|' \
-           -e 's|--env=PLANE_DISPLAY=:0|--env=PLANE_DISPLAY=:99|' \
-           -e 's|^Environment=DISPLAY=:0|Environment=DISPLAY=:99|' \
-           -e 's|^Environment=PLANE_DISPLAY=:0|Environment=PLANE_DISPLAY=:99|' \
-           "$OBS_UNIT"
-    echo "render plane: headless -> Xvfb :99 + LIBGL_ALWAYS_SOFTWARE=1"
-  fi
-  # The render edits exact strings from the unit file. A future unit edit
-  # that renames one of them must fail LOUD here — not silently boot a :0
-  # plane on a box with no :0, which is the wedge this render exists to
-  # prevent (and the failure mode a quiet sed would produce).
-  grep -q -- '--env=LIBGL_ALWAYS_SOFTWARE=1' "$OBS_UNIT" || {
-    echo "::error::station-obs.service render failed: LIBGL flag not planted — the unit text no longer matches the sed." >&2; exit 1
-  }
-  if [ "$PLANE_SESSION" = no ] && ! grep -q -- '--env=DISPLAY=:99' "$OBS_UNIT"; then
-    echo "::error::station-obs.service render failed: display not moved to :99 — the unit text no longer matches the sed." >&2; exit 1
-  fi
-fi
-
+# The unit render lives in station/render_units.sh: it is a pile of seds
+# whose patterns stop matching when a unit is edited, and a unit that
+# silently loses its BROADCAST_ROOT fails at START (a missing file, not a
+# message anyone reads). Standalone, so station/test_unit_render.py can
+# run it for real.
+bash station/render_units.sh "$UNIT_SRC" "$UNIT_DST" "$ROOT" "$PWD" \
+  "$([ "$PLANE_SESSION" = yes ] && [ "$PLANE_GPU" = yes ] && echo lab || \
+     { [ "$PLANE_SESSION" = yes ] && echo session-nogpu || echo headless; })"
 $SYS daemon-reload
 # The publish leg is NOT enabled here: it goes live on YouTube the moment
 # a real stream key lands in secrets.env, so arming it in setup.sh turned

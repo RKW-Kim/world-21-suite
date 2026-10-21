@@ -2820,7 +2820,17 @@ def cmd_loop(renderer):
             ended.append(source)
 
     renderer.on_media_ended(note_ended)
-    if not wait_ready(renderer):
+    if not PLANE_AUTORESTART:
+        # The plane is switched off ON PURPOSE (the operator does not want
+        # the OBS window). Do not sit in wait_ready for 15 minutes: start
+        # the loop, which HOLDS the queue until the plane comes back.
+        # The hold flag must be set HERE, before the opening advance():
+        # the poll loop's gate has not run yet, and without it the boot
+        # cut would consume the queue one unplayable link at a time.
+        globals()["PLANE_DOWN"] = time.time()
+        alert("Render plane is switched off on purpose: starting without "
+              "it. The queue holds until it returns.", "INFO")
+    elif not wait_ready(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
     try:
@@ -3301,7 +3311,13 @@ def cmd_loop(renderer):
                     watched = PLAYOUT_C  # fail-safe owns the air
                 else:
                     watched = decks[_wst.get("deck", "A")]
-                dog.check_source(watched, on_air=True)
+                # Only watch a deck if there IS a plane to watch it on.
+                # With the plane switched off on purpose, "source missing"
+                # is the operator's decision, not a fault: without this the
+                # watchdog counted its own absence, escalated to OFF-AIR and
+                # then failed to cut (no plane) every pass.
+                if PLANE_AUTORESTART:
+                    dog.check_source(watched, on_air=True)
         except Exception:
             import traceback
             # Full trace once per distinct error; deaf windows repeat the same
