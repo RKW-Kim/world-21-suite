@@ -907,7 +907,6 @@ def play_ad(renderer, data, decks, mid=False):
             renderer.set_source_visible(AD_SCENE, AD_INPUT, True)
             renderer.set_scene(AD_SCENE)
             renderer.restart_media(AD_INPUT)
-            state["ad_start"] = time.time()   # wall-clock backstop, see poll loop
         except Exception as e:
             alert("Ad break failed to start (%s); playing on." % e, "WARN")
             try:
