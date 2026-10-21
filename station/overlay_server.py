@@ -494,6 +494,24 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=OVERLAY_DIR, **kw)
 
+    def _token_ok(self):
+        # Bearer via header (POST/fetch) or ?token= (WebSocket handshakes
+        # cannot carry custom headers). compare_digest: a wrong guess must
+        # not be faster than a right one.
+        import hmac
+        tok = os.environ.get("STATION_TOKEN", "")
+        if not tok:
+            return False, None
+        supplied = ""
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            supplied = auth[len("Bearer "):]
+        if not supplied:
+            q = parse_qs(urlparse(self.path).query).get("token", [""])[0]
+            supplied = q
+        return bool(supplied) and \
+            hmac.compare_digest(supplied.encode(), tok.encode()), tok
+
     def _guard(self):
         # Control-plane guard. The threat: ANY web page open in ANY browser
         # on this network can fire POSTs at this server (no preflight if the
@@ -501,12 +519,13 @@ class Handler(SimpleHTTPRequestHandler):
         # Allowed:
         #   - non-browser clients (no Origin header): ssh, curl, systemd.
         #   - same-origin pages we serve (console/media/studio/whip).
-        #   - file:// operator panes ("null" origin) — UNLESS a token is set.
+        #   - file:// operator panes ("null" origin) — only while no token
+        #     is set; once STATION_TOKEN exists they must present it.
         #   - every origin, if the request carries the bearer token.
         # Set STATION_TOKEN (secrets.env or systemd) once this box speaks to
         # the WAN; Origins outside our Host are refused without it.
-        tok = os.environ.get("STATION_TOKEN", "")
-        if tok and self.headers.get("Authorization", "") == "Bearer " + tok:
+        ok, tok = self._token_ok()
+        if ok:
             return True
         origin = self.headers.get("Origin", "")
         if not origin:
@@ -516,12 +535,25 @@ class Handler(SimpleHTTPRequestHandler):
         host = self.headers.get("Host", "")
         return origin.rstrip("/") in ("http://" + host, "https://" + host)
 
+    def _guard_control(self):
+        # The surfaces that hand out AUTHENTICATED render-plane control
+        # (/ws relay, /obs proxy) are a stricter tier: the relay completes
+        # OBS authentication with the server-side secret, so a client here
+        # never needs — but effectively gets — the OBS password. When a
+        # STATION_TOKEN exists, those surfaces REQUIRE it: any Origin,
+        # same-origin or not, tunnel or LAN. Without a token the ordinary
+        # _guard trust model applies (loopback + tunnels only).
+        ok, tok = self._token_ok()
+        if tok:
+            return ok
+        return self._guard()
+
     def _refused(self):
         self.send_error(403, "origin/referrer refused (set STATION_TOKEN to pin your client)")
 
     def do_GET(self):
         if self.headers.get("Upgrade", "").lower() == "websocket":
-            if not self._guard():
+            if not self._guard_control():
                 return self._refused()
             return self._ws_relay()
         # /console /media /studio: archived on branch archive/console-studio
@@ -632,6 +664,10 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/ads":
             return self._ads_update()
         if path == "/obs":
+            # _guard_control: /obs is authenticated render-plane control
+            # (the server holds the OBS secret for the caller).
+            if not self._guard_control():
+                return self._refused()
             return self._obs_proxy()
         if path == "/music":
             return self._music()
