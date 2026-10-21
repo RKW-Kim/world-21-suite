@@ -1503,8 +1503,15 @@ function rowMenu(ev, i, anchor) {
       "press Discard again within 3s to delete “" + itTitle(it) + "”",
       () => mutate((a) => a.splice(i, 1), "removed — staged")));
   }
-  if (i === onIdx && !parked) {
-    /* The on-air row is protected: removing it would strand the cut. */
+  const onKey = keyOf(liveItems()[savedOnAirIdx()] || {});
+  if ((i === onIdx || (onKey && keyOf(it) === onKey)) && !parked) {
+    /* The on-air row is protected: removing it would strand the cut.
+       Identity-key protection, not marker-slot protection: with duplicate
+       media the marker picks the FIRST twin while the station plays the
+       OTHER one (identity is youtube-url-or-file; the saved slot decides)
+       — protecting only the marked row left the playing twin an enabled
+       "Remove". Both twins are protected now: conservative, cheap, and it
+       can never strand the cut. */
     const b = document.createElement("button");
     b.textContent = "Remove (on air — protected)";
     b.setAttribute("role", "menuitem");
