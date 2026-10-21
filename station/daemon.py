@@ -2567,8 +2567,13 @@ def cmd_loop(renderer):
         if 1 <= _boot_idx <= len(data.get("items", [])):
             _boot_item = data["items"][_boot_idx - 1]
         if _boot_deck in ("A", "B") and _boot_item and not _boot_st.get("fallback_air"):
+            # Classify with the same helper the transport uses: a link with
+            # a complete spool plays as a FILE on the playout deck. The
+            # bare youtube-key check used here before parked (muted) the
+            # very deck that was on air, and a restarted item aired silent
+            # until the next cut.
             _bsrc = (STREAM_DECK[_boot_deck]
-                     if (_boot_item.get("youtube") or _boot_item.get("url"))
+                     if stream_item_on_air(data.get("items", []), _boot_st)
                      else decks[_boot_deck])
             park_decks(renderer, _boot_deck, _bsrc, decks)
             alert("boot parked idle decks (%s on air)." % _bsrc, "INFO")
