@@ -2089,3 +2089,43 @@ afterwards.
 OBS is masked again (the operator's request), the daemon is back in
 plane-off mode (the queue holds, the heartbeat is fresh, the ingest bus
 is up), and the suite is green with the new harness in it.
+
+## 2026-10-22 (late, 2) — battle test, round 2: the paths the first round missed
+
+The plane came up again (headless, invisible on the operator's desktop)
+and the remaining playout paths were attacked. Five more defects, all
+fixed:
+
+- **KeyError('C') in the re-kick.** The fail-safe holds the air on deck
+  "C", which is NOT in the deck map -- so the re-kick's
+  `decks[state["deck"]]` raised, and the re-kick NEVER ran while the
+  fail-safe was holding (i.e. exactly when the station needed it most).
+- **The hold never retried.** With the fail-safe playing, no ENDED event
+  arrives, so nothing re-attempted the advance: the station sat on the
+  holding card even after the link came back. The hold now retries every
+  ~30s.
+- **The cover trusted a stale flag.** `state["fallback_air"]` says "the
+  fail-safe is holding" -- but after a plane restart the flag survives
+  while the scene says the fail-safe is not on air, so the cover never
+  engaged and the station sat black. The SCENE is the truth now.
+- **A visible but FROZEN deck counted as "on air".** After a plane
+  restart the collection restores the deck VISIBLE, and the watchdog
+  calls it "stalled at 41ms" -- the audience sees a frozen frame. The
+  cover now requires a visible source that is actually MOVING.
+- **The cover consumed the item.** `failover()` moves the cursor past
+  the item that FAILED; a cover is not a failure. `move_index=False` now.
+- **The preflight cried CRIT on every cold boot.** It ran BEFORE
+  wait_ready, so all it could ever see was "renderer down". It runs
+  after the plane is up now, and passes.
+
+### What the battery proved working, live
+
+- Apply (dock) -> the daemon reloads the playlist -> the next transition
+  takes the new order.
+- A link that will not resolve -> the queue HOLDS, the fail-safe's card
+  takes the air, and the fail-safe ROLLS (loop_a -> loop_b) on its own.
+- The link resolves -> "Fail-safe cleared: deck A plays again" and the
+  deck plays and MOVES.
+- The dock and the plane AGREE: the same title, a countdown that ticks
+  (3:17 -> 3:12), a progress bar that moves (30% -> 32%), and the same
+  NEXT row.

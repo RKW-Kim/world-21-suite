@@ -1662,14 +1662,30 @@ def cover_idle_deck(renderer, state, decks):
         return
     programme = {DECK_A, DECK_B, PLAYOUT_C,
                  STREAM_DECK["A"], STREAM_DECK["B"]}
-    if visible & programme:
-        return              # something IS on air: no black to cover
-    if state.get("fallback_air"):
-        return              # the fail-safe is already holding the air
+    # A visible source only counts as "on air" if it is actually MOVING.
+    # A deck that is visible but frozen (the watchdog's "stalled at 41ms")
+    # is just as black as an idle one -- and after a plane restart the
+    # collection restores the deck VISIBLE, so the cover would never
+    # engage and the station would sit on a frozen frame.
+    for src in sorted(visible & programme):
+        try:
+            m = renderer.get_media_status(src)
+        except Exception:
+            continue
+        pos = int(m.get("time_ms") or 0)
+        prev = _LAST_POS.get(src)
+        _LAST_POS[src] = pos
+        if m.get("state") == "OBS_MEDIA_STATE_PLAYING" and (prev is None or pos != prev):
+            return          # it is playing AND moving: no black to cover
+    # NOTE: the state's fallback_air flag is NOT consulted here. After a
+    # plane restart the flag still says "the fail-safe is holding" while
+    # the scene says it is not -- and the cover would never engage, so
+    # the station sat black with the flag claiming otherwise.
     try:
-        # skip_idx = index-1 keeps the cursor where it is: failover
-        # advances to skip_idx+1, which is the same slot.
-        failover(renderer, state, decks, max(0, int(state.get("index") or 1) - 1))
+        # move_index=False: the cover is not a failure, so the cursor
+        # must stay on the item that is still pending.
+        failover(renderer, state, decks, max(0, int(state.get("index") or 0) - 1),
+                 move_index=False)
     except Exception:
         pass
 
@@ -1724,6 +1740,8 @@ ON_AIR = {"src": None, "pos_ms": 0, "dur_ms": 0, "state": ""}
 # that is idle because we are waiting is not stalled, and faulting it
 # would escalate a healthy station to OFF-AIR for a slow YouTube.
 HOLDING = {"since": 0.0, "why": ""}
+# Last seen media position per source, to tell "playing" from "frozen".
+_LAST_POS = {}
 
 
 def touch_heartbeat():
@@ -1983,7 +2001,7 @@ def fallback_files():
     return [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
 
 
-def failover(renderer, state, decks, skip_idx):
+def failover(renderer, state, decks, skip_idx, move_index=True):
     """PLAYOUT_C on air: the next deck didn't come up inside FEED_WAIT.
 
     Recovery reuses advance() itself — when PLAYOUT_C's file ends,
@@ -2010,7 +2028,9 @@ def failover(renderer, state, decks, skip_idx):
             continue
         renderer.set_transition(TRANSITION, 750)
         globals()["last_advance_src"] = PLAYOUT_C
-        state.update({"index": skip_idx + 1, "deck": "C", "fallback_air": True,
+        state.update({"index": (skip_idx + 1) if move_index
+                      else int(state.get("index") or 0),
+                      "deck": "C", "fallback_air": True,
                       "stream": None, "fallback_idx": start + fi + 1})
         merge_save_state(state)
         alert("Fail-safe on air: %s (deck stalled on load)." % name, "CRIT")
@@ -2918,9 +2938,6 @@ def cmd_loop(renderer):
         return 2
     state = load_state()
     decks = {"A": DECK_A, "B": DECK_B}
-    import preflight
-    if preflight.run(renderer):
-        alert("Preflight FAILURES at boot (see daemon journal for list).", "CRIT")
     dog = Watchdog(renderer)
     last_loop_err = None
     mtime = os.path.getmtime(PLAYLIST)
@@ -2958,6 +2975,16 @@ def cmd_loop(renderer):
     elif not wait_ready(renderer):
         print("render plane never answered; refusing to start blind.")
         return 2
+    # The preflight needs the plane, so it runs AFTER wait_ready: before
+    # that it could only ever see "renderer down" and cried CRIT on every
+    # cold boot.
+    try:
+        import preflight
+        if preflight.run(renderer):
+            alert("Preflight FAILURES at boot (see daemon journal for list).",
+                  "CRIT")
+    except Exception as e:
+        alert("preflight could not run (%s)." % e, "WARN")
     try:
         # Code/collection version skew breaks advance() with cryptic
         # GetSceneItemList errors and crash-loops the daemon (seen live:
@@ -3406,9 +3433,23 @@ def cmd_loop(renderer):
                 # "missing" is excluded: that's fault()'s job (plane down).
                 # Stream items are exempt: media status lies for them (the
                 # PLAYOUT ledger is idle), and feed health above answers.
+                if HOLDING.get("since") and time.time() - HOLDING["since"] > 30:
+                    # We are holding for a link: retry the advance so the
+                    # station goes back to content as soon as the link
+                    # resolves. Every ~30s, not every pass (a resolve can
+                    # take 45s and YouTube rate-limits).
+                    HOLDING["since"] = time.time()
+                    try:
+                        advance(renderer, load_state(), data, decks)
+                    except Exception as e:
+                        alert("hold retry failed (%s)." % e, "WARN")
                 if not stream_item_on_air(data.get("items", []), load_state()):
-                    mst = renderer.get_media_status(
-                        decks[load_state().get("deck", "A")])
+                    # The fail-safe holds the air on deck "C", which is NOT
+                    # in the deck map: looking it up by name raised
+                    # KeyError('C') and the re-kick never ran.
+                    _dk = load_state().get("deck", "A")
+                    _src = PLAYOUT_C if _dk == "C" else decks.get(_dk, DECK_A)
+                    mst = renderer.get_media_status(_src)
                     if mst.get("state") in ("OBS_MEDIA_STATE_NONE", "unknown", None):
                         idle_streak += 1
                     else:
@@ -3418,6 +3459,11 @@ def cmd_loop(renderer):
                         alert("Deck idle with nothing advancing; re-kicking.", "WARN")
                         advance(renderer, load_state(), data, decks)
             except Exception as e:
+                # The alert stays one line (the log is a trail, not a dump);
+                # the trace goes to the journal, where it can be read.
+                import traceback
+                print("re-kick failed: %s\n%s" % (e, traceback.format_exc(limit=8)),
+                      flush=True)
                 alert("re-kick failed (%s)." % e, "WARN")
             dog.check_stream()
             dog.check_disk()
