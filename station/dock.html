@@ -720,6 +720,14 @@ function matchesFilter(it) {
   return itTitle(it).toLowerCase().indexOf(filter) >= 0;
 }
 
+/* Is this row folded away right now? Parked rows live inside collapsible
+   sections (a group, or the bare "Available" section); a folded section
+   renders its rows with display:none. */
+function rowHidden(it) {
+  if (!it || it.status !== "dormant") return false;
+  return it.group ? !grpOpen.has(it.group) : !grpOpen.has("__dorm");
+}
+
 function partition(items) {
   /* Three surfaces from one items array: the queue airs; parked groups
      hold imported playlists; the dormant section holds everything else
@@ -910,8 +918,14 @@ function render(force) {
 
   const part = partition(items);
   const vis = visibleRowIndices(items, part);
-  if (!vis.includes(sel)) {
-    sel = vis.includes(onIdx) ? onIdx : (vis.length ? vis[0] : -1);
+  if (!vis.includes(sel) || rowHidden(items[sel])) {
+    /* The cursor must never rest on a row the operator cannot see: the
+       same trap as walking into a folded group, where Enter then acts on
+       what is invisible. Move it to the on-air row (or the first row
+       that is not folded away). */
+    const open = vis.filter((i) => !rowHidden(items[i]));
+    sel = vis.includes(onIdx) && !rowHidden(items[onIdx])
+      ? onIdx : (open.length ? open[0] : -1);
   }
 
   /* Say what the other tab holds, so a filtered-away playlist does not
@@ -1500,7 +1514,13 @@ document.addEventListener("contextmenu", (e) => {
    without a mouse. Arrows walk the rows, Enter opens the row menu, Escape
    backs out of whatever is open. */
 function visibleRows() {
-  return Array.prototype.slice.call(document.querySelectorAll(".item"));
+  /* display:none rows (folded groups, the folded Available section) are
+     not in the walk: offsetParent is null exactly when the box or an
+     ancestor is hidden, so the roving tab stop can never strand in an
+     invisible row and Enter can never act on what the operator cannot
+     see. Filtered-away rows are absent from the DOM entirely. */
+  return Array.prototype.slice.call(document.querySelectorAll(".item"))
+    .filter((r) => r.offsetParent !== null);
 }
 
 function moveCursor(delta) {
