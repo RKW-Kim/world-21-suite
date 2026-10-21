@@ -123,6 +123,34 @@ def obs_req():
         return OBS_REQ
 
 
+def plane_call(fn, timeout=4.0):
+    """Run a plane RPC on a throwaway thread with a hard ceiling.
+
+    A wedged plane is a known failure shape: the shared connection opens,
+    says nothing, and an INLINE call pins this handler thread for up to
+    OBS_TIMEOUT (60s) -- and a page polling that route piles threads up
+    until the server exhausts. The 4s cap exists once (the /music probe);
+    every handler-side plane call goes through here now. A wedged call
+    leaves one doomed daemon thread behind -- the honest price of
+    answering instead of hanging."""
+    out = {}
+
+    def _go():
+        try:
+            out["v"] = fn()
+        except Exception as e:
+            out["e"] = e
+
+    th = threading.Thread(target=_go, daemon=True)
+    th.start()
+    th.join(timeout)
+    if th.is_alive():
+        raise TimeoutError("plane did not answer within %ss" % timeout)
+    if "e" in out:
+        raise out["e"]
+    return out["v"]
+
+
 def obs_event_loop():
     # Second connection, events only. Meters feed the console cache;
     # scene/studio changes fan out over the existing SSE bus (overlay
@@ -736,11 +764,16 @@ class Handler(SimpleHTTPRequestHandler):
             if name == "scene":
                 if not body.get("name"):
                     return self._json(400, {"ok": False, "error": "scene needs {\"name\"}"})
-                daemon.do_scene(r, body["name"])
+                plane_call(lambda: daemon.do_scene(r, body["name"]))
             elif name in INTENTS:
-                INTENTS[name](r)
+                # GO LIVE and friends run a whole cut sequence: 8s ceiling.
+                plane_call(lambda: INTENTS[name](r), timeout=8.0)
             else:
                 return self._json(404, {"ok": False, "error": "unknown intent"})
+        except TimeoutError as e:
+            # A wedged plane answers 504 honestly instead of pinning the
+            # handler thread for OBS_TIMEOUT while the polls pile up.
+            return self._json(504, {"ok": False, "error": str(e)})
         except Exception as e:
             return self._json(502, {"ok": False, "error": str(e)[:200]})
         return self._json(200, {"ok": True})
@@ -1006,7 +1039,10 @@ class Handler(SimpleHTTPRequestHandler):
         if not isinstance(data, dict):
             return self._json(400, {"ok": False, "error": "data must be an object"})
         try:
-            return self._json(200, {"ok": True, "response": obs_req()._call(rtype, data)})
+            return self._json(200, {"ok": True, "response": plane_call(
+                lambda: obs_req()._call(rtype, data), timeout=8.0)})
+        except TimeoutError as e:
+            return self._json(504, {"ok": False, "error": str(e)})
         except Exception as e:
             # Honest status: transport failures (plane down/deaf) are 502;
             # application refusals (bad names) stay 200 ok:False.
@@ -1106,13 +1142,18 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(404, {"ok": False, "error": "not in music/"})
         try:
             ensure_bed()
-            obs_req()._call("SetInputSettings",
-                            {"inputName": BED_INPUT,
-                             "inputSettings": {"local_file": os.path.join(MUSIC_DIR, fname),
-                                               "looping": True},
-                             "overlay": True})
-            obs_req()._call("TriggerMediaInputAction",
-                            {"inputName": BED_INPUT, "mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART"})
+            plane_call(lambda: obs_req()._call(
+                "SetInputSettings",
+                {"inputName": BED_INPUT,
+                 "inputSettings": {"local_file": os.path.join(MUSIC_DIR, fname),
+                                   "looping": True},
+                 "overlay": True}))
+            plane_call(lambda: obs_req()._call(
+                "TriggerMediaInputAction",
+                {"inputName": BED_INPUT,
+                 "mediaAction": "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART"}))
+        except TimeoutError as e:
+            return self._json(504, {"ok": False, "error": str(e)})
         except Exception as e:
             return self._json(502, {"ok": False, "error": str(e)[:200]})
         return self._json(200, {"ok": True, "file": fname})
