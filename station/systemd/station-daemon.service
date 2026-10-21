@@ -5,7 +5,6 @@ After=station-obs.service
 # restart. With Requires= the daemon's OWN watchdog heal (it stops
 # station-obs) stopped the daemon too, and three OBS crashes in 10
 # minutes put the plane in "failed" and took the playout engine with it.
-Wants=station-obs.service
 
 [Service]
 Type=simple

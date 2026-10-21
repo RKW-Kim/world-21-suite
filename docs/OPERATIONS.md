@@ -187,20 +187,40 @@ silent file and will never be retried (by design).
 ## 6. Switching the render plane off (and on again)
 
 The operator can keep the OBS window off their desktop while the rest of
-the station runs. Three things have to agree, or something will bring the
-window back:
+the station runs.
+
+**Do not just close the OBS window.** Closing it makes OBS *quit*, and the
+unit's `Restart=always` brings it straight back — the window reappears
+every 20 seconds. That loop is the "something keeps starting OBS" symptom.
+
+**The right way: mask the unit.** A masked unit cannot be started by
+anything — not systemd at boot, not a dependency, not the watchdog, not
+`Restart=always`:
 
 ```bash
-# 1. stop it and keep it from starting at boot
-systemctl --user disable --now station-obs.service
+# 1. stop it, keep it from starting at boot, and forbid any start
+systemctl --user stop station-obs.service
+systemctl --user disable station-obs.service
+#    (mask needs the file moved aside: a real file cannot be masked in place)
+mv ~/.config/systemd/user/station-obs.service{,.disabled}
+ln -s /dev/null ~/.config/systemd/user/station-obs.service
+systemctl --user daemon-reload
+systemctl --user is-enabled station-obs.service    # -> masked
 
-# 2. tell the daemon not to resurrect it (the live unit carries this)
+# 2. tell the daemon not to try either (the live unit carries this)
 #    Environment=PLANE_AUTORESTART=0
 systemctl --user restart station-daemon
 
-# 3. the watchdog leaves a disabled unit alone
+# 3. the watchdog leaves a masked unit alone
 python3 station/station_watchdog.py --check    # "intentionally_off": ["plane"]
+
+# 4. clear the flatpak leftovers (they hold a GPU context)
+pkill -x obs-browser-page; pkill -x obs; pkill -x bwrap
 ```
+
+**The daemon unit must not `Wants=` the plane.** It used to, and every
+daemon restart pulled the OBS window back up. The plane is an independent
+unit now: it has its own enable, and the daemon waits for it.
 
 **While the plane is off, the queue HOLDS.** `advance()` refuses to
 consume items when the renderer is not answering — otherwise every item
@@ -211,17 +231,14 @@ morning. The daemon keeps running, keeps the state, and logs
 **To turn it back on:**
 
 ```bash
+rm ~/.config/systemd/user/station-obs.service        # remove the mask
+cp ~/.config/systemd/user/station-obs.service.disabled \
+   ~/.config/systemd/user/station-obs.service
 systemctl --user enable --now station-obs.service
 # and remove the override from the live daemon unit:
 #   Environment=PLANE_AUTORESTART=0   ->  delete the line
 systemctl --user daemon-reload && systemctl --user restart station-daemon
-```
-
-The flatpak leaves orphaned CEF processes behind when it is stopped
-(`obs-browser-page`); they hold memory and a GPU context:
-
-```bash
-pkill -x obs-browser-page; pkill -x obs; pkill -x bwrap
+pkill -x obs-browser-page   # clear the flatpak leftovers, if any
 ```
 
 ## 7. Change verification
