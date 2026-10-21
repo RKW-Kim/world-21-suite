@@ -162,7 +162,7 @@
   ],
   "name": null,
   "preview": null,
-  "program": "SMILE | Meet",
+  "program": "SMILE | Program",
   "scenes": [
     {
       "items": [
@@ -796,7 +796,7 @@
           }
         }
       ],
-      "name": "SMILE | Meet"
+      "name": "SMILE | Program"
     },
     {
       "items": [

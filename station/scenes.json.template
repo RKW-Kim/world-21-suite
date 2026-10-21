@@ -34,7 +34,7 @@
       "name": "SMILE | Starting"
     },
     {
-      "name": "SMILE | Meet"
+      "name": "SMILE | Program"
     },
     {
       "name": "SMILE | Q&A"
@@ -87,7 +87,7 @@
       }
     },
     {
-      "name": "SMILE | Meet",
+      "name": "SMILE | Program",
       "id": "scene",
       "settings": {
         "items": [

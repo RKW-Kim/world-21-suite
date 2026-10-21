@@ -10,10 +10,10 @@ for pixel, provided the rules below hold.
 The daemon finds things by name and fails fast at boot if they are absent.
 Any collection — authored or generated — must contain:
 
-- Scenes exactly: `SMILE | Starting`, `SMILE | Meet`, `SMILE | Q&A`,
+- Scenes exactly: `SMILE | Starting`, `SMILE | Program`, `SMILE | Q&A`,
   `SMILE | Tech Diffs`, `SMILE | Off Air`, `SMILE | End Credits`
 - Inputs exactly: `PLAYOUT_A`, `PLAYOUT_B` (ffmpeg media inputs, inside
-  `SMILE | Meet`), `IDENT` (the ident sting, inside `SMILE | Starting`)
+  `SMILE | Program`), `IDENT` (the ident sting, inside `SMILE | Starting`)
 - Transition: `Fade` available (the daemon's default; override with
   the `TRANSITION` env var, never by renaming)
 

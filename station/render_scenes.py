@@ -102,13 +102,13 @@ def check(col):
     scenes = [s for s in col["sources"] if s["id"] == "scene"]
     assert len(scenes) == 6, "want exactly the 6 deck scenes, got %d" % len(scenes)
     decks = {s["name"] for s in scenes}
-    assert decks == {"SMILE | Starting", "SMILE | Meet", "SMILE | Q&A",
+    assert decks == {"SMILE | Starting", "SMILE | Program", "SMILE | Q&A",
                      "SMILE | Tech Diffs", "SMILE | Off Air", "SMILE | End Credits"}, decks
-    meet_items = {i["name"] for i in by_name["SMILE | Meet"]["settings"]["items"]}
-    assert {"PLAYOUT_A", "PLAYOUT_B"} <= meet_items
+    program_items = {i["name"] for i in by_name["SMILE | Program"]["settings"]["items"]}
+    assert {"PLAYOUT_A", "PLAYOUT_B"} <= program_items
     if "ticker.html" in by_name:  # absent in LAB_LIGHT builds
-        assert "ticker.html" in meet_items
-        for item in by_name["SMILE | Meet"]["settings"]["items"]:
+        assert "ticker.html" in program_items
+        for item in by_name["SMILE | Program"]["settings"]["items"]:
             if item["name"] == "ticker.html":
                 assert item["pos"]["y"] == CANVAS_H - TICKER_H, "ticker off the dock"
                 assert by_name["ticker.html"]["settings"]["height"] == TICKER_H

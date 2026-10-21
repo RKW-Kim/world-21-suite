@@ -37,18 +37,23 @@ proof; see WORKLOG). What is STILL open, ranked:
   useless on a VPS (none exists; setup.sh now skips installing it
   there). The headless recipe is documented in `docs/VPS.md` §6
   (x11vnc on the Xvfb `:99` over an SSH tunnel) but ships no unit yet.
-- **config/collection.json is still STALE** (the apply is now safe, the
-  file is not yet current). The capture in git still has `SMILE | Meet`
-  while the live plane has `SMILE | Program` (renamed on the plane after
-  the capture). Two things done: `sync.py apply` now REFUSES a capture
-  that lacks any scene the daemon drives — before touching OBS, with the
-  fix spelled out — so it can no longer create a duplicate scene and
-  orphan the live one; and the diff no longer reports a media source's
-  `settings.local_file` (runtime state, like the deck's eye state), so
-  the diff is quiet enough to be read. What remains needs the plane:
-  re-capture it (`python3 station/sync.py capture`) so the repo file
-  matches the live names. (The plane is currently switched off at the
-  operator's request, so this cannot be done yet.)
+- **config/collection.json: the scene NAMES are fixed, the CONTENT still
+  wants a re-capture.** The capture in git had `SMILE | Meet` while the
+  live plane has `SMILE | Program` (renamed on the plane after the
+  capture). Fixed 2026-10-22: the capture, the collection TEMPLATE
+  (`station/scenes.json.template` — the thing the rendered collection is
+  built from) and `render_scenes.py`'s structural check all say
+  `SMILE | Program` now, so the capture covers exactly the six scenes
+  the daemon drives and `sync.py apply` no longer refuses. The apply
+  still REFUSES a capture that lacks any scene the daemon drives —
+  before touching OBS, with the fix spelled out — because that is what
+  would have created a duplicate scene and orphaned the live one; and
+  the diff no longer reports a media source's `settings.local_file`
+  (runtime state, like the deck's eye state). What remains needs the
+  plane: re-capture the CONTENT (`python3 station/sync.py capture`),
+  because the item settings in the capture may have drifted since
+  October. (The plane is currently switched off at the operator's
+  request, so this cannot be done yet.)
 - **station has never published to YouTube end-to-end** (the publish
   leg is deliberately disarmed; see DECISIONS §13). First real cutover
   run is its own checklist.
@@ -212,11 +217,15 @@ finished thing.
 
 ## Not done yet (asked for, not built)
 
-- **Per-item preview panel** (operator's Q5): clicking a row should show
-  its thumbnail, description and other metadata, with a manual refresh and
-  a daily metadata check. The pieces exist — `/thumbs/<file>` on the
-  overlay server, and the title watcher as a metadata prober — but the
-  panel in the dock does not exist.
+- ~~**Per-item preview panel** (operator's Q5)~~ — DONE 2026-10-21:
+  clicking a row opens a card with the poster frame (new
+  `/api/thumb` proxy on the panel), the real title, the description, the
+  source and how fresh the metadata is, with a manual "refresh
+  metadata" button (`{"refresh": {"url": ...}}` verb) and a daily full
+  metadata sweep in the title watcher. STILL TO DO: the description is
+  only captured for items the watcher has visited, so a fresh import
+  shows "no description captured — press refresh" until the first
+  sweep.
 - **Scheduled profiles** (day/night running orders switching on a clock).
 - **A queue timeline / playhead** (the Studio Player pattern): a visual
   running order with a draggable playhead.
