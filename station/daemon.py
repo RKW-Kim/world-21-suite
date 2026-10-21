@@ -948,7 +948,10 @@ last_advance_src = None  # ...for WHICH source (the one we just cut to)
 STREAM_SPAWN_TRIES = 15  # 15 x 3s of path_ready polling
 STREAM_EOF = "__stream__"  # sentinel routed like a deck-ended event
 
-KNOBS_PATH = os.path.join(ROOT, "broadcast", "knobs.json")
+# ROOT already IS the broadcast dir (broadcast/), so this must not say
+# "broadcast" twice: the old path was broadcast/broadcast/knobs.json,
+# which never existed, and the panel's knob UI was dead.
+KNOBS_PATH = os.path.join(ROOT, "knobs.json")
 KNOB_KEYS = ("FEED_WAIT", "STREAM_GRACE", "STREAM_SPAWN_TRIES",
              "STREAM_PRIME_LEAD", "REPEAT_LIMIT", "WATCH_POLL",
              "PLANE_DOWN_SECS", "PLANE_RESTART_COOLDOWN")
@@ -1557,6 +1560,12 @@ def failover(renderer, state, decks, skip_idx):
     (and clears fallback_air mid-success) or drops straight into this
     function again for the next fallback file. One loop, one code path."""
     files = fallback_files()
+    # The deck that was on air keeps its feed publishing to MediaMTX after
+    # a failover: nothing stops it until the next successful cut.
+    try:
+        stop_feed(state.get("deck") or "A")
+    except Exception:
+        pass
     start = int(state.get("fallback_idx") or 0)
     for fi in range(len(files)):
         name = files[(start + fi) % len(files)]
@@ -2497,6 +2506,19 @@ def cmd_loop(renderer):
                         _ms = renderer.get_media_status(_src)
                     except Exception:
                         continue
+                    # Publish the on-air position so the dock can say how
+                    # long is left, not only what is playing.
+                    try:
+                        with pl_lock():
+                            _st_now = load_state()
+                            _st_now["onair"] = {
+                                "src": _src,
+                                "pos_ms": int(_ms.get("time_ms") or 0),
+                                "dur_ms": int(_ms.get("duration_ms") or 0),
+                                "state": _ms.get("state") or ""}
+                            save_state(_st_now)
+                    except Exception:
+                        pass
                     if _ms.get("state") == "OBS_MEDIA_STATE_ENDED":
                         ended_streaks[_src] = ended_streaks.get(_src, 0) + 1
                     else:

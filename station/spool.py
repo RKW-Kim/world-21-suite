@@ -71,7 +71,33 @@ def ready(url):
     return info
 
 
+_state_cache = {}        # url -> state, invalidated by the spool dir mtime
+_state_cache_dir = None
+_state_cache_at = 0.0
+
+
 def state(url):
+    """ready / fetching / miss. Cached: the panel asks for 200 of these
+    every poll, and each one used to be two stat() calls."""
+    global _state_cache, _state_cache_dir, _state_cache_at
+    now = time.time()
+    try:
+        dirmtime = os.stat(SPDIR).st_mtime
+    except OSError:
+        dirmtime = 0
+    if dirmtime != _state_cache_dir or now - _state_cache_at > 1.0:
+        _state_cache = {}
+        _state_cache_dir = dirmtime
+        _state_cache_at = now
+    hit = _state_cache.get(url)
+    if hit is not None:
+        return hit
+    res = _state_uncached(url)
+    _state_cache[url] = res
+    return res
+
+
+def _state_uncached(url):
     if ready(url):
         return "ready"
     if _current == url:

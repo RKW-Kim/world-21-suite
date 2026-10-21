@@ -129,6 +129,34 @@ def _normalize_on(default=True):
     return default
 
 
+def api_ping():
+    """A tiny "did anything move?" answer. The dock polled the full
+    58KB state every 2s; this lets it skip that fetch entirely when the
+    playlist, the state and the spool are all unchanged."""
+    ver = []
+    for path in (PLAYLIST, STATE):
+        try:
+            st = os.stat(path)
+            ver.append("%d-%d" % (int(st.st_mtime_ns), st.st_size))
+        except OSError:
+            ver.append("0-0")
+    try:
+        ver.append(str(int(os.stat(os.path.join(ROOT, "spool")).st_mtime_ns)))
+    except OSError:
+        ver.append("0")
+    hb = _read(os.path.join(ROOT, "broadcast", "heartbeat.json"), {})
+    age, pass_ms, busy = None, 0, ""
+    if isinstance(hb, dict):
+        if isinstance(hb.get("t"), (int, float)):
+            age = round(max(0.0, time.time() - hb["t"]), 1)
+        pass_ms = int(hb.get("pass_ms") or 0)
+        busy = hb.get("busy") or ""
+    return {"v": "|".join(ver), "daemon": {"stale": age, "pass_ms": pass_ms,
+                                          "busy": busy},
+            "normalize": {"on": _normalize_on()},
+            "dock_version": _dock_version()}
+
+
 def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
@@ -565,6 +593,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/api/state"):
             self._send(200, api_state(), "application/json")
+        elif self.path.startswith("/api/ping"):
+            self._send(200, api_ping(), "application/json")
         elif self.path.startswith("/api/playlists"):
             self._send(200, api_playlists_get(), "application/json")
         elif self.path.startswith("/dock"):

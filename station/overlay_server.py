@@ -216,10 +216,12 @@ def intake_history(limit=20):
     try:
         con = sqlite3.connect("file:%s?mode=ro" % os.path.join(daemon.MEDIA, "intake.db"),
                               uri=True, timeout=2)
-        rows = con.execute(
-            "SELECT title, source, filename, duration, intake_date FROM intake ORDER BY rowid DESC LIMIT ?",
-            (limit,)).fetchall()
-        con.close()
+        try:
+            rows = con.execute(
+                "SELECT title, source, filename, duration, intake_date FROM intake ORDER BY rowid DESC LIMIT ?",
+                (limit,)).fetchall()
+        finally:
+            con.close()   # a failed query used to leak the connection
     except Exception:
         return []
     return [{"title": r[0], "source": r[1], "file": r[2],
