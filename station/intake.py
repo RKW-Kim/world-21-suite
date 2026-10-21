@@ -154,13 +154,22 @@ def verify(path, expect_min_s=5):
 
 
 def _pinned_files():
-    """What the loop is playing, about to play, or the operator pinned.
+    """What the loop is playing, about to play, or the operator pinned,
+    plus the safety assets: the fail-safe loops and the ad pool.
+
     Intake must never evict these — evicting the on-air file mid-play is
-    the one unrecoverable cache failure (everything else retries)."""
+    the one unrecoverable cache failure (everything else retries), and
+    evicting the fail-safe loops is the one that turns a deck stall into
+    Tech Diffs for the rest of the shift. The daemon's eviction pass pins
+    these (its comment: "eviction used to eat the fail-safe loops and the
+    ad pool"); intake's post-publish evict runs the SAME evict_cache with
+    the SAME hazard — the safety assets are the oldest files in MEDIA, so
+    they are first in LRU order, and this path silently skipped the pin."""
     try:
-        items = json.load(open(PLAYLIST)).get("items", [])
+        data = json.load(open(PLAYLIST))
+        items = data.get("items", [])
     except (OSError, ValueError):
-        return frozenset()
+        data, items = {}, []
     try:
         idx = json.load(open(os.path.join(ROOT, "state.json"))).get("index", 0)
     except (OSError, ValueError):
@@ -172,6 +181,16 @@ def _pinned_files():
             if f:
                 pinned.add(f)
     pinned |= {i.get("file") for i in items if i.get("pinned") and i.get("file")}
+    # The safety assets, same as the daemon pins. fallback_files() reads
+    # the playlist's "fallback" override (default evergreen loops); ad
+    # files ride the playlist's ad_files list. Both basenames in MEDIA.
+    try:
+        from daemon import fallback_files
+        pinned |= set(fallback_files())
+    except ImportError:
+        pass
+    pinned |= {f for f in (data.get("ad_files") or [])
+               if isinstance(f, str) and f}
     return frozenset(pinned)
 
 

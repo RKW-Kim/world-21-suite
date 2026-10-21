@@ -1722,11 +1722,16 @@ def park_decks(renderer, deck, src, deck_sources):
 
 def fallback_files():
     """PLAYOUT_C pool: playlist.json `"fallback": [...]` overrides; default
-    is the evergreen loop cards."""
+    is the evergreen loop cards. A missing or corrupt playlist means the
+    DEFAULTS, not a raise: this query backs the fail-safe, and the one
+    boot it exists to survive is exactly the one where the playlist is
+    unreadable (intake's pin set rides this too, and a missing playlist
+    must not break an intake)."""
+    files = None
     with pl_lock():
         try:
             files = load_playlist().get("fallback")
-        except ValueError:
+        except (OSError, ValueError):
             files = None
     files = files or FALLBACK_DEFAULT
     return [f for f in files if os.path.exists(os.path.join(MEDIA, f))]
