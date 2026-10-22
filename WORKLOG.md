@@ -2421,3 +2421,31 @@ perfectly healthy station whose plane is masked on purpose. A check
 that always fails teaches the reader that the exit code means nothing.
 It now answers 0 when the only dead piece is one the operator switched
 off, and 1 when a piece that should be alive is dead.
+
+## 2026-10-22 (07:00) — the contribution seats, proven end to end
+
+The seats (a guest joining with a screen or a camera) had never been
+run against a real publisher. They are the operator's "a guest is in
+the show" feature, and the bus is the only thing they touch.
+
+Proven live, from the LAN address (the real guest's vantage point):
+
+- **SRT publish**: a seat publishes with its own credential
+  (`streamid=publish:slot-cam:seat-cam:<pass>`) and the path comes up
+  ready/available/online with two tracks (H264 + AAC), bytes climbing
+  for the whole 35 s.
+- **SRT read**: a reader on `streamid=read:slot-cam` — exactly what
+  the OBS "Slot Cam" input does — receives the video and the audio.
+- **WHIP publish**: the right credential gets 201 with a session URL.
+- **The auth holds**: a wrong password from the LAN is refused
+  ("failed to authenticate"), an unknown user is refused, and the right
+  credential against the WRONG path (slot-screen) is refused — the
+  path scoping works.
+- Loopback is tier 1 ("the box itself, anonymous, every action"), so
+  a local publisher needs no credential. That is the design, not a
+  hole: the seats are remote, and the remote path is checked.
+
+One thing the test did find: a publisher that is torn down mid-flight
+takes the path down with it ("no stream is available"), which is why
+the read side failed on the first attempt — a test artefact, not a
+station fault, but worth knowing when a guest's tab closes.
