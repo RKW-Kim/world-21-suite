@@ -2519,3 +2519,43 @@ process (the unit sets it), so a diagnostic run from a shell would have
 reported the operator's deliberately masked plane as a failure. It now
 reads the unit's enabled state, the same rule the station watchdog
 uses.
+
+## 2026-10-22 (07:10) — the programme stayed black when the plane came back
+
+The biggest find of the round, and it was found by doing the VPS
+migration's step 3 (bring the plane up alone in the GPU-less shape and
+see what it renders).
+
+**What the operator's own workflow does:** the plane is masked on
+purpose, the daemon restarts, the operator turns the plane on later.
+The station must come back. It did not:
+
+- The programme output was only created at boot, so the station never
+  reached the bus until the daemon was restarted.
+- The queue held the whole time: the plane-down hold was not a HOLD
+  (no marker), so the hold-retry never re-attempted the advance, and
+  the re-kick was skipped because the item "looked like a stream".
+- **The worst one: a dead STANDING websocket was treated as a dead
+  PLANE.** OBS closed the idle connection, the ping failed, PLANE_DOWN
+  was set on every pass, and advance() refused to play — with the plane
+  up and perfectly well. The programme stayed black: every deck
+  hidden, every media input idle, while the state file cheerfully said
+  the fail-safe was on air.
+- And the resume itself was broken: the "the plane is back" branch
+  cleared PLANE_DOWN AFTER calling advance(), so the resume always saw
+  "the plane is down" and refused to play.
+
+All four are fixed: a dead socket is "unknown" (dropped, so the next
+check handshakes fresh) and only a failed fresh handshake can call the
+plane down; the plane-down hold is a HOLD; the output is ensured when
+the plane returns and every 30 passes; and the resume clears the flag
+before advancing.
+
+PROVEN LIVE: daemon booted with the plane off, the plane came back,
+and the station resumed by itself — the queue advanced (index 13 →
+14), the fail-safe engaged, and a frame pulled off the bus carried the
+real picture (the test pattern, the watermark, the ticker), not black.
+That also proves the GPU-less render (Xvfb :99 + software GL): the
+step the VPS migration order had left open.
+
+New: station/test_plane_state.py — a dead socket is not a dead plane.

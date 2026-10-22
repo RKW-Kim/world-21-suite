@@ -36,13 +36,20 @@ def _display():
 
 def list_windows():
     d = _display()
+    n = 0
     try:
         for c in d.screen().root.query_tree().children:
             try:
                 g = c.get_geometry()
+                n += 1
                 print(f"{c.get_wm_name()!r} {g.width}x{g.height} at {g.x},{g.y}")
             except Exception as e:  # window vanished mid-query
+                n += 1
                 print(f"<gone> {e}")
+        if not n:
+            # Silence here reads as "the tool is broken". Say what the
+            # truth is: the display is up, and nothing is on it.
+            print(f"no windows on {DISPLAY} (is the render plane running there?)")
     finally:
         d.close()
 

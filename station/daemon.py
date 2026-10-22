@@ -1830,6 +1830,50 @@ def check_schedule(state):
               % (prof, len(items)), "INFO")
 
 
+def plane_check(renderer, gate_pass):
+    """Is the render plane there? -> "up" | "unknown" | "down".
+
+    A dead STANDING connection is "unknown", NOT "down": the standing
+    socket can die while the plane is perfectly alive (OBS closes an
+    idle connection). Treating that as "down" set PLANE_DOWN on every
+    pass, advance() refused to play, and the programme stayed BLACK
+    with the plane up and well. A dead socket is dropped so the next
+    check makes a FRESH handshake -- only that can call the plane down.
+    """
+    if renderer._shared is not None and gate_pass != 1:
+        try:
+            with renderer._lock:
+                ws = renderer._shared
+                # Bound the send: a half-dead socket inherits the call
+                # timeout; the ping must not stall the poll.
+                old_to = ws.s.gettimeout()
+                try:
+                    ws.s.settimeout(3.0)
+                    ws._frame(0x9)  # ping -> pong (skipped by recv)
+                finally:
+                    try:
+                        ws.s.settimeout(old_to)
+                    except OSError:
+                        pass
+            return "up", None
+        except Exception:
+            try:
+                renderer._shared.close()
+            except Exception:
+                pass
+            renderer._shared = None
+            return "unknown", None
+    probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
+                int(os.environ.get("OBS_PORT", "4455")), timeout=8)
+    try:
+        hello = probe.recv()
+    finally:
+        probe.close()
+    if hello.get("op") != 0:
+        raise RuntimeError("not v5")
+    return "up", hello
+
+
 def probe_plane(renderer):
     """Dump what the plane actually looks like: input names, the filters
     riding on them, and the filter kinds this OBS build offers. The ws
@@ -2249,6 +2293,13 @@ def advance(renderer, state, data, deck_sources):
         hold_alert("plane:down",
                    "Render plane is down: holding the queue, nothing advanced.",
                    "WARN")
+        # This is a HOLD like any other: the poll loop's hold-retry
+        # re-attempts the advance every 30s, which is how the station
+        # resumes when the plane comes back. Without the marker the
+        # queue stayed held for ever and the programme stayed BLACK
+        # (the decks parked at boot, nothing advancing) -- the plane was
+        # back, the station was not.
+        HOLDING["since"] = time.time()
         return
     skipped = dormant = pending = 0
     try:
@@ -3381,35 +3432,28 @@ def cmd_loop(renderer):
             # 45s metadata resolve or a slow OBS call. The verbs are
             # cheap; the playout work is not.
             consume_control(renderer, decks, data)
+            # "up" | "unknown" | "down". A dead STANDING connection is
+            # not a dead plane: it used to be treated as one, so
+            # PLANE_DOWN was set on every pass and advance() refused to
+            # play -- the programme stayed BLACK with the plane up and
+            # well. A dead socket is "unknown": drop it, and let the next
+            # check make a FRESH handshake, which is the only thing that
+            # can call the plane down.
+            plane_state = "up"
             try:
-                if renderer._shared is not None and gate_pass != 1:
-                    with renderer._lock:
-                        ws = renderer._shared
-                        # Bound the send: a half-dead socket inherits the
-                        # call timeout; the ping must not stall the poll.
-                        old_to = ws.s.gettimeout()
-                        try:
-                            ws.s.settimeout(3.0)
-                            ws._frame(0x9)  # ping -> pong (skipped by recv)
-                        finally:
-                            try:
-                                ws.s.settimeout(old_to)
-                            except OSError:
-                                pass
-                else:
-                    probe = _WS(os.environ.get("OBS_HOST", "127.0.0.1"),
-                                int(os.environ.get("OBS_PORT", "4455")), timeout=8)
-                    hello = probe.recv()
-                    probe.close()
-                    if hello.get("op") != 0:
-                        raise RuntimeError("not v5")
-                if globals().get("PLANE_DOWN"):
-                    # The plane is back. Whatever it recorded while it was
-                    # away was its absence, not a station fault.
-                    clear_fault_history("the render plane was away")
-                plane_down_since = None
-                globals()["PLANE_DOWN"] = 0
+                plane_state, _hello = plane_check(renderer, gate_pass)
+                if plane_state == "up" and gate_pass == 1:
+                    # A full probe every 30 passes: also the moment to
+                    # make sure the programme output exists. The boot
+                    # does it, but the boot can be the wrong side of a
+                    # plane that was off.
+                    try:
+                        ensure_stream_output(renderer)
+                    except Exception:
+                        pass
             except Exception:
+                plane_state = "down"
+            if plane_state == "down":
                 now = time.time()
                 globals()["PLANE_DOWN"] = now
                 if plane_down_since is None:
@@ -3420,6 +3464,39 @@ def cmd_loop(renderer):
                     plane_restarted_at = now
                     alert("Render plane unreachable; restarting it.", "CRIT")
                     restart_plane()
+            elif plane_state == "up" and globals().get("PLANE_DOWN"):
+                # THE PLANE IS BACK. Clear the flag BEFORE resuming:
+                # advance() checks it, and it used to be cleared
+                # afterwards, so the resume always saw "the plane is
+                # down" and refused to play.
+                globals()["PLANE_DOWN"] = 0
+                plane_down_since = None
+                # Whatever it recorded while it was away was its absence,
+                # not a station fault.
+                clear_fault_history("the render plane was away")
+                # The programme output may not exist: the daemon may have
+                # booted while the plane was off (the operator masks it on
+                # purpose) and the boot-time creation could not reach it.
+                try:
+                    ensure_stream_output(renderer)
+                except Exception:
+                    pass
+                # The queue has been holding. Resume it: the decks were
+                # parked at boot and nothing has advanced since, so
+                # without this the programme stays black after the plane
+                # returns.
+                try:
+                    advance(renderer, load_state(), data, decks)
+                except Exception as e:
+                    alert("could not resume after the plane came back "
+                          "(%s)." % e, "WARN")
+            else:
+                # "unknown": the standing socket died. The plane may be
+                # perfectly fine; the next check makes a fresh handshake
+                # and proves it. It is NOT down.
+                if plane_state == "up":
+                    plane_down_since = None
+                    globals()["PLANE_DOWN"] = 0
             if os.path.getmtime(PLAYLIST) != mtime:  # reload at next cut, never mid-air
                 mtime = os.path.getmtime(PLAYLIST)
                 try:
