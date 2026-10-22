@@ -21,7 +21,12 @@ def _err(tag, detail):
     return 1
 
 
-def run(renderer=None):
+def run(renderer=None, plane_expected=True):
+    """Check the station before it goes on air. Returns the number of
+    failures. plane_expected=False means the render plane is switched off
+    ON PURPOSE: the OBS checks are then SKIPPED, not failed -- crying
+    CRIT at every boot for the operator's own choice teaches them to
+    ignore the log."""
     bad = 0
     # A corrupt or missing playlist is the exact broken boot this tool
     # exists to diagnose -- the old bare load_playlist() crashed HERE,
@@ -53,21 +58,24 @@ def run(renderer=None):
     # Scenes must exist in OBS by exact name (the Meet->Program rename cost
     # us a day of ghost re-kicks).
     scene_names = []
-    if renderer:
-        try:
-            scene_names = [s["sceneName"] for s in
-                           renderer._call("GetSceneList")["scenes"]]
-        except Exception:
-            print("WARN obs        scene list unreadable (renderer down)")
-            # Not a PASS: with no scene list the check below was skipped
-            # entirely and the boot reported "scenes ok".
-            bad = _err("obs", "scene list unreadable (renderer down)")
-    wanted = [getattr(daemon, a) for a in
-              ("SCENE_STARTING", "SCENE_PROGRAM", "SCENE_OFFAIR",
-               "SCENE_TECHDIFF", "SCENE_END", "SCENE_LIVE", "AD_SCENE")]
-    for name in wanted:
-        if scene_names and name not in scene_names:
-            bad = _err("scenes", "OBS has no scene %r" % name)
+    if renderer and not plane_expected:
+        print("SKIP obs        the render plane is switched off on purpose")
+    else:
+        if renderer:
+            try:
+                scene_names = [s["sceneName"] for s in
+                               renderer._call("GetSceneList")["scenes"]]
+            except Exception:
+                print("WARN obs        scene list unreadable (renderer down)")
+                # Not a PASS: with no scene list the check below was
+                # skipped entirely and the boot reported "scenes ok".
+                bad = _err("obs", "scene list unreadable (renderer down)")
+        wanted = [getattr(daemon, a) for a in
+                  ("SCENE_STARTING", "SCENE_PROGRAM", "SCENE_OFFAIR",
+                   "SCENE_TECHDIFF", "SCENE_END", "SCENE_LIVE", "AD_SCENE")]
+        for name in wanted:
+            if scene_names and name not in scene_names:
+                bad = _err("scenes", "OBS has no scene %r" % name)
     # Disk headroom under the cache root.
     try:
         free_gb = os.statvfs(daemon.ROOT).f_bavail * \

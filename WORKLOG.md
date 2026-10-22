@@ -2315,3 +2315,23 @@ This is the same shape as the schedule bug earlier today: the OFFLINE
 test passed (the code did what it said) while the RUNNING station did
 not (the code was not what the station actually did). The proof is in
 the data the operator sees — 8 descriptions — not in the code.
+
+## 2026-10-22 (05:40) — the log told the operator two lies
+
+The activity log is the operator's evidence trail. It was saying two
+things that were not true.
+
+- **"Preflight FAILURES at boot" (CRIT) at every boot.** The preflight
+  checked OBS and, with the plane switched off on purpose, could only
+  fail. The same boot said "Render plane is switched off on purpose"
+  one line earlier. The operator's own choice was reported as a
+  failure, which teaches them to ignore the CRIT. The preflight now
+  SKIPS the OBS checks when the plane is deliberately off ("SKIP obs —
+  the render plane is switched off on purpose") and the boot says
+  "PASS preflight".
+- **Eight warnings per pass, forever.** With the plane down, every
+  pass wrote eight rows ("plane unreachable" from the normalizers, the
+  overlays, the three deck unlocks, the scene check and the hold). At
+  one pass every few minutes that is ~2,300 rows a day: the 5,000-row
+  trail fills in two days and the useful rows are trimmed away. These
+  now go through the same hourly rate-limit the hold states use.

@@ -1450,7 +1450,7 @@ def apply_mic_normalizer(renderer):
     try:
         inputs = renderer._call("GetInputList").get("inputs", [])
     except Exception as e:
-        alert("mic normalizer skipped: %s." % e, "WARN")
+        hold_alert("plane:mic", "mic normalizer skipped: %s." % e, "WARN")
         return
     mics = [i.get("inputName") for i in inputs
             if (i.get("inputKind") or "").startswith(
@@ -1486,7 +1486,7 @@ def apply_deck_normalizer(renderer):
         names = {inp.get("inputName") for inp
                  in renderer._call("GetInputList").get("inputs", [])}
     except Exception as e:
-        alert("deck normalizer skipped: %s." % e, "WARN")
+        hold_alert("plane:deck", "deck normalizer skipped: %s." % e, "WARN")
         return
     here = [t for t in targets if t in names]
     missing = [t for t in targets if t not in names]
@@ -2229,8 +2229,9 @@ def advance(renderer, state, data, deck_sources):
         # The renderer is not answering: HOLD. Advancing now would consume
         # the playlist item by item (each one "unplayable" because nothing
         # can play it) and the queue would be empty by morning.
-        alert("Render plane is down: holding the queue, nothing advanced.",
-              "WARN")
+        hold_alert("plane:down",
+                   "Render plane is down: holding the queue, nothing advanced.",
+                   "WARN")
         return
     skipped = dormant = pending = 0
     try:
@@ -3175,7 +3176,7 @@ def cmd_loop(renderer):
     # cold boot.
     try:
         import preflight
-        if preflight.run(renderer):
+        if preflight.run(renderer, plane_expected=bool(PLANE_AUTORESTART)):
             alert("Preflight FAILURES at boot (see daemon journal for list).",
                   "CRIT")
     except Exception as e:
@@ -3249,7 +3250,8 @@ def cmd_loop(renderer):
         # into the Off Air harbour because nothing cut program.
         renderer.set_scene(SCENE_PROGRAM)
     except RuntimeError as e:
-        alert("Program is not on Meet (%s); cut manually." % e, "WARN")
+        hold_alert("plane:meet",
+                   "Program is not on Meet (%s); cut manually." % e, "WARN")
     alert("Loop running: %d items." % len(data.get("items", [])), "INFO")
     # Post-restart plugin soft-lock: any file input that survived an OBS
     # restart can sit at MEDIA_STATE_NONE forever, refusing to decode no
@@ -3260,7 +3262,8 @@ def cmd_loop(renderer):
         try:
             renderer.restart_media(src)
         except Exception as e:
-            alert("unlock %s failed: %s." % (src, e), "WARN")
+            hold_alert("plane:unlock:" + src,
+                       "unlock %s failed: %s." % (src, e), "WARN")
     # Ticker + watermark on air. The exeldro downstream-keyer vendor channel
     # accepts dsk_select_scene but never persists it (silent no-op, seen
     # live 2026-10-19), so the overlays are composited as nested scene items
@@ -3268,7 +3271,7 @@ def cmd_loop(renderer):
     try:
         ensure_overlays(renderer)
     except Exception as e:
-        alert("overlays failed: %s." % e, "WARN")
+        hold_alert("plane:overlays", "overlays failed: %s." % e, "WARN")
     try:
         studio_mode_off(renderer)
     except Exception:
