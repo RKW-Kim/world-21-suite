@@ -286,9 +286,11 @@ finished thing.
   approve-all / discard-all, staged like every other edit.
 - ~~**The daily metadata sweep**~~ — DONE (it was already running; it
   captures the description, the channel and a checked-at stamp for the
-  items it visits — 7 of 203 rows carry one so far). The gap that
-  remains: it only visits what it reaches, so a fresh import shows "no
-  description captured — press refresh" until the first sweep reaches it.
+  items it visits). FIXED 2026-10-22: the sweep never actually swept
+  (8 of 201 rows after days — it re-resolved the same rows for ever),
+  because a VOD's resolve was never cached and the pass always started
+  at the top. It now caches every resolve and keeps a cursor, so it
+  reaches every row and survives a restart.
 
 ---
 
