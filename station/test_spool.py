@@ -146,7 +146,10 @@ LOG = []
 spool._run(URL, "T3", lambda m, lvl="INFO": LOG.append((m, lvl)))
 check("run-OK _current cleared", spool._current is None)
 check("run-OK promotes ready", spool.ready(URL) is not None)
-check("run-OK .dl kept for resume", os.path.isfile(fpath(K, ".dl.mp4")))
+# The raw is the FINISHED download; the blessed file is its remux. There
+# is nothing to resume from a completed raw (resume lives in the .part
+# files), so keeping both only doubles the spool's disk use.
+check("run-OK .dl freed after the remux", not os.path.isfile(fpath(K, ".dl.mp4")))
 _mirror_t = spool.ready(URL).get("title")
 check("run-OK alert names title",
       any(m.startswith("Spooled: T3") for m, _ in LOG)
@@ -269,6 +272,22 @@ os.remove(fpath(K2, spool.NOAUDIO))
 spool._faststart(K2)
 check("audible file blesses",
       bool(spool.ready(URL2)) and not os.path.isfile(fpath(K2, spool.NOAUDIO)))
+# The raw is the download; the blessed file is the remux of it. Keeping
+# both doubles the spool's disk use, so the cap only ever bought half the
+# cache it claims.
+check("the raw is freed after a successful remux",
+      not os.path.isfile(RAW2))
+
+# The sweep reclaims a raw whose blessed sibling is there (the case left
+# behind by an older run), but never the in-flight key's.
+K3 = "cafe3cafe3cafe3cafe3"
+RAW3 = fpath(K3, ".dl.mp4")
+BLESS3 = fpath(K3, ".mp4")
+open(RAW3, "wb").write(BIG)
+open(BLESS3, "wb").write(BIG)
+spool._cleanup()
+check("a duplicate raw is reclaimed by the sweep", not os.path.isfile(RAW3))
+check("the blessed copy survives the sweep", os.path.isfile(BLESS3))
 
 print("FAILURES: %s" % (fails or "none"))
 sys.exit(1 if fails else 0)

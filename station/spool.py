@@ -147,6 +147,19 @@ def _cleanup():
     # Cap pass. The in-flight job owns EVERY file for its key: .dl.mp4,
     # .dl.mp4.part-Frag#, .f<id>.mp4 merge temps, .fs.mp4 remux temp.
     live_pref = final(_key(_current)) if _current else None
+    # A raw with a blessed sibling is pure duplication: the blessed file
+    # is what plays. Reclaim it now rather than waiting for the age pass
+    # (48h) or for the disk to fill up. The in-flight key is exempt --
+    # its raw may be the download that is being written right now.
+    for f in list(files):
+        base = os.path.basename(f[2])
+        if ".dl." not in base or not base.endswith(".mp4"):
+            continue
+        if live_pref and f[2].startswith(live_pref):
+            continue
+        key = base.split(".dl.")[0]
+        if os.path.exists(os.path.join(SPDIR, key + ".mp4")):
+            _unlink(f); used -= f[1]; files.remove(f)
     evict = [f for f in files
              if not (live_pref and f[2].startswith(live_pref))]
     def _rank(f):
@@ -370,6 +383,15 @@ def _faststart(k, raw=None):
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
         if p.returncode == 0 and os.path.getsize(tmp) > 0:
             os.replace(tmp, final(k + ".mp4"))
+            # The raw IS the download; the blessed file is the remux of it.
+            # Keeping both doubles the spool's disk use, so the 3 GB cap
+            # only ever bought 1.5 GB of cache. The raw is only needed
+            # while there is no blessed copy.
+            if raw and os.path.exists(raw):
+                try:
+                    os.unlink(raw)
+                except OSError:
+                    pass
             if not _has_audio(final(k + ".mp4")):
                 # Silent file: purge the bless so ready() stays a miss (the
                 # live pipe keeps sound), drop the raw frees 150MB+, and the

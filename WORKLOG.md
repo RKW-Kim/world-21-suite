@@ -2265,3 +2265,26 @@ The "different order for a different occasion" idea, on a clock.
   them was current.
 - New: `station/test_schedule.py` (the file, the next switch, the
   guards, the marker, the recoverable order).
+
+## 2026-10-22 (05:00) — the spool held every download twice, and the test suite touched live state
+
+Two defects, found by looking at the disk rather than the code.
+
+- **The spool kept the raw download next to the blessed copy.** The raw
+  IS the download; the blessed file is its remux. Nothing deleted the
+  raw, so the cache held 2x the data and the 3 GB cap only ever bought
+  1.5 GB of content. The remux now frees the raw, and the sweep
+  reclaims a raw whose blessed sibling is there (the case left behind by
+  older runs). Measured: 782 MB -> 376 MB in the live spool.
+- **THE TEST SUITE EVICTED FROM THE OPERATOR'S LIVE CACHE.** advance()
+  ends with spool.kick(), which runs the cache cleanup, and the
+  daemon's selftest calls advance() -- with the LIVE spool directory.
+  Proved with a canary: the suite deleted a file from broadcast's
+  spool/. The selftest now points the spool at its temp dir (like it
+  already did for the playlist, the state and the activity log), and
+  asserts it.
+
+The second one only became visible because the first fix made the
+cleanup delete a duplicate raw: the suite was already evicting from the
+live cache (it just had nothing to evict before). A green suite is not
+proof that the live station was untouched -- that has to be measured.

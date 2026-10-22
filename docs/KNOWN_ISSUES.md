@@ -260,7 +260,11 @@ finished thing.
   only captured for items the watcher has visited, so a fresh import
   shows "no description captured — press refresh" until the first
   sweep.
-- **Scheduled profiles** (day/night running orders switching on a clock).
+- ~~**Scheduled profiles** (day/night running orders switching on a clock).~~
+  DONE 2026-10-22: `broadcast/schedule.json` holds the switches, the
+  daemon applies them (a missing or EMPTY profile is refused, the same
+  switch cannot fire twice in a day, the replaced order is kept as
+  `before-switch`), and the dock shows the next one. Proven live.
 - ~~**A queue timeline / playhead**~~ — DONE 2026-10-22 (the Studio
   Player pattern): the dock now draws a RUNNING ORDER strip under the
   header — one tile per queued item, the playhead on the item that is on

@@ -3737,6 +3737,13 @@ def selftest():
     MEDIA, PLAYLIST = os.path.join(tmp, "media"), os.path.join(tmp, "media", "playlist.json")
     STATE, DB = os.path.join(tmp, "state.json"), os.path.join(tmp, "a.db")
     os.makedirs(MEDIA)
+    # The spool cache is LIVE state. advance() ends with spool.kick(),
+    # which runs the cache's cleanup -- so without this the selftest
+    # evicted from the operator's real cache (proved with a canary: the
+    # suite deleted a file from the live spool directory).
+    spool.SPDIR = os.path.join(tmp, "spool")
+    os.makedirs(spool.SPDIR, exist_ok=True)
+    assert spool.SPDIR.startswith(tmp), spool.SPDIR
     open(os.path.join(MEDIA, "a.mp4"), "w").write("x")
     save_playlist({"shuffle_on_complete": True,
                    "items": [{"file": "a.mp4", "title": "A", "duration": 1},
