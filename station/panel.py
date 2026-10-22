@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import time
+import traceback
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -334,6 +335,12 @@ def save_playlist(p):
     flows (ad_plan, idents, per-item fetch metadata) are preserved, not
     silently dropped: the panel is one editor among several."""
     import daemon
+    if not isinstance(p, dict):
+        # A malformed request must be ANSWERED, not crash the handler:
+        # the operator's console would show a dropped connection instead
+        # of what was wrong with their request.
+        raise ValueError("the playlist must be an object, not %s"
+                         % type(p).__name__)
     # The WHOLE read-modify-write inside the station lock. The read used to
     # sit outside it: the daemon's shuffle-save/played-marks landing in that
     # window were published over by this stale copy (AGENTS.md rule 2 —
@@ -731,7 +738,12 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._send(404, {"ok": False, "err": "unknown endpoint"},
                            "application/json")
-        except (ValueError, KeyError) as ex:
+        except (ValueError, KeyError, TypeError, AttributeError) as ex:
+            # A malformed request gets a clean 400 and the traceback goes
+            # to the journal. Before, a non-dict playlist raised
+            # AttributeError, which was not caught here: the connection
+            # died with no answer at all.
+            traceback.print_exc()
             self._send(400, {"ok": False, "err": str(ex)}, "application/json")
 
     def log_message(self, *a):

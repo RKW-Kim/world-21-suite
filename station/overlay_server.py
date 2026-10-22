@@ -1088,7 +1088,9 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError:
             return self._json(400, {"ok": False, "error": "bad JSON"})
         rtype = body.get("type", "")
-        if not rtype or not rtype.isalpha():
+        if not isinstance(rtype, str) or not rtype or not rtype.isalpha():
+            # A non-string type used to raise AttributeError (int has
+            # no isalpha) and killed the connection with no answer.
             return self._json(400, {"ok": False, "error": "call needs {\"type\"}"})
         data = body.get("data") or {}
         if not isinstance(data, dict):
