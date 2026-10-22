@@ -266,10 +266,10 @@ finished thing.
   `/api/thumb` proxy on the panel), the real title, the description, the
   source and how fresh the metadata is, with a manual "refresh
   metadata" button (`{"refresh": {"url": ...}}` verb) and a daily full
-  metadata sweep in the title watcher. STILL TO DO: the description is
-  only captured for items the watcher has visited, so a fresh import
-  shows "no description captured — press refresh" until the first
-  sweep.
+  metadata sweep in the title watcher. The sweep is FIXED too
+  (2026-10-22): it now reaches every row instead of re-resolving the
+  same ones for ever, so a fresh import's description arrives with the
+  sweep rather than waiting for a manual press.
 - ~~**Scheduled profiles** (day/night running orders switching on a clock).~~
   DONE 2026-10-22: `broadcast/schedule.json` holds the switches, the
   daemon applies them (a missing or EMPTY profile is refused, the same
