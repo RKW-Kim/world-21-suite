@@ -4,6 +4,154 @@ Running record of what was decided, built, broken, and learned. For the
 operator and for future agents: the hiccups are the point — each one cost
 real debugging time and each fix is load-bearing. Newest first.
 
+## 2026-10-22 (06:00) — the repo's OBS config had fallen years behind the live plane
+
+`station/config/collection.json` is what a fresh box is built from (the
+VPS migration). Measured against the live plane: **62 drift lines**.
+
+What the repo was missing, and why it mattered:
+
+- **The loudness chain.** The operator's global compressor + limiter
+  (compress -16 dB / 3:1 -> limit -1.5 dBTP) live as OBS filters on the
+  live plane. A fresh install from the repo would have had NO loudness
+  chain at all.
+- **The contribution seats** (Slot Cam / Slot Screen / Slot Audio) — the
+  SRT/WHIP seats the operator uses.
+- **Three of the nine scenes** (Ad Break, Ticker, Watermark). The apply
+  refuses a capture that lacks a scene the daemon drives, so the repo's
+  capture could not have been applied at all.
+
+The capture also had a bug of its own: a deck input's file is RUNTIME
+state (the daemon points it at the item it is about to play, which is a
+spool file with a transient name), and the capture wrote that path
+verbatim. It now writes the fail-safe template.
+
+After the re-capture: `sync.py diff` says **"repo matches live (no
+drift)"**. The capture went through a temp directory and was checked
+for secrets and machine-specific paths before it went near git.
+
+## 2026-10-22 (05:40) — the log told the operator two lies
+
+The activity log is the operator's evidence trail. It was saying two
+things that were not true.
+
+- **"Preflight FAILURES at boot" (CRIT) at every boot.** The preflight
+  checked OBS and, with the plane switched off on purpose, could only
+  fail. The same boot said "Render plane is switched off on purpose"
+  one line earlier. The operator's own choice was reported as a
+  failure, which teaches them to ignore the CRIT. The preflight now
+  SKIPS the OBS checks when the plane is deliberately off ("SKIP obs —
+  the render plane is switched off on purpose") and the boot says
+  "PASS preflight".
+- **Eight warnings per pass, forever.** With the plane down, every
+  pass wrote eight rows ("plane unreachable" from the normalizers, the
+  overlays, the three deck unlocks, the scene check and the hold). At
+  one pass every few minutes that is ~2,300 rows a day: the 5,000-row
+  trail fills in two days and the useful rows are trimmed away. These
+  now go through the same hourly rate-limit the hold states use.
+
+## 2026-10-22 (05:20) — the daily metadata sweep never swept
+
+The operator asked for a daily check of the videos' metadata (Q5) and
+the dock shows the description in the preview panel. After days of
+running, **8 of 201 items had a description** — and they were the first
+eight.
+
+Two causes, both in the watcher:
+
+- `cached_resolve()` only cached a resolve that had BOTH HLS renditions
+  — which is a LIVE STREAM. A VOD's metadata was never cached, so every
+  pass re-resolved the same rows from scratch.
+- The pass always started at the top of the playlist. With a half-hour
+  cache TTL and a five-minute cycle, the frontier never moved: it
+  re-resolved the first rows and never reached the rest.
+
+The fix: cache every successful resolve, and give the pass a cursor
+(`broadcast/sweep_pos.json`) so it continues where it stopped. The
+first pass of the day is still the full sweep (20 resolves); the
+ordinary passes now advance 3 rows each instead of re-resolving the
+same 3 forever.
+
+This is the same shape as the schedule bug earlier today: the OFFLINE
+test passed (the code did what it said) while the RUNNING station did
+not (the code was not what the station actually did). The proof is in
+the data the operator sees — 8 descriptions — not in the code.
+
+## 2026-10-22 (05:00) — the spool held every download twice, and the test suite touched live state
+
+Two defects, found by looking at the disk rather than the code.
+
+- **The spool kept the raw download next to the blessed copy.** The raw
+  IS the download; the blessed file is its remux. Nothing deleted the
+  raw, so the cache held 2x the data and the 3 GB cap only ever bought
+  1.5 GB of content. The remux now frees the raw, and the sweep
+  reclaims a raw whose blessed sibling is there (the case left behind by
+  older runs). Measured: 782 MB -> 376 MB in the live spool.
+- **THE TEST SUITE EVICTED FROM THE OPERATOR'S LIVE CACHE.** advance()
+  ends with spool.kick(), which runs the cache cleanup, and the
+  daemon's selftest calls advance() -- with the LIVE spool directory.
+  Proved with a canary: the suite deleted a file from broadcast's
+  spool/. The selftest now points the spool at its temp dir (like it
+  already did for the playlist, the state and the activity log), and
+  asserts it.
+
+The second one only became visible because the first fix made the
+cleanup delete a duplicate raw: the suite was already evicting from the
+live cache (it just had nothing to evict before). A green suite is not
+proof that the live station was untouched -- that has to be measured.
+
+## 2026-10-22 (04:30) — scheduled profile switches
+
+The "different order for a different occasion" idea, on a clock.
+
+- `broadcast/schedule.json` holds the switches; the daemon applies them
+  and the dock shows the next one (`next switch 06:00 · morning`).
+- The guards are the point: a missing profile is refused, an EMPTY
+  profile is refused (it would blank the station), the same switch
+  cannot fire twice in a day, and the order a switch replaces is kept
+  as the `before-switch` profile so it can be loaded back with one
+  click.
+- PROVEN LIVE: a switch fired once (04:24:01), the order became the
+  profile, the ad cadence restarted, and `before-switch` held the
+  operator's 203 rows. The station's playlist was restored afterwards.
+- **A live catch the offline test could not make:** the switch fired
+  THREE times on the first live run. The reason was that the running
+  daemon predated the `schedule_last` state key, so the "already
+  applied" marker was never persisted and every pass re-applied the
+  switch. The offline test passed because it imported the new module.
+  This is the rule in AGENTS.md §4 in its plainest form: the unit test
+  and the running station are two different things, and only one of
+  them was current.
+- New: `station/test_schedule.py` (the file, the next switch, the
+  guards, the marker, the recoverable order).
+
+## 2026-10-22 (04:00) — the stream lane, and a content class the station could not play
+
+The stream lane had never been run against a real live stream. It
+needed one, so yt-dlp was asked for live music radio and a 24/7
+channel was picked.
+
+- **THE STATION COULD NOT PLAY A COMBINED LIVE STREAM.** The feed needs
+  a video rendition AND an audio rendition; the 24/7 music channels
+  publish ONE HLS rendition carrying both and no separate audio one.
+  The resolve therefore returned "unplayable" and the item was
+  SKIPPED -- i.e. the most obvious content for a music station could
+  never play. The resolve now also looks for a combined rendition and
+  the spawn feeds ffmpeg ONE input for it.
+- PROVEN LIVE: the combined stream resolved, ffmpeg spawned, and
+  MediaMTX's slot-stream-a path was READY 5 seconds later. The
+  programme output was read back from the bus at the same time (143
+  video frames, 262 audio frames), so the OBS side of the same path is
+  proven too.
+- The test item was removed again afterwards: the playlist is back to
+  203 rows with no test debris.
+
+Two harness expectations were wrong and are fixed (a websocket
+handshake that PASSES the guard takes the connection over, so the client
+never sees an HTTP status; and the harness timed out before the /obs
+proxy's 8s plane deadline, so the client gave up first and broke the
+pipe on the server side).
+
 ## 2026-10-21 (night) — the fixes got grilled: five adversarial clusters, nine regressions found and fixed
 
 - The operator's directive: "grill/audit even the fixes you made so that
@@ -2214,150 +2362,3 @@ It is bounded: a window of 24 tiles around the playhead, not the whole
 playlist, so a 200-item roll does not become a wall of DOM (the list
 itself is capped at 200 rows per section, with a "show all" row).
 
-## 2026-10-22 (04:00) — the stream lane, and a content class the station could not play
-
-The stream lane had never been run against a real live stream. It
-needed one, so yt-dlp was asked for live music radio and a 24/7
-channel was picked.
-
-- **THE STATION COULD NOT PLAY A COMBINED LIVE STREAM.** The feed needs
-  a video rendition AND an audio rendition; the 24/7 music channels
-  publish ONE HLS rendition carrying both and no separate audio one.
-  The resolve therefore returned "unplayable" and the item was
-  SKIPPED -- i.e. the most obvious content for a music station could
-  never play. The resolve now also looks for a combined rendition and
-  the spawn feeds ffmpeg ONE input for it.
-- PROVEN LIVE: the combined stream resolved, ffmpeg spawned, and
-  MediaMTX's slot-stream-a path was READY 5 seconds later. The
-  programme output was read back from the bus at the same time (143
-  video frames, 262 audio frames), so the OBS side of the same path is
-  proven too.
-- The test item was removed again afterwards: the playlist is back to
-  203 rows with no test debris.
-
-Two harness expectations were wrong and are fixed (a websocket
-handshake that PASSES the guard takes the connection over, so the client
-never sees an HTTP status; and the harness timed out before the /obs
-proxy's 8s plane deadline, so the client gave up first and broke the
-pipe on the server side).
-
-## 2026-10-22 (04:30) — scheduled profile switches
-
-The "different order for a different occasion" idea, on a clock.
-
-- `broadcast/schedule.json` holds the switches; the daemon applies them
-  and the dock shows the next one (`next switch 06:00 · morning`).
-- The guards are the point: a missing profile is refused, an EMPTY
-  profile is refused (it would blank the station), the same switch
-  cannot fire twice in a day, and the order a switch replaces is kept
-  as the `before-switch` profile so it can be loaded back with one
-  click.
-- PROVEN LIVE: a switch fired once (04:24:01), the order became the
-  profile, the ad cadence restarted, and `before-switch` held the
-  operator's 203 rows. The station's playlist was restored afterwards.
-- **A live catch the offline test could not make:** the switch fired
-  THREE times on the first live run. The reason was that the running
-  daemon predated the `schedule_last` state key, so the "already
-  applied" marker was never persisted and every pass re-applied the
-  switch. The offline test passed because it imported the new module.
-  This is the rule in AGENTS.md §4 in its plainest form: the unit test
-  and the running station are two different things, and only one of
-  them was current.
-- New: `station/test_schedule.py` (the file, the next switch, the
-  guards, the marker, the recoverable order).
-
-## 2026-10-22 (05:00) — the spool held every download twice, and the test suite touched live state
-
-Two defects, found by looking at the disk rather than the code.
-
-- **The spool kept the raw download next to the blessed copy.** The raw
-  IS the download; the blessed file is its remux. Nothing deleted the
-  raw, so the cache held 2x the data and the 3 GB cap only ever bought
-  1.5 GB of content. The remux now frees the raw, and the sweep
-  reclaims a raw whose blessed sibling is there (the case left behind by
-  older runs). Measured: 782 MB -> 376 MB in the live spool.
-- **THE TEST SUITE EVICTED FROM THE OPERATOR'S LIVE CACHE.** advance()
-  ends with spool.kick(), which runs the cache cleanup, and the
-  daemon's selftest calls advance() -- with the LIVE spool directory.
-  Proved with a canary: the suite deleted a file from broadcast's
-  spool/. The selftest now points the spool at its temp dir (like it
-  already did for the playlist, the state and the activity log), and
-  asserts it.
-
-The second one only became visible because the first fix made the
-cleanup delete a duplicate raw: the suite was already evicting from the
-live cache (it just had nothing to evict before). A green suite is not
-proof that the live station was untouched -- that has to be measured.
-
-## 2026-10-22 (05:20) — the daily metadata sweep never swept
-
-The operator asked for a daily check of the videos' metadata (Q5) and
-the dock shows the description in the preview panel. After days of
-running, **8 of 201 items had a description** — and they were the first
-eight.
-
-Two causes, both in the watcher:
-
-- `cached_resolve()` only cached a resolve that had BOTH HLS renditions
-  — which is a LIVE STREAM. A VOD's metadata was never cached, so every
-  pass re-resolved the same rows from scratch.
-- The pass always started at the top of the playlist. With a half-hour
-  cache TTL and a five-minute cycle, the frontier never moved: it
-  re-resolved the first rows and never reached the rest.
-
-The fix: cache every successful resolve, and give the pass a cursor
-(`broadcast/sweep_pos.json`) so it continues where it stopped. The
-first pass of the day is still the full sweep (20 resolves); the
-ordinary passes now advance 3 rows each instead of re-resolving the
-same 3 forever.
-
-This is the same shape as the schedule bug earlier today: the OFFLINE
-test passed (the code did what it said) while the RUNNING station did
-not (the code was not what the station actually did). The proof is in
-the data the operator sees — 8 descriptions — not in the code.
-
-## 2026-10-22 (05:40) — the log told the operator two lies
-
-The activity log is the operator's evidence trail. It was saying two
-things that were not true.
-
-- **"Preflight FAILURES at boot" (CRIT) at every boot.** The preflight
-  checked OBS and, with the plane switched off on purpose, could only
-  fail. The same boot said "Render plane is switched off on purpose"
-  one line earlier. The operator's own choice was reported as a
-  failure, which teaches them to ignore the CRIT. The preflight now
-  SKIPS the OBS checks when the plane is deliberately off ("SKIP obs —
-  the render plane is switched off on purpose") and the boot says
-  "PASS preflight".
-- **Eight warnings per pass, forever.** With the plane down, every
-  pass wrote eight rows ("plane unreachable" from the normalizers, the
-  overlays, the three deck unlocks, the scene check and the hold). At
-  one pass every few minutes that is ~2,300 rows a day: the 5,000-row
-  trail fills in two days and the useful rows are trimmed away. These
-  now go through the same hourly rate-limit the hold states use.
-
-## 2026-10-22 (06:00) — the repo's OBS config had fallen years behind the live plane
-
-`station/config/collection.json` is what a fresh box is built from (the
-VPS migration). Measured against the live plane: **62 drift lines**.
-
-What the repo was missing, and why it mattered:
-
-- **The loudness chain.** The operator's global compressor + limiter
-  (compress -16 dB / 3:1 -> limit -1.5 dBTP) live as OBS filters on the
-  live plane. A fresh install from the repo would have had NO loudness
-  chain at all.
-- **The contribution seats** (Slot Cam / Slot Screen / Slot Audio) — the
-  SRT/WHIP seats the operator uses.
-- **Three of the nine scenes** (Ad Break, Ticker, Watermark). The apply
-  refuses a capture that lacks a scene the daemon drives, so the repo's
-  capture could not have been applied at all.
-
-The capture also had a bug of its own: a deck input's file is RUNTIME
-state (the daemon points it at the item it is about to play, which is a
-spool file with a transient name), and the capture wrote that path
-verbatim. It now writes the fail-safe template.
-
-After the re-capture: `sync.py diff` says **"repo matches live (no
-drift)"**. The capture went through a temp directory and was checked
-for secrets and machine-specific paths before it went near git.
