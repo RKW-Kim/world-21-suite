@@ -2362,3 +2362,23 @@ It is bounded: a window of 24 tiles around the playhead, not the whole
 playlist, so a 200-item roll does not become a wall of DOM (the list
 itself is capped at 200 rows per section, with a "show all" row).
 
+
+## 2026-10-22 (06:40) — the panel accepted a corrupt cursor
+
+Found by fuzzing the panel's own endpoints: `POST /api/state` with
+`{"state": {"index": "abc"}}` answered 200 and wrote the value to the
+live state. The daemon then coerced it to 0 — so the station would have
+restarted the show from the top — and the operator's position was gone.
+
+The panel now checks the state's VALUES, not only the key names: the
+index must be a whole number (and not a bool, which is an int in
+Python), the flags must be booleans, and the cursor must not be
+negative. A malformed value is a 400 with the reason.
+
+Two other things cleaned up in the same pass:
+
+- A leftover OBS process from an earlier session was still running
+  (1h39m, ignoring SIGTERM — it needed SIGKILL). The unit was masked,
+  so nothing was served by it; it was just RAM and CPU.
+- The live cursor was repaired to where it was (row 10 — the row after
+  the last item that played).

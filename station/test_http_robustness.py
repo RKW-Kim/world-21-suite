@@ -87,6 +87,18 @@ def main():
                  headers=jsonh)
     check(st == 400, "panel: a list state -> 400 (got %s)" % st)
 
+    # ---- the panel: the state's VALUES are checked, not just the keys -
+    # A non-integer index ("abc") was accepted and written to the live
+    # state; the daemon coerced it to 0 and the station would have
+    # restarted the show from the top.
+    for label, payload in [("a string index", {"index": "abc"}),
+                            ("a negative index", {"index": -3}),
+                            ("a boolean index", {"index": True}),
+                            ("a string flag", {"fallback_air": "yes"})]:
+        st, _ = call(panel, "/api/state", body=json.dumps({"state": payload}).encode(),
+                     headers=jsonh)
+        check(st == 400, "panel: %s -> 400 (got %s)" % (label, st))
+
     # ---- the overlay: a malformed OBS call is refused, not fatal ------
     for label, payload in [
             ("a number type", {"type": 123}),

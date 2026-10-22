@@ -717,14 +717,32 @@ class Handler(BaseHTTPRequestHandler):
                 import daemon   # the station lock lives with the daemon
                 allowed = {"index", "just_played", "fallback_air",
                            "in_ad_break", "ad_mid", "ad_reports"}
+                # The values are checked, not just the key names. A
+                # non-integer index ("abc") was accepted and written to
+                # the live state; the daemon then coerced it to 0 and
+                # the station would have restarted the show from the top.
+                types = {"index": int, "fallback_air": bool,
+                         "in_ad_break": bool, "ad_mid": bool}
+                patch = {}
+                for k, v in (data.get("state") or {}).items():
+                    if k not in allowed:
+                        continue
+                    want = types.get(k)
+                    if want is int:
+                        if isinstance(v, bool) or not isinstance(v, int):
+                            raise ValueError("%s must be a whole number, "
+                                             "not %r" % (k, v))
+                        if v < 0:
+                            raise ValueError("%s must not be negative" % k)
+                    elif want is bool and not isinstance(v, bool):
+                        raise ValueError("%s must be true or false" % k)
+                    patch[k] = v
                 # The station lock: the daemon reads and writes the same
                 # file, and an unlocked read-modify-write here silently
                 # ate its index update (and vice versa).
                 with daemon.pl_lock():
                     st = _read(STATE, {})
-                    for k, v in (data.get("state") or {}).items():
-                        if k in allowed:
-                            st[k] = v
+                    st.update(patch)
                     _write(STATE, st)
                 _send_ok(self)
             elif self.path.startswith("/api/restart"):
