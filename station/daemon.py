@@ -2051,6 +2051,11 @@ def _title_watch_pass():
         # skipped by the fresh-resolve limit must be where the next pass
         # starts, or the frontier never moves.
         last_pos = pos
+        # It is written as the pass goes: a daemon restart in the
+        # middle of a pass used to lose it, and since the rows it had
+        # already done carry a description, the next pass re-resolved
+        # the same ones for ever and never moved.
+        _sweep_pos_set((pos + 1) % max(1, len(items)))
         if pos == onidx:
             continue
         new = (meta or {}).get("title")
