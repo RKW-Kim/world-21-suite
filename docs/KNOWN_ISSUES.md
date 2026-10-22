@@ -261,8 +261,12 @@ finished thing.
   shows "no description captured — press refresh" until the first
   sweep.
 - **Scheduled profiles** (day/night running orders switching on a clock).
-- **A queue timeline / playhead** (the Studio Player pattern): a visual
-  running order with a draggable playhead.
+- ~~**A queue timeline / playhead**~~ — DONE 2026-10-22 (the Studio
+  Player pattern): the dock now draws a RUNNING ORDER strip under the
+  header — one tile per queued item, the playhead on the item that is on
+  air, the next one in amber, the played ones struck through, and a
+  click on a tile selects that row and opens its preview. It is bounded
+  to a window of 24 tiles around the playhead.
 - ~~**Bulk review of amber rows**~~ — DONE 2026-10-22: the dock shows a
   review bar when rows are flagged ("N videos renamed on YouTube") with
   approve-all / discard-all, staged like every other edit.

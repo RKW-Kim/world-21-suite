@@ -2199,3 +2199,17 @@ More live work with the plane up, then a battery of malformed input.
   a "show all" row for the rest (the rows are all still there, and
   searchable -- the DOM just does not hold a thousand of them for
   nothing). Rebuild 300ms -> 200ms, and a no-change pass is 11-20ms.
+
+## 2026-10-22 (late, 6) — the running order (the Studio Player queue)
+
+The last of the operator's "steal its ideas" asks: a queue you can
+SEE, not a list you have to read. The dock now draws a strip of tiles
+under the header — one per queued item, the playhead on the item that is
+on air (green), the next one in amber, the played ones struck through
+and dimmed, parked rows excluded. Clicking a tile selects that row and
+opens its preview, so the operator can look at an item without hunting
+for it in the list.
+
+It is bounded: a window of 24 tiles around the playhead, not the whole
+playlist, so a 200-item roll does not become a wall of DOM (the list
+itself is capped at 200 rows per section, with a "show all" row).

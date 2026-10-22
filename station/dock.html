@@ -84,6 +84,22 @@
                background: #2a3038; overflow: hidden; }
   .item .bar i { display: block; height: 100%; background: var(--ok); }
   #pending { font-size: 10px; color: var(--warn); white-space: nowrap; }
+  /* The running order, as a strip of tiles. The Studio Player idea: the
+     queue you can SEE, with the playhead on the item that is on air. */
+  #queuebar { display: flex; gap: 3px; padding: 4px 6px; background: #14181d;
+              border-bottom: 1px solid var(--bar-border); flex: none;
+              overflow-x: auto; scrollbar-width: thin; min-height: 26px; }
+  #queuebar:empty { display: none; }
+  .tile { flex: none; max-width: 108px; padding: 2px 7px; border-radius: 3px;
+          background: #1b2027; border-left: 2px solid transparent;
+          color: var(--muted); font-size: 10px; white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+          user-select: none; }
+  .tile:hover { background: #232a33; color: var(--text); }
+  .tile.onair { background: #14301f; border-left-color: var(--ok); color: #9fe0bb; }
+  .tile.next { border-left-color: var(--warn); color: #e2c58e; }
+  .tile.played { opacity: .45; text-decoration: line-through; }
+  .tile.here { outline: 1px solid var(--accent); outline-offset: -1px; }
 
   #body { flex: 1; overflow-y: auto; overflow-x: hidden;
           scrollbar-width: thin; scrollbar-color: #3a4048 transparent; }
@@ -306,6 +322,8 @@
           aria-label="Station loudness normalization">
     <svg class="i" aria-hidden="true"><use href="#i-wave"/></svg></button>
 </div>
+
+<div id="queuebar" role="list" aria-label="Running order — the queue as it will play"></div>
 
 <div id="libbar" class="trow" style="border-top:0">
   <span class="lbl">LIBRARY</span>
@@ -1141,6 +1159,7 @@ function render(force) {
     rowEl(i, items[i], spill[i] || "miss", false, onIdx, nxIdx)));
   if (qcap.more) q.appendChild(moreRow("queue", qcap.more, "queued items"));
 
+  renderQueueBar(items, onIdx, nxIdx);
   renderGroups(items, part.groups, onIdx, nxIdx);
   renderDorm(items, part.dormant, onIdx, nxIdx);
 
@@ -1350,6 +1369,48 @@ function renderDorm(items, dormant, onIdx, nxIdx) {
     rowEl(i, items[i], spill[i] || "miss", true, onIdx, nxIdx)));
   if (acap.more) list.appendChild(moreRow("available", acap.more, "parked items"));
   box.appendChild(list);
+}
+
+/* The running order, as a strip of tiles with the playhead on the item
+   that is on air. It is the Studio Player's queue idea: you SEE the order
+   instead of reading a list, and you can click a tile to look at that
+   item. Bounded: a window of tiles around the playhead, not the whole
+   playlist. */
+function renderQueueBar(items, onIdx, nxIdx) {
+  const bar = $("queuebar");
+  bar.innerHTML = "";
+  const live = [];
+  items.forEach((it, i) => { if (it.status !== "dormant") live.push(i); });
+  if (!live.length) return;
+  let at = live.indexOf(onIdx);
+  if (at < 0) at = live.indexOf(nxIdx);
+  if (at < 0) at = 0;
+  const WINDOW = 24;          // tiles drawn, centred on the playhead
+  const from = Math.max(0, at - 4);
+  const to = Math.min(live.length, from + WINDOW);
+  live.slice(from, to).forEach((i) => {
+    const it = items[i];
+    const t = document.createElement("div");
+    t.className = "tile" + (i === onIdx ? " onair" : i === nxIdx ? " next" :
+                             it.played ? " played" : "") +
+      (i === sel ? " here" : "");
+    t.setAttribute("role", "listitem");
+    t.setAttribute("tabindex", "0");
+    const label = (it.title || it.file || "?");
+    t.textContent = "#" + (i + 1) + " " + label.slice(0, 16);
+    t.title = "#" + (i + 1) + " " + label;
+    t.addEventListener("click", () => { sel = i; openPreview(i); render(true); });
+    t.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        sel = i; openPreview(i); render(true); e.preventDefault();
+      }
+    });
+    bar.appendChild(t);
+  });
+  const here = bar.querySelector(".tile.here, .tile.onair, .tile.next");
+  if (here && here.scrollIntoView) {
+    try { here.scrollIntoView({block: "nearest", inline: "center"}); } catch (e) {}
+  }
 }
 
 /* Container drop-zones bind once — re-adding them inside render() would
