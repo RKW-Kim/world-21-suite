@@ -21,7 +21,7 @@ commits 8258642..043dbe9) — which found nine real regressions, all fixed
 same-day (9997adf..2641b77, one idea per commit, each with its own
 proof; see WORKLOG). What is STILL open, ranked:
 
-- **The OBS unit render is unproven on a REAL GPU-less box.** The
+- ~~**The OBS unit render is unproven on a REAL GPU-less box.**~~ The
   lab-shaped `station-obs.service` defect is fixed in code (2026-10-21):
   `setup.sh` now renders the installed unit per box — headless → Xvfb
   `:99` + `--env=LIBGL_ALWAYS_SOFTWARE=1`, session-without-GPU → `:0` +
@@ -34,7 +34,23 @@ proof; see WORKLOG). What is STILL open, ranked:
   programme output came up, and a frame pulled off the bus carried the
   real picture -- the fail-safe's test pattern, the watermark and the
   ticker -- not black. The output is 960x540 (the canvas is 1920x1080 and
-  the output scales it), which is the light build's resolution.
+  the output scales it), which is the light build's resolution. (What is
+  still unproven is a REAL VPS: the box itself, with its own X server
+  and a real network path -- `docs/VPS.md` §6.)
+- **The station used to stay black when the plane came back** — FIXED
+  2026-10-22. Four causes, all in the poll loop and the boot: the
+  programme output was only created at boot; the plane-down hold was
+  not a HOLD (no marker), so nothing re-attempted the advance; a dead
+  STANDING websocket was treated as a dead PLANE (PLANE_DOWN on every
+  pass, advance() refusing to play, with the plane up and well); and
+  the resume cleared the flag AFTER calling advance(). Proven live:
+  daemon booted with the plane off, the plane came back, the station
+  resumed by itself and the frame on the bus carried a real picture.
+- **Stopping the plane did not stop the plane** — FIXED 2026-10-22: OBS
+  ignores SIGTERM with no window manager, so the unit went inactive
+  while the old process kept holding :4455 and 14 CEF browser pages
+  stayed resident. The unit's stop now escalates to SIGKILL and reaps
+  them; proven live (the port closes, no process remains).
 - **The TD-desk/VNC unit is session-shaped.** `station-vnc.service` runs
   wayvnc, which mirrors a Wayland session — correct on the lab desktop,
   useless on a VPS (none exists; setup.sh now skips installing it
