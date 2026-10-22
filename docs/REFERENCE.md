@@ -217,12 +217,24 @@ Inputs: `PLAYOUT_A`, `PLAYOUT_B` (file decks), `PLAYOUT_C` (fail-safe),
 | `python3 station/test_control_consume.py` | The control write-back: verbs pop by value, no resurrection, no double execution. |
 | `python3 station/test_overlay_auth.py` | The control-plane guard: STATION_TOKEN tiers, Origin rules, compare_digest. |
 | `python3 station/test_plane_guard.py` | plane_call generations: the stale tail of a timed-out sequence dies superseded. |
+| `python3 station/test_stream_renditions.py` | The stream lane: a COMBINED live rendition is spawnable and is fed to ffmpeg as ONE input. |
+| `python3 station/test_schedule.py` | Scheduled profile switches: the file, the next switch, the guards (no profile / empty profile / twice a day), the recoverable order. |
+| `python3 station/test_meta_sweep.py` | The metadata sweep: a VOD's resolve is cached, the pass keeps a cursor and reaches every row. |
+| `python3 station/test_http_robustness.py` | The panel and the overlay: a malformed request is ANSWERED (400), never a dropped connection. Needs the station running; it skips otherwise. |
+| `python3 station/test_intake_sweep.py` | The intake sweep: a recycled pid cannot keep a dead workdir alive. |
+| `python3 station/test_playlist_robustness.py` | Malformed playlist rows and paths: the station skips them and keeps playing. |
+| `python3 station/test_resolve_hold.py` | A failed resolve holds the queue instead of eating the playlist. |
+| `python3 station/test_sync_guard.py` | `sync.py apply` refuses a capture that lacks a scene the daemon drives. |
+| `python3 station/test_unit_render.py` | The per-box unit render (Xvfb/software GL on a headless box). |
 | `python3 station/daemon.py selftest` | Offline: overlay repair, advance, ident routing, dormants, corrupt state, cache eviction, the watchdog. |
 | `python3 station/stress_cache.py` | The cache-eviction battery on a tmpfs. |
 
 There is no pytest. They are stdlib scripts and they exit non-zero on
 failure. **Point `daemon.DB` at a temp file in any new test** — the live
-activity log is the operator's evidence trail.
+activity log is the operator's evidence trail. The same goes for the
+spool cache: the daemon's selftest used to run the cache's cleanup
+against the LIVE spool directory (proved with a canary), so it now
+points `spool.SPDIR` at its temp dir too.
 
 ## 9. Git
 
