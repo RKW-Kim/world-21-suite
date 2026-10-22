@@ -67,6 +67,16 @@ def main():
         us = units_in(dst)
         check(len(us) >= 6, "%s: the unit set is present (%d units)" % (shape, len(us)))
 
+        # The render plane's stop must REAP the flatpak tree. OBS
+        # ignores SIGTERM when it has no window manager, so a unit that
+        # only sends SIGTERM leaves the plane holding :4455 -- the
+        # daemon keeps talking to a plane the operator believes is off.
+        with open(os.path.join(dst, "station-obs.service")) as f:
+            obs_unit = f.read()
+        check("pkill -9" in obs_unit and "obs-browser-page" in obs_unit,
+              "%s: the plane's stop escalates to SIGKILL and reaps the "
+              "browser pages" % shape)
+
         for name in us:
             with open(os.path.join(dst, name)) as f:
                 text = f.read()

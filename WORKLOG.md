@@ -2559,3 +2559,22 @@ That also proves the GPU-less render (Xvfb :99 + software GL): the
 step the VPS migration order had left open.
 
 New: station/test_plane_state.py — a dead socket is not a dead plane.
+
+## 2026-10-22 (07:40) — "the plane is off" did not mean the plane was off
+
+`systemctl --user stop station-obs.service` sends SIGTERM. OBS ignores
+it when it has no window manager to tell it to quit — so the unit went
+inactive while the old process **kept holding :4455** and the CEF
+browser pages (14 of them) stayed resident.
+
+That is worse than a stray process: the daemon kept talking to a plane
+the operator had deliberately switched off (and the watchdog's probe
+answered it ✓), so "the plane is off" and "the station is talking to
+the plane" were both true at once.
+
+The unit's stop now escalates: SIGTERM, three seconds, then SIGKILL,
+and it reaps the browser pages too. Proven live: after the stop the
+port is closed and no OBS process remains (it used to leave 14).
+
+The operations doc now says to CHECK that the port is closed after a
+stop, and the unit render test pins the escalation.

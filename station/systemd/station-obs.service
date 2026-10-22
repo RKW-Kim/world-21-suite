@@ -52,7 +52,12 @@ ExecStartPost=/bin/sh -c 'nohup /bin/sh -c "i=0; while [ \$i -lt 120 ]; do sleep
 # systemctl stop does NOT reap the flatpak/bwrap tree (seen live: unit
 # inactive, old obs still holding :4455, new instance parking at "already
 # running"). Reap by exact comm names on every stop, not just restarts.
-ExecStop=/bin/sh -c 'pkill -x obs; pkill -x bwrap; exit 0'
+# SIGTERM alone is NOT enough: OBS ignores it when it has no window
+# manager to tell it to quit, so the port stayed open after the unit
+# was stopped (the daemon kept talking to a plane the operator
+# believed was off, and the CEF browser pages stayed resident). Escalate
+# to SIGKILL, and take the browser-page helpers with them.
+ExecStop=/bin/sh -c 'pkill -x obs; pkill -x bwrap; sleep 3; pkill -9 -x obs; pkill -9 -x bwrap; pkill -9 -f obs-browser-page; exit 0'
 Restart=always
 RestartSec=20
 

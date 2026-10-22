@@ -225,6 +225,17 @@ the station runs.
 unit's `Restart=always` brings it straight back — the window reappears
 every 20 seconds. That loop is the "something keeps starting OBS" symptom.
 
+**Check that it really went.** `systemctl --user stop` sends SIGTERM,
+and OBS ignores it when it has no window manager to tell it to quit: the
+unit goes inactive while the old process keeps holding :4455 and the
+CEF browser pages stay resident. The daemon then keeps talking to a
+plane you believe is off. The unit's stop now escalates to SIGKILL and
+reaps the browser pages, so after a stop the port must be closed:
+
+```bash
+ss -ltn | grep 4455 || echo "the plane is really off"
+```
+
 **The right way: mask the unit.** A masked unit cannot be started by
 anything — not systemd at boot, not a dependency, not the watchdog, not
 `Restart=always`:
