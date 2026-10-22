@@ -3928,8 +3928,59 @@ def selftest():
     gaps = [900.0]  # one-mark case: any single mark lands in the window
     m1 = plan_rolls(3600, {"ad_every": 4, "ad_plan": {"mid_rolls": 1}}, "y")
     assert len(m1) == 1 and 900 <= m1[0] <= 2700, m1
+    # The 'watch' diagnostic: a report, not silence. It must say what
+    # it found, and the disk check must not be skipped.
+    rep = watch_report(r)
+    assert set(("stream", "disk", "plane")) <= set(rep), rep
+    assert isinstance(rep["stream"], bool) and isinstance(rep["disk"], bool), rep
+    assert rep["plane"] in ("expected", "switched off on purpose"), rep
     print("selftest: all checks passed.")
     return 0
+
+
+def watch_report(renderer):
+    """What the station's own watchdog sees, as a report.
+
+    A diagnostic has to be honest: the plane switched off ON PURPOSE is
+    not a fault, and the disk check must not be skipped by a
+    short-circuit."""
+    d = Watchdog(renderer)
+    out = {}
+    try:
+        out["stream"] = bool(d.check_stream())
+    except Exception as e:
+        out["stream"] = False
+        out["stream_error"] = str(e)[:160]
+    try:
+        out["disk"] = bool(d.check_disk())
+    except Exception as e:
+        out["disk"] = False
+        out["disk_error"] = str(e)[:160]
+    if not PLANE_AUTORESTART or _plane_off_on_purpose():
+        out["plane"] = "switched off on purpose"
+        out["stream"] = True
+    else:
+        out["plane"] = "expected"
+    return out
+
+
+def _plane_off_on_purpose():
+    """Is the render plane switched off on purpose?
+
+    PLANE_AUTORESTART only speaks for the daemon's own process (the
+    unit sets it). A diagnostic run from a shell does not have it, and
+    would report a plane that the operator deliberately masked as a
+    failure. The unit's enabled state says it: masked or disabled is
+    the operator's choice."""
+    try:
+        cmd = ["systemctl"]
+        if os.geteuid() != 0:
+            cmd.append("--user")
+        cmd += ["is-enabled", "station-obs.service"]
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        return (p.stdout or "").strip() in ("disabled", "masked", "static")
+    except Exception:
+        return False
 
 
 def do_scene(renderer, name):
@@ -3978,9 +4029,12 @@ def main():
         print(json.dumps(s, indent=2))
         return 0 if s["active"] else 1
     if args.cmd == "watch":
-        d = Watchdog(r)
-        ok = d.check_stream() and d.check_disk()
-        return 0 if ok else 1
+        # A diagnostic the operator runs by hand. It used to print
+        # NOTHING and just exit 1 -- and the `and` short-circuited, so
+        # the disk was never even looked at. Now it says what it found.
+        out = watch_report(r)
+        print(json.dumps(out, indent=2))
+        return 0 if out.get("stream") and out.get("disk") else 1
     if args.cmd == "selftest":
         return selftest()
     if args.cmd == "scene":

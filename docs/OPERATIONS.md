@@ -185,6 +185,7 @@ silent file and will never be retried (by design).
 | Restart the daemon | The dock's down overlay → Restart daemon (two presses), or `systemctl --user restart station-daemon`. |
 | Restart the plane | `systemctl --user restart station-obs` — it cuts the programme. Say so first. |
 | Turn the watermark/ticker keyer on or off | `python3 station/dsk.py watermark on` — **it will tell you it did nothing**: the vendor plugin accepts the request and never persists it, and the daemon composites the overlays as nested scene items in PROGRAM. The overlays are therefore governed by the daemon, not by this keyer. |
+| What does the station's own watchdog see? | `python3 station/daemon.py watch` — the stream output, the disk, and whether the plane is expected or switched off on purpose. |
 | Is the station whole? | `python3 station/station_watchdog.py --check` — the daemon, the panel, the overlay, the plane and the bus. Exit code 0 means every piece that should be alive is. |
 | What is broken? | `python3 station/preflight.py` — the playlist, the state, the media files, the disk, and (with `--strict`) the OBS scenes. It says what it did NOT check. |
 

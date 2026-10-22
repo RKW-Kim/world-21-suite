@@ -2505,3 +2505,17 @@ not happen: the command explains that the plugin's selection is a known
 no-op, that the daemon composites the overlays, and that nothing
 changed (exit code 1). `dsk.py status` says the same thing, and the
 operations doc now lists it as a control that tells you it did nothing.
+
+## 2026-10-22 (08:20) — "watch" said nothing at all
+
+`python3 station/daemon.py watch` is a diagnostic an operator runs by
+hand. It printed nothing and exited 1 — and the `and` between the two
+checks short-circuited, so the disk was never even looked at.
+
+It now reports what it found: the stream output, the disk, and whether
+the render plane is expected or switched off on purpose. The last part
+needed care: PLANE_AUTORESTART only speaks for the daemon's own
+process (the unit sets it), so a diagnostic run from a shell would have
+reported the operator's deliberately masked plane as a failure. It now
+reads the unit's enabled state, the same rule the station watchdog
+uses.
