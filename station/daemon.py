@@ -2077,6 +2077,10 @@ def _title_watch_pass():
                         break
                 if touched:
                     save_playlist(data)
+                    # Our own write: the poll loop must not announce it
+                    # as a human edit ("Playlist reloaded") once per
+                    # captured row.
+                    globals()["_SELF_WROTE_PLAYLIST"] = True
         if new and new != old:
             # A renamed video is usually the SAME video: let it keep
             # playing and just flag it. But if the DURATION also changed,
