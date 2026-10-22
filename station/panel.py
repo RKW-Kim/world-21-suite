@@ -166,6 +166,21 @@ def api_ping():
             "dock_version": _dock_version()}
 
 
+def api_schedule():
+    """The schedule: the configured switches and when the next one is."""
+    import daemon
+    switches = daemon.schedule_switches()
+    nxt = daemon.next_switch()
+    return {"switches": switches,
+            "next": ({"at": nxt[0], "profile": nxt[1],
+                      "in_s": int(nxt[2])} if nxt else None),
+            "profiles": sorted(
+                f[:-5] for f in os.listdir(
+                    os.path.join(MEDIA, "playlists"))
+                if f.endswith(".json")) if os.path.isdir(
+                    os.path.join(MEDIA, "playlists")) else []}
+
+
 def api_state():
     import spool
     items = (_read(PLAYLIST, {}) or {}).get("items") or []
@@ -629,6 +644,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, api_state(), "application/json")
         elif self.path.startswith("/api/ping"):
             self._send(200, api_ping(), "application/json")
+        elif self.path.startswith("/api/schedule"):
+            self._send(200, api_schedule(), "application/json")
         elif self.path.startswith("/api/thumb"):
             # The dock shows a poster frame for the row it is inspecting.
             # The overlay server owns the thumbnail cache; the panel

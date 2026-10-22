@@ -54,6 +54,7 @@ into the environment with `setdefault`, so an exported variable wins.
 | GET | `/api/state` | — | The merged truth: playlist, state, knobs, spool, titles, daemon health, loudness switch, dock version. ~58 KB. |
 | GET | `/api/ping` | — | ~200 bytes: a version stamp + daemon health + loudness + dock version. **The dock polls this.** |
 | GET | `/api/playlists` | — | Saved profile names. |
+| GET | `/api/schedule` | — | The configured profile switches, the next one (`{at, profile, in_s}`) and the saved profile names. |
 | GET | `/dock` | — | The dock UI, with `window.__DOCK_VERSION__` stamped in. |
 | POST | `/api/save` | `{playlist, knobs}` | Write the playlist (under the station lock) and the knobs. |
 | POST | `/api/state` | `{state:{index,...}}` | Patch the cursor (under the station lock). |
@@ -141,12 +142,32 @@ Per item: `youtube` | `file`, `title`, `duration`, `status`
 `meta_trip{old,new,same_video}`, `group`, `gorder`, `tab`
 (`video`/`music`), `played`.
 
+### `broadcast/schedule.json`
+
+The profile switches, on a clock:
+
+```json
+{"switches": [{"at": "06:00", "profile": "morning"}]}
+```
+
+`at` is a local `HH:MM`, `profile` the name of a saved profile in
+`broadcast/media/playlists/<profile>.json`. The daemon applies the
+profile when the clock passes `at` (within a five-minute window, at the
+next cut). Guards: the profile must exist and must not be empty (an
+empty profile would blank the station); the same switch cannot fire
+twice in a day; the order the switch replaced is kept as the
+`before-switch` profile so it can be loaded back from the dock.
+
+The file may be absent or broken — the station then simply has no
+switches.
+
 ### `broadcast/state.json`
 
 `index` (1-based, the **next** item), `deck` (`A`/`B`/`C`), `stream`,
 `stream_pre`, `roll_marks`, `next_roll`, `marks_for`, `since_ad`,
 `fallback_air`, `fallback_idx`, `just_played`, `deck_volume_db`,
-`deck_paused`, `faults`, `in_ad_break`, `ad_mid`, `ad_start`,
+`deck_paused`, `schedule_last` (the switch that already fired today),
+`faults`, `in_ad_break`, `ad_mid`, `ad_start`,
 `onair{src,pos_ms,dur_ms,state}`.
 
 ### `broadcast/knobs.json`, `normalize.json`, `heartbeat.json`, `control.json`

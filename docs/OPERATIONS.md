@@ -179,10 +179,38 @@ silent file and will never be retried (by design).
 | Undo a staged change | Ctrl+Z in the dock, or the undo button in the staged bar. Step by step back to the last applied state. |
 | Save a running order as a profile | The dock: type a name, press the save icon. Profiles live in `broadcast/media/playlists/`. |
 | Load a profile | The dock: select it, press the folder icon. It **stages**; press Apply to put it on air. |
+| Swap the order automatically at a set time | Edit `broadcast/schedule.json`: `{"switches": [{"at": "06:00", "profile": "morning"}]}`. The dock shows the next switch. The switch applies at the next cut after the clock passes `at`. |
 | Import a YouTube playlist | Paste a link with `list=` in the dock's top field. It becomes a parked group. |
 | Change the loudness | The wave icon in the strip: on = compress+limit everywhere, off = removed. |
 | Restart the daemon | The dock's down overlay → Restart daemon (two presses), or `systemctl --user restart station-daemon`. |
 | Restart the plane | `systemctl --user restart station-obs` — it cuts the programme. Say so first. |
+
+### Scheduled profile switches
+
+`broadcast/schedule.json` holds the switches:
+
+```json
+{"switches": [{"at": "06:00", "profile": "morning"}]}
+```
+
+`at` is a local `HH:MM`; `profile` is the name of a saved profile in
+`broadcast/media/playlists/`. The daemon applies it when the clock
+passes `at` — within five minutes, so a late restart still catches it —
+and the change lands at the next cut like any other order change.
+
+What the station refuses to do:
+
+- apply a profile that does not exist (it logs a warning and waits),
+- apply an **empty** profile (that would blank the station),
+- fire the same switch twice in a day.
+
+What it does for you: the order the switch replaced is saved as the
+`before-switch` profile, so you can load it back from the dock if the
+swap was not what you wanted.
+
+The dock's toolbar shows the next switch (`next switch 06:00 ·
+morning`) so a swap is never a surprise. The log line is
+`Scheduled switch: the running order is now the 'morning' profile`.
 
 ## 6. Switching the render plane off (and on again)
 

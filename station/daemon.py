@@ -1706,6 +1706,115 @@ def cover_idle_deck(renderer, state, decks):
         pass
 
 
+SCHEDULE_FILE = "schedule.json"
+
+
+def schedule_switches():
+    """The schedule file: {"switches": [{"at": "06:00", "profile": "morning"}]}.
+
+    A scheduled switch swaps the running order for a saved profile at a
+    given local time -- the "different profile for a different occasion"
+    idea, on a clock. The operator edits the file (or the panel's API
+    writes it); the daemon applies it."""
+    try:
+        with open(os.path.join(ROOT, SCHEDULE_FILE)) as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return []
+    sw = data.get("switches") if isinstance(data, dict) else None
+    return [s for s in sw if isinstance(s, dict)] if isinstance(sw, list) else []
+
+
+def next_switch():
+    """The next scheduled switch as (at, profile, seconds_away), or None."""
+    today = time.strftime("%Y-%m-%d")
+    now = time.time()
+    best = None
+    for sw in schedule_switches():
+        at = str(sw.get("at") or "")
+        prof = str(sw.get("profile") or "")
+        if not at or not prof:
+            continue
+        try:
+            hh, mm = at.split(":")
+            when = time.mktime(time.strptime(today + " " + hh + ":" + mm,
+                                             "%Y-%m-%d %H:%M"))
+        except Exception:
+            continue
+        delta = when - now
+        if delta < -3600:          # already past today: tomorrow
+            when += 86400
+            delta = when - now
+        if best is None or delta < best[2]:
+            best = (at, prof, delta)
+    return best
+
+
+def check_schedule(state):
+    """Apply a scheduled profile when its time comes.
+
+    A swap is a playlist load, so it takes effect at the next cut. The
+    guards: the profile must exist, it must not be empty (an empty
+    profile would blank the station), and the same switch cannot fire
+    twice in a day."""
+    switches = schedule_switches()
+    if not switches:
+        return
+    now = time.time()
+    local = time.strftime("%Y-%m-%d")
+    for sw in switches:
+        at = str(sw.get("at") or "")
+        prof = str(sw.get("profile") or "")
+        if not at or not prof:
+            continue
+        try:
+            hh, mm = at.split(":")
+            when = time.mktime(time.strptime(local + " " + hh + ":" + mm,
+                                             "%Y-%m-%d %H:%M"))
+        except Exception:
+            continue
+        # a small window: the pass that notices it applies it
+        if not (0 <= now - when <= 300):
+            continue
+        key = "%s|%s|%s" % (local, at, prof)
+        if state.get("schedule_last") == key:
+            continue                      # already applied today
+        path = os.path.join(MEDIA, "playlists", prof + ".json")
+        try:
+            with open(path) as f:
+                prof_data = json.load(f)
+        except (OSError, ValueError) as e:
+            alert("Scheduled switch to %r failed: %s." % (prof, e), "WARN")
+            continue
+        items = prof_data.get("items") if isinstance(prof_data, dict) else None
+        if not isinstance(items, list) or not items:
+            alert("Scheduled switch to %r refused: the profile is empty."
+                  % prof, "WARN")
+            continue
+        with pl_lock():
+            data = load_playlist()
+            before = data.get("items") or []
+            # Never lose the order we are replacing: it may have been
+            # built by hand. Keep it as a profile the operator can load
+            # back from the dock with one click.
+            if before:
+                try:
+                    with open(os.path.join(MEDIA, "playlists",
+                                           "before-switch.json"), "w") as f:
+                        json.dump({"items": before}, f)
+                except OSError:
+                    pass
+            data["items"] = items
+            data["since_ad"] = 0          # a new running order: the ad cadence restarts
+            save_playlist(data)
+        state["schedule_last"] = key
+        merge_save_state(state)
+        alert("Scheduled switch: the running order is now the %r profile "
+              "(%d items). It takes effect at the next cut. The order it "
+              "replaced is saved as the 'before-switch' profile."
+              % (prof, len(items)), "INFO")
+
+
 def probe_plane(renderer):
     """Dump what the plane actually looks like: input names, the filters
     riding on them, and the filter kinds this OBS build offers. The ws
@@ -2384,7 +2493,11 @@ def advance(renderer, state, data, deck_sources):
 STATE_KEYS = ("index", "deck", "stream", "roll_marks",
               "next_roll", "marks_for", "since_ad",
               "fallback_air", "fallback_idx", "just_played",
-              "deck_volume_db", "deck_paused")
+              "deck_volume_db", "deck_paused",
+              # which scheduled switch has already fired today: without
+              # this key the marker would not survive the save and the
+              # same switch would fire on every pass.
+              "schedule_last")
 
 
 def merge_save_state(state):
@@ -3190,6 +3303,12 @@ def cmd_loop(renderer):
             # supposed to save, dragging every skip ~8s late.
             gate_pass = (gate_pass + 1) % 30
             PASS_STATE["what"] = "plane check"
+            # The clock: a scheduled profile swap (the "different order for
+            # a different occasion" idea, on a timer).
+            try:
+                check_schedule(load_state())
+            except Exception:
+                pass
             # Operator commands FIRST: a skip must not wait behind a
             # 45s metadata resolve or a slow OBS call. The verbs are
             # cheap; the playout work is not.

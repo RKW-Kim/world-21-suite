@@ -232,3 +232,23 @@ changes are in `docs/VPS.md`.
 server-side (the daemon, the spooler, the watchdog). They run better
 headless than on a desktop that also runs a browser, a compositor and a
 video editor.
+
+## 17. Scheduled profile switches live in a file, and the daemon owns them
+
+**Decision.** A switch swaps the running order for a saved profile at a
+given local time. The switches live in `broadcast/schedule.json`, the
+daemon applies them, and the dock only *shows* the next one.
+
+**The rules that matter.** A profile that does not exist is refused; an
+empty profile is refused (it would blank the station); the same switch
+cannot fire twice in a day; the order a switch replaces is kept as the
+`before-switch` profile so it can be loaded back with one click.
+
+**Why a file and not a dock editor.** The schedule is configuration, not
+a staged edit: it must survive a restart and be editable without the
+station running. The dock still tells the operator what is coming —
+a schedule that fires unseen is a surprise, not a feature.
+
+**Why the daemon owns it.** The daemon runs 24/7; the dock is a console
+that may be closed. A schedule implemented in the dock would silently
+stop applying the moment the operator closed it.

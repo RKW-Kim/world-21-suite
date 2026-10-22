@@ -314,6 +314,7 @@
     <input type="checkbox" id="shuf" style="min-height:0">
     <span style="font-size:10px; color:var(--muted)">shuf at end</span>
   </label>
+  <span id="schednext" class="mutate" style="font-size:10px; color:var(--muted); white-space:nowrap"></span>
   <button id="shuf-now" class="icon mutate" title="Shuffle the queue (the on-air item keeps its slot)"
           aria-label="Shuffle the queue">
     <svg class="i" aria-hidden="true"><use href="#i-shuffle"/></svg></button>
@@ -716,6 +717,33 @@ function discardAll() {
     const drop = new Set(flagged.map((r) => r.i));
     for (let i = a.length - 1; i >= 0; i--) if (drop.has(i)) a.splice(i, 1);
   }, "discarded " + flagged.length + " renamed video(s) — staged, press Apply");
+}
+
+/* The next scheduled profile switch, so the operator knows what is
+   coming before it happens. The schedule lives in broadcast/schedule.json
+   ({"switches": [{"at": "06:00", "profile": "morning"}]}); the daemon
+   applies the profile at the next cut. */
+function renderSchedule(sched) {
+  const el = $("schednext");
+  if (!el) return;
+  const nx = sched && sched.next;
+  el.textContent = nx ? ("next switch " + nx.at + " \u00b7 " + nx.profile) : "";
+  el.title = nx
+    ? ("At " + nx.at + " the running order becomes the \"" + nx.profile +
+       "\" profile (in " + Math.round(nx.in_s / 60) + " min). " +
+       "Edit broadcast/schedule.json to change it.")
+    : "No scheduled profile switches. Edit broadcast/schedule.json to add one.";
+}
+
+async function loadSchedule() {
+  try {
+    const r = await fetch("/api/schedule");
+    if (!r.ok) throw new Error("http " + r.status);
+    renderSchedule(await r.json());
+  } catch (e) {
+    const el = $("schednext");
+    if (el) { el.textContent = ""; el.title = "The panel is not answering."; }
+  }
 }
 
 function renderStagedBar() {
@@ -2339,6 +2367,8 @@ $("btn-retry").addEventListener("click", async () => {
 
 bindDropZones();
 refreshPlaylists();
+loadSchedule();
+setInterval(loadSchedule, 60000);
 loadHistory();
 load();
 setInterval(load, 2000);

@@ -2240,3 +2240,28 @@ handshake that PASSES the guard takes the connection over, so the client
 never sees an HTTP status; and the harness timed out before the /obs
 proxy's 8s plane deadline, so the client gave up first and broke the
 pipe on the server side).
+
+## 2026-10-22 (04:30) — scheduled profile switches
+
+The "different order for a different occasion" idea, on a clock.
+
+- `broadcast/schedule.json` holds the switches; the daemon applies them
+  and the dock shows the next one (`next switch 06:00 · morning`).
+- The guards are the point: a missing profile is refused, an EMPTY
+  profile is refused (it would blank the station), the same switch
+  cannot fire twice in a day, and the order a switch replaces is kept
+  as the `before-switch` profile so it can be loaded back with one
+  click.
+- PROVEN LIVE: a switch fired once (04:24:01), the order became the
+  profile, the ad cadence restarted, and `before-switch` held the
+  operator's 203 rows. The station's playlist was restored afterwards.
+- **A live catch the offline test could not make:** the switch fired
+  THREE times on the first live run. The reason was that the running
+  daemon predated the `schedule_last` state key, so the "already
+  applied" marker was never persisted and every pass re-applied the
+  switch. The offline test passed because it imported the new module.
+  This is the rule in AGENTS.md §4 in its plainest form: the unit test
+  and the running station are two different things, and only one of
+  them was current.
+- New: `station/test_schedule.py` (the file, the next switch, the
+  guards, the marker, the recoverable order).
