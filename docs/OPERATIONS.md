@@ -309,6 +309,17 @@ from any IP — anyone who could reach :9000 could inject on air. Now:
 - **WHIP seat** (browser tab, `station/whip.html`): the credentials field
   takes `user:pass` (e.g. `seat-cam:<SEAT_CAM_PASS>`) — mediamtx internal
   auth speaks HTTP Basic there, not Bearer.
+  **The browser seat needs a secure context.** `getUserMedia` is
+  blocked on a plain `http://` page that is not localhost, so a guest
+  who opens the page on the box's LAN address gets "denied" with no
+  explanation. Two ways round it, both supported today:
+  - the guest opens the page through an **SSH tunnel** (then it is
+    `http://127.0.0.1:7070/whip` — localhost, which IS a secure
+    context, and it never touches the LAN);
+  - the guest publishes over **SRT** from OBS or ffmpeg instead, which
+    needs no browser and no secure context at all.
+  Serving the page over https would be the third way; the box has the
+  self-signed TLS material for it but no unit wired up.
 - **The firewall adds source restriction on top.** Nothing seat-shaped is
   open by default. Put a seat on the map with:
 

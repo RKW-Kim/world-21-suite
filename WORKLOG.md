@@ -2449,3 +2449,16 @@ One thing the test did find: a publisher that is torn down mid-flight
 takes the path down with it ("no stream is available"), which is why
 the read side failed on the first attempt — a test artefact, not a
 station fault, but worth knowing when a guest's tab closes.
+
+## 2026-10-22 (07:20) — the browser seat's secure-context trap, documented
+
+While proving the seats, the one thing a guest would actually hit was
+clear: `getUserMedia` is blocked on a plain `http://` page that is not
+localhost, so a guest who opens `station/whip.html` on the box's LAN
+address gets "denied" and no explanation. The page says so; the
+operations doc did not.
+
+Both ways round it are supported today and are now written down: the
+guest opens the page through an SSH tunnel (localhost is a secure
+context), or the guest publishes over SRT from OBS/ffmpeg and needs no
+browser at all.
