@@ -2213,3 +2213,30 @@ for it in the list.
 It is bounded: a window of 24 tiles around the playhead, not the whole
 playlist, so a 200-item roll does not become a wall of DOM (the list
 itself is capped at 200 rows per section, with a "show all" row).
+
+## 2026-10-22 (04:00) — the stream lane, and a content class the station could not play
+
+The stream lane had never been run against a real live stream. It
+needed one, so yt-dlp was asked for live music radio and a 24/7
+channel was picked.
+
+- **THE STATION COULD NOT PLAY A COMBINED LIVE STREAM.** The feed needs
+  a video rendition AND an audio rendition; the 24/7 music channels
+  publish ONE HLS rendition carrying both and no separate audio one.
+  The resolve therefore returned "unplayable" and the item was
+  SKIPPED -- i.e. the most obvious content for a music station could
+  never play. The resolve now also looks for a combined rendition and
+  the spawn feeds ffmpeg ONE input for it.
+- PROVEN LIVE: the combined stream resolved, ffmpeg spawned, and
+  MediaMTX's slot-stream-a path was READY 5 seconds later. The
+  programme output was read back from the bus at the same time (143
+  video frames, 262 audio frames), so the OBS side of the same path is
+  proven too.
+- The test item was removed again afterwards: the playlist is back to
+  203 rows with no test debris.
+
+Two harness expectations were wrong and are fixed (a websocket
+handshake that PASSES the guard takes the connection over, so the client
+never sees an HTTP status; and the harness timed out before the /obs
+proxy's 8s plane deadline, so the client gave up first and broke the
+pipe on the server side).
