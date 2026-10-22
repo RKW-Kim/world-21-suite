@@ -56,10 +56,16 @@ def _scene_of(k):
 
 
 def status():
-    return {name: {"on": bool(k.get("scene")),
+    out = {name: {"on": bool(k.get("scene")),
                    "scene": k.get("scene") or None,
                    "tie": bool(k.get("tie"))}
-            for name, k in _keyers().items()}
+           for name, k in _keyers().items()}
+    # Say what actually governs the overlays, so nobody reads this as
+    # the state of the watermark on air.
+    out["_note"] = ("the daemon composites the watermark and the ticker "
+                    "as nested scene items in PROGRAM; these keyers are "
+                    "not in the loop")
+    return out
 
 
 def set_state(name, on):
@@ -71,6 +77,18 @@ def set_state(name, on):
                                  dsk_name=name, scene=target))
     if not res.get("success", True):
         sys.exit(f"select failed: {res}")
+    # READ IT BACK. The plugin accepts dsk_select_scene and never
+    # persists it (silent no-op, seen live 2026-10-19) -- so the old
+    # version reported {"on": true} for a change that had not happened.
+    # An operator who sees "on: true" expects the watermark on air.
+    after = _retry(lambda: _keyers().get(name, {}))
+    if bool(after.get("scene")) != bool(on):
+        sys.exit(
+            "the keyer accepted the request but did NOT persist it.\n"
+            "That plugin's scene selection is a known no-op on this box, "
+            "and the overlays on air are composited by the daemon as "
+            "nested scene items -- so the watermark and the ticker are "
+            "governed by the daemon, not by this keyer. Nothing changed.")
     return {"name": name, "on": bool(on), "scene": target or None}
 
 

@@ -2482,3 +2482,26 @@ real key.
 
 The test publishers were stopped afterwards: the `monitor` path is
 free again for the OBS output.
+
+## 2026-10-22 (08:00) — the watermark keyer lied
+
+`station/dsk.py` toggles the downstream keyers (the watermark and the
+ticker). It reported success:
+
+```
+$ python3 station/dsk.py watermark on
+{"name": "Watermark", "on": true, "scene": "SMILE | Watermark"}
+```
+
+and reading it back showed the watermark still off. The vendor plugin
+accepts `dsk_select_scene` and never persists it — the daemon's own
+comments say so ("silent no-op, seen live 2026-10-19"), and the
+overlays are composited as nested scene items instead. But the tool
+still claimed the change had happened, and an operator who sees
+"on: true" expects the watermark on air.
+
+It now READS THE KEYER BACK and refuses to report a change that did
+not happen: the command explains that the plugin's selection is a known
+no-op, that the daemon composites the overlays, and that nothing
+changed (exit code 1). `dsk.py status` says the same thing, and the
+operations doc now lists it as a control that tells you it did nothing.
