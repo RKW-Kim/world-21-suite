@@ -2462,3 +2462,23 @@ Both ways round it are supported today and are now written down: the
 guest opens the page through an SSH tunnel (localhost is a secure
 context), or the guest publishes over SRT from OBS/ffmpeg and needs no
 browser at all.
+
+## 2026-10-22 (07:40) — the publish leg, run for the first time
+
+The station has never published anything, and the leg had never run at
+all. It is the operator's cutover, so it was worth proving everything
+except YouTube itself.
+
+The destination is now overridable (`PUBLISH_DEST`, `PUBLISH_SRC`), so
+the leg can be run against a local RTMP sink. The key guard is
+unchanged for the real YouTube endpoint: a placeholder key still
+refuses to publish there, so the station cannot go live by accident.
+
+PROVEN: with a test programme on the bus's `monitor` path, the leg
+pulled it and pushed it into a local RTMP sink — video (h264, 640x360,
+15 fps) and audio (aac, 44.1 kHz) crossed `-c copy`, unchanged, for 29
+seconds. The only untested step left is YouTube's own handshake with a
+real key.
+
+The test publishers were stopped afterwards: the `monitor` path is
+free again for the OBS output.

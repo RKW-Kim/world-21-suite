@@ -74,9 +74,13 @@ proof; see WORKLOG). What is STILL open, ranked:
   output when a plane restart leaves it stopped. Proven live: 143 video
   frames and 262 audio frames read back from
   `rtmp://127.0.0.1:1935/monitor` at 960x540.
-  **Still open:** the bus -> YouTube leg (the publish relayer) has never
-  run against a real stream key -- that is the operator's cutover (see
-  DECISIONS §13).
+  **Still open:** the bus -> YouTube leg has never run against YouTube's
+  own endpoint -- that is the operator's cutover (see DECISIONS §13).
+  The leg's PLUMBING is now proven (2026-10-22): with the destination
+  overridable (`PUBLISH_DEST`), the leg pulled the programme off the
+  bus and pushed it, `-c copy`, into a local RTMP sink -- video
+  (h264) and audio (aac) crossed unchanged. The only untested step is
+  YouTube's handshake with a real key.
 - **plane_call is a deadline, not a bound** — FIXED 2026-10-21 to the
   extent Python can: every plane_call takes a generation and the
   renderer refuses an RPC older than one that already sent (the guard
