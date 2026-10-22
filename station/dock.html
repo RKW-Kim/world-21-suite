@@ -115,6 +115,9 @@
   .cue { font-size: 10px; letter-spacing: .06em; flex: none; color: var(--warn);
          text-transform: uppercase; }
   #empty { color: var(--muted); text-align: center; padding: 22px 12px; font-size: 11px; }
+  .item.more { color: var(--muted); font-size: 10px; justify-content: center;
+                border-left-color: transparent; cursor: pointer; }
+  .item.more:hover { color: var(--text); }
 
   .section { min-height: 12px; }
   .sechead { display: flex; gap: 8px; align-items: center; padding: 5px 9px;
@@ -564,6 +567,8 @@ function seedShuf() {
 const HIST_KEY = "w21.dock.history";
 let history = [];        // [{label, items}] — the state AFTER each edit
 let histIndex = 0;       // how many of those edits are applied to the draft
+let showAll = {};         // section key -> the operator asked for every row
+const RENDER_CAP = 200;   // rows drawn per section before "show all"
 let appliedSnap = null;  // the items the station actually runs (stack base)
 
 function loadHistory() {
@@ -1131,8 +1136,10 @@ function render(force) {
       : "Queue is empty. Paste a link above, or drag rows out of the parked groups below.";
   }
   const spill = (S.spool || []);
-  shown.forEach((i) => q.appendChild(
+  const qcap = capSection("queue", shown);
+  qcap.rows.forEach((i) => q.appendChild(
     rowEl(i, items[i], spill[i] || "miss", false, onIdx, nxIdx)));
+  if (qcap.more) q.appendChild(moreRow("queue", qcap.more, "queued items"));
 
   renderGroups(items, part.groups, onIdx, nxIdx);
   renderDorm(items, part.dormant, onIdx, nxIdx);
@@ -1168,6 +1175,27 @@ function signature(items, part, onIdx, nxIdx) {
     mix(it.meta_trip ? 1 : 0); mix(it.duration || 0); mix(it.title || "");
   }
   return h;
+}
+
+/* Draw at most RENDER_CAP rows per section, with a "show all" row for
+   the rest. The rows are all still in the playlist (and searchable) --
+   this only stops the DOM from holding a thousand of them. */
+function capSection(key, rows) {
+  if (showAll[key] || rows.length <= RENDER_CAP) return {rows: rows, more: 0};
+  return {rows: rows.slice(0, RENDER_CAP), more: rows.length - RENDER_CAP};
+}
+
+function moreRow(key, more, label) {
+  const r = document.createElement("div");
+  r.className = "item more";
+  r.setAttribute("role", "button");
+  r.tabIndex = 0;
+  r.textContent = "… " + more + " more " + label + " (show all)";
+  r.addEventListener("click", () => { showAll[key] = true; render(true); });
+  r.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { showAll[key] = true; render(true); e.preventDefault(); }
+  });
+  return r;
 }
 
 function renderGroups(items, groups, onIdx, nxIdx) {
@@ -1317,8 +1345,10 @@ function renderDorm(items, dormant, onIdx, nxIdx) {
     if (from == null) return;
     parkItem(from, null);
   });
-  shown.forEach((i) => list.appendChild(
+  const acap = capSection("available", shown);
+  acap.rows.forEach((i) => list.appendChild(
     rowEl(i, items[i], spill[i] || "miss", true, onIdx, nxIdx)));
+  if (acap.more) list.appendChild(moreRow("available", acap.more, "parked items"));
   box.appendChild(list);
 }
 

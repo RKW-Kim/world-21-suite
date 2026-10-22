@@ -2173,3 +2173,29 @@ the operator's preview looked perfect.
 
 The bus -> YouTube leg still needs a real stream key (the operator's
 cutover); the OBS -> bus leg is now proven.
+
+## 2026-10-22 (late, 5) — the ad break, the edge cases, and a 1200-row playlist
+
+More live work with the plane up, then a battery of malformed input.
+
+- **THE AD BREAK, ROUND TRIP, VERIFIED.** The ad configuration is off
+  (`ad_every: 0`, no ad files), so the test drove the FUNCTION with a
+  temp plan and left the operator's configuration untouched: the ad
+  scene cuts, the ad plays, the decks mute, the ad ends, and the daemon
+  hands back to the programme ("Ad done; back to program") with the decks
+  unmuted and `in_ad_break` cleared.
+- **A MALFORMED PLAYLIST ROW CRASHED THE PLAYOUT.** A row that is not
+  an object raised AttributeError in advance(). The loop caught it, but
+  the SAME bad row was retried every pass, so the station sat on it
+  forever. Malformed rows are now skipped with a warning. A row that
+  names a PATH instead of a media file is refused too, so a hand-edited
+  playlist cannot point the renderer outside the media dir.
+  `station/test_playlist_robustness.py` pins it, along with the shapes
+  that already worked (string/null/negative/huge durations, a dict
+  title, an empty file name, unicode, duplicates) and an absurd cursor
+  (negative, out of range, a string, a float).
+- **A 1200-ROW PLAYLIST COST A 300ms REBUILD** inside the OBS
+  process. The dock now draws at most 200 rows per section and offers
+  a "show all" row for the rest (the rows are all still there, and
+  searchable -- the DOM just does not hold a thousand of them for
+  nothing). Rebuild 300ms -> 200ms, and a no-change pass is 11-20ms.

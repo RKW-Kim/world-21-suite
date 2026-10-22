@@ -2097,6 +2097,15 @@ def advance(renderer, state, data, deck_sources):
         sidx = state.get("index", 0)
         idx = (sidx if isinstance(sidx, int) else 0) % len(items)
         item = items[idx]
+        if not isinstance(item, dict):
+            # A hand-edited or badly imported playlist can hold a row that
+            # is not an object. Crashing here stalled the station on that
+            # row forever (the same bad item was retried every pass).
+            alert("Playlist row %d is not an object; skipping it."
+                  % (idx + 1), "WARN")
+            state["index"] = idx + 1
+            skipped += 1
+            continue
         if item.get("status") == "dormant":
             dormant += 1  # operator intent, not a fault: silent, no alert
             state["index"] = idx + 1
@@ -2152,6 +2161,15 @@ def advance(renderer, state, data, deck_sources):
             skipped += 1  # entry names nothing at all: fault, loud below
             alert("Playlist entry names no file: %s. Skipping." % item.get("title", "?"), "WARN")
             state["index"] = idx + 1
+            continue
+        _fname = str(item["file"])
+        if os.path.basename(_fname) != _fname or _fname in ("", ".", ".."):
+            # A path, not a filename: the playlist must not be able to
+            # point the renderer at a file outside the media dir.
+            alert("Playlist row %d names a path, not a media file; skipping."
+                  % (idx + 1), "WARN")
+            state["index"] = idx + 1
+            skipped += 1
             continue
         path = os.path.join(MEDIA, item["file"])
         if os.path.exists(path):
