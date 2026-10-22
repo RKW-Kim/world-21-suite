@@ -1564,32 +1564,48 @@ def publish_expected():
 
 
 def ensure_stream_output(renderer):
-    """Give the station its YouTube output when it has a real key.
+    """Give the station its programme output.
 
-    The render plane ships with no RTMP output: the station was never
-    publishing, it was only LOOKING like a broadcaster (and logging
-    "Stream output not active!" every pass). With a key in secrets.env
-    the output is created once at boot; without one the station stays
-    local and quiet."""
-    if not publish_expected():
-        return
+    The render plane ships with NO output at all (only a file output),
+    so the finished programme never left OBS: MediaMTX's monitor path
+    was never fed and the programme was black to everyone downstream --
+    the classic "the preview has content and the programme is black".
+    The output belongs to the LOCAL BUS (mediamtx), always: the bus is
+    what the publish leg (station/publish_youtube.sh) reads, and it is
+    also what the confidence monitor reads. Publishing to YouTube
+    directly from OBS would bypass the bus, the failover and the
+    monitoring."""
     try:
         outs = renderer._call("GetOutputList").get("outputs", [])
     except Exception:
         return
     for o in outs:
         if o.get("outputKind") in ("rtmp_output", "rtmp_custom"):
+            if not o.get("outputActive"):
+                # The output exists but is not running: start it (a plane
+                # restart leaves it stopped, and the programme is black
+                # to everyone downstream).
+                try:
+                    renderer._call("StartStream", {
+                        "stream": "rtmp_custom",
+                        "server": "rtmp://127.0.0.1:1935/monitor",
+                        "key": ""})
+                    alert("Programme output restarted (the bus).", "INFO")
+                except Exception as e:
+                    alert("Could not start the programme output: %s" % e, "WARN")
             return                      # already there
     try:
-        renderer._call("CreateOutput", {
-            "outputName": "YouTube",
-            "outputKind": "rtmp_output",
-            "outputSettings": {
-                "server": "rtmp://a.rtmp.youtube.com/live2",
-                "key": os.environ.get("YOUTUBE_STREAM_KEY", "")}})
-        alert("YouTube output created — the station is publishing.", "INFO")
+        # This obs-websocket build has no CreateOutput request (the ws
+        # 5.0 line); StartStream on the custom service is the way to
+        # bring the programme output up.
+        renderer._call("StartStream", {
+            "stream": "rtmp_custom",
+            "server": "rtmp://127.0.0.1:1935/monitor",
+            "key": ""})
+        alert("Programme output created (rtmp://127.0.0.1:1935/monitor) — "
+              "the station is on the bus.", "INFO")
     except Exception as e:
-        alert("Could not create the YouTube output: %s" % e, "WARN")
+        alert("Could not create the programme output: %s" % e, "WARN")
 
 
 def refresh_item_metadata(url, alert_fn=None):

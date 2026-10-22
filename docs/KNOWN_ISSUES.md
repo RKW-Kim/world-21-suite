@@ -54,9 +54,19 @@ proof; see WORKLOG). What is STILL open, ranked:
   because the item settings in the capture may have drifted since
   October. (The plane is currently switched off at the operator's
   request, so this cannot be done yet.)
-- **station has never published to YouTube end-to-end** (the publish
-  leg is deliberately disarmed; see DECISIONS §13). First real cutover
-  run is its own checklist.
+- **The OBS -> bus leg is FIXED and PROVEN (2026-10-22).** The live
+  render plane had NO output at all (only a file output), so the finished
+  programme never left OBS: MediaMTX's monitor path was never fed and
+  the programme was black to everyone downstream -- the original
+  "preview has content, program is black" report. The daemon now brings
+  the output up at boot with StartStream (this ws build has no
+  CreateOutput request) pointing at the LOCAL bus, and it restarts the
+  output when a plane restart leaves it stopped. Proven live: 143 video
+  frames and 262 audio frames read back from
+  `rtmp://127.0.0.1:1935/monitor` at 960x540.
+  **Still open:** the bus -> YouTube leg (the publish relayer) has never
+  run against a real stream key -- that is the operator's cutover (see
+  DECISIONS §13).
 - **plane_call is a deadline, not a bound** — FIXED 2026-10-21 to the
   extent Python can: every plane_call takes a generation and the
   renderer refuses an RPC older than one that already sent (the guard

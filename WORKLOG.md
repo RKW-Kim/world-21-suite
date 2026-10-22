@@ -2149,3 +2149,27 @@ the amber dot exists: the "Big Buck Bunny (prime test)" row's YouTube
 id now serves a completely different upload (Lady Gaga - Gimme More).
 The duration check catches that case and holds it; a title-only change
 would have kept playing.
+
+## 2026-10-22 (late, 4) — "the preview has content and the programme is
+## black", solved
+
+The oldest item on the backlog, and the reason the station was never
+actually broadcasting: **the live render plane had NO output at all** —
+only a file output. The finished programme never left OBS, MediaMTX's
+`monitor` path was never fed, and everything downstream saw black while
+the operator's preview looked perfect.
+
+- The daemon now brings the programme output up at boot, pointing at
+  the LOCAL bus (`rtmp://127.0.0.1:1935/monitor`), and restarts it when
+  a plane restart leaves it stopped.
+- The request matters: this obs-websocket build has NO `CreateOutput`
+  ("Your request type is not valid") — `StartStream` on the custom
+  service is the way.
+- It points at the BUS, not at YouTube. The bus is what the publish leg
+  reads, what the confidence monitor reads, and where the failover can
+  be observed. Publishing straight from OBS would bypass all three.
+- Proven live: 143 video frames and 262 audio frames read back from the
+  monitor path at 960x540, with the output active and 12MB written.
+
+The bus -> YouTube leg still needs a real stream key (the operator's
+cutover); the OBS -> bus leg is now proven.
