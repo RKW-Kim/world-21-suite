@@ -15,7 +15,31 @@
       "volumeDb": 0.0
     },
     {
-      "filters": [],
+      "filters": [
+        {
+          "enabled": true,
+          "index": 0,
+          "kind": "compressor_filter",
+          "name": "AStation Compressor",
+          "settings": {
+            "attack": 25.0,
+            "output_gain": 0.0,
+            "ratio": 3.0,
+            "release": 250.0,
+            "threshold": -16.0
+          }
+        },
+        {
+          "enabled": true,
+          "index": 1,
+          "kind": "limiter_filter",
+          "name": "AStation Limiter",
+          "settings": {
+            "release": 60.0,
+            "threshold": -1.5
+          }
+        }
+      ],
       "kind": "ffmpeg_source",
       "muted": false,
       "name": "PLAYOUT_A",
@@ -27,9 +51,33 @@
       "volumeDb": 0.0
     },
     {
-      "filters": [],
+      "filters": [
+        {
+          "enabled": true,
+          "index": 0,
+          "kind": "compressor_filter",
+          "name": "AStation Compressor",
+          "settings": {
+            "attack": 25.0,
+            "output_gain": 0.0,
+            "ratio": 3.0,
+            "release": 250.0,
+            "threshold": -16.0
+          }
+        },
+        {
+          "enabled": true,
+          "index": 1,
+          "kind": "limiter_filter",
+          "name": "AStation Limiter",
+          "settings": {
+            "release": 60.0,
+            "threshold": -1.5
+          }
+        }
+      ],
       "kind": "ffmpeg_source",
-      "muted": false,
+      "muted": true,
       "name": "PLAYOUT_B",
       "settings": {
         "is_local_file": true,
@@ -134,9 +182,33 @@
       "volumeDb": 0.0
     },
     {
-      "filters": [],
+      "filters": [
+        {
+          "enabled": true,
+          "index": 0,
+          "kind": "compressor_filter",
+          "name": "AStation Compressor",
+          "settings": {
+            "attack": 25.0,
+            "output_gain": 0.0,
+            "ratio": 3.0,
+            "release": 250.0,
+            "threshold": -16.0
+          }
+        },
+        {
+          "enabled": true,
+          "index": 1,
+          "kind": "limiter_filter",
+          "name": "AStation Limiter",
+          "settings": {
+            "release": 60.0,
+            "threshold": -1.5
+          }
+        }
+      ],
       "kind": "ffmpeg_source",
-      "muted": false,
+      "muted": true,
       "name": "STREAM_A",
       "settings": {
         "input": "rtmp://127.0.0.1:1935/slot-stream-a",
@@ -147,15 +219,139 @@
       "volumeDb": 0.0
     },
     {
-      "filters": [],
+      "filters": [
+        {
+          "enabled": true,
+          "index": 0,
+          "kind": "compressor_filter",
+          "name": "AStation Compressor",
+          "settings": {
+            "attack": 25.0,
+            "output_gain": 0.0,
+            "ratio": 3.0,
+            "release": 250.0,
+            "threshold": -16.0
+          }
+        },
+        {
+          "enabled": true,
+          "index": 1,
+          "kind": "limiter_filter",
+          "name": "AStation Limiter",
+          "settings": {
+            "release": 60.0,
+            "threshold": -1.5
+          }
+        }
+      ],
       "kind": "ffmpeg_source",
-      "muted": false,
+      "muted": true,
       "name": "STREAM_B",
       "settings": {
         "input": "rtmp://127.0.0.1:1935/slot-stream-b",
         "is_local_file": false,
         "reconnect_delay_sec": 2,
         "restart_on_activate": false
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "Slot Cam",
+      "settings": {
+        "input": "srt://127.0.0.1:9000?streamid=read:slot-cam&latency=800000",
+        "is_local_file": false,
+        "looping": false,
+        "reconnect_delay_sec": 2,
+        "restart_on_activate": false
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "Slot Screen",
+      "settings": {
+        "input": "srt://127.0.0.1:9000?streamid=read:slot-screen&latency=800000",
+        "is_local_file": false,
+        "looping": false,
+        "reconnect_delay_sec": 2,
+        "restart_on_activate": false
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "Slot Audio",
+      "settings": {
+        "input": "rtmp://127.0.0.1:1935/slot-audio",
+        "is_local_file": false,
+        "looping": false,
+        "reconnect_delay_sec": 2,
+        "restart_on_activate": false
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "AD Break",
+      "settings": {
+        "local_file": "media:e2e_ad1.mp4",
+        "looping": false
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "STREAM AD",
+      "settings": {
+        "input": "rtmp://127.0.0.1:1935/slot-ad",
+        "is_local_file": false,
+        "reconnect_delay_sec": 2
+      },
+      "volumeDb": 0.0
+    },
+    {
+      "filters": [
+        {
+          "enabled": true,
+          "index": 0,
+          "kind": "compressor_filter",
+          "name": "AStation Compressor",
+          "settings": {
+            "attack": 25.0,
+            "output_gain": 0.0,
+            "ratio": 3.0,
+            "release": 250.0,
+            "threshold": -16.0
+          }
+        },
+        {
+          "enabled": true,
+          "index": 1,
+          "kind": "limiter_filter",
+          "name": "AStation Limiter",
+          "settings": {
+            "release": 60.0,
+            "threshold": -1.5
+          }
+        }
+      ],
+      "kind": "ffmpeg_source",
+      "muted": false,
+      "name": "PLAYOUT_C",
+      "settings": {
+        "local_file": "media:loop_a.mp4",
+        "looping": false
       },
       "volumeDb": 0.0
     }
@@ -223,64 +419,6 @@
             "sourceWidth": 0.0,
             "width": 0.0
           }
-        },
-        {
-          "enabled": true,
-          "id": 3,
-          "locked": false,
-          "source": "ticker.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 76.0,
-            "positionX": 0.0,
-            "positionY": 1004.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 76.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 4,
-          "locked": false,
-          "source": "watermark.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 1080.0,
-            "positionX": 0.0,
-            "positionY": 0.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 1080.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
         }
       ],
       "name": "SMILE | End Credits"
@@ -343,64 +481,6 @@
             "sourceHeight": 0.0,
             "sourceWidth": 0.0,
             "width": 0.0
-          }
-        },
-        {
-          "enabled": false,
-          "id": 3,
-          "locked": false,
-          "source": "ticker.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 76.0,
-            "positionX": 0.0,
-            "positionY": 1004.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 76.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 4,
-          "locked": false,
-          "source": "watermark.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 1080.0,
-            "positionX": 0.0,
-            "positionY": 0.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 1080.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
           }
         }
       ],
@@ -465,64 +545,6 @@
             "sourceWidth": 0.0,
             "width": 0.0
           }
-        },
-        {
-          "enabled": true,
-          "id": 3,
-          "locked": false,
-          "source": "ticker.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 76.0,
-            "positionX": 0.0,
-            "positionY": 1004.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 76.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 4,
-          "locked": false,
-          "source": "watermark.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 1080.0,
-            "positionX": 0.0,
-            "positionY": 0.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 1080.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
         }
       ],
       "name": "SMILE | Tech Diffs"
@@ -560,7 +582,99 @@
         },
         {
           "enabled": true,
-          "id": 4,
+          "id": 7,
+          "locked": false,
+          "source": "Slot Cam",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        },
+        {
+          "enabled": true,
+          "id": 8,
+          "locked": false,
+          "source": "Slot Screen",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        },
+        {
+          "enabled": true,
+          "id": 9,
+          "locked": false,
+          "source": "Slot Audio",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        }
+      ],
+      "name": "SMILE | Q&A"
+    },
+    {
+      "items": [
+        {
+          "enabled": true,
+          "id": 1,
           "locked": false,
           "source": "ticker.html",
           "sourceHeight": null,
@@ -586,11 +700,16 @@
             "sourceWidth": 1920.0,
             "width": 1920.0
           }
-        },
+        }
+      ],
+      "name": "SMILE | Ticker"
+    },
+    {
+      "items": [
         {
           "enabled": true,
-          "id": 5,
-          "locked": false,
+          "id": 2,
+          "locked": true,
           "source": "watermark.html",
           "sourceHeight": null,
           "sourceWidth": null,
@@ -617,12 +736,75 @@
           }
         }
       ],
-      "name": "SMILE | Q&A"
+      "name": "SMILE | Watermark"
     },
     {
       "items": [
         {
           "enabled": true,
+          "id": 1,
+          "locked": false,
+          "source": "AD Break",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        },
+        {
+          "enabled": false,
+          "id": 2,
+          "locked": false,
+          "source": "STREAM AD",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        }
+      ],
+      "name": "SMILE | Ad Break"
+    },
+    {
+      "items": [
+        {
+          "enabled": false,
           "id": 1,
           "locked": false,
           "source": "PLAYOUT_A",
@@ -639,15 +821,15 @@
             "cropRight": 0,
             "cropToBounds": false,
             "cropTop": 0,
-            "height": 720.0,
+            "height": 0.0,
             "positionX": 0.0,
             "positionY": 0.0,
             "rotation": 0.0,
             "scaleX": 1.0,
             "scaleY": 1.0,
-            "sourceHeight": 720.0,
-            "sourceWidth": 1280.0,
-            "width": 1280.0
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
           }
         },
         {
@@ -677,64 +859,6 @@
             "sourceHeight": 0.0,
             "sourceWidth": 0.0,
             "width": 0.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 3,
-          "locked": true,
-          "source": "ticker.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 76.0,
-            "positionX": 0.0,
-            "positionY": 1004.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 76.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 4,
-          "locked": true,
-          "source": "watermark.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 1080.0,
-            "positionX": 0.0,
-            "positionY": 0.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 1080.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
           }
         },
         {
@@ -793,6 +917,93 @@
             "sourceHeight": 0.0,
             "sourceWidth": 0.0,
             "width": 0.0
+          }
+        },
+        {
+          "enabled": true,
+          "id": 10,
+          "locked": false,
+          "source": "PLAYOUT_C",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 0.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 0.0,
+            "sourceWidth": 0.0,
+            "width": 0.0
+          }
+        },
+        {
+          "enabled": true,
+          "id": 11,
+          "locked": false,
+          "source": "SMILE | Ticker",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 1080.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 1080.0,
+            "sourceWidth": 1920.0,
+            "width": 1920.0
+          }
+        },
+        {
+          "enabled": true,
+          "id": 12,
+          "locked": false,
+          "source": "SMILE | Watermark",
+          "sourceHeight": null,
+          "sourceWidth": null,
+          "transform": {
+            "alignment": 5,
+            "boundsAlignment": 0,
+            "boundsHeight": 0.0,
+            "boundsType": "OBS_BOUNDS_NONE",
+            "boundsWidth": 0.0,
+            "cropBottom": 0,
+            "cropLeft": 0,
+            "cropRight": 0,
+            "cropToBounds": false,
+            "cropTop": 0,
+            "height": 1080.0,
+            "positionX": 0.0,
+            "positionY": 0.0,
+            "rotation": 0.0,
+            "scaleX": 1.0,
+            "scaleY": 1.0,
+            "sourceHeight": 1080.0,
+            "sourceWidth": 1920.0,
+            "width": 1920.0
           }
         }
       ],
@@ -856,64 +1067,6 @@
             "sourceHeight": 0.0,
             "sourceWidth": 0.0,
             "width": 0.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 4,
-          "locked": true,
-          "source": "ticker.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 76.0,
-            "positionX": 0.0,
-            "positionY": 1004.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 76.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
-          }
-        },
-        {
-          "enabled": true,
-          "id": 5,
-          "locked": true,
-          "source": "watermark.html",
-          "sourceHeight": null,
-          "sourceWidth": null,
-          "transform": {
-            "alignment": 5,
-            "boundsAlignment": 0,
-            "boundsHeight": 0.0,
-            "boundsType": "OBS_BOUNDS_NONE",
-            "boundsWidth": 0.0,
-            "cropBottom": 0,
-            "cropLeft": 0,
-            "cropRight": 0,
-            "cropToBounds": false,
-            "cropTop": 0,
-            "height": 1080.0,
-            "positionX": 0.0,
-            "positionY": 0.0,
-            "rotation": 0.0,
-            "scaleX": 1.0,
-            "scaleY": 1.0,
-            "sourceHeight": 1080.0,
-            "sourceWidth": 1920.0,
-            "width": 1920.0
           }
         }
       ],

@@ -2335,3 +2335,29 @@ things that were not true.
   one pass every few minutes that is ~2,300 rows a day: the 5,000-row
   trail fills in two days and the useful rows are trimmed away. These
   now go through the same hourly rate-limit the hold states use.
+
+## 2026-10-22 (06:00) — the repo's OBS config had fallen years behind the live plane
+
+`station/config/collection.json` is what a fresh box is built from (the
+VPS migration). Measured against the live plane: **62 drift lines**.
+
+What the repo was missing, and why it mattered:
+
+- **The loudness chain.** The operator's global compressor + limiter
+  (compress -16 dB / 3:1 -> limit -1.5 dBTP) live as OBS filters on the
+  live plane. A fresh install from the repo would have had NO loudness
+  chain at all.
+- **The contribution seats** (Slot Cam / Slot Screen / Slot Audio) — the
+  SRT/WHIP seats the operator uses.
+- **Three of the nine scenes** (Ad Break, Ticker, Watermark). The apply
+  refuses a capture that lacks a scene the daemon drives, so the repo's
+  capture could not have been applied at all.
+
+The capture also had a bug of its own: a deck input's file is RUNTIME
+state (the daemon points it at the item it is about to play, which is a
+spool file with a transient name), and the capture wrote that path
+verbatim. It now writes the fail-safe template.
+
+After the re-capture: `sync.py diff` says **"repo matches live (no
+drift)"**. The capture went through a temp directory and was checked
+for secrets and machine-specific paths before it went near git.

@@ -37,8 +37,18 @@ proof; see WORKLOG). What is STILL open, ranked:
   useless on a VPS (none exists; setup.sh now skips installing it
   there). The headless recipe is documented in `docs/VPS.md` §6
   (x11vnc on the Xvfb `:99` over an SSH tunnel) but ships no unit yet.
-- **config/collection.json: the scene NAMES are fixed, the CONTENT still
-  wants a re-capture.** The capture in git had `SMILE | Meet` while the
+- ~~**config/collection.json: the scene NAMES are fixed, the CONTENT
+  still wants a re-capture.**~~ — DONE 2026-10-22: the content was
+  re-captured from the live plane and `sync.py diff` now says "repo
+  matches live (no drift)". The capture had fallen behind in ways that
+  mattered for a fresh install (the VPS): it had NO loudness chain (the
+  operator's global compressor + limiter), no contribution seats
+  (Slot Cam/Screen/Audio), and three of the nine scenes (Ad Break,
+  Ticker, Watermark) were missing -- an apply would have been REFUSED,
+  and a fresh box would have had no loudness at all. The capture also
+  needed a fix of its own: a deck input's file is RUNTIME state (the
+  daemon points it at the item it is about to play), so the capture now
+  writes the fail-safe template instead of a transient spool path. The capture in git had `SMILE | Meet` while the
   live plane has `SMILE | Program` (renamed on the plane after the
   capture). Fixed 2026-10-22: the capture, the collection TEMPLATE
   (`station/scenes.json.template` — the thing the rendered collection is

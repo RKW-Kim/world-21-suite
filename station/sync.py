@@ -85,6 +85,13 @@ def norm_str(s, media):
                 return "overlay:/" + path
     if media and os.path.isabs(s) and s.startswith(media + os.sep):
         return "media:" + s[len(media) + 1:]
+    # A deck input's file is RUNTIME state: the daemon points it at the
+    # item it is about to play, which is a spool file with a transient
+    # name. The capture must not commit that -- the fail-safe template
+    # goes in instead, exactly as the hand-made capture did.
+    spool_dir = getattr(getattr(daemon, "spool", None), "SPDIR", "")
+    if spool_dir and os.path.isabs(s) and s.startswith(spool_dir + os.sep):
+        return "media:" + daemon.FALLBACK_DEFAULT[1]
     return s
 
 
