@@ -29,9 +29,12 @@ proof; see WORKLOG). What is STILL open, ranked:
   `BrowserHWAccel=false` when it does not exist yet (first boot used to
   skip the guard and die of the CEF GPU-process crash). Verified by a
   render harness against the real unit text for all three box shapes.
-  What is NOT yet proven: an actual llvmpipe boot with real air. That is
-  step 3 of the `docs/VPS.md` migration order — bring up the plane alone
-  and check it renders at the intended size before anything airs.
+  **PROVEN 2026-10-22:** the headless unit IS the GPU-less shape
+  (Xvfb :99 + `LIBGL_ALWAYS_SOFTWARE=1`). The plane booted under it, the
+  programme output came up, and a frame pulled off the bus carried the
+  real picture -- the fail-safe's test pattern, the watermark and the
+  ticker -- not black. The output is 960x540 (the canvas is 1920x1080 and
+  the output scales it), which is the light build's resolution.
 - **The TD-desk/VNC unit is session-shaped.** `station-vnc.service` runs
   wayvnc, which mirrors a Wayland session — correct on the lab desktop,
   useless on a VPS (none exists; setup.sh now skips installing it
