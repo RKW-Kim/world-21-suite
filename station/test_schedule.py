@@ -93,14 +93,32 @@ def main():
               "a missing schedule file reads as no switches")
 
         # --- the next switch is computed ------------------------------
-        write_schedule(root, [{"at": "06:00", "profile": "morning"},
-                              {"at": "23:30", "profile": "morning"}])
+        # Two hours ahead: the next switch must never be in the past.
+        ahead = time.strftime("%H:%M", time.localtime(time.time() + 7200))
+        write_schedule(root, [{"at": ahead, "profile": "morning"}])
         nxt = daemon.next_switch()
         check(nxt is not None, "the next switch is known")
         if nxt:
             check(nxt[1] == "morning", "the next switch names its profile")
             check(0 < nxt[2] <= 86400,
                   "the next switch is in the future (%ds)" % nxt[2])
+
+        # A switch that is DUE NOW counts as zero, never negative: the
+        # dock used to be told "in -2 minutes" for a switch that was
+        # about to fire.
+        due = time.strftime("%H:%M", time.localtime(time.time() - 60))
+        write_schedule(root, [{"at": due, "profile": "morning"}])
+        nxt = daemon.next_switch()
+        check(nxt is not None and nxt[2] == 0,
+              "a switch that is due now counts as zero (%s)"
+              % (nxt[2] if nxt else None))
+        # A switch long past is tomorrow, not a negative countdown.
+        old_at = time.strftime("%H:%M", time.localtime(time.time() - 7200))
+        write_schedule(root, [{"at": old_at, "profile": "morning"}])
+        nxt = daemon.next_switch()
+        check(nxt is not None and nxt[2] > 0,
+              "a switch that is long past is tomorrow (%s)"
+              % (nxt[2] if nxt else None))
 
         # --- the switch fires when its time comes ---------------------
         # a time one minute in the past: inside the firing window

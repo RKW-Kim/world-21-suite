@@ -1714,6 +1714,10 @@ def cover_idle_deck(renderer, state, decks):
 
 
 SCHEDULE_FILE = "schedule.json"
+# How long after its time a switch still counts as "due". The same
+# window decides whether a switch fires and how it is shown, so the
+# dock can never say "in -2 minutes" for something that is due now.
+SCHEDULE_WINDOW = 300
 
 
 def schedule_switches():
@@ -1749,9 +1753,13 @@ def next_switch():
         except Exception:
             continue
         delta = when - now
-        if delta < -3600:          # already past today: tomorrow
+        if delta < -SCHEDULE_WINDOW:
+            # Past its window (and not due): tomorrow.
             when += 86400
             delta = when - now
+        elif delta < 0:
+            # Due right now: the countdown is zero, not negative.
+            delta = 0
         if best is None or delta < best[2]:
             best = (at, prof, delta)
     return best
@@ -1781,7 +1789,7 @@ def check_schedule(state):
         except Exception:
             continue
         # a small window: the pass that notices it applies it
-        if not (0 <= now - when <= 300):
+        if not (0 <= now - when <= SCHEDULE_WINDOW):
             continue
         key = "%s|%s|%s" % (local, at, prof)
         if state.get("schedule_last") == key:

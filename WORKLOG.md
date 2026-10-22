@@ -2382,3 +2382,23 @@ Two other things cleaned up in the same pass:
   so nothing was served by it; it was just RAM and CPU.
 - The live cursor was repaired to where it was (row 10 — the row after
   the last item that played).
+
+## 2026-10-22 (06:20) — the operator's first-stop diagnostic lied, and a countdown went negative
+
+Two small lies found by running the tools the operator actually runs.
+
+- **The preflight said "scenes ok" without ever asking OBS.** Run
+  without `--strict` (the normal way), it has no renderer, so the
+  scene checks are skipped -- and the PASS line still claimed the
+  scenes were fine. The preflight is the first stop when something is
+  wrong, and a false all-clear sends the operator looking in the wrong
+  place. It now says "scenes NOT CHECKED (no plane; use --strict)", and
+  says so even when another check (the disk) fails. With the plane
+  switched off on purpose it says "SKIP obs -- the render plane is
+  switched off on purpose" instead of crying FAIL.
+- **A switch that was DUE showed a negative countdown** ("in -2 min").
+  The firing window (five minutes) and the display used different
+  rules. They now share one constant: a due switch reads zero ("due
+  now" in the dock), and one long past reads tomorrow.
+
+New: station/test_preflight_honesty.py.

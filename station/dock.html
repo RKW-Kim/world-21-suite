@@ -727,10 +727,14 @@ function renderSchedule(sched) {
   const el = $("schednext");
   if (!el) return;
   const nx = sched && sched.next;
-  el.textContent = nx ? ("next switch " + nx.at + " \u00b7 " + nx.profile) : "";
+  el.textContent = nx ? ("next switch " + nx.at + " \u00b7 " + nx.profile +
+                         (nx.in_s <= 0 ? " \u00b7 due now" : "")) : "";
   el.title = nx
-    ? ("At " + nx.at + " the running order becomes the \"" + nx.profile +
-       "\" profile (in " + Math.round(nx.in_s / 60) + " min). " +
+    ? ((nx.in_s <= 0
+        ? "The " + nx.at + " switch is due: the running order becomes the \"" +
+          nx.profile + "\" profile at the next cut. "
+        : "At " + nx.at + " the running order becomes the \"" + nx.profile +
+          "\" profile (in " + Math.round(nx.in_s / 60) + " min). ") +
        "Edit broadcast/schedule.json to change it.")
     : "No scheduled profile switches. Edit broadcast/schedule.json to add one.";
 }

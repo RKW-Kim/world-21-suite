@@ -58,7 +58,10 @@ def run(renderer=None, plane_expected=True):
     # Scenes must exist in OBS by exact name (the Meet->Program rename cost
     # us a day of ghost re-kicks).
     scene_names = []
-    if renderer and not plane_expected:
+    if not plane_expected:
+        # Said every time, not only on the PASS line: the disk check can
+        # fail on a small filesystem, and the operator still needs to know
+        # that the scenes were skipped ON PURPOSE.
         print("SKIP obs        the render plane is switched off on purpose")
     else:
         if renderer:
@@ -70,6 +73,12 @@ def run(renderer=None, plane_expected=True):
                 # Not a PASS: with no scene list the check below was
                 # skipped entirely and the boot reported "scenes ok".
                 bad = _err("obs", "scene list unreadable (renderer down)")
+        if not renderer:
+            # No plane to ask. Said here, not only on the PASS line: the
+            # disk check can fail on a small filesystem, and the operator
+            # still needs to know the scenes were not looked at.
+            print("NOTE obs        the scenes were NOT CHECKED "
+                  "(no plane; use --strict)")
         wanted = [getattr(daemon, a) for a in
                   ("SCENE_STARTING", "SCENE_PROGRAM", "SCENE_OFFAIR",
                    "SCENE_TECHDIFF", "SCENE_END", "SCENE_LIVE", "AD_SCENE")]
@@ -87,7 +96,18 @@ def run(renderer=None, plane_expected=True):
         print("WARN disk        statvfs failed on %s" % daemon.ROOT)
     if not bad:
         items = len(data.get("items", []))
-        print("PASS preflight %d playlist item(s), scenes ok, disk ok" % items)
+        # Honest about what was checked. The preflight run without
+        # --strict never talks to OBS, so it must not say "scenes ok":
+        # the operator runs this when something is wrong, and a false
+        # all-clear sends them looking in the wrong place.
+        if scene_names:
+            scene_note = "scenes ok"
+        elif plane_expected:
+            scene_note = "scenes NOT CHECKED (no plane; use --strict)"
+        else:
+            scene_note = "scenes not checked (the plane is off on purpose)"
+        print("PASS preflight %d playlist item(s), %s, disk ok"
+              % (items, scene_note))
     return bad
 
 
@@ -98,4 +118,7 @@ if __name__ == "__main__":
             renderer = daemon.OBSRenderer()
         except Exception as e:
             print("renderer unreachable: %s" % e)
-    sys.exit(run(renderer))
+    # The default run honours the deliberate-off state: the operator
+    # switched the plane off on purpose, so "the renderer is down" is
+    # their choice, not a fault. --strict still checks it (they asked).
+    sys.exit(run(renderer, plane_expected=bool(daemon.PLANE_AUTORESTART)))
