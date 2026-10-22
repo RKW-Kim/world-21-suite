@@ -1074,7 +1074,14 @@ def cached_resolve(url, force=False):
                          > time.time() - 1800)):
             return meta
     meta = ytstream.resolve(url)
-    if meta and meta.get("hls_v") and meta.get("hls_a"):
+    if meta:
+        # Cache EVERY successful resolve. The old condition (hls_v AND
+        # hls_a) only ever held for live streams, so a VOD's metadata was
+        # never cached: every cut and every watch cycle re-resolved it,
+        # and the metadata sweep never got past the first few rows (it
+        # re-resolved the same ones forever and the rest of the playlist
+        # was never visited -- 8 of 201 items had a description after
+        # days of running).
         _RESOLVE_CACHE[url] = (time.time(), meta)
         return meta
     return _RESOLVE_CACHE.get(url, (0, None))[1]
@@ -1968,6 +1975,32 @@ def _normalize_media(name, title=None):
 
 
 _SWEEP_DAY = None   # the day of the last full metadata sweep
+_SWEEP_POS = 0      # where the last pass stopped (so the next one continues)
+
+
+def _sweep_pos_file():
+    return os.path.join(ROOT, "sweep_pos.json")
+
+
+def _sweep_pos_get():
+    """Where the last metadata pass stopped. It has to survive a daemon
+    restart: without a cursor the pass restarts at the top every cycle,
+    re-resolves the same rows and never reaches the rest of the list."""
+    try:
+        with open(_sweep_pos_file()) as f:
+            return int(json.load(f).get("pos") or 0)
+    except Exception:
+        return 0
+
+
+def _sweep_pos_set(pos):
+    try:
+        tmp = _sweep_pos_file() + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump({"pos": int(pos)}, f)
+        os.replace(tmp, _sweep_pos_file())
+    except Exception:
+        pass
 
 
 def _title_watch_pass():
@@ -1992,7 +2025,15 @@ def _title_watch_pass():
     limit = 20 if sweep else 3
     fresh = 0
     tripped = []
-    for pos, it in enumerate(items):
+    # Continue where the last pass stopped. The resolve cache has a
+    # half-hour TTL and the pass runs every five minutes, so a pass that
+    # always starts at the top re-resolves the same rows and the frontier
+    # never moves (proved: 8 of 201 items had a description after days).
+    start = _sweep_pos_get() % max(1, len(items))
+    order = list(range(start, len(items))) + list(range(0, start))
+    last_pos = start - 1
+    for pos in order:
+        it = items[pos]
         url = it.get("youtube")
         old = it.get("title")
         if not url or not old or it.get("meta_trip") or url in tripped:
@@ -2006,6 +2047,10 @@ def _title_watch_pass():
             meta = cached_resolve(url)
         except Exception:
             continue
+        # The cursor advances only past what was really visited: a row
+        # skipped by the fresh-resolve limit must be where the next pass
+        # starts, or the frontier never moves.
+        last_pos = pos
         if pos == onidx:
             continue
         new = (meta or {}).get("title")
@@ -2066,6 +2111,9 @@ def _title_watch_pass():
             tripped.append(url)
             if len(tripped) >= 2:
                 break
+    if items:
+        # Where to continue: past the last row we actually looked at.
+        _sweep_pos_set((last_pos + 1) % len(items))
 
 
 def _title_watch():
@@ -3785,6 +3833,11 @@ def selftest():
     n = len(r.calls)
     advance(r, {"index": 0, "deck": "A", "faults": {}}, load_playlist(), decks)
     assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls
+    save_playlist({"shuffle_on_complete": False, "items": []})  # EMPTY: the
+    n = len(r.calls)                                             # operator
+    advance(r, {"index": 0, "deck": "A", "faults": {}}, load_playlist(), decks)
+    assert ("scene", SCENE_TECHDIFF) in r.calls[n:], r.calls      # deleted
+    assert not [c for c in r.calls[n:] if c[0] == "file"], r.calls  # everything
     save_playlist({"shuffle_on_complete": False, "items": [  # pending: silent
         {"title": "P", "source": "http://example.invalid/x"}]})
     n = len(r.calls)

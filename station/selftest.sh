@@ -15,7 +15,7 @@ for t in test_spool test_fallback test_playlist_edges test_stream_respawn \
          test_control_consume test_overlay_auth test_plane_guard \
          test_unit_render test_sync_guard test_intake_sweep \
          test_resolve_hold test_playlist_robustness \
-         test_stream_renditions test_schedule; do
+         test_stream_renditions test_schedule test_meta_sweep; do
   if python3 "$HERE/$t.py" > "/tmp/station-$t.log" 2>&1; then
     echo "PASS $t"
   else

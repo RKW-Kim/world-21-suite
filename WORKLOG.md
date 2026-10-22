@@ -2288,3 +2288,30 @@ The second one only became visible because the first fix made the
 cleanup delete a duplicate raw: the suite was already evicting from the
 live cache (it just had nothing to evict before). A green suite is not
 proof that the live station was untouched -- that has to be measured.
+
+## 2026-10-22 (05:20) — the daily metadata sweep never swept
+
+The operator asked for a daily check of the videos' metadata (Q5) and
+the dock shows the description in the preview panel. After days of
+running, **8 of 201 items had a description** — and they were the first
+eight.
+
+Two causes, both in the watcher:
+
+- `cached_resolve()` only cached a resolve that had BOTH HLS renditions
+  — which is a LIVE STREAM. A VOD's metadata was never cached, so every
+  pass re-resolved the same rows from scratch.
+- The pass always started at the top of the playlist. With a half-hour
+  cache TTL and a five-minute cycle, the frontier never moved: it
+  re-resolved the first rows and never reached the rest.
+
+The fix: cache every successful resolve, and give the pass a cursor
+(`broadcast/sweep_pos.json`) so it continues where it stopped. The
+first pass of the day is still the full sweep (20 resolves); the
+ordinary passes now advance 3 rows each instead of re-resolving the
+same 3 forever.
+
+This is the same shape as the schedule bug earlier today: the OFFLINE
+test passed (the code did what it said) while the RUNNING station did
+not (the code was not what the station actually did). The proof is in
+the data the operator sees — 8 descriptions — not in the code.
