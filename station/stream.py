@@ -39,6 +39,11 @@ MTX_RTMP = "rtmp://127.0.0.1:1935"
 MTX_API = "http://127.0.0.1:9997"
 V_FMT = "bv*[vcodec^=avc1][height<=720][protocol*=m3u8]/bv*[vcodec^=avc1][protocol*=m3u8]"
 A_FMT = "ba[acodec^=mp4a][protocol*=m3u8]/ba[protocol*=m3u8]"
+# One rendition carrying BOTH video and audio. Many live streams publish
+# only this (a 24/7 music channel, for instance) and the station used to
+# refuse them outright: the feed needs hls_v AND hls_a, so a combined
+# stream resolved to "unplayable" and was skipped.
+AV_FMT = "b[protocol*=m3u8][ext=mp4]/b[protocol*=m3u8]"
 RESOLVE_TIMEOUT = 45     # three serial probes: 3x this is the worst case
 
 # Why the last resolve failed, and whether it is PERMANENT. A video that
@@ -150,6 +155,12 @@ def resolve(url):
         return None
     live = bool(j.get("is_live"))
     desc = j.get("description") or ""
+    hls_v = _g(url, V_FMT)
+    hls_a = _g(url, A_FMT)
+    hls_av = None
+    if not hls_a:
+        # No separate audio rendition: look for a combined one.
+        hls_av = _g(url, AV_FMT)
     return {"id": j.get("id"), "title": j.get("title") or url,
             "duration": None if live else j.get("duration"),
             "thumbnail": j.get("thumbnail"), "live": live,
@@ -159,7 +170,31 @@ def resolve(url):
             "upload_date": j.get("upload_date") or j.get("release_date") or "",
             "channel": j.get("channel") or j.get("uploader") or "",
             "hls_at": time.time(),
-            "hls_v": _g(url, V_FMT), "hls_a": _g(url, A_FMT)}
+            "hls_v": hls_v, "hls_a": hls_a, "hls_av": hls_av}
+
+
+def spawnable(meta):
+    """Can this stream be fed to ffmpeg? Either two separate renditions
+    or one combined one."""
+    if not meta:
+        return False
+    if meta.get("hls_av"):
+        return True
+    return bool(meta.get("hls_v") and meta.get("hls_a"))
+
+
+def spawn_argv(meta, path):
+    """The ffmpeg argv for a stream. A combined rendition is ONE input."""
+    inputs = (["-re", "-i", meta["hls_av"]] if meta.get("hls_av")
+              and not meta.get("hls_a")
+              else ["-re", "-i", meta["hls_v"], "-re", "-i", meta["hls_a"]])
+    return ([FFMPEG, "-hide_banner", "-loglevel", "warning",
+             # 15s socket timeout: without it a dead upstream keeps the
+             # process alive (and the frame frozen) forever.
+             "-rw_timeout", "15000000", "-reconnect", "1",
+             "-reconnect_streamed", "1"]
+            + inputs
+            + ["-c", "copy", "-f", "flv", "%s/%s" % (MTX_RTMP, path)])
 
 
 def spawn(url, path, meta=None):
@@ -172,21 +207,15 @@ def spawn(url, path, meta=None):
         if fresh:
             meta = fresh
     meta = meta or resolve(url)
-    if not meta or not meta.get("hls_v") or not meta.get("hls_a"):
+    if not spawnable(meta):
         log.warning("spawn %s: unresolvable", url)
         return None
     try:
         # Truncate per spawn: /tmp is a tmpfs (RAM) and the log grew
         # forever, one stats line per 0.5s of stream.
         err = open(os.environ.get("FFERR_PATH", "/tmp/feed-%s.err" % path), "wb")
-        ff = subprocess.Popen(
-            [FFMPEG, "-hide_banner", "-loglevel", "warning",
-             # 15s socket timeout: without it a dead upstream keeps the
-             # process alive (and the frame frozen) forever.
-             "-rw_timeout", "15000000", "-reconnect", "1", "-reconnect_streamed", "1",
-             "-re", "-i", meta["hls_v"], "-re", "-i", meta["hls_a"],
-             "-c", "copy", "-f", "flv", "%s/%s" % (MTX_RTMP, path)],
-            stdout=subprocess.DEVNULL, stderr=err)
+        ff = subprocess.Popen(spawn_argv(meta, path),
+                              stdout=subprocess.DEVNULL, stderr=err)
     except OSError as e:
         log.warning("spawn %s: %s", path, e)
         return None

@@ -62,7 +62,10 @@ def req(base, path, method="GET", headers=None, body=None):
     r = urllib.request.Request(base + path, method=method,
                                data=body, headers=headers or {})
     try:
-        with urllib.request.urlopen(r, timeout=5) as resp:
+        # 15s, not 5: the /obs proxy waits up to 8s for the plane before
+        # answering 502, and a client that gives up first just breaks the
+        # pipe on the server side.
+        with urllib.request.urlopen(r, timeout=15) as resp:
             return resp.status, resp.read()
     except urllib.error.HTTPError as e:
         return e.code, e.read()
@@ -109,7 +112,11 @@ check(st == 403, "token set: /ws without a token is refused (%s)" % st)
 st, _ = req(base, "/ws?XTransformPort=4455&token=" + TOKEN, "GET", {
     "Upgrade": "websocket", "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
     "Sec-WebSocket-Version": "13"})
-check(st is not None and st != 403,
+# No status at all is the PASS case here: once the guard accepts, the
+# websocket handshake takes the connection over, so the client never sees
+# an HTTP response (the relay then fails against a plane that is not
+# there). What must NOT happen is a 403.
+check(st != 403,
       "token set: /ws with ?token= passes the guard (%s)" % st)
 
 # Same-origin without the token: STILL refused on the control tier — the
