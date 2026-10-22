@@ -184,6 +184,8 @@ silent file and will never be retried (by design).
 | Change the loudness | The wave icon in the strip: on = compress+limit everywhere, off = removed. |
 | Restart the daemon | The dock's down overlay → Restart daemon (two presses), or `systemctl --user restart station-daemon`. |
 | Restart the plane | `systemctl --user restart station-obs` — it cuts the programme. Say so first. |
+| Is the station whole? | `python3 station/station_watchdog.py --check` — the daemon, the panel, the overlay, the plane and the bus. Exit code 0 means every piece that should be alive is. |
+| What is broken? | `python3 station/preflight.py` — the playlist, the state, the media files, the disk, and (with `--strict`) the OBS scenes. It says what it did NOT check. |
 
 ### Scheduled profile switches
 

@@ -32,7 +32,12 @@ DEAD_AGE = {"daemon": 45.0, "panel": 20.0, "overlay": 20.0, "plane": 90.0}
 USER_UNITS = {"daemon": "station-daemon.service",
               "panel": "station-panel.service",
               "overlay": "station-overlay.service",
-              "plane": "station-obs.service"}
+              "plane": "station-obs.service",
+              # The bus. The programme output (OBS -> rtmp://.../monitor),
+              # the live-stream lane and the publish leg all run through
+              # it, and NOTHING revived it when it died: the station
+              # looked alive and went dark downstream.
+              "bus": "station-mediamtx.service"}
 # A sync.py apply --restart parks the watchdog by dropping this file while
 # it stops the daemon, merges the collection and brings units back. A STALE
 # park (an apply that died mid-flight) expires: after PARK_TTL the watchdog
@@ -143,6 +148,12 @@ def http_alive(port, path, timeout=4):
         return False
 
 
+def bus_alive():
+    """MediaMTX's API answers on 9997. The bus is what carries the
+    finished programme out of OBS and the live feeds in."""
+    return http_alive(9997, "/v3/paths/list", timeout=4)
+
+
 def plane_alive():
     """The obs-websocket answers an HTTP upgrade with 426: that is the
     cheapest proof that the render plane is up (a websocket handshake
@@ -224,6 +235,8 @@ def check_again(name):
         return http_alive(7070, "/state")
     if name == "plane":
         return plane_alive()
+    if name == "bus":
+        return bus_alive()
     return False
 
 
@@ -236,12 +249,18 @@ def main():
         "panel": http_alive(8220, "/api/ping"),
         "overlay": http_alive(7070, "/state"),
         "plane": plane_alive(),
+        "bus": bus_alive(),
     }
     if check_only:
         off = [k for k, u in USER_UNITS.items() if unit_disabled(u)]
         print(json.dumps({"daemon_age": age, "parked": parked(),
                           "intentionally_off": off, **states}, indent=2))
-        return 0 if all(states.values()) else 1
+        # A unit the operator switched off on purpose is not a failure.
+        # The check answered 1 for a perfectly healthy station whose
+        # plane is masked, which teaches the reader that the exit code
+        # means nothing.
+        bad = [k for k, v in states.items() if not v and k not in off]
+        return 0 if not bad else 1
     if parked():
         # A sync.py apply --restart is mid-flight: units are stopped BY
         # DESIGN and reviving them would start the daemon under the merge.

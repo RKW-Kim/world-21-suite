@@ -2402,3 +2402,22 @@ Two small lies found by running the tools the operator actually runs.
   now" in the dock), and one long past reads tomorrow.
 
 New: station/test_preflight_honesty.py.
+
+## 2026-10-22 (06:50) — nothing watched the bus
+
+The station watchdog revives the daemon, the panel, the overlay server
+and the render plane. It did **not** watch MediaMTX — the bus that
+carries the finished programme out of OBS, the live feeds in, and the
+publish leg out. If the bus died, the station looked alive and went
+dark downstream, and nothing brought it back.
+
+The bus is now one of the watched pieces (MediaMTX's API on 9997 is the
+liveness probe). PROVEN LIVE: the bus was stopped, the watchdog found
+it ("bus not answering. Reviving."), restarted it, and the API came
+back.
+
+The same pass fixed the check's exit code: `--check` answered 1 for a
+perfectly healthy station whose plane is masked on purpose. A check
+that always fails teaches the reader that the exit code means nothing.
+It now answers 0 when the only dead piece is one the operator switched
+off, and 1 when a piece that should be alive is dead.
